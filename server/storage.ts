@@ -147,6 +147,12 @@ import {
   teams, teamMembers, pipelineLabels, cardLabels, cardChecklists, cardChecklistItems,
   type Team, type TeamMember, type PipelineLabel, type CardChecklist, type CardChecklistItem,
   TEAM_TASK_DEFAULT_STAGES, TEAM_DEFAULT_VIEWS,
+  // Teamspace v5.0 Fase 2
+  teamChatMessages, teamEvents, teamEventParticipants,
+  checkinQuestions, checkinRecipients, checkinResponses,
+  teamFolders, teamDocuments, teamFiles, contentRecipients,
+  type TeamChatMessage, type TeamEvent, type CheckinQuestion, type CheckinResponse,
+  type TeamFolder, type TeamDocument, type TeamFile,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -3058,6 +3064,503 @@ export class DatabaseStorage implements IStorage {
     const [row] = await this.db.select().from(pipelineCards)
       .where(and(eq(pipelineCards.id, copy.id), eq(pipelineCards.mitraId, mitraId)));
     return row!;
+  }
+
+  // ── Teamspace Fase 2: Chat Grup (FR-5xx) ──
+
+  /** Pesan chat tim, cursor pagination mundur (beforeId) — hasil urut ASC untuk render. */
+  async listChatMessages(teamId: number, opts?: { beforeId?: number; limit?: number }): Promise<TeamChatMessage[]> {
+    const mitraId = getMitraId();
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const conds = [eq(teamChatMessages.mitraId, mitraId), eq(teamChatMessages.teamId, teamId)];
+    if (opts?.beforeId) conds.push(sql`${teamChatMessages.id} < ${opts.beforeId}` as any);
+    const rows = await this.db.select().from(teamChatMessages)
+      .where(and(...conds))
+      .orderBy(desc(teamChatMessages.id))
+      .limit(limit);
+    return rows.reverse();
+  }
+
+  async getChatMessage(id: number): Promise<TeamChatMessage | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teamChatMessages)
+      .where(and(eq(teamChatMessages.id, id), eq(teamChatMessages.mitraId, mitraId)));
+    return row;
+  }
+
+  async addChatMessage(data: {
+    teamId: number; senderId: number; body?: string | null; replyToId?: number | null;
+    attachmentPath?: string | null; attachmentName?: string | null; attachmentMime?: string | null; attachmentSize?: number | null;
+  }): Promise<TeamChatMessage> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(teamChatMessages).values({
+      mitraId, teamId: data.teamId, senderId: data.senderId,
+      body: data.body ?? null, replyToId: data.replyToId ?? null,
+      attachmentPath: data.attachmentPath ?? null, attachmentName: data.attachmentName ?? null,
+      attachmentMime: data.attachmentMime ?? null, attachmentSize: data.attachmentSize ?? null,
+      createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(teamChatMessages)
+      .where(and(eq(teamChatMessages.id, insertId), eq(teamChatMessages.mitraId, mitraId)));
+    return row!;
+  }
+
+  /** Soft delete — bubble tetap tampil sebagai "pesan dihapus". */
+  async softDeleteChatMessage(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teamChatMessages)
+      .set({ deletedAt: new Date().toISOString(), body: null, attachmentPath: null, attachmentName: null, attachmentMime: null, attachmentSize: null } as any)
+      .where(and(eq(teamChatMessages.id, id), eq(teamChatMessages.mitraId, mitraId)));
+  }
+
+  /** Panel Media (FR-504): semua pesan ber-lampiran, terbaru dulu. */
+  async listChatMedia(teamId: number, limit = 200): Promise<TeamChatMessage[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(teamChatMessages)
+      .where(and(
+        eq(teamChatMessages.mitraId, mitraId), eq(teamChatMessages.teamId, teamId),
+        isNotNull(teamChatMessages.attachmentPath), isNull(teamChatMessages.deletedAt),
+      ))
+      .orderBy(desc(teamChatMessages.id))
+      .limit(limit);
+  }
+
+  /** Tandai chat tim terbaca (unread marker per anggota). */
+  async markChatRead(teamId: number, userId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teamMembers).set({ lastReadChatAt: new Date().toISOString() })
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId), eq(teamMembers.mitraId, mitraId)));
+  }
+
+  /** teamId -> jumlah pesan belum dibaca (pesan orang lain setelah lastReadChatAt), batched. */
+  async getUnreadChatCounts(userId: number, teamIds: number[]): Promise<Map<number, number>> {
+    const map = new Map<number, number>();
+    if (teamIds.length === 0) return map;
+    const mitraId = getMitraId();
+    const placeholders = teamIds.map(() => "?").join(",");
+    const [rows]: any = await this.pool.execute(
+      `SELECT m.team_id AS teamId, COUNT(*) AS c
+       FROM team_chat_messages m
+       JOIN team_members tm ON tm.team_id = m.team_id AND tm.user_id = ? AND tm.mitra_id = ?
+       WHERE m.mitra_id = ? AND m.team_id IN (${placeholders})
+         AND m.deleted_at IS NULL AND m.sender_id <> ?
+         AND (tm.last_read_chat_at IS NULL OR m.created_at > tm.last_read_chat_at)
+       GROUP BY m.team_id`,
+      [userId, mitraId, mitraId, ...teamIds, userId],
+    );
+    for (const r of rows as any[]) map.set(Number(r.teamId), Number(r.c));
+    return map;
+  }
+
+  // ── Teamspace Fase 2: Jadwal (FR-7xx) ──
+
+  async listTeamEvents(teamId: number): Promise<TeamEvent[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(teamEvents)
+      .where(and(eq(teamEvents.mitraId, mitraId), eq(teamEvents.teamId, teamId), isNull(teamEvents.archivedAt)))
+      .orderBy(asc(teamEvents.startAt));
+  }
+
+  async getTeamEvent(id: number): Promise<TeamEvent | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teamEvents)
+      .where(and(eq(teamEvents.id, id), eq(teamEvents.mitraId, mitraId)));
+    return row;
+  }
+
+  async createTeamEvent(data: {
+    teamId: number; title: string; startAt: string; endAt: string;
+    recurrence?: string | null; isConfidential?: boolean; notes?: string | null; participantIds?: number[];
+  }, userId: number): Promise<TeamEvent> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(teamEvents).values({
+      mitraId, teamId: data.teamId, title: data.title, startAt: data.startAt, endAt: data.endAt,
+      recurrence: data.recurrence ?? null, isConfidential: data.isConfidential ? 1 : 0,
+      notes: data.notes ?? null, createdBy: userId, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    if (data.participantIds?.length) await this.setEventParticipants(insertId, data.participantIds);
+    const [row] = await this.db.select().from(teamEvents)
+      .where(and(eq(teamEvents.id, insertId), eq(teamEvents.mitraId, mitraId)));
+    return row!;
+  }
+
+  async updateTeamEvent(id: number, data: {
+    title?: string; startAt?: string; endAt?: string; recurrence?: string | null;
+    isConfidential?: boolean; notes?: string | null; participantIds?: number[];
+  }): Promise<TeamEvent> {
+    const mitraId = getMitraId();
+    const patch: any = { updatedAt: new Date().toISOString() };
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.startAt !== undefined) patch.startAt = data.startAt;
+    if (data.endAt !== undefined) patch.endAt = data.endAt;
+    if (data.recurrence !== undefined) patch.recurrence = data.recurrence;
+    if (data.isConfidential !== undefined) patch.isConfidential = data.isConfidential ? 1 : 0;
+    if (data.notes !== undefined) patch.notes = data.notes;
+    await this.db.update(teamEvents).set(patch)
+      .where(and(eq(teamEvents.id, id), eq(teamEvents.mitraId, mitraId)));
+    if (data.participantIds !== undefined) await this.setEventParticipants(id, data.participantIds);
+    const [row] = await this.db.select().from(teamEvents)
+      .where(and(eq(teamEvents.id, id), eq(teamEvents.mitraId, mitraId)));
+    if (!row) throw new Error("Event tidak ditemukan");
+    return row;
+  }
+
+  async archiveTeamEvent(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teamEvents)
+      .set({ archivedAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as any)
+      .where(and(eq(teamEvents.id, id), eq(teamEvents.mitraId, mitraId)));
+  }
+
+  async setEventParticipants(eventId: number, userIds: number[]): Promise<void> {
+    await this.db.delete(teamEventParticipants).where(eq(teamEventParticipants.eventId, eventId));
+    for (const userId of [...new Set(userIds)]) {
+      await this.db.insert(teamEventParticipants).values({ eventId, userId } as any);
+    }
+  }
+
+  /** eventId -> participant userIds[], batched. */
+  async getParticipantsForEvents(eventIds: number[]): Promise<Map<number, number[]>> {
+    const map = new Map<number, number[]>();
+    if (eventIds.length === 0) return map;
+    const rows = await this.db.select().from(teamEventParticipants)
+      .where(inArray(teamEventParticipants.eventId, eventIds));
+    for (const r of rows) {
+      const arr = map.get(r.eventId) ?? [];
+      arr.push(r.userId);
+      map.set(r.eventId, arr);
+    }
+    return map;
+  }
+
+  /** Ambil/generate token feed iCal personal (FR-703), revocable via regenerate. */
+  async getOrCreateCalendarFeedToken(userId: number, regenerate = false): Promise<string> {
+    const [u] = await this.db.select().from(users).where(eq(users.id, userId));
+    const existing = (u as any)?.calendarFeedToken as string | null;
+    if (existing && !regenerate) return existing;
+    const token = (await import("crypto")).randomBytes(24).toString("hex");
+    await this.db.update(users).set({ calendarFeedToken: token } as any).where(eq(users.id, userId));
+    return token;
+  }
+
+  async getUserByCalendarFeedToken(token: string): Promise<User | undefined> {
+    if (!token) return undefined;
+    const [row] = await this.db.select().from(users).where(eq(users.calendarFeedToken, token));
+    return row;
+  }
+
+  // ── Teamspace Fase 2: Check-in (FR-8xx) ──
+
+  async listCheckinQuestions(teamId: number): Promise<CheckinQuestion[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(checkinQuestions)
+      .where(and(eq(checkinQuestions.mitraId, mitraId), eq(checkinQuestions.teamId, teamId)))
+      .orderBy(desc(checkinQuestions.isActive), asc(checkinQuestions.sendTime), asc(checkinQuestions.id));
+  }
+
+  async getCheckinQuestion(id: number): Promise<CheckinQuestion | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(checkinQuestions)
+      .where(and(eq(checkinQuestions.id, id), eq(checkinQuestions.mitraId, mitraId)));
+    return row;
+  }
+
+  async createCheckinQuestion(data: {
+    teamId: number; questionText: string; sendDays: number[]; sendTime: string;
+    isConfidential?: boolean; recipientIds: number[];
+  }, userId: number): Promise<CheckinQuestion> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(checkinQuestions).values({
+      mitraId, teamId: data.teamId, questionText: data.questionText,
+      sendDays: JSON.stringify(data.sendDays), sendTime: data.sendTime,
+      isConfidential: data.isConfidential ? 1 : 0, isActive: 1,
+      createdBy: userId, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    await this.setCheckinRecipients(insertId, data.recipientIds);
+    const [row] = await this.db.select().from(checkinQuestions)
+      .where(and(eq(checkinQuestions.id, insertId), eq(checkinQuestions.mitraId, mitraId)));
+    return row!;
+  }
+
+  async updateCheckinQuestion(id: number, data: {
+    questionText?: string; sendDays?: number[]; sendTime?: string;
+    isConfidential?: boolean; isActive?: boolean; recipientIds?: number[];
+  }): Promise<CheckinQuestion> {
+    const mitraId = getMitraId();
+    const patch: any = { updatedAt: new Date().toISOString() };
+    if (data.questionText !== undefined) patch.questionText = data.questionText;
+    if (data.sendDays !== undefined) patch.sendDays = JSON.stringify(data.sendDays);
+    if (data.sendTime !== undefined) patch.sendTime = data.sendTime;
+    if (data.isConfidential !== undefined) patch.isConfidential = data.isConfidential ? 1 : 0;
+    if (data.isActive !== undefined) patch.isActive = data.isActive ? 1 : 0;
+    await this.db.update(checkinQuestions).set(patch)
+      .where(and(eq(checkinQuestions.id, id), eq(checkinQuestions.mitraId, mitraId)));
+    if (data.recipientIds !== undefined) await this.setCheckinRecipients(id, data.recipientIds);
+    const [row] = await this.db.select().from(checkinQuestions)
+      .where(and(eq(checkinQuestions.id, id), eq(checkinQuestions.mitraId, mitraId)));
+    if (!row) throw new Error("Pertanyaan tidak ditemukan");
+    return row;
+  }
+
+  async deleteCheckinQuestion(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.delete(checkinRecipients).where(eq(checkinRecipients.questionId, id));
+    await this.db.delete(checkinResponses).where(and(eq(checkinResponses.questionId, id), eq(checkinResponses.mitraId, mitraId)));
+    await this.db.delete(checkinQuestions)
+      .where(and(eq(checkinQuestions.id, id), eq(checkinQuestions.mitraId, mitraId)));
+  }
+
+  async setCheckinRecipients(questionId: number, userIds: number[]): Promise<void> {
+    await this.db.delete(checkinRecipients).where(eq(checkinRecipients.questionId, questionId));
+    for (const userId of [...new Set(userIds)]) {
+      await this.db.insert(checkinRecipients).values({ questionId, userId } as any);
+    }
+  }
+
+  /** questionId -> recipient userIds[], batched. */
+  async getRecipientsForQuestions(questionIds: number[]): Promise<Map<number, number[]>> {
+    const map = new Map<number, number[]>();
+    if (questionIds.length === 0) return map;
+    const rows = await this.db.select().from(checkinRecipients)
+      .where(inArray(checkinRecipients.questionId, questionIds));
+    for (const r of rows) {
+      const arr = map.get(r.questionId) ?? [];
+      arr.push(r.userId);
+      map.set(r.questionId, arr);
+    }
+    return map;
+  }
+
+  /** Jawab instance check-in — upsert per (question, user, responseDate). */
+  async upsertCheckinResponse(questionId: number, userId: number, responseDate: string, responseText: string): Promise<CheckinResponse> {
+    const mitraId = getMitraId();
+    const now = new Date().toISOString();
+    const [existing] = await this.db.select().from(checkinResponses)
+      .where(and(
+        eq(checkinResponses.questionId, questionId), eq(checkinResponses.userId, userId),
+        eq(checkinResponses.responseDate, responseDate), eq(checkinResponses.mitraId, mitraId),
+      ));
+    if (existing) {
+      await this.db.update(checkinResponses).set({ responseText, submittedAt: now } as any)
+        .where(and(eq(checkinResponses.id, existing.id), eq(checkinResponses.mitraId, mitraId)));
+      const [row] = await this.db.select().from(checkinResponses)
+        .where(and(eq(checkinResponses.id, existing.id), eq(checkinResponses.mitraId, mitraId)));
+      return row!;
+    }
+    const result = await this.db.insert(checkinResponses).values({
+      mitraId, questionId, userId, responseDate, responseText, submittedAt: now,
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(checkinResponses)
+      .where(and(eq(checkinResponses.id, insertId), eq(checkinResponses.mitraId, mitraId)));
+    return row!;
+  }
+
+  /** Rekap jawaban satu pertanyaan, terbaru dulu (group per tanggal di client). */
+  async listCheckinResponses(questionId: number, limit = 500): Promise<CheckinResponse[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(checkinResponses)
+      .where(and(eq(checkinResponses.questionId, questionId), eq(checkinResponses.mitraId, mitraId)))
+      .orderBy(desc(checkinResponses.responseDate), asc(checkinResponses.submittedAt))
+      .limit(limit);
+  }
+
+  /** WORKER (lintas-mitra, tanpa tenant context): semua pertanyaan aktif mentah. */
+  async listActiveCheckinQuestionsAllMitra(): Promise<Array<{
+    id: number; mitraId: number; teamId: number; questionText: string;
+    sendDays: string; sendTime: string; isActive: number; lastSentDate: string | null; createdBy: number;
+  }>> {
+    const [rows]: any = await this.pool.execute(
+      `SELECT id, mitra_id AS mitraId, team_id AS teamId, question_text AS questionText,
+              send_days AS sendDays, send_time AS sendTime, is_active AS isActive,
+              last_sent_date AS lastSentDate, created_by AS createdBy
+       FROM checkin_questions WHERE is_active = 1`,
+    );
+    return rows as any[];
+  }
+
+  async markCheckinSent(questionId: number, dateStr: string): Promise<void> {
+    await this.pool.execute(`UPDATE checkin_questions SET last_sent_date = ? WHERE id = ?`, [dateStr, questionId]);
+  }
+
+  // ── Teamspace Fase 2: Dokumen & File (FR-9xx) ──
+
+  async listTeamFolders(teamId: number): Promise<TeamFolder[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(teamFolders)
+      .where(and(eq(teamFolders.mitraId, mitraId), eq(teamFolders.teamId, teamId)))
+      .orderBy(asc(teamFolders.name));
+  }
+
+  async getTeamFolder(id: number): Promise<TeamFolder | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teamFolders)
+      .where(and(eq(teamFolders.id, id), eq(teamFolders.mitraId, mitraId)));
+    return row;
+  }
+
+  async createTeamFolder(teamId: number, name: string, parentFolderId: number | null, userId: number): Promise<TeamFolder> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(teamFolders).values({
+      mitraId, teamId, name, parentFolderId, createdBy: userId, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(teamFolders)
+      .where(and(eq(teamFolders.id, insertId), eq(teamFolders.mitraId, mitraId)));
+    return row!;
+  }
+
+  async renameTeamFolder(id: number, name: string): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teamFolders).set({ name } as any)
+      .where(and(eq(teamFolders.id, id), eq(teamFolders.mitraId, mitraId)));
+  }
+
+  /** Hapus folder — ditolak bila masih ada isi (subfolder/dokumen/file aktif). */
+  async deleteTeamFolder(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    const [subs, docs, files] = await Promise.all([
+      this.db.select({ c: count() }).from(teamFolders).where(and(eq(teamFolders.parentFolderId, id), eq(teamFolders.mitraId, mitraId))),
+      this.db.select({ c: count() }).from(teamDocuments).where(and(eq(teamDocuments.folderId, id), eq(teamDocuments.mitraId, mitraId), isNull(teamDocuments.archivedAt))),
+      this.db.select({ c: count() }).from(teamFiles).where(and(eq(teamFiles.folderId, id), eq(teamFiles.mitraId, mitraId), isNull(teamFiles.archivedAt))),
+    ]);
+    if (Number(subs[0]?.c ?? 0) + Number(docs[0]?.c ?? 0) + Number(files[0]?.c ?? 0) > 0) {
+      throw new Error("Folder masih berisi item — kosongkan dulu sebelum menghapus");
+    }
+    await this.db.delete(teamFolders).where(and(eq(teamFolders.id, id), eq(teamFolders.mitraId, mitraId)));
+  }
+
+  async listTeamDocuments(teamId: number, includeArchived = false): Promise<TeamDocument[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(teamDocuments.mitraId, mitraId), eq(teamDocuments.teamId, teamId)];
+    if (!includeArchived) conds.push(isNull(teamDocuments.archivedAt));
+    return this.db.select().from(teamDocuments).where(and(...conds))
+      .orderBy(desc(teamDocuments.updatedAt), desc(teamDocuments.id));
+  }
+
+  async getTeamDocument(id: number): Promise<TeamDocument | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teamDocuments)
+      .where(and(eq(teamDocuments.id, id), eq(teamDocuments.mitraId, mitraId)));
+    return row;
+  }
+
+  async createTeamDocument(data: {
+    teamId: number; folderId?: number | null; title: string; content?: string | null;
+    isConfidential?: boolean; recipientIds?: number[];
+  }, userId: number): Promise<TeamDocument> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(teamDocuments).values({
+      mitraId, teamId: data.teamId, folderId: data.folderId ?? null, title: data.title,
+      content: data.content ?? null, isConfidential: data.isConfidential ? 1 : 0,
+      createdBy: userId, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    if (data.isConfidential && data.recipientIds) {
+      await this.setContentRecipients("document", insertId, data.recipientIds);
+    }
+    const [row] = await this.db.select().from(teamDocuments)
+      .where(and(eq(teamDocuments.id, insertId), eq(teamDocuments.mitraId, mitraId)));
+    return row!;
+  }
+
+  async updateTeamDocument(id: number, data: {
+    title?: string; content?: string | null; folderId?: number | null;
+    isConfidential?: boolean; recipientIds?: number[];
+  }, userId: number): Promise<TeamDocument> {
+    const mitraId = getMitraId();
+    const patch: any = { updatedAt: new Date().toISOString(), updatedBy: userId };
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.content !== undefined) patch.content = data.content;
+    if (data.folderId !== undefined) patch.folderId = data.folderId;
+    if (data.isConfidential !== undefined) patch.isConfidential = data.isConfidential ? 1 : 0;
+    await this.db.update(teamDocuments).set(patch)
+      .where(and(eq(teamDocuments.id, id), eq(teamDocuments.mitraId, mitraId)));
+    if (data.recipientIds !== undefined) {
+      await this.setContentRecipients("document", id, data.recipientIds);
+    }
+    const [row] = await this.db.select().from(teamDocuments)
+      .where(and(eq(teamDocuments.id, id), eq(teamDocuments.mitraId, mitraId)));
+    if (!row) throw new Error("Dokumen tidak ditemukan");
+    return row;
+  }
+
+  async setTeamDocumentArchived(id: number, archived: boolean): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teamDocuments)
+      .set({ archivedAt: archived ? new Date().toISOString() : null, updatedAt: new Date().toISOString() } as any)
+      .where(and(eq(teamDocuments.id, id), eq(teamDocuments.mitraId, mitraId)));
+  }
+
+  async listTeamFiles(teamId: number, includeArchived = false): Promise<TeamFile[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(teamFiles.mitraId, mitraId), eq(teamFiles.teamId, teamId)];
+    if (!includeArchived) conds.push(isNull(teamFiles.archivedAt));
+    return this.db.select().from(teamFiles).where(and(...conds))
+      .orderBy(desc(teamFiles.id));
+  }
+
+  async getTeamFile(id: number): Promise<TeamFile | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teamFiles)
+      .where(and(eq(teamFiles.id, id), eq(teamFiles.mitraId, mitraId)));
+    return row;
+  }
+
+  async addTeamFile(data: {
+    teamId: number; folderId?: number | null; fileName: string; filePath: string;
+    mimeType: string; sizeBytes: number;
+  }, userId: number): Promise<TeamFile> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(teamFiles).values({
+      mitraId, teamId: data.teamId, folderId: data.folderId ?? null,
+      fileName: data.fileName, filePath: data.filePath, mimeType: data.mimeType,
+      sizeBytes: data.sizeBytes, uploadedBy: userId, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(teamFiles)
+      .where(and(eq(teamFiles.id, insertId), eq(teamFiles.mitraId, mitraId)));
+    return row!;
+  }
+
+  async setTeamFileArchived(id: number, archived: boolean): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teamFiles)
+      .set({ archivedAt: archived ? new Date().toISOString() : null } as any)
+      .where(and(eq(teamFiles.id, id), eq(teamFiles.mitraId, mitraId)));
+  }
+
+  // ── Penerima konten Rahasia (polymorphic, FR-1404) ──
+
+  async setContentRecipients(ownerType: string, ownerId: number, userIds: number[]): Promise<void> {
+    await this.db.delete(contentRecipients)
+      .where(and(eq(contentRecipients.ownerType, ownerType), eq(contentRecipients.ownerId, ownerId)));
+    for (const userId of [...new Set(userIds)]) {
+      await this.db.insert(contentRecipients).values({ ownerType, ownerId, userId } as any);
+    }
+  }
+
+  async getContentRecipients(ownerType: string, ownerId: number): Promise<number[]> {
+    const rows = await this.db.select().from(contentRecipients)
+      .where(and(eq(contentRecipients.ownerType, ownerType), eq(contentRecipients.ownerId, ownerId)));
+    return rows.map((r) => r.userId);
+  }
+
+  /** ownerId -> userIds[], batched per ownerType. */
+  async getRecipientsForOwners(ownerType: string, ownerIds: number[]): Promise<Map<number, number[]>> {
+    const map = new Map<number, number[]>();
+    if (ownerIds.length === 0) return map;
+    const rows = await this.db.select().from(contentRecipients)
+      .where(and(eq(contentRecipients.ownerType, ownerType), inArray(contentRecipients.ownerId, ownerIds)));
+    for (const r of rows) {
+      const arr = map.get(r.ownerId) ?? [];
+      arr.push(r.userId);
+      map.set(r.ownerId, arr);
+    }
+    return map;
   }
 
   // ===== Pipeline Custom Fields (Phase 2) =====
@@ -7821,6 +8324,154 @@ export class DatabaseStorage implements IStorage {
           KEY idx_card_checklist_items_checklist (checklist_id)
         )`,
       },
+      // ── Fase 2: Chat, Jadwal, Check-in, Dokumen & File ──
+      {
+        name: "team_chat_messages",
+        ddl: `CREATE TABLE IF NOT EXISTS team_chat_messages (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          sender_id INT NOT NULL,
+          body TEXT,
+          attachment_path VARCHAR(255) NULL,
+          attachment_name VARCHAR(255) NULL,
+          attachment_mime VARCHAR(128) NULL,
+          attachment_size INT NULL,
+          reply_to_id INT NULL,
+          created_at TEXT NOT NULL,
+          edited_at TEXT NULL,
+          deleted_at TEXT NULL,
+          KEY idx_team_chat_team (mitra_id, team_id, id)
+        )`,
+      },
+      {
+        name: "team_events",
+        ddl: `CREATE TABLE IF NOT EXISTS team_events (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          start_at TEXT NOT NULL,
+          end_at TEXT NOT NULL,
+          recurrence TEXT NULL,
+          is_confidential INT NOT NULL DEFAULT 0,
+          notes TEXT NULL,
+          created_by INT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NULL,
+          archived_at TEXT NULL,
+          KEY idx_team_events_team_start (mitra_id, team_id, start_at(24))
+        )`,
+      },
+      {
+        name: "team_event_participants",
+        ddl: `CREATE TABLE IF NOT EXISTS team_event_participants (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          event_id INT NOT NULL,
+          user_id INT NOT NULL,
+          UNIQUE KEY uniq_event_participant (event_id, user_id)
+        )`,
+      },
+      {
+        name: "checkin_questions",
+        ddl: `CREATE TABLE IF NOT EXISTS checkin_questions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          question_text TEXT NOT NULL,
+          send_days TEXT NOT NULL,
+          send_time VARCHAR(5) NOT NULL,
+          is_confidential INT NOT NULL DEFAULT 0,
+          is_active INT NOT NULL DEFAULT 1,
+          last_sent_date VARCHAR(10) NULL,
+          created_by INT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NULL,
+          KEY idx_checkin_questions_team (mitra_id, team_id)
+        )`,
+      },
+      {
+        name: "checkin_recipients",
+        ddl: `CREATE TABLE IF NOT EXISTS checkin_recipients (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          question_id INT NOT NULL,
+          user_id INT NOT NULL,
+          UNIQUE KEY uniq_checkin_recipient (question_id, user_id)
+        )`,
+      },
+      {
+        name: "checkin_responses",
+        ddl: `CREATE TABLE IF NOT EXISTS checkin_responses (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          question_id INT NOT NULL,
+          user_id INT NOT NULL,
+          response_date VARCHAR(10) NOT NULL,
+          response_text TEXT NOT NULL,
+          submitted_at TEXT NOT NULL,
+          UNIQUE KEY uniq_checkin_response (question_id, user_id, response_date),
+          KEY idx_checkin_responses_qdate (question_id, response_date)
+        )`,
+      },
+      {
+        name: "team_folders",
+        ddl: `CREATE TABLE IF NOT EXISTS team_folders (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          parent_folder_id INT NULL,
+          name VARCHAR(255) NOT NULL,
+          created_by INT NOT NULL,
+          created_at TEXT NOT NULL,
+          KEY idx_team_folders_team (mitra_id, team_id, parent_folder_id)
+        )`,
+      },
+      {
+        name: "team_documents",
+        ddl: `CREATE TABLE IF NOT EXISTS team_documents (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          folder_id INT NULL,
+          title VARCHAR(255) NOT NULL,
+          content MEDIUMTEXT NULL,
+          is_confidential INT NOT NULL DEFAULT 0,
+          archived_at TEXT NULL,
+          created_by INT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NULL,
+          updated_by INT NULL,
+          KEY idx_team_documents_team (mitra_id, team_id, folder_id)
+        )`,
+      },
+      {
+        name: "team_files",
+        ddl: `CREATE TABLE IF NOT EXISTS team_files (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          folder_id INT NULL,
+          file_name VARCHAR(255) NOT NULL,
+          file_path VARCHAR(255) NOT NULL,
+          mime_type VARCHAR(128) NOT NULL,
+          size_bytes INT NOT NULL DEFAULT 0,
+          uploaded_by INT NOT NULL,
+          archived_at TEXT NULL,
+          created_at TEXT NOT NULL,
+          KEY idx_team_files_team (mitra_id, team_id, folder_id)
+        )`,
+      },
+      {
+        name: "content_recipients",
+        ddl: `CREATE TABLE IF NOT EXISTS content_recipients (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          owner_type VARCHAR(16) NOT NULL,
+          owner_id INT NOT NULL,
+          user_id INT NOT NULL,
+          UNIQUE KEY uniq_content_recipient (owner_type, owner_id, user_id),
+          KEY idx_content_recipients_user (user_id)
+        )`,
+      },
     ];
     for (const t of tables) {
       try {
@@ -7840,6 +8491,11 @@ export class DatabaseStorage implements IStorage {
       { table: "pipeline_cards", column: "cover_path", ddl: "VARCHAR(255) NULL" },
       { table: "pipeline_cards", column: "is_private", ddl: "INT NOT NULL DEFAULT 0" },
       { table: "pipeline_cards", column: "archived_at", ddl: "TEXT NULL" },
+      // Fase 2
+      { table: "announcements", column: "team_id", ddl: "INT NULL" },
+      { table: "announcements", column: "is_confidential", ddl: "INT DEFAULT 0" },
+      { table: "announcements", column: "expires_at", ddl: "TEXT NULL" },
+      { table: "users", column: "calendar_feed_token", ddl: "VARCHAR(64) NULL" },
     ];
     for (const { table, column, ddl } of colAdds) {
       try {

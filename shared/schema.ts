@@ -1503,6 +1503,8 @@ export const users = mysqlTable("users", {
   telegramChatId: text("telegram_chat_id"),       // Chat ID Telegram setelah pairing (string utk safe JSON)
   telegramUsername: text("telegram_username"),    // @handle Telegram (display only)
   telegramLinkedAt: text("telegram_linked_at"),
+  // Teamspace v5.0 Fase 2 (FR-703): token feed iCal personal (webcal), revocable
+  calendarFeedToken: varchar("calendar_feed_token", { length: 64 }),
   telegramPrefs: text("telegram_prefs"),          // JSON: { lead_assigned, lead_hot, canvassing_report, sahabat_referral, collection_promise, ticket_assigned }
   // Phase B multi-tenant: active mitra context for this user's session
   activeMitraId: int("active_mitra_id").default(1),
@@ -1643,6 +1645,10 @@ export const ALL_PERMISSIONS = [
   // v5.0 Teamspace — kolaborasi tim internal
   { key: "teams", label: "Tim (kelola tim & anggota)", group: "Teamspace" },
   { key: "team_tasks", label: "Tugas Tim", group: "Teamspace" },
+  { key: "team_chat", label: "Chat Tim", group: "Teamspace" },
+  { key: "team_schedule", label: "Jadwal Tim", group: "Teamspace" },
+  { key: "team_checkins", label: "Pertanyaan / Check-in", group: "Teamspace" },
+  { key: "team_docs", label: "Dokumen & File Tim", group: "Teamspace" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -1681,7 +1687,7 @@ export const FEATURE_PERMISSIONS: Record<string, string[]> = {
   customer_portal: ["customer_portal_admin"],
   chatwoot: ["chatwoot", "chatwoot_settings"],
   pipelines: ["pipelines"],
-  teamspace: ["teams", "team_tasks"],
+  teamspace: ["teams", "team_tasks", "team_chat", "team_schedule", "team_checkins", "team_docs"],
 };
 
 export const ALL_PERMISSION_KEYS = ALL_PERMISSIONS.map(p => p.key);
@@ -1996,6 +2002,10 @@ export const announcements = mysqlTable("announcements", {
   authorId: int("author_id").notNull(),
   publishedAt: text("published_at"),                   // null = draft
   pinnedUntil: text("pinned_until"),                   // opsional: pin sampai tanggal X
+  // Teamspace v5.0 Fase 2 (FR-6xx): scoping tim + penerima terpilih + expiry otomatis
+  teamId: int("team_id"),                              // NULL = company-wide (perilaku lama)
+  isConfidential: int("is_confidential").default(0),   // 1 = hanya penerima di content_recipients
+  expiresAt: text("expires_at"),                       // lewat ini → status expired/arsip
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });
@@ -2517,19 +2527,172 @@ export const cardChecklistItems = mysqlTable("card_checklist_items", {
   byChecklist: index("idx_card_checklist_items_checklist").on(t.checklistId),
 }));
 
+// ── Fase 2: Chat, Jadwal, Check-in, Dokumen & File ──
+
+/** Chat grup per tim (FR-5xx) — 1 tim = 1 room (tanpa tabel room terpisah). */
+export const teamChatMessages = mysqlTable("team_chat_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  senderId: int("sender_id").notNull(),
+  body: text("body"),
+  attachmentPath: varchar("attachment_path", { length: 255 }),
+  attachmentName: varchar("attachment_name", { length: 255 }),
+  attachmentMime: varchar("attachment_mime", { length: 128 }),
+  attachmentSize: int("attachment_size"),
+  replyToId: int("reply_to_id"),
+  createdAt: text("created_at").notNull(),
+  editedAt: text("edited_at"),
+  deletedAt: text("deleted_at"),                           // soft delete — bubble "pesan dihapus"
+}, (t) => ({
+  byTeam: index("idx_team_chat_team").on(t.mitraId, t.teamId, t.id),
+}));
+
+/** Event jadwal tim (FR-7xx). Recurrence JSON sederhana (shared/eventRecurrence). */
+export const teamEvents = mysqlTable("team_events", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  startAt: text("start_at").notNull(),
+  endAt: text("end_at").notNull(),
+  recurrence: text("recurrence"),                          // JSON {freq,interval,until} — NULL = sekali
+  isConfidential: int("is_confidential").notNull().default(0),
+  notes: text("notes"),
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+  archivedAt: text("archived_at"),
+}, (t) => ({
+  byTeamStart: index("idx_team_events_team_start").on(t.mitraId, t.teamId, t.startAt),
+}));
+
+export const teamEventParticipants = mysqlTable("team_event_participants", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("event_id").notNull(),
+  userId: int("user_id").notNull(),
+}, (t) => ({
+  uniqEventUser: uniqueIndex("uniq_event_participant").on(t.eventId, t.userId),
+}));
+
+/** Pertanyaan rutin / check-in (FR-8xx). Jadwal DOW ISO 1=Senin..7=Minggu + jam "HH:mm". */
+export const checkinQuestions = mysqlTable("checkin_questions", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  questionText: text("question_text").notNull(),
+  sendDays: text("send_days").notNull(),                   // JSON array [1..7]
+  sendTime: varchar("send_time", { length: 5 }).notNull(), // "HH:mm"
+  isConfidential: int("is_confidential").notNull().default(0), // jawaban hanya visible pembuat+admin
+  isActive: int("is_active").notNull().default(1),
+  lastSentDate: varchar("last_sent_date", { length: 10 }), // dedup harian worker (YYYY-MM-DD)
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+}, (t) => ({
+  byTeam: index("idx_checkin_questions_team").on(t.mitraId, t.teamId),
+}));
+
+export const checkinRecipients = mysqlTable("checkin_recipients", {
+  id: int("id").autoincrement().primaryKey(),
+  questionId: int("question_id").notNull(),
+  userId: int("user_id").notNull(),
+}, (t) => ({
+  uniqQuestionUser: uniqueIndex("uniq_checkin_recipient").on(t.questionId, t.userId),
+}));
+
+export const checkinResponses = mysqlTable("checkin_responses", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  questionId: int("question_id").notNull(),
+  userId: int("user_id").notNull(),
+  responseDate: varchar("response_date", { length: 10 }).notNull(), // tanggal instance (= lastSentDate saat dikirim)
+  responseText: text("response_text").notNull(),
+  submittedAt: text("submitted_at").notNull(),
+}, (t) => ({
+  uniqInstanceUser: uniqueIndex("uniq_checkin_response").on(t.questionId, t.userId, t.responseDate),
+  byQuestionDate: index("idx_checkin_responses_qdate").on(t.questionId, t.responseDate),
+}));
+
+/** Folder untuk Dokumen & File (FR-903) — nested via parentFolderId. */
+export const teamFolders = mysqlTable("team_folders", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  parentFolderId: int("parent_folder_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byTeam: index("idx_team_folders_team").on(t.mitraId, t.teamId, t.parentFolderId),
+}));
+
+/** Dokumen native (markdown) per tim (FR-901b/902). */
+export const teamDocuments = mysqlTable("team_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  folderId: int("folder_id"),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: mediumtext("content"),                          // markdown
+  isConfidential: int("is_confidential").notNull().default(0),
+  archivedAt: text("archived_at"),
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+  updatedBy: int("updated_by"),
+}, (t) => ({
+  byTeam: index("idx_team_documents_team").on(t.mitraId, t.teamId, t.folderId),
+}));
+
+/** File upload per tim (FR-901a). filePath relatif JABNET_UPLOAD_ROOT. */
+export const teamFiles = mysqlTable("team_files", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  folderId: int("folder_id"),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  filePath: varchar("file_path", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 128 }).notNull(),
+  sizeBytes: int("size_bytes").notNull().default(0),
+  uploadedBy: int("uploaded_by").notNull(),
+  archivedAt: text("archived_at"),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byTeam: index("idx_team_files_team").on(t.mitraId, t.teamId, t.folderId),
+}));
+
+/** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
+export const contentRecipients = mysqlTable("content_recipients", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerType: varchar("owner_type", { length: 16 }).notNull(), // announcement|document|event|checkin
+  ownerId: int("owner_id").notNull(),
+  userId: int("user_id").notNull(),
+}, (t) => ({
+  uniqOwnerUser: uniqueIndex("uniq_content_recipient").on(t.ownerType, t.ownerId, t.userId),
+  byUser: index("idx_content_recipients_user").on(t.userId),
+}));
+
 export type Team = typeof teams.$inferSelect;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type PipelineLabel = typeof pipelineLabels.$inferSelect;
 export type CardLabel = typeof cardLabels.$inferSelect;
 export type CardChecklist = typeof cardChecklists.$inferSelect;
 export type CardChecklistItem = typeof cardChecklistItems.$inferSelect;
+export type TeamChatMessage = typeof teamChatMessages.$inferSelect;
+export type TeamEvent = typeof teamEvents.$inferSelect;
+export type CheckinQuestion = typeof checkinQuestions.$inferSelect;
+export type CheckinResponse = typeof checkinResponses.$inferSelect;
+export type TeamFolder = typeof teamFolders.$inferSelect;
+export type TeamDocument = typeof teamDocuments.$inferSelect;
+export type TeamFile = typeof teamFiles.$inferSelect;
 
 export const insertTeamSchema = createInsertSchema(teams, {
   name: z.string().min(1, "Nama tim wajib diisi").max(255),
 }).omit({ id: true, mitraId: true, taskPipelineId: true, createdBy: true, createdAt: true, updatedAt: true, archivedAt: true });
 
-/** Default views saat tim dibuat (view lain menyala saat modul fase 2/3 rilis). */
-export const TEAM_DEFAULT_VIEWS = ["summary", "tasks"] as const;
+/** Default views saat tim dibuat — Fase 2 lengkap (bisa di-pin/lepas via pengaturan tim). */
+export const TEAM_DEFAULT_VIEWS = ["summary", "tasks", "chat", "schedule", "checkins", "docs"] as const;
 /** Stage default board tugas tim — copywriting mengikuti Cicle agar zero learning curve. */
 export const TEAM_TASK_DEFAULT_STAGES = [
   { label: "To Do List", color: "#64748B", semanticType: "todo" },

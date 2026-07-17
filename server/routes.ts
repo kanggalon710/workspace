@@ -11,6 +11,8 @@ import { invalidatePermCacheAtMitra } from "./perm-cache.js";
 import { validateFieldValue } from "./pipeline-field-helpers.js";
 import { resolvePipelineCapabilities, deriveLevel, PIPELINE_CAPABILITY_LABELS, isAdminLockedRole, type PipelineCapability } from "../shared/pipelineCapabilities.js";
 import { resolveTeamPipelineCapabilities, parseTeamRole, canManageTeam, canCreateTeam, canSeePrivateCard, parseMovePermission, canMoveWithStage, parseEnabledViews, type PermKeyLevel } from "../shared/teamAccess.js";
+import { parseSendDays, isValidSendTime } from "../shared/checkinSchedule.js";
+import { parseEventRecurrence, buildTeamCalendarIcs } from "../shared/eventRecurrence.js";
 import { customerConnStatus } from "../shared/customerStatus.js";
 import { DEFAULT_OPTICAL_THRESHOLDS, type OpticalThresholds } from "../shared/opticalPower.js";
 import { buildDeviceIndexes, matchCustomerDevice } from "./ont-match.js";
@@ -6412,16 +6414,20 @@ async function loadTeamForView(req: Request, res: Response): Promise<{ team: imp
   return null;
 }
 
-/** Enrich daftar tim dengan jumlah anggota + ringkasan tugas (batched). */
-async function enrichTeams(teamsList: Array<any>): Promise<Array<any>> {
+/** Enrich daftar tim dengan jumlah anggota + ringkasan tugas + unread chat (batched). */
+async function enrichTeams(teamsList: Array<any>, forUserId?: number): Promise<Array<any>> {
   const memberCounts = await storage.getTeamMemberCounts(teamsList.map((t) => t.id));
   const pipelineIds = teamsList.map((t) => t.taskPipelineId).filter((x): x is number => x != null);
   const summaries = await storage.getTeamTaskSummaries(pipelineIds);
+  const unread = forUserId != null
+    ? await storage.getUnreadChatCounts(forUserId, teamsList.map((t) => t.id))
+    : new Map<number, number>();
   return teamsList.map((t) => ({
     ...t,
     enabledViews: parseEnabledViews(t.enabledViews),
     memberCount: memberCounts.get(t.id) ?? 0,
     taskSummary: (t.taskPipelineId != null ? summaries.get(t.taskPipelineId) : null) ?? { total: 0, done: 0, overdue: 0 },
+    unreadChat: unread.get(t.id) ?? 0,
   }));
 }
 
@@ -6439,7 +6445,7 @@ router.get("/api/teamspace/teams", async (req, res) => {
   } else {
     list = await storage.listTeamsForUser(req.authUser!.id, includeArchived);
   }
-  sendSuccess(res, await enrichTeams(list));
+  sendSuccess(res, await enrichTeams(list, req.authUser!.id));
 });
 
 router.post("/api/teamspace/teams", async (req, res) => {
@@ -6811,6 +6817,589 @@ router.patch("/api/pipelines/:id/stages/:stageId/move-permission", async (req, r
   const parsed = parseMovePermission(raw);
   await storage.setStageMovePermission(stage.id, parsed ? JSON.stringify(parsed) : null);
   sendSuccess(res, { ok: true, movePermission: parsed });
+});
+
+// ── Teamspace Fase 2 — helper guard modul ──
+
+type TeamModuleKey = "team_chat" | "team_schedule" | "team_checkins" | "team_docs";
+
+/** Gerbang per-modul Teamspace: cek permission key modul (read/write). */
+function requireTeamModule(req: Request, res: Response, key: TeamModuleKey, write = false): boolean {
+  if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
+  const ok = write ? hasWritePermission(req, key) : hasPermission(req, key);
+  if (!ok) {
+    sendError(res, `Akses ditolak: fitur '${key}' ${write ? "bersifat read-only" : "tidak diizinkan"} untuk role Anda`, 403);
+    return false;
+  }
+  return true;
+}
+
+/** Load tim :id, wajib ANGGOTA tim (atau admin) — untuk ruang khusus anggota (chat, jawab check-in). */
+async function loadTeamForMember(req: Request, res: Response): Promise<{ team: import("../shared/schema.js").Team; myRole: string | null } | null> {
+  const team = await storage.getTeam(Number(req.params.id));
+  if (!team) { sendError(res, "Tim tidak ditemukan", 404); return null; }
+  const membership = await storage.getTeamMembership(team.id, req.authUser!.id);
+  const myRole = membership ? parseTeamRole(membership.role) : null;
+  if (myRole || isPipelineAdmin(req)) return { team, myRole };
+  sendError(res, "Akses ditolak: Anda bukan anggota tim ini", 403);
+  return null;
+}
+
+/** Boleh melihat konten Rahasia? (creator / penerima eksplisit / admin). */
+function canSeeConfidential(req: Request, createdBy: number, recipientIds: number[]): boolean {
+  if (isPipelineAdmin(req)) return true;
+  const uid = req.authUser!.id;
+  return createdBy === uid || recipientIds.includes(uid);
+}
+
+// ── Teamspace Fase 2: Chat Grup (FR-5xx) ──
+
+router.get("/api/teamspace/teams/:id/chat", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat")) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  const beforeId = req.query.before ? Number(req.query.before) : undefined;
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+  sendSuccess(res, await storage.listChatMessages(loaded.team.id, { beforeId, limit }));
+});
+
+router.post("/api/teamspace/teams/:id/chat", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat", true)) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  let parsed;
+  try {
+    parsed = await parseMultipart(req, { maxBytes: ATTACHMENT_MAX_BYTES, maxFiles: 1, maxTotalBytes: ATTACHMENT_MAX_BYTES });
+  } catch (e: any) {
+    return sendError(res, e?.message || "Upload gagal", 413);
+  }
+  const body = (parsed.fields.body ?? "").trim();
+  const replyToId = parsed.fields.replyToId ? Number(parsed.fields.replyToId) : null;
+  if (!body && parsed.files.length === 0) return sendError(res, "Pesan atau lampiran wajib diisi", 400);
+  let attachment: { path: string; name: string; mime: string; size: number } | null = null;
+  if (parsed.files.length > 0) {
+    const f = parsed.files[0];
+    const v = validateAttachment(f.fileName, f.buffer.length);
+    if (!v.ok) return sendError(res, v.error!, 400);
+    const slug = await storage.getMitraSlug(req.authUser!.activeMitraId);
+    const rel = await saveUploadedFile(slug, `chat-${loaded.team.id}`, f.buffer, v.ext!);
+    attachment = { path: rel, name: f.fileName, mime: v.mime!, size: f.buffer.length };
+  }
+  const msg = await storage.addChatMessage({
+    teamId: loaded.team.id, senderId: req.authUser!.id, body: body || null, replyToId,
+    attachmentPath: attachment?.path ?? null, attachmentName: attachment?.name ?? null,
+    attachmentMime: attachment?.mime ?? null, attachmentSize: attachment?.size ?? null,
+  });
+  await storage.markChatRead(loaded.team.id, req.authUser!.id);
+  sendSuccess(res, msg);
+});
+
+router.post("/api/teamspace/teams/:id/chat/read", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat")) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  await storage.markChatRead(loaded.team.id, req.authUser!.id);
+  sendSuccess(res, { ok: true });
+});
+
+router.get("/api/teamspace/teams/:id/chat/media", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat")) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  sendSuccess(res, await storage.listChatMedia(loaded.team.id));
+});
+
+/** Stream lampiran chat (cookie/bearer auth; guard keanggotaan via pesan→tim). */
+router.get("/api/teamspace/chat/:messageId/attachment", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat")) return;
+  const msg = await storage.getChatMessage(Number(req.params.messageId));
+  if (!msg || !msg.attachmentPath) return sendError(res, "Lampiran tidak ditemukan", 404);
+  const membership = await storage.getTeamMembership(msg.teamId, req.authUser!.id);
+  if (!membership && !isPipelineAdmin(req)) return sendError(res, "Akses ditolak", 403);
+  const download = req.query.download === "1";
+  await streamFile(msg.attachmentPath, res, { download, fileName: msg.attachmentName ?? undefined });
+});
+
+router.delete("/api/teamspace/chat/:messageId", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat", true)) return;
+  const msg = await storage.getChatMessage(Number(req.params.messageId));
+  if (!msg) return sendError(res, "Pesan tidak ditemukan", 404);
+  if (msg.senderId !== req.authUser!.id) {
+    const team = await storage.getTeam(msg.teamId);
+    const membership = team ? await storage.getTeamMembership(team.id, req.authUser!.id) : undefined;
+    const ok = canManageTeam({
+      isAdmin: isPipelineAdmin(req), teamsKeyLevel: teamsKeyLevelOf(req),
+      teamRole: membership ? parseTeamRole(membership.role) : null,
+    });
+    if (!ok) return sendError(res, "Hanya pengirim atau manager tim yang boleh menghapus pesan", 403);
+  }
+  await storage.softDeleteChatMessage(msg.id);
+  sendSuccess(res, { ok: true });
+});
+
+// ── Teamspace Fase 2: Jadwal (FR-7xx) ──
+
+router.get("/api/teamspace/teams/:id/events", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_schedule")) return;
+  const loaded = await loadTeamForView(req, res);
+  if (!loaded) return;
+  const events = await storage.listTeamEvents(loaded.team.id);
+  const participants = await storage.getParticipantsForEvents(events.map((e) => e.id));
+  const visible = events.filter((e) => {
+    if (e.isConfidential !== 1) return true;
+    return canSeeConfidential(req, e.createdBy, participants.get(e.id) ?? []);
+  });
+  sendSuccess(res, visible.map((e) => ({ ...e, participantIds: participants.get(e.id) ?? [] })));
+});
+
+router.post("/api/teamspace/teams/:id/events", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);   // FR: buat jadwal = manager/admin (§9)
+  if (!team) return;
+  const { title, startAt, endAt, recurrence, isConfidential, notes, participantIds } = req.body ?? {};
+  if (!title || typeof title !== "string" || !title.trim()) return sendError(res, "Nama acara wajib diisi", 400);
+  const s = new Date(startAt); const e = new Date(endAt);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return sendError(res, "Tanggal mulai/selesai tidak valid", 400);
+  if (e.getTime() < s.getTime()) return sendError(res, "Waktu selesai harus setelah waktu mulai", 400);
+  const rec = parseEventRecurrence(recurrence ? JSON.stringify(recurrence) : null);
+  const pids: number[] = Array.isArray(participantIds) ? participantIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : [];
+  const ev = await storage.createTeamEvent({
+    teamId: team.id, title: title.trim(), startAt: s.toISOString(), endAt: e.toISOString(),
+    recurrence: rec.freq === "none" ? null : JSON.stringify(rec),
+    isConfidential: Boolean(isConfidential), notes: typeof notes === "string" ? notes : null,
+    participantIds: pids,
+  }, req.authUser!.id);
+  // Notifikasi peserta (in-app).
+  for (const uid of pids) {
+    if (uid === req.authUser!.id) continue;
+    await storage.createNotification({
+      userId: uid, type: "team_event", title: "Jadwal baru",
+      message: `"${ev.title}" — ${new Date(ev.startAt).toLocaleString("id-ID")}`,
+      link: `/teamspace/teams/${team.id}`, entityType: "team_event", entityId: ev.id,
+      fromUserId: req.authUser!.id,
+    });
+  }
+  await logAudit(req, "TEAM_EVENT_CREATE", "team_event", ev.id, ev.title, { teamId: team.id });
+  sendSuccess(res, ev);
+});
+
+/** Guard edit event: creator ATAU manager/admin tim tsb. */
+async function loadEventForEdit(req: Request, res: Response): Promise<import("../shared/schema.js").TeamEvent | null> {
+  const ev = await storage.getTeamEvent(Number(req.params.eventId));
+  if (!ev) { sendError(res, "Event tidak ditemukan", 404); return null; }
+  if (ev.createdBy === req.authUser!.id || isPipelineAdmin(req)) return ev;
+  const membership = await storage.getTeamMembership(ev.teamId, req.authUser!.id);
+  const ok = canManageTeam({
+    isAdmin: false, teamsKeyLevel: teamsKeyLevelOf(req),
+    teamRole: membership ? parseTeamRole(membership.role) : null,
+  });
+  if (!ok) { sendError(res, "Hanya pembuat atau manager tim yang boleh mengubah event ini", 403); return null; }
+  return ev;
+}
+
+router.patch("/api/teamspace/events/:eventId", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const ev = await loadEventForEdit(req, res);
+  if (!ev) return;
+  const { title, startAt, endAt, recurrence, isConfidential, notes, participantIds } = req.body ?? {};
+  const patch: any = {};
+  if (title !== undefined) {
+    if (!title || !String(title).trim()) return sendError(res, "Nama acara tidak valid", 400);
+    patch.title = String(title).trim();
+  }
+  if (startAt !== undefined || endAt !== undefined) {
+    const s = new Date(startAt ?? ev.startAt); const e = new Date(endAt ?? ev.endAt);
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e.getTime() < s.getTime()) {
+      return sendError(res, "Rentang waktu tidak valid", 400);
+    }
+    patch.startAt = s.toISOString(); patch.endAt = e.toISOString();
+  }
+  if (recurrence !== undefined) {
+    const rec = parseEventRecurrence(recurrence ? JSON.stringify(recurrence) : null);
+    patch.recurrence = rec.freq === "none" ? null : JSON.stringify(rec);
+  }
+  if (isConfidential !== undefined) patch.isConfidential = Boolean(isConfidential);
+  if (notes !== undefined) patch.notes = typeof notes === "string" ? notes : null;
+  if (Array.isArray(participantIds)) patch.participantIds = participantIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0);
+  sendSuccess(res, await storage.updateTeamEvent(ev.id, patch));
+});
+
+router.delete("/api/teamspace/events/:eventId", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const ev = await loadEventForEdit(req, res);
+  if (!ev) return;
+  await storage.archiveTeamEvent(ev.id);
+  await logAudit(req, "TEAM_EVENT_ARCHIVE", "team_event", ev.id, ev.title);
+  sendSuccess(res, { ok: true });
+});
+
+/** Token feed iCal personal (FR-703). */
+router.post("/api/teamspace/calendar-token", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const token = await storage.getOrCreateCalendarFeedToken(req.authUser!.id, req.body?.regenerate === true);
+  sendSuccess(res, { feedToken: token });
+});
+
+/** Feed iCal per tim — TANPA header auth (dipakai Google/Apple Calendar).
+ *  Autentikasi via feedToken personal; wajib anggota tim tsb. */
+router.get("/api/teamspace/teams/:id/calendar.ics", async (req, res) => {
+  try {
+    const token = String(req.query.feedToken ?? "");
+    const user = await storage.getUserByCalendarFeedToken(token);
+    if (!user || (user as any).isActive === 0) return sendError(res, "Feed token tidak valid", 401);
+    // Route anonim berjalan di tenant ctx default (mitra 1) — resolve tim via pool lalu
+    // jalankan sisa query di tenant ctx tim tsb.
+    const [teamRows]: any = await (storage as any).pool.execute(`SELECT * FROM teams WHERE id = ?`, [Number(req.params.id)]);
+    const teamRaw = (teamRows as any[])[0];
+    if (!teamRaw) return sendError(res, "Tim tidak ditemukan", 404);
+    await new Promise<void>((resolve) => {
+      tenantContext.run({ mitraId: Number(teamRaw.mitra_id), userId: user.id, isSuperAdmin: false }, async () => {
+        try {
+          const membership = await storage.getTeamMembership(Number(teamRaw.id), user.id);
+          if (!membership) { sendError(res, "Bukan anggota tim ini", 403); return resolve(); }
+          const events = await storage.listTeamEvents(Number(teamRaw.id));
+          const participants = await storage.getParticipantsForEvents(events.map((e) => e.id));
+          const visible = events.filter((e) => e.isConfidential !== 1
+            || e.createdBy === user.id || (participants.get(e.id) ?? []).includes(user.id));
+          const ics = buildTeamCalendarIcs(
+            `JABNET — ${teamRaw.name}`,
+            visible.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, endAt: e.endAt, recurrence: e.recurrence, notes: e.notes })),
+            new Date(),
+          );
+          res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+          res.setHeader("Content-Disposition", `inline; filename="jabnet-team-${teamRaw.id}.ics"`);
+          res.send(ics);
+        } catch (e: any) {
+          sendError(res, e?.message ?? "Internal error", 500);
+        }
+        resolve();
+      });
+    });
+  } catch (e: any) {
+    sendError(res, e?.message ?? "Internal error", 500);
+  }
+});
+
+// ── Teamspace Fase 2: Check-in (FR-8xx) ──
+
+router.get("/api/teamspace/teams/:id/checkins", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_checkins")) return;
+  const loaded = await loadTeamForView(req, res);
+  if (!loaded) return;
+  const questions = await storage.listCheckinQuestions(loaded.team.id);
+  const recipients = await storage.getRecipientsForQuestions(questions.map((q) => q.id));
+  const uid = req.authUser!.id;
+  const out = [];
+  for (const q of questions) {
+    const rcpts = recipients.get(q.id) ?? [];
+    // Instance terakhir: completion + apakah SAYA masih perlu menjawab.
+    let lastCompletion: { date: string; responded: number; total: number } | null = null;
+    let myPending = false;
+    let myResponse: string | null = null;
+    if (q.lastSentDate) {
+      const responses = await storage.listCheckinResponses(q.id, 200);
+      const lastResponses = responses.filter((r) => r.responseDate === q.lastSentDate);
+      lastCompletion = { date: q.lastSentDate, responded: lastResponses.length, total: rcpts.length };
+      const mine = lastResponses.find((r) => r.userId === uid);
+      myResponse = mine?.responseText ?? null;
+      myPending = rcpts.includes(uid) && !mine;
+    }
+    out.push({ ...q, sendDays: parseSendDays(q.sendDays), recipientIds: rcpts, lastCompletion, myPending, myResponse });
+  }
+  sendSuccess(res, out);
+});
+
+router.post("/api/teamspace/teams/:id/checkins", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);   // buat pertanyaan = manager/admin (§9)
+  if (!team) return;
+  const { questionText, sendDays, sendTime, isConfidential, recipientIds } = req.body ?? {};
+  if (!questionText || typeof questionText !== "string" || !questionText.trim()) return sendError(res, "Pertanyaan wajib diisi", 400);
+  const days = Array.isArray(sendDays) ? [...new Set(sendDays.map(Number).filter((n: number) => Number.isInteger(n) && n >= 1 && n <= 7))] : [];
+  if (days.length === 0) return sendError(res, "Pilih minimal satu hari pengiriman", 400);
+  if (!isValidSendTime(sendTime)) return sendError(res, "Jam kirim tidak valid (format HH:mm)", 400);
+  const rcpts: number[] = Array.isArray(recipientIds) ? recipientIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : [];
+  if (rcpts.length === 0) return sendError(res, "Pilih minimal satu penerima", 400);
+  const q = await storage.createCheckinQuestion({
+    teamId: team.id, questionText: questionText.trim(), sendDays: days as number[], sendTime,
+    isConfidential: Boolean(isConfidential), recipientIds: rcpts,
+  }, req.authUser!.id);
+  await logAudit(req, "CHECKIN_CREATE", "checkin_question", q.id, questionText.trim().slice(0, 80), { teamId: team.id });
+  sendSuccess(res, q);
+});
+
+/** Guard edit pertanyaan: creator ATAU manager/admin tim. */
+async function loadCheckinForEdit(req: Request, res: Response): Promise<import("../shared/schema.js").CheckinQuestion | null> {
+  const q = await storage.getCheckinQuestion(Number(req.params.qid));
+  if (!q) { sendError(res, "Pertanyaan tidak ditemukan", 404); return null; }
+  if (q.createdBy === req.authUser!.id || isPipelineAdmin(req)) return q;
+  const membership = await storage.getTeamMembership(q.teamId, req.authUser!.id);
+  const ok = canManageTeam({
+    isAdmin: false, teamsKeyLevel: teamsKeyLevelOf(req),
+    teamRole: membership ? parseTeamRole(membership.role) : null,
+  });
+  if (!ok) { sendError(res, "Hanya pembuat atau manager tim yang boleh mengubah pertanyaan ini", 403); return null; }
+  return q;
+}
+
+router.patch("/api/teamspace/checkins/:qid", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const q = await loadCheckinForEdit(req, res);
+  if (!q) return;
+  const { questionText, sendDays, sendTime, isConfidential, isActive, recipientIds } = req.body ?? {};
+  const patch: any = {};
+  if (questionText !== undefined) {
+    if (!questionText || !String(questionText).trim()) return sendError(res, "Pertanyaan tidak valid", 400);
+    patch.questionText = String(questionText).trim();
+  }
+  if (sendDays !== undefined) {
+    const days = Array.isArray(sendDays) ? [...new Set(sendDays.map(Number).filter((n: number) => Number.isInteger(n) && n >= 1 && n <= 7))] : [];
+    if (days.length === 0) return sendError(res, "Pilih minimal satu hari", 400);
+    patch.sendDays = days;
+  }
+  if (sendTime !== undefined) {
+    if (!isValidSendTime(sendTime)) return sendError(res, "Jam kirim tidak valid", 400);
+    patch.sendTime = sendTime;
+  }
+  if (isConfidential !== undefined) patch.isConfidential = Boolean(isConfidential);
+  if (isActive !== undefined) patch.isActive = Boolean(isActive);
+  if (Array.isArray(recipientIds)) patch.recipientIds = recipientIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0);
+  sendSuccess(res, await storage.updateCheckinQuestion(q.id, patch));
+});
+
+router.delete("/api/teamspace/checkins/:qid", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const q = await loadCheckinForEdit(req, res);
+  if (!q) return;
+  await storage.deleteCheckinQuestion(q.id);
+  await logAudit(req, "CHECKIN_DELETE", "checkin_question", q.id, q.questionText.slice(0, 80));
+  sendSuccess(res, { ok: true });
+});
+
+/** Jawab instance check-in (FR-804) — penerima saja; instance = lastSentDate (default). */
+router.post("/api/teamspace/checkins/:qid/respond", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_checkins")) return;
+  const q = await storage.getCheckinQuestion(Number(req.params.qid));
+  if (!q) return sendError(res, "Pertanyaan tidak ditemukan", 404);
+  const rcpts = (await storage.getRecipientsForQuestions([q.id])).get(q.id) ?? [];
+  if (!rcpts.includes(req.authUser!.id)) return sendError(res, "Anda bukan penerima pertanyaan ini", 403);
+  const text = String(req.body?.responseText ?? "").trim();
+  if (!text) return sendError(res, "Jawaban wajib diisi", 400);
+  const responseDate = q.lastSentDate ?? new Date().toISOString().slice(0, 10);
+  const row = await storage.upsertCheckinResponse(q.id, req.authUser!.id, responseDate, text);
+  // Beritahu pembuat pertanyaan.
+  if (q.createdBy !== req.authUser!.id) {
+    await storage.createNotification({
+      userId: q.createdBy, type: "checkin_response", title: "Jawaban check-in baru",
+      message: `${req.authUser!.name}: ${text.slice(0, 60)}`,
+      link: `/teamspace/teams/${q.teamId}`, entityType: "checkin_question", entityId: q.id,
+      fromUserId: req.authUser!.id,
+    });
+  }
+  sendSuccess(res, row);
+});
+
+/** Rekap jawaban (FR-804). Rahasia → hanya pembuat/manager/admin. */
+router.get("/api/teamspace/checkins/:qid/responses", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_checkins")) return;
+  const q = await storage.getCheckinQuestion(Number(req.params.qid));
+  if (!q) return sendError(res, "Pertanyaan tidak ditemukan", 404);
+  const membership = await storage.getTeamMembership(q.teamId, req.authUser!.id);
+  if (!membership && !isPipelineAdmin(req) && teamsKeyLevelOf(req) === "none") {
+    return sendError(res, "Akses ditolak", 403);
+  }
+  if (q.isConfidential === 1) {
+    const isManager = membership ? parseTeamRole(membership.role) === "manager" : false;
+    if (!(q.createdBy === req.authUser!.id || isManager || isPipelineAdmin(req))) {
+      // Penerima hanya boleh lihat jawaban miliknya sendiri.
+      const mine = (await storage.listCheckinResponses(q.id)).filter((r) => r.userId === req.authUser!.id);
+      return sendSuccess(res, mine);
+    }
+  }
+  sendSuccess(res, await storage.listCheckinResponses(q.id));
+});
+
+// ── Teamspace Fase 2: Dokumen & File (FR-9xx) ──
+
+router.get("/api/teamspace/teams/:id/docs", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs")) return;
+  const loaded = await loadTeamForView(req, res);
+  if (!loaded) return;
+  const includeArchived = req.query.archived === "1";
+  const [folders, documents, files] = await Promise.all([
+    storage.listTeamFolders(loaded.team.id),
+    storage.listTeamDocuments(loaded.team.id, includeArchived),
+    storage.listTeamFiles(loaded.team.id, includeArchived),
+  ]);
+  const confidentialIds = documents.filter((d) => d.isConfidential === 1).map((d) => d.id);
+  const recipientsMap = await storage.getRecipientsForOwners("document", confidentialIds);
+  const visibleDocs = documents.filter((d) => d.isConfidential !== 1
+    || canSeeConfidential(req, d.createdBy, recipientsMap.get(d.id) ?? []));
+  sendSuccess(res, {
+    folders,
+    documents: visibleDocs.map((d) => ({ ...d, recipientIds: recipientsMap.get(d.id) ?? [] })),
+    files,
+  });
+});
+
+router.post("/api/teamspace/teams/:id/folders", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  const name = String(req.body?.name ?? "").trim();
+  if (!name) return sendError(res, "Nama folder wajib diisi", 400);
+  const parentFolderId = req.body?.parentFolderId ? Number(req.body.parentFolderId) : null;
+  if (parentFolderId != null) {
+    const parent = await storage.getTeamFolder(parentFolderId);
+    if (!parent || parent.teamId !== loaded.team.id) return sendError(res, "Folder induk tidak valid", 400);
+  }
+  sendSuccess(res, await storage.createTeamFolder(loaded.team.id, name, parentFolderId, req.authUser!.id));
+});
+
+router.patch("/api/teamspace/folders/:folderId", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const folder = await storage.getTeamFolder(Number(req.params.folderId));
+  if (!folder) return sendError(res, "Folder tidak ditemukan", 404);
+  const name = String(req.body?.name ?? "").trim();
+  if (!name) return sendError(res, "Nama folder wajib diisi", 400);
+  await storage.renameTeamFolder(folder.id, name);
+  sendSuccess(res, { ok: true });
+});
+
+router.delete("/api/teamspace/folders/:folderId", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const folder = await storage.getTeamFolder(Number(req.params.folderId));
+  if (!folder) return sendError(res, "Folder tidak ditemukan", 404);
+  try {
+    await storage.deleteTeamFolder(folder.id);
+  } catch (e: any) {
+    return sendError(res, e?.message ?? "Gagal menghapus folder", 400);
+  }
+  sendSuccess(res, { ok: true });
+});
+
+router.post("/api/teamspace/teams/:id/docs", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  const { title, content, folderId, isConfidential, recipientIds } = req.body ?? {};
+  if (!title || typeof title !== "string" || !title.trim()) return sendError(res, "Judul dokumen wajib diisi", 400);
+  const doc = await storage.createTeamDocument({
+    teamId: loaded.team.id, folderId: folderId ? Number(folderId) : null,
+    title: title.trim(), content: typeof content === "string" ? content : null,
+    isConfidential: Boolean(isConfidential),
+    recipientIds: Array.isArray(recipientIds) ? recipientIds.map(Number).filter((n: number) => n > 0) : [],
+  }, req.authUser!.id);
+  await logAudit(req, "TEAM_DOC_CREATE", "team_document", doc.id, doc.title, { teamId: loaded.team.id });
+  sendSuccess(res, doc);
+});
+
+/** Guard dokumen: baca = anggota + (non-rahasia | creator/penerima/admin); edit = creator/manager/admin. */
+async function loadDocForAccess(req: Request, res: Response, forEdit: boolean): Promise<import("../shared/schema.js").TeamDocument | null> {
+  const doc = await storage.getTeamDocument(Number(req.params.docId));
+  if (!doc) { sendError(res, "Dokumen tidak ditemukan", 404); return null; }
+  const membership = await storage.getTeamMembership(doc.teamId, req.authUser!.id);
+  if (!membership && !isPipelineAdmin(req) && teamsKeyLevelOf(req) === "none") {
+    sendError(res, "Akses ditolak", 403); return null;
+  }
+  if (doc.isConfidential === 1) {
+    const rcpts = await storage.getContentRecipients("document", doc.id);
+    if (!canSeeConfidential(req, doc.createdBy, rcpts)) { sendError(res, "Dokumen tidak ditemukan", 404); return null; }
+  }
+  if (forEdit) {
+    const ok = doc.createdBy === req.authUser!.id || isPipelineAdmin(req) || canManageTeam({
+      isAdmin: false, teamsKeyLevel: teamsKeyLevelOf(req),
+      teamRole: membership ? parseTeamRole(membership.role) : null,
+    });
+    if (!ok) { sendError(res, "Hanya pembuat atau manager tim yang boleh mengubah dokumen ini", 403); return null; }
+  }
+  return doc;
+}
+
+router.get("/api/teamspace/docs/:docId", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs")) return;
+  const doc = await loadDocForAccess(req, res, false);
+  if (!doc) return;
+  const recipientIds = doc.isConfidential === 1 ? await storage.getContentRecipients("document", doc.id) : [];
+  sendSuccess(res, { ...doc, recipientIds });
+});
+
+router.patch("/api/teamspace/docs/:docId", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const doc = await loadDocForAccess(req, res, true);
+  if (!doc) return;
+  const { title, content, folderId, isConfidential, recipientIds } = req.body ?? {};
+  const patch: any = {};
+  if (title !== undefined) {
+    if (!title || !String(title).trim()) return sendError(res, "Judul tidak valid", 400);
+    patch.title = String(title).trim();
+  }
+  if (content !== undefined) patch.content = typeof content === "string" ? content : null;
+  if (folderId !== undefined) patch.folderId = folderId ? Number(folderId) : null;
+  if (isConfidential !== undefined) patch.isConfidential = Boolean(isConfidential);
+  if (Array.isArray(recipientIds)) patch.recipientIds = recipientIds.map(Number).filter((n: number) => n > 0);
+  sendSuccess(res, await storage.updateTeamDocument(doc.id, patch, req.authUser!.id));
+});
+
+router.post("/api/teamspace/docs/:docId/archive", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const doc = await loadDocForAccess(req, res, true);
+  if (!doc) return;
+  await storage.setTeamDocumentArchived(doc.id, req.body?.archived !== false);
+  sendSuccess(res, { ok: true });
+});
+
+router.post("/api/teamspace/teams/:id/files", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  let parsed;
+  try {
+    parsed = await parseMultipart(req, { maxBytes: ATTACHMENT_MAX_BYTES, maxFiles: 5, maxTotalBytes: 60 * 1024 * 1024 });
+  } catch (e: any) {
+    return sendError(res, e?.message || "Upload gagal", 413);
+  }
+  if (parsed.files.length === 0) return sendError(res, "Pilih minimal satu file", 400);
+  const folderId = parsed.fields.folderId ? Number(parsed.fields.folderId) : null;
+  const slug = await storage.getMitraSlug(req.authUser!.activeMitraId);
+  const saved = [];
+  for (const f of parsed.files) {
+    const v = validateAttachment(f.fileName, f.buffer.length);
+    if (!v.ok) return sendError(res, `${f.fileName}: ${v.error}`, 400);
+    const rel = await saveUploadedFile(slug, `teamfile-${loaded.team.id}`, f.buffer, v.ext!);
+    saved.push(await storage.addTeamFile({
+      teamId: loaded.team.id, folderId, fileName: f.fileName, filePath: rel,
+      mimeType: v.mime!, sizeBytes: f.buffer.length,
+    }, req.authUser!.id));
+  }
+  sendSuccess(res, saved);
+});
+
+router.get("/api/teamspace/files/:fileId/raw", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs")) return;
+  const file = await storage.getTeamFile(Number(req.params.fileId));
+  if (!file) return sendError(res, "File tidak ditemukan", 404);
+  const membership = await storage.getTeamMembership(file.teamId, req.authUser!.id);
+  if (!membership && !isPipelineAdmin(req) && teamsKeyLevelOf(req) === "none") {
+    return sendError(res, "Akses ditolak", 403);
+  }
+  await streamFile(file.filePath, res, { download: req.query.download === "1", fileName: file.fileName });
+});
+
+router.post("/api/teamspace/files/:fileId/archive", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_docs", true)) return;
+  const file = await storage.getTeamFile(Number(req.params.fileId));
+  if (!file) return sendError(res, "File tidak ditemukan", 404);
+  if (file.uploadedBy !== req.authUser!.id && !isPipelineAdmin(req)) {
+    const membership = await storage.getTeamMembership(file.teamId, req.authUser!.id);
+    const ok = canManageTeam({
+      isAdmin: false, teamsKeyLevel: teamsKeyLevelOf(req),
+      teamRole: membership ? parseTeamRole(membership.role) : null,
+    });
+    if (!ok) return sendError(res, "Hanya pengunggah atau manager tim yang boleh mengarsipkan file ini", 403);
+  }
+  await storage.setTeamFileArchived(file.id, req.body?.archived !== false);
+  sendSuccess(res, { ok: true });
 });
 
 // ==================== LOYALTY ADMIN (v4.1.8) ====================
