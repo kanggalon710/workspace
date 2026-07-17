@@ -2562,8 +2562,10 @@ export const teamEvents = mysqlTable("team_events", {
   mitraId: int("mitra_id").notNull().default(1),
   teamId: int("team_id").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
-  startAt: text("start_at").notNull(),
-  endAt: text("end_at").notNull(),
+  // ISO 8601 timestamp — varchar (bukan text) supaya bisa masuk composite index di bawah
+  // (MySQL/MariaDB menolak index TEXT tanpa prefix length). Panjang 32 cukup untuk ISO+offset.
+  startAt: varchar("start_at", { length: 32 }).notNull(),
+  endAt: varchar("end_at", { length: 32 }).notNull(),
   recurrence: text("recurrence"),                          // JSON {freq,interval,until} — NULL = sekali
   isConfidential: int("is_confidential").notNull().default(0),
   notes: text("notes"),

@@ -8528,8 +8528,8 @@ export class DatabaseStorage implements IStorage {
           mitra_id INT NOT NULL DEFAULT 1,
           team_id INT NOT NULL,
           title VARCHAR(255) NOT NULL,
-          start_at TEXT NOT NULL,
-          end_at TEXT NOT NULL,
+          start_at VARCHAR(32) NOT NULL,
+          end_at VARCHAR(32) NOT NULL,
           recurrence TEXT NULL,
           is_confidential INT NOT NULL DEFAULT 0,
           notes TEXT NULL,
@@ -8537,7 +8537,7 @@ export class DatabaseStorage implements IStorage {
           created_at TEXT NOT NULL,
           updated_at TEXT NULL,
           archived_at TEXT NULL,
-          KEY idx_team_events_team_start (mitra_id, team_id, start_at(24))
+          KEY idx_team_events_team_start (mitra_id, team_id, start_at)
         )`,
       },
       {
