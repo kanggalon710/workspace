@@ -11,8 +11,9 @@ import { invalidatePermCacheAtMitra } from "./perm-cache.js";
 import { validateFieldValue } from "./pipeline-field-helpers.js";
 import { resolvePipelineCapabilities, deriveLevel, PIPELINE_CAPABILITY_LABELS, isAdminLockedRole, type PipelineCapability } from "../shared/pipelineCapabilities.js";
 import { resolveTeamPipelineCapabilities, parseTeamRole, canManageTeam, canCreateTeam, canSeePrivateCard, parseMovePermission, canMoveWithStage, parseEnabledViews, type PermKeyLevel } from "../shared/teamAccess.js";
-import { parseSendDays, isValidSendTime } from "../shared/checkinSchedule.js";
+import { parseSendDays, isValidSendTime, localDateStr } from "../shared/checkinSchedule.js";
 import { parseEventRecurrence, buildTeamCalendarIcs } from "../shared/eventRecurrence.js";
+import { computeScore, parseScoreWeights } from "../shared/performanceScore.js";
 import { customerConnStatus } from "../shared/customerStatus.js";
 import { DEFAULT_OPTICAL_THRESHOLDS, type OpticalThresholds } from "../shared/opticalPower.js";
 import { buildDeviceIndexes, matchCustomerDevice } from "./ont-match.js";
@@ -7400,6 +7401,312 @@ router.post("/api/teamspace/files/:fileId/archive", async (req, res) => {
   }
   await storage.setTeamFileArchived(file.id, req.body?.archived !== false);
   sendSuccess(res, { ok: true });
+});
+
+// ── Teamspace Fase 3: Laporan Kinerja terpadu (FR-10xx) ──
+
+interface TsPerfParams { from: string; to: string; teamId?: number; userId?: number }
+
+/** Hitung laporan kinerja: tugas tim + check-in + output ops, per user + total.
+ *  Scope: supervisor (admin / teams / performance_reports:write) lihat semua;
+ *  manager lihat tim yang ia kelola; member lihat dirinya sendiri. */
+async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
+  const uid = req.authUser!.id;
+  const supervisor = isPipelineAdmin(req) || teamsKeyLevelOf(req) !== "none" || hasWritePermission(req, "performance_reports");
+  let teamsList: any[] = supervisor
+    ? (await storage.listTeams(false)).map((t) => ({ ...t, myRole: null as string | null }))
+    : await storage.listTeamsForUser(uid);
+  const managedIds = new Set<number>();
+  if (!supervisor) for (const t of teamsList) if (t.myRole === "manager") managedIds.add(t.id);
+  if (opts.teamId) teamsList = teamsList.filter((t) => t.id === opts.teamId);
+
+  // Visible users: supervisor → semua; manager → anggota tim yang dikelola + diri sendiri; member → diri sendiri.
+  let visibleUsers: Set<number> | null = null;
+  if (!supervisor) {
+    visibleUsers = new Set<number>([uid]);
+    for (const tid of managedIds) {
+      for (const mb of await storage.listTeamMembers(tid)) visibleUsers.add(mb.userId);
+    }
+  }
+  const userVisible = (id: number | null | undefined): boolean =>
+    id != null && (visibleUsers === null || visibleUsers.has(id)) && (opts.userId == null || id === opts.userId);
+
+  const pipelineIds = teamsList.map((t) => t.taskPipelineId).filter((x): x is number => x != null);
+  const [stagesMap, cards] = await Promise.all([
+    storage.listStagesForPipelines(pipelineIds),
+    storage.listCardsForPipelines(pipelineIds),
+  ]);
+  const secondaryByCard = await storage.getSecondaryAssigneesForCards(cards.map((c) => c.id));
+  const doneStages = new Set<number>();
+  const cancelledStages = new Set<number>();
+  for (const stages of stagesMap.values()) {
+    for (const s of stages) {
+      if ((s as any).semanticType === "done") doneStages.add(s.id);
+      if ((s as any).semanticType === "cancelled") cancelledStages.add(s.id);
+    }
+  }
+  const fromIso = new Date(`${opts.from}T00:00:00`).toISOString();
+  const toIso = new Date(`${opts.to}T23:59:59`).toISOString();
+  const nowIso = new Date().toISOString();
+  const teamByPipeline = new Map(teamsList.filter((t) => t.taskPipelineId != null).map((t) => [t.taskPipelineId as number, t]));
+
+  const isDone = (c: any) => c.isCompleted === 1 || doneStages.has(c.stageId);
+  const completedDateOf = (c: any): string | null => c.completedAt ?? (doneStages.has(c.stageId) ? (c.stageEnteredAt ?? c.updatedAt ?? null) : null);
+  const statusOf = (c: any): "selesai" | "terlambat" | "dikerjakan" | "belum" => {
+    if (isDone(c)) return "selesai";
+    if (c.dueDate && c.dueDate < nowIso) return "terlambat";
+    const st = (stagesMap.get(c.pipelineId) ?? []).find((s) => s.id === c.stageId);
+    return (st as any)?.semanticType === "in_progress" ? "dikerjakan" : "belum";
+  };
+  // Aktif pada periode: dibuat sebelum akhir periode, dan (belum selesai ATAU selesai setelah awal periode).
+  const periodCards = cards.filter((c) => !cancelledStages.has(c.stageId)
+    && c.createdAt <= toIso
+    && (!isDone(c) || (completedDateOf(c) ?? nowIso) >= fromIso));
+
+  // ── Totals (per kartu, tanpa double-count assignee) ──
+  const distribution = { belum: 0, dikerjakan: 0, terlambat: 0, selesai: 0 };
+  let totOnTimeNum = 0, totOnTimeDen = 0, totCycleSum = 0, totCycleN = 0;
+  for (const c of periodCards) {
+    distribution[statusOf(c)]++;
+    if (isDone(c)) {
+      const done = completedDateOf(c);
+      if (done && c.dueDate) { totOnTimeDen++; if (done <= c.dueDate) totOnTimeNum++; }
+      if (done) { totCycleSum += Math.max(0, (new Date(done).getTime() - new Date(c.createdAt).getTime()) / 86400_000); totCycleN++; }
+    }
+  }
+
+  // ── Per-user tugas ──
+  interface UserAgg {
+    selesai: number; dikerjakan: number; belum: number; terlambat: number;
+    onTimeNum: number; onTimeDen: number; cycleSum: number; cycleN: number;
+    checkinExpected: number; checkinResponded: number;
+  }
+  const perUser = new Map<number, UserAgg>();
+  const aggOf = (id: number): UserAgg => {
+    const cur = perUser.get(id) ?? { selesai: 0, dikerjakan: 0, belum: 0, terlambat: 0, onTimeNum: 0, onTimeDen: 0, cycleSum: 0, cycleN: 0, checkinExpected: 0, checkinResponded: 0 };
+    perUser.set(id, cur);
+    return cur;
+  };
+  for (const c of periodCards) {
+    const targets = new Set<number>([c.assigneeId ?? -1, ...(secondaryByCard.get(c.id) ?? [])]);
+    targets.delete(-1);
+    const st = statusOf(c);
+    for (const t of targets) {
+      if (!userVisible(t)) continue;
+      const a = aggOf(t);
+      a[st]++;
+      if (st === "selesai") {
+        const done = completedDateOf(c);
+        if (done && c.dueDate) { a.onTimeDen++; if (done <= c.dueDate) a.onTimeNum++; }
+        if (done) { a.cycleSum += Math.max(0, (new Date(done).getTime() - new Date(c.createdAt).getTime()) / 86400_000); a.cycleN++; }
+      }
+    }
+  }
+
+  // ── Check-in rate per user (instance = tanggal jawaban terobservasi ∪ lastSentDate dalam periode) ──
+  for (const t of teamsList) {
+    const questions = await storage.listCheckinQuestions(t.id);
+    if (questions.length === 0) continue;
+    const recipientsMap = await storage.getRecipientsForQuestions(questions.map((q) => q.id));
+    for (const q of questions) {
+      const responses = (await storage.listCheckinResponses(q.id)).filter((r) => r.responseDate >= opts.from && r.responseDate <= opts.to);
+      const instanceDates = new Set(responses.map((r) => r.responseDate));
+      if (q.lastSentDate && q.lastSentDate >= opts.from && q.lastSentDate <= opts.to) instanceDates.add(q.lastSentDate);
+      if (instanceDates.size === 0) continue;
+      const rcpts = recipientsMap.get(q.id) ?? [];
+      for (const r of rcpts) {
+        if (!userVisible(r)) continue;
+        const a = aggOf(r);
+        a.checkinExpected += instanceDates.size;
+        a.checkinResponded += responses.filter((x) => x.userId === r).length;
+      }
+    }
+  }
+
+  // ── Ops terpadu (FR-1006) ──
+  const opsMap = await storage.getOpsStatsForUsers(fromIso, toIso);
+  for (const [id] of opsMap) if (userVisible(id)) aggOf(id);   // pastikan user ops-only ikut tampil
+  let maxOpsTotal = 0;
+  const opsTotalOf = (id: number) => {
+    const o = opsMap.get(id);
+    return o ? o.ticketsResolved + o.leadsWon + o.collectionsClosed + o.canvassingReports : 0;
+  };
+  for (const id of perUser.keys()) maxOpsTotal = Math.max(maxOpsTotal, opsTotalOf(id));
+
+  // ── Kemungkinan Penghambat (FR-1003) ──
+  const threshold = Number(await storage.getMitraSetting("teamspace_stuck_threshold_days")) || 40;
+  const nowMs = Date.now();
+  const blockers = cards
+    .filter((c) => !isDone(c) && !cancelledStages.has(c.stageId))
+    .map((c) => ({ card: c, ageDays: Math.floor((nowMs - new Date(c.createdAt).getTime()) / 86400_000) }))
+    .filter((x) => x.ageDays >= threshold)
+    .filter((x) => supervisor
+      || managedIds.has(teamByPipeline.get(x.card.pipelineId)?.id ?? -1)
+      || x.card.assigneeId === uid
+      || (secondaryByCard.get(x.card.id) ?? []).includes(uid))
+    .sort((a, b) => b.ageDays - a.ageDays)
+    .slice(0, 10)
+    .map((x) => ({
+      id: x.card.id, title: x.card.title, ageDays: x.ageDays,
+      assigneeId: x.card.assigneeId,
+      teamId: teamByPipeline.get(x.card.pipelineId)?.id ?? null,
+      teamName: teamByPipeline.get(x.card.pipelineId)?.name ?? null,
+      pipelineId: x.card.pipelineId,
+      status: statusOf(x.card),
+    }));
+
+  // ── Skor deterministik (§14.3) ──
+  const weights = parseScoreWeights(await storage.getMitraSetting("teamspace_score_weights"));
+  const users = [...perUser.entries()].map(([id, a]) => {
+    const total = a.selesai + a.dikerjakan + a.belum + a.terlambat;
+    const ops = opsMap.get(id) ?? { ticketsResolved: 0, leadsWon: 0, collectionsClosed: 0, canvassingClosed: 0, canvassingReports: 0 } as any;
+    const opsTotal = opsTotalOf(id);
+    const inputs = {
+      onTimeRate: a.onTimeDen > 0 ? a.onTimeNum / a.onTimeDen : null,
+      completionRate: total > 0 ? a.selesai / total : null,
+      checkinRate: a.checkinExpected > 0 ? a.checkinResponded / a.checkinExpected : null,
+      opsNorm: maxOpsTotal > 0 ? opsTotal / maxOpsTotal : null,
+    };
+    return {
+      userId: id,
+      tasks: { selesai: a.selesai, dikerjakan: a.dikerjakan, belum: a.belum, terlambat: a.terlambat, total },
+      onTimeRate: inputs.onTimeRate,
+      avgCycleDays: a.cycleN > 0 ? Math.round((a.cycleSum / a.cycleN) * 10) / 10 : null,
+      checkin: { expected: a.checkinExpected, responded: a.checkinResponded, rate: inputs.checkinRate },
+      ops: { ticketsResolved: ops.ticketsResolved ?? 0, leadsWon: ops.leadsWon ?? 0, collectionsClosed: ops.collectionsClosed ?? 0, canvassingReports: ops.canvassingReports ?? 0, total: opsTotal },
+      ...(computeScore(inputs, weights) ?? { score: null, stars: null, label: null }),
+    };
+  }).sort((x, y) => (y.score ?? -1) - (x.score ?? -1));
+
+  return {
+    period: { from: opts.from, to: opts.to },
+    scope: { supervisor, teamIds: teamsList.map((t) => t.id) },
+    teams: teamsList.map((t) => ({ id: t.id, name: t.name, color: t.color })),
+    totals: {
+      distribution,
+      totalActive: periodCards.length,
+      onTimeRate: totOnTimeDen > 0 ? totOnTimeNum / totOnTimeDen : null,
+      avgCycleDays: totCycleN > 0 ? Math.round((totCycleSum / totCycleN) * 10) / 10 : null,
+    },
+    users,
+    blockers,
+    threshold,
+    weights,
+  };
+}
+
+function parsePerfParams(req: Request): TsPerfParams {
+  const now = new Date();
+  const defTo = localDateStr(now);
+  const defFrom = localDateStr(new Date(now.getTime() - 29 * 86400_000));
+  const from = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.from ?? "")) ? String(req.query.from) : defFrom;
+  const to = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.to ?? "")) ? String(req.query.to) : defTo;
+  const teamId = req.query.teamId ? Number(req.query.teamId) : undefined;
+  const userId = req.query.userId ? Number(req.query.userId) : undefined;
+  return { from, to, teamId, userId };
+}
+
+router.get("/api/teamspace/performance", async (req, res) => {
+  if (!requirePermission(req, res, "performance_reports")) return;
+  sendSuccess(res, await computeTeamspacePerformance(req, parsePerfParams(req)));
+});
+
+/** Saran AI (FR-1004): 1 paragraf bahasa natural dari statistik AKTUAL via Claude API.
+ *  Key & toggle di appSettings (pola google_maps_api_key) — cache 24 jam per kombinasi filter. */
+const tsAiCache = new Map<string, { text: string; expiresAt: number }>();
+router.get("/api/teamspace/performance/suggestion", async (req, res) => {
+  if (!requirePermission(req, res, "performance_reports")) return;
+  const enabled = (await storage.getMitraSetting("teamspace_ai_enabled")) === "true";
+  const apiKey = await storage.getMitraSetting("anthropic_api_key");
+  if (!enabled || !apiKey) {
+    return sendError(res, "Saran AI belum aktif — set 'teamspace_ai_enabled=true' dan 'anthropic_api_key' di pengaturan (halaman Integrasi / app_settings)", 400);
+  }
+  const p = parsePerfParams(req);
+  const cacheKey = `${req.authUser!.activeMitraId}:${p.from}:${p.to}:${p.teamId ?? 0}:${p.userId ?? 0}:${localDateStr(new Date())}`;
+  const hit = tsAiCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return sendSuccess(res, { suggestion: hit.text, cached: true });
+
+  const stats = await computeTeamspacePerformance(req, p);
+  // Prompt deterministik: angka disuntik apa adanya; instruksi anti-halusinasi eksplisit (FR-1004).
+  const prompt = [
+    "Kamu adalah asisten analisis kinerja tim untuk ISP JABNET (bahasa Indonesia).",
+    "Berdasarkan data JSON berikut, tulis TEPAT SATU paragraf (4-6 kalimat) rangkuman kondisi kinerja periode ini.",
+    "Aturan ketat: sebut hanya angka yang ADA di data — jangan mengarang angka, nama, atau penyebab.",
+    "Sorot: distribusi status tugas, on-time rate, tugas macet (blockers) bila ada, dan 1 saran tindakan konkret.",
+    "",
+    "DATA:",
+    JSON.stringify({
+      periode: stats.period,
+      totalTugasAktif: stats.totals.totalActive,
+      distribusi: stats.totals.distribution,
+      onTimeRatePersen: stats.totals.onTimeRate != null ? Math.round(stats.totals.onTimeRate * 100) : null,
+      rataCycleHari: stats.totals.avgCycleDays,
+      jumlahAnggotaDinilai: stats.users.length,
+      skorTertinggi: stats.users[0]?.score ?? null,
+      skorTerendah: stats.users.length ? stats.users[stats.users.length - 1]?.score ?? null : null,
+      tugasMacet: stats.blockers.map((b) => ({ judul: b.title, umurHari: b.ageDays, tim: b.teamName })),
+      thresholdMacetHari: stats.threshold,
+    }),
+  ].join("\n");
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5",
+        max_tokens: 500,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    const json: any = await resp.json();
+    if (!resp.ok) return sendError(res, `Claude API error: ${json?.error?.message ?? resp.status}`, 502);
+    const text = String(json?.content?.[0]?.text ?? "").trim();
+    if (!text) return sendError(res, "Claude API mengembalikan jawaban kosong", 502);
+    tsAiCache.set(cacheKey, { text, expiresAt: Date.now() + 24 * 3600_000 });
+    sendSuccess(res, { suggestion: text, cached: false });
+  } catch (e: any) {
+    sendError(res, `Gagal memanggil Claude API: ${e?.message}`, 502);
+  }
+});
+
+// ── Teamspace Fase 3: Cheers (FR-1203) ──
+
+router.post("/api/teamspace/cheers", async (req, res) => {
+  if (!requireWritePermission(req, res, "cheers")) return;
+  const toUserId = Number(req.body?.toUserId);
+  const message = String(req.body?.message ?? "").trim();
+  if (!Number.isFinite(toUserId) || toUserId <= 0) return sendError(res, "toUserId wajib diisi", 400);
+  if (toUserId === req.authUser!.id) return sendError(res, "Tidak bisa mengirim cheers ke diri sendiri", 400);
+  if (!message) return sendError(res, "Pesan apresiasi wajib diisi", 400);
+  if (message.length > 500) return sendError(res, "Pesan maksimal 500 karakter", 400);
+  const target = await storage.getUser(toUserId);
+  if (!target || (target as any).isActive === 0) return sendError(res, "User tujuan tidak ditemukan/nonaktif", 400);
+  const cardId = req.body?.cardId ? Number(req.body.cardId) : null;
+  const cheer = await storage.createCheer(req.authUser!.id, toUserId, message, cardId);
+  await storage.createNotification({
+    userId: toUserId, type: "cheers_received", title: "🎉 Kamu dapat Cheers!",
+    message: `${req.authUser!.name}: "${message.slice(0, 80)}"`,
+    link: "/teamspace/cheers", entityType: "cheer", entityId: cheer.id,
+    fromUserId: req.authUser!.id,
+  });
+  sendSuccess(res, cheer);
+});
+
+router.get("/api/teamspace/cheers", async (req, res) => {
+  if (!requirePermission(req, res, "cheers")) return;
+  const box = req.query.box === "sent" ? "sent" : "received";
+  const rows = box === "sent"
+    ? await storage.listCheersSent(req.authUser!.id)
+    : await storage.listCheersReceived(req.authUser!.id);
+  sendSuccess(res, rows);
+});
+
+router.get("/api/teamspace/cheers/leaderboard", async (req, res) => {
+  if (!requirePermission(req, res, "cheers")) return;
+  const now = new Date();
+  const from = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.from ?? "")) ? String(req.query.from) : localDateStr(new Date(now.getTime() - 29 * 86400_000));
+  const to = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.to ?? "")) ? String(req.query.to) : localDateStr(now);
+  sendSuccess(res, await storage.cheersLeaderboard(new Date(`${from}T00:00:00`).toISOString(), new Date(`${to}T23:59:59`).toISOString()));
 });
 
 // ==================== LOYALTY ADMIN (v4.1.8) ====================

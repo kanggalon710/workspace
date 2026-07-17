@@ -153,6 +153,8 @@ import {
   teamFolders, teamDocuments, teamFiles, contentRecipients,
   type TeamChatMessage, type TeamEvent, type CheckinQuestion, type CheckinResponse,
   type TeamFolder, type TeamDocument, type TeamFile,
+  // Teamspace v5.0 Fase 3
+  cheers, type Cheer,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -3531,6 +3533,80 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(teamFiles)
       .set({ archivedAt: archived ? new Date().toISOString() : null } as any)
       .where(and(eq(teamFiles.id, id), eq(teamFiles.mitraId, mitraId)));
+  }
+
+  // ── Teamspace Fase 3: Ops stats terpadu (FR-1006) ──
+
+  /** Output operasional per user pada periode — pembeda utama vs Cicle: kinerja tugas
+   *  internal disandingkan dengan hasil ops nyata (tiket, lead, collection, canvassing). */
+  async getOpsStatsForUsers(fromIso: string, toIso: string): Promise<Map<number, {
+    ticketsResolved: number; leadsWon: number; collectionsClosed: number; canvassingReports: number;
+  }>> {
+    const mitraId = getMitraId();
+    const map = new Map<number, { ticketsResolved: number; leadsWon: number; collectionsClosed: number; canvassingReports: number }>();
+    const ensure = (uid: number) => {
+      const cur = map.get(uid) ?? { ticketsResolved: 0, leadsWon: 0, collectionsClosed: 0, canvassingReports: 0 };
+      map.set(uid, cur);
+      return cur;
+    };
+    const [ticketRows, leadRows, collectionRows, canvassingRows] = await Promise.all([
+      this.db.select({ uid: tickets.assignedTo, c: count() }).from(tickets)
+        .where(and(eq(tickets.mitraId, mitraId), isNotNull(tickets.assignedTo), isNotNull(tickets.resolvedAt), gte(tickets.resolvedAt, fromIso), lte(tickets.resolvedAt, toIso)))
+        .groupBy(tickets.assignedTo),
+      // Proxy waktu konversi lead: updatedAt saat stage 'won' (tidak ada kolom wonAt).
+      this.db.select({ uid: leads.assignedTo, c: count() }).from(leads)
+        .where(and(eq(leads.mitraId, mitraId), eq(leads.stage, "won"), isNotNull(leads.assignedTo), isNotNull(leads.updatedAt), gte(leads.updatedAt, fromIso), lte(leads.updatedAt, toIso)))
+        .groupBy(leads.assignedTo),
+      this.db.select({ uid: collections.assignedTo, c: count() }).from(collections)
+        .where(and(eq(collections.mitraId, mitraId), isNotNull(collections.assignedTo), isNotNull(collections.closedAt), gte(collections.closedAt, fromIso), lte(collections.closedAt, toIso)))
+        .groupBy(collections.assignedTo),
+      this.db.select({ uid: canvassingLogs.userId, c: count() }).from(canvassingLogs)
+        .where(and(eq(canvassingLogs.mitraId, mitraId), gte(canvassingLogs.createdAt, fromIso), lte(canvassingLogs.createdAt, toIso)))
+        .groupBy(canvassingLogs.userId),
+    ]);
+    for (const r of ticketRows) if (r.uid != null) ensure(r.uid).ticketsResolved = Number(r.c);
+    for (const r of leadRows) if (r.uid != null) ensure(r.uid).leadsWon = Number(r.c);
+    for (const r of collectionRows) if (r.uid != null) ensure(r.uid).collectionsClosed = Number(r.c);
+    for (const r of canvassingRows) if (r.uid != null) ensure(r.uid).canvassingReports = Number(r.c);
+    return map;
+  }
+
+  // ── Teamspace Fase 3: Cheers (FR-1203) ──
+
+  async createCheer(fromUserId: number, toUserId: number, message: string, cardId?: number | null): Promise<Cheer> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(cheers).values({
+      mitraId, fromUserId, toUserId, message, cardId: cardId ?? null, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(cheers)
+      .where(and(eq(cheers.id, insertId), eq(cheers.mitraId, mitraId)));
+    return row!;
+  }
+
+  async listCheersReceived(userId: number, limit = 100): Promise<Cheer[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(cheers)
+      .where(and(eq(cheers.mitraId, mitraId), eq(cheers.toUserId, userId)))
+      .orderBy(desc(cheers.id)).limit(limit);
+  }
+
+  async listCheersSent(userId: number, limit = 100): Promise<Cheer[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(cheers)
+      .where(and(eq(cheers.mitraId, mitraId), eq(cheers.fromUserId, userId)))
+      .orderBy(desc(cheers.id)).limit(limit);
+  }
+
+  /** Leaderboard penerima cheers pada periode. */
+  async cheersLeaderboard(fromIso: string, toIso: string, limit = 10): Promise<Array<{ userId: number; count: number }>> {
+    const mitraId = getMitraId();
+    const rows = await this.db.select({ userId: cheers.toUserId, c: count() }).from(cheers)
+      .where(and(eq(cheers.mitraId, mitraId), gte(cheers.createdAt, fromIso), lte(cheers.createdAt, toIso)))
+      .groupBy(cheers.toUserId)
+      .orderBy(desc(count()))
+      .limit(limit);
+    return rows.map((r) => ({ userId: r.userId, count: Number(r.c) }));
   }
 
   // ── Penerima konten Rahasia (polymorphic, FR-1404) ──
@@ -8459,6 +8535,20 @@ export class DatabaseStorage implements IStorage {
           archived_at TEXT NULL,
           created_at TEXT NOT NULL,
           KEY idx_team_files_team (mitra_id, team_id, folder_id)
+        )`,
+      },
+      {
+        name: "cheers",
+        ddl: `CREATE TABLE IF NOT EXISTS cheers (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          from_user_id INT NOT NULL,
+          to_user_id INT NOT NULL,
+          message VARCHAR(500) NOT NULL,
+          card_id INT NULL,
+          created_at TEXT NOT NULL,
+          KEY idx_cheers_to (mitra_id, to_user_id, id),
+          KEY idx_cheers_from (mitra_id, from_user_id)
         )`,
       },
       {

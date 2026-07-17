@@ -83,6 +83,8 @@ const PipelineBoardPage = lazy(() => import("@/pages/PipelineBoardPage"));
 const TeamListPage = lazy(() => import("@/pages/TeamListPage"));
 const TeamPage = lazy(() => import("@/pages/TeamPage"));
 const AllTasksPage = lazy(() => import("@/pages/AllTasksPage"));
+const PerformancePage = lazy(() => import("@/pages/PerformancePage"));
+const CheersPage = lazy(() => import("@/pages/CheersPage"));
 const ChatwootAgentMapPage = lazy(() => import("@/pages/ChatwootAgentMapPage"));
 
 // ── Loading fallback ──
@@ -259,6 +261,8 @@ function ProtectedRouter() {
           <Route path="/teamspace/teams">{() => <WithPerm permission="team_tasks"><TeamListPage /></WithPerm>}</Route>
           <Route path="/teamspace/teams/:id">{() => <WithPerm permission="team_tasks"><TeamPage /></WithPerm>}</Route>
           <Route path="/teamspace/boards/:id">{() => <WithPerm permission="team_tasks"><PipelineBoardPage /></WithPerm>}</Route>
+          <Route path="/teamspace/performance">{() => <WithPerm permission="performance_reports"><PerformancePage /></WithPerm>}</Route>
+          <Route path="/teamspace/cheers">{() => <WithPerm permission="cheers"><CheersPage /></WithPerm>}</Route>
           <Route path="/loyalty">{() => <WithPerm permission="loyalty_admin"><LoyaltyAdminPage /></WithPerm>}</Route>
           <Route path="/api-keys">{() => <WithPerm permission="api_keys"><PublicApiPage /></WithPerm>}</Route>
           <Route path="/announcements" component={AnnouncementsPage} />

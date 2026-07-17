@@ -399,6 +399,83 @@ export function useDocsMutations(teamId: number) {
   };
 }
 
+// ── Fase 3: Laporan Kinerja + Cheers ──
+
+export interface PerfUserRow {
+  userId: number;
+  tasks: { selesai: number; dikerjakan: number; belum: number; terlambat: number; total: number };
+  onTimeRate: number | null;
+  avgCycleDays: number | null;
+  checkin: { expected: number; responded: number; rate: number | null };
+  ops: { ticketsResolved: number; leadsWon: number; collectionsClosed: number; canvassingReports: number; total: number };
+  score: number | null;
+  stars: number | null;
+  label: string | null;
+}
+
+export interface PerformanceReport {
+  period: { from: string; to: string };
+  scope: { supervisor: boolean; teamIds: number[] };
+  teams: Array<{ id: number; name: string; color: string }>;
+  totals: {
+    distribution: { belum: number; dikerjakan: number; terlambat: number; selesai: number };
+    totalActive: number;
+    onTimeRate: number | null;
+    avgCycleDays: number | null;
+  };
+  users: PerfUserRow[];
+  blockers: Array<{ id: number; title: string; ageDays: number; assigneeId: number | null; teamId: number | null; teamName: string | null; pipelineId: number; status: string }>;
+  threshold: number;
+  weights: { onTime: number; completion: number; checkin: number; ops: number };
+}
+
+export function usePerformance(params: { from: string; to: string; teamId?: number | null; userId?: number | null }) {
+  const qs = new URLSearchParams({ from: params.from, to: params.to });
+  if (params.teamId) qs.set("teamId", String(params.teamId));
+  if (params.userId) qs.set("userId", String(params.userId));
+  return useQuery({
+    queryKey: [KEY, "performance", params.from, params.to, params.teamId ?? 0, params.userId ?? 0],
+    queryFn: () => api.get<PerformanceReport>(`/teamspace/performance?${qs.toString()}`),
+  });
+}
+
+export function useAiSuggestion() {
+  return useMutation({
+    mutationFn: (params: { from: string; to: string; teamId?: number | null; userId?: number | null }) => {
+      const qs = new URLSearchParams({ from: params.from, to: params.to });
+      if (params.teamId) qs.set("teamId", String(params.teamId));
+      if (params.userId) qs.set("userId", String(params.userId));
+      return api.get<{ suggestion: string; cached: boolean }>(`/teamspace/performance/suggestion?${qs.toString()}`);
+    },
+  });
+}
+
+export interface CheerRow { id: number; fromUserId: number; toUserId: number; message: string; cardId: number | null; createdAt: string }
+
+export function useCheers(box: "received" | "sent") {
+  return useQuery({
+    queryKey: [KEY, "cheers", box],
+    queryFn: () => api.get<CheerRow[]>(`/teamspace/cheers?box=${box}`),
+  });
+}
+
+export function useCheersLeaderboard() {
+  return useQuery({
+    queryKey: [KEY, "cheers-leaderboard"],
+    queryFn: () => api.get<Array<{ userId: number; count: number }>>(`/teamspace/cheers/leaderboard`),
+  });
+}
+
+export function useCheerMutations() {
+  const qc = useQueryClient();
+  return {
+    sendCheer: useMutation({
+      mutationFn: (b: { toUserId: number; message: string; cardId?: number | null }) => api.post(`/teamspace/cheers`, b),
+      onSuccess: () => qc.invalidateQueries({ queryKey: [KEY, "cheers"] }),
+    }),
+  };
+}
+
 /** Palet ≥30 warna preset untuk label (FR-413). */
 export const LABEL_COLOR_PALETTE = [
   "#EF4444", "#F97316", "#F59E0B", "#EAB308", "#84CC16", "#22C55E",

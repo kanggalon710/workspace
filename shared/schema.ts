@@ -1649,6 +1649,8 @@ export const ALL_PERMISSIONS = [
   { key: "team_schedule", label: "Jadwal Tim", group: "Teamspace" },
   { key: "team_checkins", label: "Pertanyaan / Check-in", group: "Teamspace" },
   { key: "team_docs", label: "Dokumen & File Tim", group: "Teamspace" },
+  { key: "performance_reports", label: "Laporan Kinerja", group: "Teamspace" },
+  { key: "cheers", label: "Cheers (Apresiasi)", group: "Teamspace" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -1687,7 +1689,7 @@ export const FEATURE_PERMISSIONS: Record<string, string[]> = {
   customer_portal: ["customer_portal_admin"],
   chatwoot: ["chatwoot", "chatwoot_settings"],
   pipelines: ["pipelines"],
-  teamspace: ["teams", "team_tasks", "team_chat", "team_schedule", "team_checkins", "team_docs"],
+  teamspace: ["teams", "team_tasks", "team_chat", "team_schedule", "team_checkins", "team_docs", "performance_reports", "cheers"],
 };
 
 export const ALL_PERMISSION_KEYS = ALL_PERMISSIONS.map(p => p.key);
@@ -2661,6 +2663,22 @@ export const teamFiles = mysqlTable("team_files", {
 }, (t) => ({
   byTeam: index("idx_team_files_team").on(t.mitraId, t.teamId, t.folderId),
 }));
+
+/** Cheers / apresiasi antar-rekan (FR-1203, Fase 3). */
+export const cheers = mysqlTable("cheers", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  fromUserId: int("from_user_id").notNull(),
+  toUserId: int("to_user_id").notNull(),
+  message: varchar("message", { length: 500 }).notNull(),
+  cardId: int("card_id"),                                  // opsional: cheers atas tugas tertentu
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byTo: index("idx_cheers_to").on(t.mitraId, t.toUserId, t.id),
+  byFrom: index("idx_cheers_from").on(t.mitraId, t.fromUserId),
+}));
+
+export type Cheer = typeof cheers.$inferSelect;
 
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {

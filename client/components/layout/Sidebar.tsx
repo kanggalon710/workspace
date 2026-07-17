@@ -135,6 +135,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Semua Tugas", path: "/teamspace/tasks", icon: CheckSquare, permission: "team_tasks" },
       { label: "Tim Saya", path: "/teamspace/teams", icon: UsersRound, permission: "team_tasks" },
+      { label: "Laporan Kinerja", path: "/teamspace/performance", icon: BarChart3, permission: "performance_reports" },
+      { label: "Cheers", path: "/teamspace/cheers", icon: Heart, permission: "cheers" },
     ],
   },
   {
