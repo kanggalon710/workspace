@@ -143,6 +143,10 @@ import {
   // MP1: Pipeline Metrics
   pipelineMetrics,
   type PipelineMetric,
+  // Teamspace v5.0 Fase 1
+  teams, teamMembers, pipelineLabels, cardLabels, cardChecklists, cardChecklistItems,
+  type Team, type TeamMember, type PipelineLabel, type CardChecklist, type CardChecklistItem,
+  TEAM_TASK_DEFAULT_STAGES, TEAM_DEFAULT_VIEWS,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -2160,8 +2164,10 @@ export class DatabaseStorage implements IStorage {
 
   async listCards(pipelineId: number, opts?: { q?: string; assigneeId?: number }): Promise<PipelineCard[]> {
     const mitraId = getMitraId();
+    // Teamspace: kartu terarsip disembunyikan dari board (lihat listArchivedCards). Kartu ops
+    // lama selalu archived_at NULL sehingga perilaku pipeline ops tidak berubah.
     let rows = await this.db.select().from(pipelineCards)
-      .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.pipelineId, pipelineId)))
+      .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.pipelineId, pipelineId), isNull(pipelineCards.archivedAt)))
       .orderBy(asc(pipelineCards.stageId), asc(pipelineCards.position), asc(pipelineCards.id));
     if (opts?.q) {
       const q = opts.q.toLowerCase();
@@ -2537,6 +2543,513 @@ export class DatabaseStorage implements IStorage {
       map.set(r.cardId, arr);
     }
     return map;
+  }
+
+  // ==================== TEAMSPACE (v5.0 Fase 1) ====================
+  // Tim internal + board tugas di atas engine pipelines (PRD-JABNET-TEAMSPACE.md).
+
+  /** Semua tim di mitra aktif (untuk admin / pemegang teams:write). */
+  async listTeams(includeArchived = false): Promise<Team[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(teams.mitraId, mitraId)];
+    if (!includeArchived) conds.push(isNull(teams.archivedAt));
+    return this.db.select().from(teams).where(and(...conds)).orderBy(asc(teams.name));
+  }
+
+  /** Tim yang user ikuti, plus role membership-nya. */
+  async listTeamsForUser(userId: number, includeArchived = false): Promise<Array<Team & { myRole: string }>> {
+    const mitraId = getMitraId();
+    const conds = [eq(teams.mitraId, mitraId), eq(teamMembers.userId, userId)];
+    if (!includeArchived) conds.push(isNull(teams.archivedAt));
+    const rows = await this.db
+      .select({ team: teams, myRole: teamMembers.role })
+      .from(teams)
+      .innerJoin(teamMembers, eq(teamMembers.teamId, teams.id))
+      .where(and(...conds))
+      .orderBy(asc(teams.name));
+    return rows.map((r) => ({ ...r.team, myRole: r.myRole }));
+  }
+
+  async getTeam(id: number): Promise<Team | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teams)
+      .where(and(eq(teams.id, id), eq(teams.mitraId, mitraId)));
+    return row;
+  }
+
+  /** Tim pemilik sebuah pipeline (untuk resolusi kapabilitas board tim). */
+  async getTeamByPipelineId(pipelineId: number): Promise<Team | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teams)
+      .where(and(eq(teams.taskPipelineId, pipelineId), eq(teams.mitraId, mitraId)));
+    return row;
+  }
+
+  async getTeamMembership(teamId: number, userId: number): Promise<TeamMember | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(teamMembers)
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId), eq(teamMembers.mitraId, mitraId)));
+    return row;
+  }
+
+  /** Buat tim + provision board tugas (pipeline + 4 stage default Cicle-style) dalam satu alur.
+   *  Pipeline tim ditandai team_id sehingga tersembunyi dari daftar pipeline ops (NFR-012). */
+  async createTeam(
+    data: { name: string; description?: string | null; icon?: string | null; color?: string | null; type?: string | null },
+    userId: number,
+  ): Promise<Team> {
+    const mitraId = getMitraId();
+    const now = new Date().toISOString();
+    const type = data.type === "PROJECT" ? "PROJECT" : "TEAM";
+    const teamResult = await this.db.insert(teams).values({
+      mitraId, name: data.name, description: data.description ?? null,
+      icon: data.icon ?? null, color: data.color ?? "#8B5CF6", type,
+      enabledViews: JSON.stringify(TEAM_DEFAULT_VIEWS),
+      createdBy: userId, createdAt: now,
+    } as any);
+    const teamId = Number((teamResult[0] as any).insertId);
+
+    // Board tugas: pipeline milik tim (ikon/warna mengikuti tim).
+    const pipeline = await this.createPipeline(
+      { name: `Tugas — ${data.name}`, description: `Board tugas tim ${data.name}`, color: data.color ?? "#8B5CF6", icon: data.icon ?? "ClipboardList" },
+      userId,
+    );
+    await this.db.update(pipelines).set({ teamId })
+      .where(and(eq(pipelines.id, pipeline.id), eq(pipelines.mitraId, mitraId)));
+    for (let i = 0; i < TEAM_TASK_DEFAULT_STAGES.length; i++) {
+      const s = TEAM_TASK_DEFAULT_STAGES[i];
+      await this.db.insert(pipelineStages).values({
+        mitraId, pipelineId: pipeline.id, label: s.label, color: s.color,
+        semanticType: s.semanticType, position: i, createdAt: now,
+      } as any);
+    }
+    await this.db.update(teams).set({ taskPipelineId: pipeline.id, updatedAt: now })
+      .where(and(eq(teams.id, teamId), eq(teams.mitraId, mitraId)));
+
+    // Pembuat otomatis jadi manager tim.
+    await this.db.insert(teamMembers).values({ mitraId, teamId, userId, role: "manager", joinedAt: now } as any);
+
+    const [row] = await this.db.select().from(teams).where(and(eq(teams.id, teamId), eq(teams.mitraId, mitraId)));
+    return row!;
+  }
+
+  async updateTeam(
+    id: number,
+    data: { name?: string; description?: string | null; icon?: string | null; color?: string | null; type?: string; enabledViews?: string[] },
+  ): Promise<Team> {
+    const mitraId = getMitraId();
+    const before = await this.getTeam(id);
+    if (!before) throw new Error("Tim tidak ditemukan");
+    const patch: any = { updatedAt: new Date().toISOString() };
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.description !== undefined) patch.description = data.description;
+    if (data.icon !== undefined) patch.icon = data.icon;
+    if (data.color !== undefined) patch.color = data.color;
+    if (data.type !== undefined) patch.type = data.type === "PROJECT" ? "PROJECT" : "TEAM";
+    if (data.enabledViews !== undefined) patch.enabledViews = JSON.stringify(data.enabledViews);
+    await this.db.update(teams).set(patch).where(and(eq(teams.id, id), eq(teams.mitraId, mitraId)));
+    // Sinkronkan kosmetik board dengan tim.
+    if (before.taskPipelineId && (data.name !== undefined || data.color !== undefined || data.icon !== undefined)) {
+      const pipePatch: any = { updatedAt: patch.updatedAt };
+      if (data.name !== undefined) pipePatch.name = `Tugas — ${data.name}`;
+      if (data.color !== undefined && data.color !== null) pipePatch.color = data.color;
+      if (data.icon !== undefined && data.icon !== null) pipePatch.icon = data.icon;
+      await this.db.update(pipelines).set(pipePatch)
+        .where(and(eq(pipelines.id, before.taskPipelineId), eq(pipelines.mitraId, mitraId)));
+    }
+    const [row] = await this.db.select().from(teams).where(and(eq(teams.id, id), eq(teams.mitraId, mitraId)));
+    return row!;
+  }
+
+  async setTeamArchived(id: number, archived: boolean): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(teams)
+      .set({ archivedAt: archived ? new Date().toISOString() : null, updatedAt: new Date().toISOString() })
+      .where(and(eq(teams.id, id), eq(teams.mitraId, mitraId)));
+  }
+
+  async listTeamMembers(teamId: number): Promise<Array<{ userId: number; teamRole: string; joinedAt: string; name: string; username: string; isActive: number | null }>> {
+    const mitraId = getMitraId();
+    const rows = await this.db
+      .select({
+        userId: teamMembers.userId, teamRole: teamMembers.role, joinedAt: teamMembers.joinedAt,
+        name: users.name, username: users.username, isActive: users.isActive,
+      })
+      .from(teamMembers)
+      .innerJoin(users, eq(users.id, teamMembers.userId))
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.mitraId, mitraId)))
+      .orderBy(asc(users.name));
+    return rows as any;
+  }
+
+  async addTeamMember(teamId: number, userId: number, role: "manager" | "member"): Promise<void> {
+    const mitraId = getMitraId();
+    const existing = await this.getTeamMembership(teamId, userId);
+    if (existing) {
+      if (existing.role !== role) {
+        await this.db.update(teamMembers).set({ role })
+          .where(and(eq(teamMembers.id, existing.id), eq(teamMembers.mitraId, mitraId)));
+      }
+      return;
+    }
+    await this.db.insert(teamMembers).values({ mitraId, teamId, userId, role, joinedAt: new Date().toISOString() } as any);
+  }
+
+  async removeTeamMember(teamId: number, userId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.delete(teamMembers)
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId), eq(teamMembers.mitraId, mitraId)));
+  }
+
+  /** teamId -> jumlah anggota, batched (anti-N+1 untuk grid Tim Saya). */
+  async getTeamMemberCounts(teamIds: number[]): Promise<Map<number, number>> {
+    const map = new Map<number, number>();
+    if (teamIds.length === 0) return map;
+    const mitraId = getMitraId();
+    const rows = await this.db.select({ teamId: teamMembers.teamId, c: count() }).from(teamMembers)
+      .where(and(eq(teamMembers.mitraId, mitraId), inArray(teamMembers.teamId, teamIds)))
+      .groupBy(teamMembers.teamId);
+    for (const r of rows) map.set(r.teamId, Number(r.c));
+    return map;
+  }
+
+  /** pipelineId -> ringkasan tugas {total, done, overdue}, batched. done = stage done ATAU isCompleted. */
+  async getTeamTaskSummaries(pipelineIds: number[]): Promise<Map<number, { total: number; done: number; overdue: number }>> {
+    const map = new Map<number, { total: number; done: number; overdue: number }>();
+    if (pipelineIds.length === 0) return map;
+    const mitraId = getMitraId();
+    const stageRows = await this.db.select().from(pipelineStages)
+      .where(and(eq(pipelineStages.mitraId, mitraId), inArray(pipelineStages.pipelineId, pipelineIds)));
+    const doneStages = new Set(stageRows.filter((s) => (s as any).semanticType === "done" || (s as any).semanticType === "cancelled").map((s) => s.id));
+    const cards = await this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.mitraId, mitraId), inArray(pipelineCards.pipelineId, pipelineIds), isNull(pipelineCards.archivedAt)));
+    const nowIso = new Date().toISOString();
+    for (const pid of pipelineIds) map.set(pid, { total: 0, done: 0, overdue: 0 });
+    for (const c of cards) {
+      const agg = map.get(c.pipelineId)!;
+      agg.total++;
+      const isDone = (c as any).isCompleted === 1 || doneStages.has(c.stageId);
+      if (isDone) agg.done++;
+      else if (c.dueDate && c.dueDate < nowIso) agg.overdue++;
+    }
+    return map;
+  }
+
+  /** Kartu non-arsip lintas pipeline (agregasi "Semua Tugas"), batched inArray. */
+  async listCardsForPipelines(pipelineIds: number[]): Promise<PipelineCard[]> {
+    if (pipelineIds.length === 0) return [];
+    const mitraId = getMitraId();
+    return this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.mitraId, mitraId), inArray(pipelineCards.pipelineId, pipelineIds), isNull(pipelineCards.archivedAt)))
+      .orderBy(asc(pipelineCards.pipelineId), asc(pipelineCards.stageId), asc(pipelineCards.position), asc(pipelineCards.id));
+  }
+
+  /** pipelineId -> stages[], batched. */
+  async listStagesForPipelines(pipelineIds: number[]): Promise<Map<number, PipelineStage[]>> {
+    const map = new Map<number, PipelineStage[]>();
+    if (pipelineIds.length === 0) return map;
+    const mitraId = getMitraId();
+    const rows = await this.db.select().from(pipelineStages)
+      .where(and(eq(pipelineStages.mitraId, mitraId), inArray(pipelineStages.pipelineId, pipelineIds)))
+      .orderBy(asc(pipelineStages.position), asc(pipelineStages.id));
+    for (const r of rows) {
+      const arr = map.get(r.pipelineId) ?? [];
+      arr.push(r);
+      map.set(r.pipelineId, arr);
+    }
+    return map;
+  }
+
+  /** cardId -> follower userIds[], batched (untuk filter kartu Rahasia). */
+  async getFollowersForCards(cardIds: number[]): Promise<Map<number, number[]>> {
+    const map = new Map<number, number[]>();
+    if (cardIds.length === 0) return map;
+    const mitraId = getMitraId();
+    const rows = await this.db.select().from(pipelineCardFollowers)
+      .where(and(eq(pipelineCardFollowers.mitraId, mitraId), inArray(pipelineCardFollowers.cardId, cardIds)));
+    for (const r of rows) {
+      const arr = map.get(r.cardId) ?? [];
+      arr.push(r.userId);
+      map.set(r.cardId, arr);
+    }
+    return map;
+  }
+
+  // ── Labels berwarna scoped per board (FR-413) ──
+
+  async listLabels(pipelineId: number): Promise<PipelineLabel[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(pipelineLabels)
+      .where(and(eq(pipelineLabels.mitraId, mitraId), eq(pipelineLabels.pipelineId, pipelineId)))
+      .orderBy(asc(pipelineLabels.position), asc(pipelineLabels.id));
+  }
+
+  async createLabel(pipelineId: number, data: { name: string; colorHex?: string }): Promise<PipelineLabel> {
+    const mitraId = getMitraId();
+    const existing = await this.listLabels(pipelineId);
+    const maxPos = existing.reduce((m, l) => Math.max(m, l.position), -1);
+    const result = await this.db.insert(pipelineLabels).values({
+      mitraId, pipelineId, name: data.name, colorHex: data.colorHex ?? "#0EA5E9",
+      position: maxPos + 1, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(pipelineLabels)
+      .where(and(eq(pipelineLabels.id, insertId), eq(pipelineLabels.mitraId, mitraId)));
+    return row!;
+  }
+
+  async getLabel(id: number): Promise<PipelineLabel | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(pipelineLabels)
+      .where(and(eq(pipelineLabels.id, id), eq(pipelineLabels.mitraId, mitraId)));
+    return row;
+  }
+
+  async updateLabel(id: number, data: { name?: string; colorHex?: string }): Promise<PipelineLabel> {
+    const mitraId = getMitraId();
+    const patch: any = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.colorHex !== undefined) patch.colorHex = data.colorHex;
+    if (Object.keys(patch).length > 0) {
+      await this.db.update(pipelineLabels).set(patch)
+        .where(and(eq(pipelineLabels.id, id), eq(pipelineLabels.mitraId, mitraId)));
+    }
+    const [row] = await this.db.select().from(pipelineLabels)
+      .where(and(eq(pipelineLabels.id, id), eq(pipelineLabels.mitraId, mitraId)));
+    if (!row) throw new Error("Label tidak ditemukan");
+    return row;
+  }
+
+  async deleteLabel(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.delete(cardLabels).where(eq(cardLabels.labelId, id));
+    await this.db.delete(pipelineLabels)
+      .where(and(eq(pipelineLabels.id, id), eq(pipelineLabels.mitraId, mitraId)));
+  }
+
+  /** Replace seluruh label sebuah kartu (validasi scope pipeline dilakukan caller). */
+  async setCardLabels(cardId: number, labelIds: number[], actorId: number): Promise<void> {
+    await this.db.delete(cardLabels).where(eq(cardLabels.cardId, cardId));
+    for (const labelId of labelIds) {
+      await this.db.insert(cardLabels).values({ cardId, labelId } as any);
+    }
+    await this.logCardActivity(cardId, actorId, "labels_changed", { labelIds });
+  }
+
+  /** cardId -> label[], batched untuk board/list view. */
+  async getLabelsForCards(cardIds: number[]): Promise<Map<number, PipelineLabel[]>> {
+    const map = new Map<number, PipelineLabel[]>();
+    if (cardIds.length === 0) return map;
+    const rows = await this.db
+      .select({ cardId: cardLabels.cardId, label: pipelineLabels })
+      .from(cardLabels)
+      .innerJoin(pipelineLabels, eq(pipelineLabels.id, cardLabels.labelId))
+      .where(inArray(cardLabels.cardId, cardIds));
+    for (const r of rows) {
+      const arr = map.get(r.cardId) ?? [];
+      arr.push(r.label);
+      map.set(r.cardId, arr);
+    }
+    return map;
+  }
+
+  // ── Checklist bertingkat (FR-406) ──
+
+  async listChecklistsForCard(cardId: number): Promise<Array<CardChecklist & { items: CardChecklistItem[] }>> {
+    const mitraId = getMitraId();
+    const lists = await this.db.select().from(cardChecklists)
+      .where(and(eq(cardChecklists.mitraId, mitraId), eq(cardChecklists.cardId, cardId)))
+      .orderBy(asc(cardChecklists.position), asc(cardChecklists.id));
+    if (lists.length === 0) return [];
+    const items = await this.db.select().from(cardChecklistItems)
+      .where(inArray(cardChecklistItems.checklistId, lists.map((l) => l.id)))
+      .orderBy(asc(cardChecklistItems.position), asc(cardChecklistItems.id));
+    const byList = new Map<number, CardChecklistItem[]>();
+    for (const it of items) {
+      const arr = byList.get(it.checklistId) ?? [];
+      arr.push(it);
+      byList.set(it.checklistId, arr);
+    }
+    return lists.map((l) => ({ ...l, items: byList.get(l.id) ?? [] }));
+  }
+
+  async getChecklist(id: number): Promise<CardChecklist | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(cardChecklists)
+      .where(and(eq(cardChecklists.id, id), eq(cardChecklists.mitraId, mitraId)));
+    return row;
+  }
+
+  async createChecklist(cardId: number, title: string, actorId: number): Promise<CardChecklist> {
+    const mitraId = getMitraId();
+    const existing = await this.db.select().from(cardChecklists)
+      .where(and(eq(cardChecklists.mitraId, mitraId), eq(cardChecklists.cardId, cardId)));
+    const maxPos = existing.reduce((m, l) => Math.max(m, l.position), -1);
+    const result = await this.db.insert(cardChecklists).values({
+      mitraId, cardId, title, position: maxPos + 1, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    await this.logCardActivity(cardId, actorId, "checklist_added", { title });
+    const [row] = await this.db.select().from(cardChecklists)
+      .where(and(eq(cardChecklists.id, insertId), eq(cardChecklists.mitraId, mitraId)));
+    return row!;
+  }
+
+  async updateChecklist(id: number, title: string): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(cardChecklists).set({ title })
+      .where(and(eq(cardChecklists.id, id), eq(cardChecklists.mitraId, mitraId)));
+  }
+
+  async deleteChecklist(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.delete(cardChecklistItems).where(eq(cardChecklistItems.checklistId, id));
+    await this.db.delete(cardChecklists)
+      .where(and(eq(cardChecklists.id, id), eq(cardChecklists.mitraId, mitraId)));
+  }
+
+  async getChecklistItem(id: number): Promise<CardChecklistItem | undefined> {
+    const [row] = await this.db.select().from(cardChecklistItems).where(eq(cardChecklistItems.id, id));
+    return row;
+  }
+
+  async addChecklistItem(checklistId: number, text: string): Promise<CardChecklistItem> {
+    const existing = await this.db.select().from(cardChecklistItems)
+      .where(eq(cardChecklistItems.checklistId, checklistId));
+    const maxPos = existing.reduce((m, i) => Math.max(m, i.position), -1);
+    const result = await this.db.insert(cardChecklistItems).values({
+      checklistId, text, isChecked: 0, position: maxPos + 1, createdAt: new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(cardChecklistItems).where(eq(cardChecklistItems.id, insertId));
+    return row!;
+  }
+
+  async updateChecklistItem(id: number, data: { text?: string; isChecked?: boolean }): Promise<void> {
+    const patch: any = {};
+    if (data.text !== undefined) patch.text = data.text;
+    if (data.isChecked !== undefined) patch.isChecked = data.isChecked ? 1 : 0;
+    if (Object.keys(patch).length === 0) return;
+    await this.db.update(cardChecklistItems).set(patch).where(eq(cardChecklistItems.id, id));
+  }
+
+  async deleteChecklistItem(id: number): Promise<void> {
+    await this.db.delete(cardChecklistItems).where(eq(cardChecklistItems.id, id));
+  }
+
+  /** cardId -> {done,total} progres checklist, batched untuk badge board. */
+  async getChecklistProgressForCards(cardIds: number[]): Promise<Map<number, { done: number; total: number }>> {
+    const map = new Map<number, { done: number; total: number }>();
+    if (cardIds.length === 0) return map;
+    const mitraId = getMitraId();
+    const lists = await this.db.select().from(cardChecklists)
+      .where(and(eq(cardChecklists.mitraId, mitraId), inArray(cardChecklists.cardId, cardIds)));
+    if (lists.length === 0) return map;
+    const listToCard = new Map(lists.map((l) => [l.id, l.cardId]));
+    const items = await this.db.select().from(cardChecklistItems)
+      .where(inArray(cardChecklistItems.checklistId, lists.map((l) => l.id)));
+    for (const it of items) {
+      const cardId = listToCard.get(it.checklistId);
+      if (cardId == null) continue;
+      const agg = map.get(cardId) ?? { done: 0, total: 0 };
+      agg.total++;
+      if (it.isChecked === 1) agg.done++;
+      map.set(cardId, agg);
+    }
+    return map;
+  }
+
+  // ── Ekstensi kartu (FR-405/409/414) ──
+
+  async setCardCompleted(cardId: number, completed: boolean, userId: number): Promise<PipelineCard> {
+    const mitraId = getMitraId();
+    const now = new Date().toISOString();
+    await this.db.update(pipelineCards)
+      .set({ isCompleted: completed ? 1 : 0, completedAt: completed ? now : null, updatedAt: now, updatedBy: userId } as any)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    await this.logCardActivity(cardId, userId, completed ? "completed" : "uncompleted");
+    const [row] = await this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    return row!;
+  }
+
+  async setCardPrivate(cardId: number, isPrivate: boolean, userId: number): Promise<PipelineCard> {
+    const mitraId = getMitraId();
+    await this.db.update(pipelineCards)
+      .set({ isPrivate: isPrivate ? 1 : 0, updatedAt: new Date().toISOString(), updatedBy: userId } as any)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    await this.logCardActivity(cardId, userId, isPrivate ? "made_private" : "made_public");
+    const [row] = await this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    return row!;
+  }
+
+  async setCardArchived(cardId: number, archived: boolean, userId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(pipelineCards)
+      .set({ archivedAt: archived ? new Date().toISOString() : null, updatedAt: new Date().toISOString(), updatedBy: userId } as any)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    await this.logCardActivity(cardId, userId, archived ? "archived" : "unarchived");
+  }
+
+  async listArchivedCards(pipelineId: number): Promise<PipelineCard[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.pipelineId, pipelineId), isNotNull(pipelineCards.archivedAt)))
+      .orderBy(desc(pipelineCards.archivedAt));
+  }
+
+  /** Salin kartu (FR-409): field dasar + label + checklist + secondary assignees + custom values.
+   *  Komentar/lampiran/aktivitas TIDAK ikut (konsisten Trello/Cicle). */
+  async duplicateCard(cardId: number, userId: number): Promise<PipelineCard> {
+    const mitraId = getMitraId();
+    const src = await this.getCard(cardId);
+    if (!src) throw new Error("Kartu tidak ditemukan");
+    const copy = await this.createCard(src.pipelineId, {
+      stageId: src.stageId,
+      title: `${src.title} (salinan)`,
+      description: src.description ?? undefined,
+      assigneeId: src.assigneeId ?? null,
+      priority: src.priority,
+      dueDate: src.dueDate ?? null,
+      tags: src.tags ? (JSON.parse(src.tags) as string[]) : null,
+    }, userId);
+    // isPrivate ikut disalin (kartu rahasia tetap rahasia).
+    if ((src as any).isPrivate === 1) {
+      await this.db.update(pipelineCards).set({ isPrivate: 1 } as any)
+        .where(and(eq(pipelineCards.id, copy.id), eq(pipelineCards.mitraId, mitraId)));
+    }
+    // Secondary assignees
+    const secondary = await this.listCardAssignees(cardId);
+    for (const a of secondary) {
+      await this.db.insert(pipelineCardAssignees).values({ mitraId, cardId: copy.id, userId: a.userId, createdAt: new Date().toISOString() } as any);
+    }
+    // Labels
+    const labelRows = await this.db.select().from(cardLabels).where(eq(cardLabels.cardId, cardId));
+    for (const l of labelRows) {
+      await this.db.insert(cardLabels).values({ cardId: copy.id, labelId: l.labelId } as any);
+    }
+    // Checklists + items
+    const lists = await this.listChecklistsForCard(cardId);
+    for (const l of lists) {
+      const newList = await this.createChecklist(copy.id, l.title, userId);
+      for (const it of l.items) {
+        const created = await this.addChecklistItem(newList.id, it.text);
+        if (it.isChecked === 1) await this.updateChecklistItem(created.id, { isChecked: true });
+      }
+    }
+    // Custom field values
+    const values = await this.db.select().from(pipelineCardValues)
+      .where(and(eq(pipelineCardValues.mitraId, mitraId), eq(pipelineCardValues.cardId, cardId)));
+    for (const v of values) {
+      await this.db.insert(pipelineCardValues).values({
+        mitraId, cardId: copy.id, fieldId: v.fieldId, value: v.value, createdAt: new Date().toISOString(),
+      } as any);
+    }
+    await this.logCardActivity(copy.id, userId, "duplicated_from", { sourceCardId: cardId });
+    const [row] = await this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.id, copy.id), eq(pipelineCards.mitraId, mitraId)));
+    return row!;
   }
 
   // ===== Pipeline Custom Fields (Phase 2) =====
@@ -7214,6 +7727,128 @@ export class DatabaseStorage implements IStorage {
     return Number(result?.[0]?.affectedRows ?? 0) > 0;
   }
 
+  /** Teamspace v5.0 Fase 1 — tim internal + board tugas di atas engine pipelines.
+   *  Konvensi codebase: CREATE TABLE IF NOT EXISTS + ADD COLUMN via information_schema
+   *  check, semuanya additive & idempotent (aman re-run tiap startup). */
+  private async runTeamspaceMigrations(): Promise<void> {
+    const tables: Array<{ name: string; ddl: string }> = [
+      {
+        name: "teams",
+        ddl: `CREATE TABLE IF NOT EXISTS teams (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          parent_id INT NULL,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          icon VARCHAR(64),
+          color VARCHAR(16) NOT NULL DEFAULT '#8B5CF6',
+          type VARCHAR(16) NOT NULL DEFAULT 'TEAM',
+          task_pipeline_id INT NULL,
+          enabled_views TEXT,
+          archived_at TEXT NULL,
+          created_by INT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT,
+          KEY idx_teams_mitra (mitra_id, name)
+        )`,
+      },
+      {
+        name: "team_members",
+        ddl: `CREATE TABLE IF NOT EXISTS team_members (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          team_id INT NOT NULL,
+          user_id INT NOT NULL,
+          role VARCHAR(16) NOT NULL DEFAULT 'member',
+          last_read_chat_at TEXT NULL,
+          joined_at TEXT NOT NULL,
+          UNIQUE KEY uniq_team_member (team_id, user_id),
+          KEY idx_team_members_user (mitra_id, user_id)
+        )`,
+      },
+      {
+        name: "pipeline_labels",
+        ddl: `CREATE TABLE IF NOT EXISTS pipeline_labels (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          pipeline_id INT NOT NULL,
+          name VARCHAR(100) NOT NULL,
+          color_hex VARCHAR(16) NOT NULL DEFAULT '#0EA5E9',
+          position INT NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          KEY idx_pipeline_labels_pipeline (mitra_id, pipeline_id, position)
+        )`,
+      },
+      {
+        name: "card_labels",
+        ddl: `CREATE TABLE IF NOT EXISTS card_labels (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          card_id INT NOT NULL,
+          label_id INT NOT NULL,
+          UNIQUE KEY uniq_card_label (card_id, label_id),
+          KEY idx_card_labels_label (label_id)
+        )`,
+      },
+      {
+        name: "card_checklists",
+        ddl: `CREATE TABLE IF NOT EXISTS card_checklists (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          card_id INT NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          position INT NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          KEY idx_card_checklists_card (card_id)
+        )`,
+      },
+      {
+        name: "card_checklist_items",
+        ddl: `CREATE TABLE IF NOT EXISTS card_checklist_items (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          checklist_id INT NOT NULL,
+          text VARCHAR(500) NOT NULL,
+          is_checked INT NOT NULL DEFAULT 0,
+          position INT NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          KEY idx_card_checklist_items_checklist (checklist_id)
+        )`,
+      },
+    ];
+    for (const t of tables) {
+      try {
+        await this.pool.execute(t.ddl);
+      } catch (e: any) {
+        console.warn(`[migration] teamspace create ${t.name} skipped: ${e.message}`);
+      }
+    }
+
+    // Kolom baru pada tabel eksisting — cek via information_schema (pola p4cColAdds).
+    const colAdds: Array<{ table: string; column: string; ddl: string }> = [
+      { table: "pipelines", column: "team_id", ddl: "INT NULL" },
+      { table: "pipeline_stages", column: "semantic_type", ddl: "VARCHAR(16) NULL" },
+      { table: "pipeline_stages", column: "move_permission", ddl: "TEXT NULL" },
+      { table: "pipeline_cards", column: "is_completed", ddl: "INT NOT NULL DEFAULT 0" },
+      { table: "pipeline_cards", column: "completed_at", ddl: "TEXT NULL" },
+      { table: "pipeline_cards", column: "cover_path", ddl: "VARCHAR(255) NULL" },
+      { table: "pipeline_cards", column: "is_private", ddl: "INT NOT NULL DEFAULT 0" },
+      { table: "pipeline_cards", column: "archived_at", ddl: "TEXT NULL" },
+    ];
+    for (const { table, column, ddl } of colAdds) {
+      try {
+        const [rows]: any = await this.pool.execute(
+          `SELECT COUNT(*) AS c FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?`,
+          [table, column],
+        );
+        if (Number((rows as any[])[0]?.c ?? 0) === 0) {
+          await this.pool.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+          console.log(`[migration] Added ${table}.${column} ✓`);
+        }
+      } catch (e: any) {
+        console.warn(`[migration] ${table}.${column} add failed: ${e.message}`);
+      }
+    }
+  }
+
   async seedAdminIfNeeded(): Promise<void> {
     // Phase A: multi-tenant schema migration (idempotent). Must run before index migrations
     // because indexes may reference mitra_id column.
@@ -7869,6 +8504,9 @@ export class DatabaseStorage implements IStorage {
     } catch (e: any) {
       console.warn(`[migration] pipeline_templates create skipped: ${e.message}`);
     }
+
+    // Teamspace v5.0 Fase 1 — teams + board tugas (additive, idempotent).
+    await this.runTeamspaceMigrations();
 
     // 2. Seed default admin user
     const existing = await this.db.select().from(users).limit(1);

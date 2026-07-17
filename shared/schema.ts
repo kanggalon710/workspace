@@ -507,6 +507,7 @@ export const pipelines = mysqlTable("pipelines", {
   position: int("position").notNull().default(0),
   isArchived: int("is_archived").notNull().default(0),
   restricted: int("restricted").notNull().default(0),
+  teamId: int("team_id"),                    // Teamspace: pipeline milik tim (NULL = pipeline ops biasa)
   createdBy: int("created_by").notNull(),
   updatedBy: int("updated_by"),
   createdAt: text("created_at").notNull(),
@@ -523,6 +524,8 @@ export const pipelineStages = mysqlTable("pipeline_stages", {
   description: text("description"),
   color: varchar("color", { length: 16 }).notNull().default("#6B7280"),
   position: int("position").notNull().default(0),
+  semanticType: varchar("semantic_type", { length: 16 }),   // Teamspace: todo|in_progress|done|cancelled|custom (untuk laporan kinerja)
+  movePermission: text("move_permission"),                  // Teamspace: JSON {userIds:[],roleIds:[]} — siapa boleh pindahkan kartu di list ini (NULL = semua)
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 }, (t) => ({
@@ -552,6 +555,12 @@ export const pipelineCards = mysqlTable("pipeline_cards", {
   originCardId: int("origin_card_id"),
   relationType: varchar("relation_type", { length: 16 }),
   collectionCycle: int("collection_cycle"),
+  // Teamspace (v5.0 Fase 1):
+  isCompleted: int("is_completed").notNull().default(0),    // checkbox selesai (FR-405)
+  completedAt: text("completed_at"),                        // timestamp selesai — dasar on-time rate
+  coverPath: varchar("cover_path", { length: 255 }),        // cover image relatif JABNET_UPLOAD_ROOT
+  isPrivate: int("is_private").notNull().default(0),        // "Rahasiakan" — hanya creator/assignee/follower/admin
+  archivedAt: text("archived_at"),                          // arsip kartu (FR-409/414)
 }, (t) => ({
   byMitraPipelineStage: index("idx_pipeline_cards_mitra_pipeline_stage").on(t.mitraId, t.pipelineId, t.stageId, t.position),
   byMaster: index("idx_pipeline_cards_master").on(t.mitraId, t.masterCardId),
@@ -1631,6 +1640,9 @@ export const ALL_PERMISSIONS = [
   { key: "mitra_admin", label: "Kelola Mitra (Owner Only)", group: "Owner" },
   { key: "chatwoot", label: "Chatwoot", group: "Komunikasi" },
   { key: "chatwoot_settings", label: "Chatwoot — Pengaturan", group: "Komunikasi" },
+  // v5.0 Teamspace — kolaborasi tim internal
+  { key: "teams", label: "Tim (kelola tim & anggota)", group: "Teamspace" },
+  { key: "team_tasks", label: "Tugas Tim", group: "Teamspace" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -1648,6 +1660,7 @@ export const ALL_FEATURES = [
   { key: "announcements", label: "Announcements" },
   { key: "customer_portal", label: "Customer Portal" },
   { key: "pipelines", label: "Pipelines (Kanban)" },
+  { key: "teamspace", label: "Teamspace (Kolaborasi Tim)" },
 ] as const;
 
 export type FeatureKey = typeof ALL_FEATURES[number]["key"];
@@ -1668,6 +1681,7 @@ export const FEATURE_PERMISSIONS: Record<string, string[]> = {
   customer_portal: ["customer_portal_admin"],
   chatwoot: ["chatwoot", "chatwoot_settings"],
   pipelines: ["pipelines"],
+  teamspace: ["teams", "team_tasks"],
 };
 
 export const ALL_PERMISSION_KEYS = ALL_PERMISSIONS.map(p => p.key);
@@ -2418,6 +2432,112 @@ export const chatwootAgentLinks = mysqlTable("chatwoot_agent_links", {
   updatedAt: text("updated_at"),
 });
 export type ChatwootAgentLink = typeof chatwootAgentLinks.$inferSelect;
+
+// ==================== TEAMSPACE (v5.0) ====================
+// Modul kolaborasi tim internal (PRD-JABNET-TEAMSPACE.md).
+// Fase 1: teams + members + board tugas di atas engine pipelines eksisting.
+
+/** Tim/divisi internal (NOC, Marketing, Finance, dst) atau Proyek.
+ *  Setiap tim punya tepat SATU pipeline tugas (taskPipelineId) yang di-provision
+ *  otomatis saat tim dibuat — board Kanban reuse engine pipelines. */
+export const teams = mysqlTable("teams", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  parentId: int("parent_id"),                              // nested tree (Fase 2) — NULL = root
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  icon: varchar("icon", { length: 64 }),                   // nama ikon lucide
+  color: varchar("color", { length: 16 }).notNull().default("#8B5CF6"),
+  type: varchar("type", { length: 16 }).notNull().default("TEAM"),   // TEAM | PROJECT
+  taskPipelineId: int("task_pipeline_id"),                 // FK pipelines.id (board tugas tim)
+  enabledViews: text("enabled_views"),                     // JSON array berurut, default ["summary","tasks"]
+  archivedAt: text("archived_at"),
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+}, (t) => ({
+  byMitra: index("idx_teams_mitra").on(t.mitraId, t.name),
+}));
+
+export const teamMembers = mysqlTable("team_members", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  teamId: int("team_id").notNull(),
+  userId: int("user_id").notNull(),
+  role: varchar("role", { length: 16 }).notNull().default("member"),  // manager | member
+  lastReadChatAt: text("last_read_chat_at"),               // unread chat marker (Fase 2)
+  joinedAt: text("joined_at").notNull(),
+}, (t) => ({
+  uniqTeamUser: uniqueIndex("uniq_team_member").on(t.teamId, t.userId),
+  byUser: index("idx_team_members_user").on(t.mitraId, t.userId),
+}));
+
+/** Label berwarna scoped per pipeline/board (FR-413) — pengganti tags bebas untuk board tim. */
+export const pipelineLabels = mysqlTable("pipeline_labels", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  pipelineId: int("pipeline_id").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  colorHex: varchar("color_hex", { length: 16 }).notNull().default("#0EA5E9"),
+  position: int("position").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byPipeline: index("idx_pipeline_labels_pipeline").on(t.mitraId, t.pipelineId, t.position),
+}));
+
+export const cardLabels = mysqlTable("card_labels", {
+  id: int("id").autoincrement().primaryKey(),
+  cardId: int("card_id").notNull(),
+  labelId: int("label_id").notNull(),
+}, (t) => ({
+  uniqCardLabel: uniqueIndex("uniq_card_label").on(t.cardId, t.labelId),
+  byLabel: index("idx_card_labels_label").on(t.labelId),
+}));
+
+/** Checklist bertingkat pada kartu (FR-406): checklist → items, progress bar dari rasio checked. */
+export const cardChecklists = mysqlTable("card_checklists", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  cardId: int("card_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  position: int("position").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byCard: index("idx_card_checklists_card").on(t.cardId),
+}));
+
+export const cardChecklistItems = mysqlTable("card_checklist_items", {
+  id: int("id").autoincrement().primaryKey(),
+  checklistId: int("checklist_id").notNull(),
+  text: varchar("text", { length: 500 }).notNull(),
+  isChecked: int("is_checked").notNull().default(0),
+  position: int("position").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byChecklist: index("idx_card_checklist_items_checklist").on(t.checklistId),
+}));
+
+export type Team = typeof teams.$inferSelect;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type PipelineLabel = typeof pipelineLabels.$inferSelect;
+export type CardLabel = typeof cardLabels.$inferSelect;
+export type CardChecklist = typeof cardChecklists.$inferSelect;
+export type CardChecklistItem = typeof cardChecklistItems.$inferSelect;
+
+export const insertTeamSchema = createInsertSchema(teams, {
+  name: z.string().min(1, "Nama tim wajib diisi").max(255),
+}).omit({ id: true, mitraId: true, taskPipelineId: true, createdBy: true, createdAt: true, updatedAt: true, archivedAt: true });
+
+/** Default views saat tim dibuat (view lain menyala saat modul fase 2/3 rilis). */
+export const TEAM_DEFAULT_VIEWS = ["summary", "tasks"] as const;
+/** Stage default board tugas tim — copywriting mengikuti Cicle agar zero learning curve. */
+export const TEAM_TASK_DEFAULT_STAGES = [
+  { label: "To Do List", color: "#64748B", semanticType: "todo" },
+  { label: "Dikerjakan", color: "#F59E0B", semanticType: "in_progress" },
+  { label: "Selesai", color: "#22C55E", semanticType: "done" },
+  { label: "Batal", color: "#94A3B8", semanticType: "cancelled" },
+] as const;
+export type StageSemanticType = "todo" | "in_progress" | "done" | "cancelled" | "custom";
 
 // ── Workflow Stage Type (di-store sebagai JSON di ticket_categories.workflow_stages) ──
 // v4.2.6: re-aligned dengan design Jabnet Work Order — fields array berisi field types
