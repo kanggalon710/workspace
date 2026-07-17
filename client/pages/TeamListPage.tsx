@@ -34,6 +34,11 @@ function TeamCard({ t, onOpen }: { t: TeamSummary; onOpen: () => void }) {
           <div className="flex items-center gap-2">
             <h3 className="truncate text-sm font-semibold">{t.name}</h3>
             {t.myRole === "manager" && <StatusBadge variant="info" label="Manager" size="sm" appearance="subtle" />}
+            {t.unreadChat > 0 && (
+              <span className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white" title={`${t.unreadChat} pesan chat belum dibaca`}>
+                {t.unreadChat > 99 ? "99+" : t.unreadChat}
+              </span>
+            )}
           </div>
           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
             {t.description || (t.type === "PROJECT" ? "Proyek" : "Tim")} · {t.memberCount} anggota

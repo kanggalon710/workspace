@@ -5,6 +5,38 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
+## [v5.0.0-fase2] - 2026-07-17 — Teamspace Fase 2: Chat, Jadwal, Check-in, Dokumen & File
+
+### Added
+- **Chat Grup per tim** (FR-5xx): bubble WA-style + lampiran (gambar inline / file chip,
+  validasi 25MB), panel Media (tab Media/Dokumen), unread badge di daftar tim & tab,
+  hapus pesan (pengirim/manager, soft delete), polling 5s pause-on-blur
+- **Jadwal tim** (FR-7xx): kalender **2 bulan berdampingan** gaya Cicle, event dengan
+  pengulangan (harian/mingguan/bulanan — `shared/eventRecurrence`, monthly anchor-safe),
+  peserta + notifikasi, toggle Rahasia (hanya peserta/pembuat), **feed iCal/webcal**
+  per tim via token personal revocable (`calendar.ics?feedToken=`) untuk Google/Apple Calendar
+- **Pertanyaan / Check-in rutin** (FR-8xx): jadwal per hari (Senin–Minggu) + jam,
+  penerima terpilih, toggle Rahasia (jawaban hanya ke pembuat/manager), jawab inline,
+  rekap per tanggal + completion rate; **worker scheduler** tick 60s (dedup harian,
+  tahan downtime) mengirim notifikasi in-app + **WhatsApp via MPWA**
+  (`TEAMSPACE_WORKER_ENABLED`, hormati `mpwa_enabled`)
+- **Dokumen & File tim** (FR-9xx): folder/subfolder + breadcrumb, upload drag&drop /
+  picker (multi-file), dokumen native **markdown + preview** (escape-safe), dokumen
+  Rahasia via penerima terpilih (`content_recipients` polymorphic), arsip dokumen/file,
+  streaming download terproteksi
+- **TeamPage ber-tab** (FR-305): Ringkasan · Tugas · Chat · Jadwal · Pertanyaan ·
+  Dokumen — mengikuti `enabledViews` tim, deep-link `?tab=`
+- Permission keys baru: `team_chat`, `team_schedule`, `team_checkins`, `team_docs`
+- shared murni + unit test: `checkinSchedule` (9 test), `eventRecurrence` + builder
+  iCal RFC5545 (8 test)
+
+### Notes
+- Sisa Fase 2 (pengumuman bertarget+expiry — kolom DB sudah siap, view Kalender tugas,
+  recurring card, nested team, pencarian ⌘K konten) + Fase 3 menyusul sesuai PRD §3
+- Verifikasi: typecheck 0 error · 419/419 unit test · build produksi sukses
+
+---
+
 ## [v5.0.0-fase1] - 2026-07-17 — Teamspace Fase 1: Tim + Board Tugas (PRD-JABNET-TEAMSPACE.md)
 
 ### Added
