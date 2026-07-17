@@ -13,6 +13,7 @@ import { customerPortalRouter } from "./customer-portal-routes.js";
 import { publicApiRouter } from "./public-api-routes.js";
 import { pipelinesTickRouter } from "./pipelines-tick-route.js";
 import { trafficSnapshotWorker } from "./traffic-snapshot-worker.js";
+import { teamspaceWorker } from "./teamspace-worker.js";
 import { withMitra } from "./tenant-context.js";
 
 // Worker enable flags — di-set di .env (default: enable kalau env tidak diset = backward compat).
@@ -30,6 +31,7 @@ const CSAT_SCHEDULER_ENABLED = flag("CSAT_SCHEDULER_ENABLED");
 const BOOST_EXPIRE_ENABLED = flag("BOOST_EXPIRE_ENABLED");
 const BROADCAST_WORKER_ENABLED = flag("BROADCAST_WORKER_ENABLED");
 const CHATWOOT_CONTACT_SYNC_ENABLED = flag("CHATWOOT_CONTACT_SYNC_ENABLED");
+const TEAMSPACE_WORKER_ENABLED = flag("TEAMSPACE_WORKER_ENABLED");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -156,6 +158,13 @@ if (TRAFFIC_SNAPSHOT_ENABLED) {
   trafficSnapshotWorker.start().catch(e => console.error("[TrafficSnapshotWorker] startup failed:", e));
 } else {
   console.log("[Startup] traffic snapshot worker disabled via env (TRAFFIC_SNAPSHOT_ENABLED=false)");
+}
+
+// v5.0 Teamspace: scheduler check-in rutin (notifikasi in-app + WA via MPWA)
+if (TEAMSPACE_WORKER_ENABLED) {
+  teamspaceWorker.start().catch(e => console.error("[TeamspaceWorker] startup failed:", e));
+} else {
+  console.log("[Startup] teamspace worker disabled via env (TEAMSPACE_WORKER_ENABLED=false)");
 }
 
 // v4.2.3: Atomic expire+revert worker untuk Speed-on-Demand boost (poll tiap 60 detik)
@@ -350,6 +359,9 @@ const shutdown = async (sig: string) => {
   }
   if (CHATWOOT_CONTACT_SYNC_ENABLED) {
     try { await chatwootContactSyncWorker.stop(); } catch (e: any) { console.error("[Shutdown] chatwoot contact sync worker stop error:", e.message); }
+  }
+  if (TEAMSPACE_WORKER_ENABLED) {
+    try { await teamspaceWorker.stop(); } catch (e: any) { console.error("[Shutdown] teamspace worker stop error:", e.message); }
   }
   process.exit(0);
 };
