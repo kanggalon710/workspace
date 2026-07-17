@@ -79,6 +79,10 @@ const ShowcasePage = lazy(() => import("@/pages/ShowcasePage"));
 const MitraPage = lazy(() => import("@/pages/MitraPage"));
 const PipelinesPage = lazy(() => import("@/pages/PipelinesPage"));
 const PipelineBoardPage = lazy(() => import("@/pages/PipelineBoardPage"));
+// Teamspace v5.0
+const TeamListPage = lazy(() => import("@/pages/TeamListPage"));
+const TeamPage = lazy(() => import("@/pages/TeamPage"));
+const AllTasksPage = lazy(() => import("@/pages/AllTasksPage"));
 const ChatwootAgentMapPage = lazy(() => import("@/pages/ChatwootAgentMapPage"));
 
 // ── Loading fallback ──
@@ -250,6 +254,11 @@ function ProtectedRouter() {
           <Route path="/collections">{() => <WithPerm permission="collections"><CollectionPipelinePage /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
           <Route path="/pipelines/:id">{() => <WithPerm permission="pipelines"><PipelineBoardPage /></WithPerm>}</Route>
+          {/* Teamspace v5.0 — kolaborasi tim internal */}
+          <Route path="/teamspace/tasks">{() => <WithPerm permission="team_tasks"><AllTasksPage /></WithPerm>}</Route>
+          <Route path="/teamspace/teams">{() => <WithPerm permission="team_tasks"><TeamListPage /></WithPerm>}</Route>
+          <Route path="/teamspace/teams/:id">{() => <WithPerm permission="team_tasks"><TeamPage /></WithPerm>}</Route>
+          <Route path="/teamspace/boards/:id">{() => <WithPerm permission="team_tasks"><PipelineBoardPage /></WithPerm>}</Route>
           <Route path="/loyalty">{() => <WithPerm permission="loyalty_admin"><LoyaltyAdminPage /></WithPerm>}</Route>
           <Route path="/api-keys">{() => <WithPerm permission="api_keys"><PublicApiPage /></WithPerm>}</Route>
           <Route path="/announcements" component={AnnouncementsPage} />

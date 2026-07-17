@@ -16,6 +16,7 @@ import { CardRelatedCards } from "@/components/pipelines/CardRelatedCards";
 import { CardAttachments } from "@/components/pipelines/CardAttachments";
 import { CardComments } from "@/components/pipelines/CardComments";
 import { AssigneePicker } from "./AssigneePicker";
+import { CardTeamExtras } from "./CardTeamExtras";
 import { CreateLeadFromCardDialog } from "./CreateLeadFromCardDialog";
 import { toast } from "sonner";
 
@@ -248,6 +249,9 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 disabled={!writable}
                 onBlur={(e) => { if (writable && e.target.value !== (card.description ?? "")) m.updateCard.mutateAsync({ cardId, description: e.target.value }); }}
               />
+
+              {/* Teamspace v5.0: selesai + tenggat + label + checklist + aksi (salin/rahasia/arsip) */}
+              <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} />
 
               {/* Lead link — show linked lead or "Buat Lead" button */}
               <div className="flex items-center gap-2 pt-1">

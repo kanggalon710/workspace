@@ -7,7 +7,7 @@ import {
   MapPinned, ListChecks, Search, BarChart3, Contact, TrendingUp, ChevronRight,
   ChevronDown, Network, Wrench, Megaphone, Settings,
   Router, Wifi, Activity, Package, AlertCircle, MessageCircle, Camera, Heart, KeyRound,
-  Bug, Building2, Kanban, MessageSquare,
+  Bug, Building2, Kanban, MessageSquare, UsersRound, CheckSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
@@ -127,6 +127,14 @@ const navGroups: NavGroup[] = [
           { label: "Broadcast Reseller",   path: "/whatsapp/broadcast/reseller",  icon: Megaphone,    permission: "whatsapp" },
         ],
       },
+    ],
+  },
+  {
+    // Teamspace v5.0 — kolaborasi tim internal (PRD-JABNET-TEAMSPACE.md)
+    key: "teamspace", label: "Teamspace", icon: UsersRound,
+    items: [
+      { label: "Semua Tugas", path: "/teamspace/tasks", icon: CheckSquare, permission: "team_tasks" },
+      { label: "Tim Saya", path: "/teamspace/teams", icon: UsersRound, permission: "team_tasks" },
     ],
   },
   {

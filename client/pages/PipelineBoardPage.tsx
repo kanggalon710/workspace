@@ -27,7 +27,10 @@ import { MetricsConfigDialog } from "@/components/pipelines/MetricsConfigDialog"
 
 export default function PipelineBoardPage() {
   const [, params] = useRoute("/pipelines/:id");
-  const pid = params ? Number(params.id) : null;
+  // Teamspace: board tugas tim dilayani halaman yang sama via route /teamspace/boards/:id
+  // (gate permission `team_tasks`; kapabilitas per-pipeline tetap dari server).
+  const [, teamParams] = useRoute("/teamspace/boards/:id");
+  const pid = params ? Number(params.id) : teamParams ? Number(teamParams.id) : null;
   const { data: pipeline, isLoading: pipelineLoading, error: pipelineError } = usePipeline(pid);
   const writable = pipeline?.level === "edit";
   const caps = useMemo(() => new Set(pipeline?.capabilities ?? []), [pipeline?.capabilities]);

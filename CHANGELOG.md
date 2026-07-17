@@ -5,6 +5,35 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
+## [v5.0.0-fase1] - 2026-07-17 — Teamspace Fase 1: Tim + Board Tugas (PRD-JABNET-TEAMSPACE.md)
+
+### Added
+- **Modul Teamspace** (kolaborasi tim internal, pengganti Cicle):
+  - **Tim & anggota**: tabel `teams` + `team_members` (role manager/member per tim), CRUD via `/api/teamspace/teams*`, guard "manager terakhir tidak bisa dihapus", arsip tim
+  - **Board tugas per tim** di atas engine pipelines eksisting — pipeline milik tim (`pipelines.team_id`) di-provision otomatis saat tim dibuat dengan 4 list gaya Cicle: "To Do List / Dikerjakan / Selesai / Batal" (+ `semantic_type` per stage untuk laporan kinerja)
+  - **RBAC 3 lapis** (`shared/teamAccess.ts`, 13 unit test): admin → manager per tim → creator → member+permission key; kapabilitas board tim diresolusi via keanggotaan di `getPipelineCapabilities` — isolasi dua arah dengan pipeline ops
+  - **Checklist bertingkat** pada kartu (FR-406) dengan progress bar + badge board
+  - **Label berwarna scoped per board** (FR-413) — palet 36 warna, picker + create inline di modal kartu
+  - **Kartu**: tandai Selesai (`is_completed`/`completed_at` — dasar on-time rate), edit tenggat (datetime), **Rahasiakan** (`is_private` — hanya creator/assignee/follower/admin, enforced server-side di semua jalur baca), **Arsipkan** + daftar arsip, **Salin** (duplicate berikut label/checklist/assignee/values)
+  - **Move permission per list** (FR-403): `pipeline_stages.move_permission` + enforcement di endpoint move (stage asal & tujuan)
+  - **Semua Tugas** (`/teamspace/tasks`, FR-412): agregasi lintas tim batched (anti-N+1), view List + Tabel, filter nama/label/tim/kategori tanggal/"Tugas saya", 4 KPI tile
+  - **Halaman**: TeamListPage (grid tim + buat tim), TeamPage (ringkasan hub + kelola anggota), AllTasksPage; group sidebar "Teamspace"; board tim di `/teamspace/boards/:id` (reuse PipelineBoardPage)
+  - **Permission keys baru** group "Teamspace": `teams`, `team_tasks` + feature flag `teamspace` (auto-grant via migrasi permission eksisting)
+- Migrasi startup idempotent `runTeamspaceMigrations()` (CREATE TABLE IF NOT EXISTS + ADD COLUMN via information_schema — konvensi codebase)
+
+### Changed
+- Gerbang fitur endpoint pipeline menerima key `pipelines` ATAU `team_tasks` (`requirePipelinesFeature`) — keamanan per-pipeline tetap di resolusi kapabilitas
+- `GET /api/pipelines` menyembunyikan pipeline milik tim dari daftar ops (non-regresi pipeline leads/collections)
+- `listCards` menyembunyikan kartu terarsip (kartu ops lama selalu `archived_at` NULL — perilaku tak berubah)
+- `GET /api/pipelines/:id/cards` di-enrich `labels` + `checklistProgress` (batched)
+- Link notifikasi kartu board tim mengarah ke `/teamspace/boards/:id`
+
+### Notes
+- Fase 2 (Chat, Pengumuman bertarget, Jadwal+iCal, Check-in via WA, Dokumen, view Kalender, recurring, nested team) dan Fase 3 (Laporan Kinerja+AI, Cheers, API scope) menyusul sesuai PRD §3
+- Belum dideploy ke produksi — jalankan `npm run db` migration otomatis saat startup pertama
+
+---
+
 ## [v4.2.8] - 2026-04-27 — Integration Audit & Auto-Pair ONT
 
 ### Added
