@@ -16,6 +16,7 @@ import { CardRelatedCards } from "@/components/pipelines/CardRelatedCards";
 import { CardAttachments } from "@/components/pipelines/CardAttachments";
 import { CardComments } from "@/components/pipelines/CardComments";
 import { AssigneePicker } from "./AssigneePicker";
+import { MarkdownField } from "@/components/ui/markdown-field";
 import { CardTeamExtras } from "./CardTeamExtras";
 import { CreateLeadFromCardDialog } from "./CreateLeadFromCardDialog";
 import { toast } from "sonner";
@@ -103,6 +104,9 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
   const isCardAdmin = caps.length === 0 || caps.includes("manage");
   const canMoveStage = writable && (caps.length === 0 || caps.includes("cards"));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Teamspace board (pipeline.teamId != null): sembunyikan radio JABNET/Lintas mitra (BUG-005)
+  // & hard-delete (BUG-003 — pakai Arsipkan). Pipeline ops (lead/collection) tak berubah.
+  const isTeamBoard = (pipeline as any)?.teamId != null;
   const [wide, setWide] = useState(() => { try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; } });
 
   const toggleWide = () =>
@@ -199,10 +203,11 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-muted-foreground">Assignee</span>
+                  <span className="text-[10px] font-medium text-muted-foreground">{isTeamBoard ? "Penanggung jawab utama" : "Assignee"}</span>
                   <AssigneePicker
                     mode="single"
                     size="sm"
+                    showSourceToggle={!isTeamBoard}
                     value={card.assigneeId == null ? "" : String(card.assigneeId)}
                     placeholder="Belum ada"
                     disabled={!(writable && canAssign)}
@@ -243,12 +248,15 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 </div>
               )}
 
-              <Textarea
-                defaultValue={card.description ?? ""}
-                placeholder="Deskripsi / catatan"
-                disabled={!writable}
-                onBlur={(e) => { if (writable && e.target.value !== (card.description ?? "")) m.updateCard.mutateAsync({ cardId, description: e.target.value }); }}
-              />
+              {/* BUG-002: deskripsi mendukung markdown (bold/italic/list/heading/link) + preview */}
+              <div>
+                <span className="mb-1 block text-[10px] font-medium text-muted-foreground">Deskripsi / catatan</span>
+                <MarkdownField
+                  value={card.description ?? ""}
+                  disabled={!writable}
+                  onSave={(text) => { if (writable && text !== (card.description ?? "")) m.updateCard.mutateAsync({ cardId, description: text }); }}
+                />
+              </div>
 
               {/* Teamspace v5.0: selesai + tenggat + label + checklist + aksi (salin/rahasia/arsip) */}
               <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} />
@@ -324,10 +332,12 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
             </div>
 
             {/* Pinned footer — primary actions grouped together, always reachable (mobile-first).
-                Simpan Field is the prominent primary; Hapus Kartu is a less-dominant outline. */}
-            {writable && (
+                BUG-003: di board tim, hard-delete DISEMBUNYIKAN — pakai "Arsipkan" (reversible,
+                di bagian Aksi). Pipeline ops (lead/collection) tetap punya Hapus Kartu. */}
+            {writable && (!isTeamBoard || cf.hasEditable) && (
               <div className="shrink-0 flex items-center justify-between gap-3 border-t bg-background px-5 py-3">
                 {/* Two-step delete so the now-prominent button can't fire on a single mis-tap. */}
+                {!isTeamBoard ? (
                 <Button
                   type="button"
                   variant={confirmDelete ? "destructive" : "outline"}
@@ -343,6 +353,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 >
                   <Trash2 className="size-4 mr-1.5" /> {confirmDelete ? "Yakin? Hapus" : "Hapus Kartu"}
                 </Button>
+                ) : <span />}
                 {cf.hasEditable && (
                   <Button
                     type="button"

@@ -209,10 +209,12 @@ export default function PerformancePage() {
                 <p className="py-10 text-center text-xs text-muted-foreground">Tidak ada tugas pada periode ini.</p>
               ) : (
                 <>
-                  <div className="h-52">
-                    <ResponsiveContainer width="100%" height="100%">
+                  {/* BUG-001: width="99%" + key remount = fix ResponsiveContainer 0-width di grid/flex
+                      (donut sebelumnya render "blob" saat container terukur 0 pada mount awal). */}
+                  <div className="h-52 min-w-0">
+                    <ResponsiveContainer width="99%" height="100%" key={donutData.length}>
                       <PieChart>
-                        <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={2}>
+                        <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={donutData.length > 1 ? 2 : 0} isAnimationActive={false}>
                           {donutData.map((d) => <Cell key={d.key} fill={STATUS_COLORS[d.key]} />)}
                         </Pie>
                         <Tooltip formatter={(v: any, n: any) => [`${v} tugas`, n]} />

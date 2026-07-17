@@ -7514,6 +7514,10 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
   for (const c of periodCards) {
     const targets = new Set<number>([c.assigneeId ?? -1, ...(secondaryByCard.get(c.id) ?? [])]);
     targets.delete(-1);
+    // BUG-006: kartu tanpa penanggung jawab dikreditkan ke pembuatnya, supaya angka
+    // "Kinerja per Anggota" rekonsiliasi dengan total di atas (tiap kartu non-batal
+    // pasti punya creator) — bukan hilang dari tabel dan memunculkan empty-state palsu.
+    if (targets.size === 0) targets.add(c.createdBy);
     const st = statusOf(c);
     for (const t of targets) {
       if (!userVisible(t)) continue;

@@ -31,12 +31,17 @@ function stageOf(data: AllTasksResponse | undefined, card: TaskRow) {
   return data?.stages?.[card.pipelineId]?.find((s) => s.id === card.stageId);
 }
 
-/** Status due-date 3 kondisi (FR-410) — selalu ikon+teks, bukan warna saja (NFR-008). */
-function dueState(card: TaskRow, doneStage: boolean): { variant: "danger" | "neutral" | "success"; label: string } | null {
+/** Status TENGGAT (FR-410) — beda makna dgn status LIST/Kanban (BUG-009): kolom ini soal
+ *  KETEPATAN WAKTU, bukan tahap. Tanpa due date → tak ada badge (LIST sudah menunjukkan tahap).
+ *  Selalu ikon+teks, bukan warna saja (NFR-008). */
+function dueState(card: TaskRow, doneStage: boolean): { variant: "danger" | "warning" | "neutral" | "success"; label: string } | null {
   const done = (card as any).isCompleted === 1 || doneStage;
-  if (!card.dueDate) return done ? { variant: "success", label: "Selesai" } : null;
+  if (!card.dueDate) return null;
   const due = new Date(card.dueDate);
-  if (done) return { variant: "success", label: "Selesai" };
+  if (done) {
+    const onTime = !card.completedAt || card.completedAt <= card.dueDate;
+    return onTime ? { variant: "success", label: "Tepat waktu" } : { variant: "warning", label: "Selesai telat" };
+  }
   if (due.getTime() < Date.now()) return { variant: "danger", label: "Terlambat" };
   return { variant: "neutral", label: due.toLocaleDateString("id-ID", { day: "numeric", month: "short" }) };
 }

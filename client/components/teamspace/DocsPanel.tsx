@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AssigneePicker } from "@/components/pipelines/AssigneePicker";
 import { FolderClosed, FolderPlus, FileText, FilePlus2, Upload, ChevronRight, Home, Download, Archive, Lock, Trash2, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { miniMarkdown } from "@/lib/miniMarkdown";
 import type { TeamDocument, TeamFolder } from "@shared/schema";
 
 interface Props {
@@ -23,22 +24,6 @@ interface Props {
 function fmtSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/** Render markdown ringan: heading/bold/italic/list/code → HTML aman (escape dulu). */
-function miniMarkdown(src: string): string {
-  const esc = src.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return esc
-    .replace(/^### (.*)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.*)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.*)$/gm, "<h1>$1</h1>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
-    .replace(/^- (.*)$/gm, "<li>$1</li>")
-    .replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, "<ul>$1</ul>")
-    .replace(/\n{2,}/g, "<br/><br/>")
-    .replace(/\n/g, "<br/>");
 }
 
 export function DocsPanel({ teamId, canManage, active }: Props) {
