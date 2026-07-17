@@ -2109,6 +2109,14 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
 
+  /** Teamspace FR-403: set aturan siapa boleh memindahkan kartu pada list ini (JSON atau NULL = semua). */
+  async setStageMovePermission(stageId: number, movePermissionJson: string | null): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(pipelineStages)
+      .set({ movePermission: movePermissionJson, updatedAt: new Date().toISOString() } as any)
+      .where(and(eq(pipelineStages.id, stageId), eq(pipelineStages.mitraId, mitraId)));
+  }
+
   async updateStage(id: number, data: { label?: string; color?: string; description?: string | null }): Promise<PipelineStage> {
     const mitraId = getMitraId();
     const patch: any = { updatedAt: new Date().toISOString() };

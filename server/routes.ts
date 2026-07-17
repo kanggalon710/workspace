@@ -10,6 +10,7 @@ import { resolveMapMitraId } from "./map-helpers.js";
 import { invalidatePermCacheAtMitra } from "./perm-cache.js";
 import { validateFieldValue } from "./pipeline-field-helpers.js";
 import { resolvePipelineCapabilities, deriveLevel, PIPELINE_CAPABILITY_LABELS, isAdminLockedRole, type PipelineCapability } from "../shared/pipelineCapabilities.js";
+import { resolveTeamPipelineCapabilities, parseTeamRole, canManageTeam, canCreateTeam, canSeePrivateCard, parseMovePermission, canMoveWithStage, parseEnabledViews, type PermKeyLevel } from "../shared/teamAccess.js";
 import { customerConnStatus } from "../shared/customerStatus.js";
 import { DEFAULT_OPTICAL_THRESHOLDS, type OpticalThresholds } from "../shared/opticalPower.js";
 import { buildDeviceIndexes, matchCustomerDevice } from "./ont-match.js";
@@ -315,6 +316,25 @@ function requireWritePermission(req: Request, res: Response, feature: string): b
   return true;
 }
 
+/** Teamspace v5.0: endpoint pipeline melayani juga board tugas tim, jadi gerbang fitur
+ *  menerima key `pipelines` ATAU `team_tasks`. Ini TIDAK membocorkan data: resolusi
+ *  per-pipeline di getPipelineCapabilities tetap ketat — pemegang team_tasks tanpa
+ *  key pipelines mendapat nol kapabilitas atas pipeline ops, dan sebaliknya pemegang
+ *  pipelines yang bukan anggota tim mendapat nol kapabilitas atas board tim. */
+function requirePipelinesFeature(req: Request, res: Response): boolean {
+  if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
+  if (hasPermission(req, "pipelines") || hasPermission(req, "team_tasks")) return true;
+  sendError(res, "Akses ditolak: tidak memiliki izin 'pipelines' (read)", 403);
+  return false;
+}
+
+function requireWritePipelinesFeature(req: Request, res: Response): boolean {
+  if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
+  if (hasWritePermission(req, "pipelines") || hasWritePermission(req, "team_tasks")) return true;
+  sendError(res, "Akses ditolak: fitur 'pipelines' bersifat read-only untuk role Anda", 403);
+  return false;
+}
+
 /**
  * Map URL path → feature permission key. Dipakai global write guard middleware.
  * Pattern match diurutkan dari yang paling spesifik ke yang umum (prefix).
@@ -394,6 +414,10 @@ function globalWriteGuard(req: Request, res: Response, next: NextFunction) {
   // Match path → feature
   const matched = PATH_TO_FEATURE.find(m => m.pattern.test(path));
   if (!matched) return next(); // endpoint belum di-map → biarkan (fallback ke guard internal route)
+
+  // Teamspace: endpoint pipeline dipakai juga board tugas tim — team_tasks write setara
+  // (keamanan per-pipeline tetap di getPipelineCapabilities).
+  if (matched.feature === "pipelines" && hasWritePermission(req, "team_tasks")) return next();
 
   if (!hasWritePermission(req, matched.feature)) {
     return sendError(res, `Akses ditolak: fitur '${matched.feature}' bersifat read-only untuk role Anda (path=${path})`, 403);
@@ -4642,10 +4666,13 @@ async function notifyPipelineCardWatchers(cardId: number, actorId: number, title
     const secondary = await storage.listCardAssignees(cardId);
     for (const s of secondary) targets.add(s.userId);
     targets.delete(actorId);
+    // Teamspace: kartu board tim mengarah ke route teamspace agar gate permission client cocok.
+    const ownerTeam = await storage.getTeamByPipelineId(card.pipelineId);
+    const link = ownerTeam ? `/teamspace/boards/${card.pipelineId}` : `/pipelines/${card.pipelineId}`;
     for (const uid of targets) {
       await storage.createNotification({
         userId: uid, type: "pipeline_card", title, message,
-        link: `/pipelines/${card.pipelineId}`, entityType: "pipeline_card", entityId: cardId,
+        link, entityType: "pipeline_card", entityId: cardId,
         fromUserId: actorId,
       });
     }
@@ -4668,6 +4695,17 @@ async function getPipelineCapabilities(req: Request, pipelineId: number): Promis
   const isAdmin = isPipelineAdmin(req);
   const p = await storage.getPipeline(pipelineId);
   if (!p) return new Set();
+  // Teamspace v5.0: pipeline milik tim → resolusi via keanggotaan tim (bukan grants pipelineAccess).
+  // Isolasi dua arah: pemegang key `pipelines` yang bukan anggota tim mendapat nol caps di sini.
+  if ((p as any).teamId != null) {
+    const membership = await storage.getTeamMembership(Number((p as any).teamId), req.authUser!.id);
+    return resolveTeamPipelineCapabilities({
+      isAdmin,
+      isCreator: (p as any).createdBy === req.authUser!.id,
+      teamRole: membership ? parseTeamRole(membership.role) : null,
+      keyLevel: (req.authUser!.permLevels["team_tasks"] ?? "none") as PermKeyLevel,
+    });
+  }
   const isCreator = (p as any).createdBy === req.authUser!.id;
   const restricted = (p as any).restricted === 1;
   let grantCapabilities: PipelineCapability[] = [];
@@ -4739,7 +4777,28 @@ async function guardCard(req: Request, res: Response, card: PipelineCard | undef
     ? await requirePipelineView(req, res, card.pipelineId)
     : await requirePipelineCapability(req, res, card.pipelineId, gate);
   if (!ok) return false;
+  // Teamspace FR-1404: kartu "Rahasia" hanya untuk creator/assignee/follower/admin — 404 (sembunyikan keberadaan).
+  if ((card as any).isPrivate === 1 && !(await canAccessPrivateCard(req, card))) {
+    sendError(res, "Kartu tidak ditemukan", 404);
+    return false;
+  }
   return requireCardAccess(req, res, card);
+}
+
+/** Cek akses kartu Rahasia untuk requester (server-side, dipakai guard tunggal + filter list). */
+async function canAccessPrivateCard(req: Request, card: PipelineCard): Promise<boolean> {
+  if (isPipelineAdmin(req)) return true;
+  const uid = req.authUser!.id;
+  if (card.createdBy === uid || card.assigneeId === uid) return true;
+  const [secondary, followers] = await Promise.all([
+    storage.listCardAssignees(card.id),
+    storage.listFollowers(card.id),
+  ]);
+  return canSeePrivateCard({
+    isAdmin: false, userId: uid, createdBy: card.createdBy,
+    assigneeIds: [card.assigneeId ?? -1, ...secondary.map((s) => s.userId)],
+    followerIds: followers.map((f) => f.userId),
+  });
 }
 
 /** Load the card named by req.params.cardId, then run guardCard. Returns the card, or null when the
@@ -5065,9 +5124,11 @@ async function validateTriggerConfig(
 }
 
   router.get("/api/pipelines", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const includeArchived = req.query.archived === "1";
-    const all = await storage.listPipelines(includeArchived);
+    // Teamspace: pipeline milik tim disembunyikan dari daftar ops (NFR-012) —
+    // board tim diakses via /api/teamspace/* + GET /api/pipelines/:id.
+    const all = (await storage.listPipelines(includeArchived)).filter((p) => (p as any).teamId == null);
     const admin = isPipelineAdmin(req);
     const grantMap = (!admin && req.authUser!.effectiveRoleId)
       ? await storage.getGrantCapabilitiesMapForRole(req.authUser!.effectiveRoleId) : {};
@@ -5088,7 +5149,7 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const { name, description, color, icon } = req.body ?? {};
     if (!name || typeof name !== "string") return sendError(res, "Nama pipeline wajib diisi", 400);
     sendSuccess(res, await storage.createPipeline({ name, description, color, icon }, req.authUser!.id));
@@ -5096,7 +5157,7 @@ async function validateTriggerConfig(
 
   // NOTE: reorder must be registered BEFORE /:id routes to avoid Express capturing "reorder" as :id param
   router.post("/api/pipelines/reorder", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     // reorder is a list-level op; per-pipeline gating N/A
     const { orderedIds } = req.body ?? {};
     if (!Array.isArray(orderedIds)) return sendError(res, "orderedIds wajib array", 400);
@@ -5105,7 +5166,7 @@ async function validateTriggerConfig(
   });
 
   router.patch("/api/pipelines/:id", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "manage"))) return;
     const { name, description, color, icon, isArchived } = req.body ?? {};
     try {
@@ -5117,14 +5178,14 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines/:id/archive", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "manage"))) return;
     await storage.archivePipeline(Number(req.params.id), req.authUser!.id);
     sendSuccess(res, { ok: true });
   });
 
   router.delete("/api/pipelines/:id", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const pid = Number(req.params.id);
     const pipe = await storage.getPipeline(pid);
     if (!pipe) return sendError(res, "Pipeline tidak ditemukan", 404);
@@ -5136,13 +5197,13 @@ async function validateTriggerConfig(
   });
 
   router.get("/api/pipelines/:id/stages", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
     sendSuccess(res, await storage.listStages(Number(req.params.id)));
   });
 
   router.post("/api/pipelines/:id/stages", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "stages"))) return;
     const { label, color, description } = req.body ?? {};
     if (!label) return sendError(res, "Label stage wajib diisi", 400);
@@ -5151,7 +5212,7 @@ async function validateTriggerConfig(
   });
 
   router.patch("/api/pipelines/:id/stages/:stageId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "stages"))) return;
     const { label, color, description } = req.body ?? {};
     const desc = description === undefined ? undefined : (typeof description === "string" ? (description.trim() || null) : null);
@@ -5164,7 +5225,7 @@ async function validateTriggerConfig(
   });
 
   router.delete("/api/pipelines/:id/stages/:stageId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "stages"))) return;
     try {
       await storage.deleteStage(Number(req.params.stageId));
@@ -5175,7 +5236,7 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines/:id/stages/reorder", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "stages"))) return;
     const { orderedIds } = req.body ?? {};
     if (!Array.isArray(orderedIds)) return sendError(res, "orderedIds wajib array", 400);
@@ -5185,7 +5246,7 @@ async function validateTriggerConfig(
 
   // ── Assignable users — literal path; MUST be before GET /api/pipelines/:id ──
   router.get("/api/pipelines/assignable-users", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const allowCross = req.query.scope === "cross" && isSystemAdmin(req);
     const list = await storage.getAssignableUsers(req.authUser!.activeMitraId, allowCross);
     sendSuccess(res, list);
@@ -5193,7 +5254,7 @@ async function validateTriggerConfig(
 
   // ── Card routes — MUST be registered BEFORE GET /api/pipelines/:id ──────────
   router.get("/api/pipelines/:id/cards", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
     const q = typeof req.query.q === "string" ? req.query.q : undefined;
     const assigneeId = req.query.assignee ? Number(req.query.assignee) : undefined;
@@ -5213,17 +5274,36 @@ async function validateTriggerConfig(
       }));
     }
     const secondaryByCard = await storage.getSecondaryAssigneesForCards(visibleCards.map((c) => c.id));
+    // Teamspace FR-1404: kartu "Rahasia" disaring server-side untuk non-creator/assignee/follower.
+    const boardAdmin = isPipelineAdmin(req);
+    if (!boardAdmin && visibleCards.some((c) => (c as any).isPrivate === 1)) {
+      const followersByCard = await storage.getFollowersForCards(visibleCards.filter((c) => (c as any).isPrivate === 1).map((c) => c.id));
+      const uid = req.authUser!.id;
+      visibleCards = visibleCards.filter((c) => (c as any).isPrivate !== 1 || canSeePrivateCard({
+        isAdmin: false, userId: uid, createdBy: c.createdBy,
+        assigneeIds: [c.assigneeId ?? -1, ...(secondaryByCard.get(c.id) ?? [])],
+        followerIds: followersByCard.get(c.id) ?? [],
+      }));
+    }
+    // Teamspace: enrich label berwarna + progres checklist (batched, anti-N+1).
+    const labelsByCard = await storage.getLabelsForCards(visibleCards.map((c) => c.id));
+    const checklistByCard = await storage.getChecklistProgressForCards(visibleCards.map((c) => c.id));
     sendSuccess(res, visibleCards.map((c) => {
+      const extra = {
+        secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [],
+        labels: labelsByCard.get(c.id) ?? [],
+        checklistProgress: checklistByCard.get(c.id) ?? null,
+      };
       const v = valuesByCard[c.id] ?? {};
-      if (hidden.size === 0) return { ...c, values: v, secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [] };
+      if (hidden.size === 0) return { ...c, values: v, ...extra };
       const fv: Record<number, string> = {};
       for (const [fid, val] of Object.entries(v)) if (!hidden.has(Number(fid))) fv[Number(fid)] = val as string;
-      return { ...c, values: fv, secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [] };
+      return { ...c, values: fv, ...extra };
     }));
   });
 
   router.post("/api/pipelines/:id/cards", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "cards"))) return;
     const { stageId, title, description, assigneeId, priority, dueDate, tags } = req.body ?? {};
     if (!stageId || !title) return sendError(res, "stageId & title wajib diisi", 400);
@@ -5234,7 +5314,7 @@ async function validateTriggerConfig(
   });
 
   router.get("/api/pipelines/:id/cards/export", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const pid = Number(req.params.id);
     const pipeline = await storage.getPipeline(pid);
     if (!pipeline) return sendError(res, "Pipeline tidak ditemukan", 404);
@@ -5274,7 +5354,7 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines/:id/cards/import", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const pid = Number(req.params.id);
     const pipeline = await storage.getPipeline(pid);
     if (!pipeline) return sendError(res, "Pipeline tidak ditemukan", 404);
@@ -5321,7 +5401,7 @@ async function validateTriggerConfig(
   });
 
   router.get("/api/pipelines/cards/:cardId", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
     const [comments, activity, followers, fields, values] = await Promise.all([
@@ -5349,7 +5429,7 @@ async function validateTriggerConfig(
   });
 
   router.patch("/api/pipelines/cards/:cardId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const bodyKeys = Object.keys(req.body ?? {});
     const onlyAssignee = bodyKeys.length > 0 && bodyKeys.every((k) => k === "assigneeId");
     const neededCap: PipelineCapability = onlyAssignee ? "assign" : "cards";
@@ -5374,7 +5454,7 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines/cards/:cardId/move", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const cardForGuard = await loadGuardedCard(req, res, "cards");
     if (!cardForGuard) return;
     const { toStageId, toPosition } = req.body ?? {};
@@ -5384,6 +5464,23 @@ async function validateTriggerConfig(
     // corrupting the card and firing stage-enter automations against a stage the pipeline doesn't own.
     const moveStages = await storage.listStages(cardForGuard.pipelineId);
     if (!moveStages.some((s) => s.id === Number(toStageId))) return sendError(res, "Stage tujuan tidak valid untuk pipeline ini", 400);
+    // Teamspace FR-403: move permission per list — enforce pada stage asal DAN tujuan.
+    const fromStageRow = moveStages.find((s) => s.id === cardForGuard.stageId);
+    const toStageRow = moveStages.find((s) => s.id === Number(toStageId));
+    const mpFrom = parseMovePermission((fromStageRow as any)?.movePermission);
+    const mpTo = parseMovePermission((toStageRow as any)?.movePermission);
+    if (mpFrom || mpTo) {
+      const movePipe = await storage.getPipeline(cardForGuard.pipelineId);
+      let isTeamManager = false;
+      if (movePipe && (movePipe as any).teamId != null) {
+        const membership = await storage.getTeamMembership(Number((movePipe as any).teamId), req.authUser!.id);
+        isTeamManager = membership?.role === "manager";
+      }
+      const moveArgs = { isAdmin: isPipelineAdmin(req), isManager: isTeamManager, userId: req.authUser!.id, roleId: req.authUser!.effectiveRoleId ?? null };
+      if (!canMoveWithStage({ movePermission: mpFrom, ...moveArgs }) || !canMoveWithStage({ movePermission: mpTo, ...moveArgs })) {
+        return sendError(res, "Anda tidak diizinkan memindahkan kartu pada list ini", 403);
+      }
+    }
     try {
       const card = await storage.moveCard(Number(req.params.cardId), Number(toStageId), toPosition === undefined ? undefined : Number(toPosition), req.authUser!.id);
       await notifyPipelineCardWatchers(card.id, req.authUser!.id, "Kartu dipindahkan", `Kartu "${card.title}" dipindahkan`);
@@ -5399,7 +5496,7 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines/cards/:cardId/retrigger", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     await storage.clearStageFires(card.id, card.stageId, card.pipelineId);
@@ -5408,7 +5505,7 @@ async function validateTriggerConfig(
   });
 
   router.delete("/api/pipelines/cards/:cardId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     await storage.deleteCard(Number(req.params.cardId));
@@ -5417,7 +5514,7 @@ async function validateTriggerConfig(
 
   // ── Bulk card actions ──
   router.post("/api/pipelines/:id/cards/bulk", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const pid = Number(req.params.id);
     if (!(await requirePipelineView(req, res, pid))) return;
     const { op, cardIds, payload, runAutomation, overwrite } = req.body ?? {};
@@ -5512,7 +5609,7 @@ async function validateTriggerConfig(
 
   // ── Card relations (Phase 1) ──
   router.get("/api/pipelines/cards/:cardId/relations", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
 
@@ -5544,7 +5641,7 @@ async function validateTriggerConfig(
   });
 
   router.post("/api/pipelines/cards/:cardId/relations", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     const { entityType, entityId, label } = req.body ?? {};
@@ -5563,7 +5660,7 @@ async function validateTriggerConfig(
   });
 
   router.delete("/api/pipelines/cards/:cardId/relations/:relationId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     const n = await storage.deleteCardRelation(card.id, Number(req.params.relationId));
@@ -5620,7 +5717,7 @@ async function validateTriggerConfig(
   });
 
   router.get("/api/pipelines/relations/search", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const type = String(req.query.type ?? "");
     if (!isValidEntityType(type)) return sendError(res, "type tidak valid", 400);
     const q = String(req.query.q ?? "").trim();
@@ -5647,14 +5744,14 @@ async function validateTriggerConfig(
   });
 
   router.get("/api/pipelines/cards/:cardId/comments", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
     sendSuccess(res, await storage.listComments(card.id));
   });
 
   router.post("/api/pipelines/cards/:cardId/comments", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "comment");
     if (!card) return;
     let parsed;
@@ -5685,7 +5782,7 @@ async function validateTriggerConfig(
   });
 
   router.delete("/api/pipelines/cards/comments/:id", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const cardId = await storage.getCommentCardId(Number(req.params.id));
     if (cardId === null) return sendError(res, "Komentar tidak ditemukan", 404);
     const card = await storage.getCard(cardId);
@@ -5697,7 +5794,7 @@ async function validateTriggerConfig(
   });
 
   router.get("/api/pipelines/cards/comments/:id/photo", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const meta = await storage.getCommentPhotoMeta(Number(req.params.id));
     if (!meta || !meta.photoPath) return sendError(res, "Foto tidak ditemukan", 404);
     const card = await storage.getCard(meta.cardId);
@@ -5724,7 +5821,7 @@ async function saveOneAttachment(opts: {
 
   // ── Card attachments ──────────────────────────────────────────────────────
   router.post("/api/pipelines/cards/:cardId/attachments", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     let parsed;
@@ -5750,14 +5847,14 @@ async function saveOneAttachment(opts: {
   });
 
   router.get("/api/pipelines/cards/:cardId/attachments", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
     sendSuccess(res, await storage.listCardAttachments(card.id));
   });
 
   router.get("/api/pipelines/attachments/:id/raw", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const att = await storage.getCardAttachment(Number(req.params.id));
     if (!att) return sendError(res, "File tidak ditemukan", 404);
     const card = await storage.getCard(att.cardId);
@@ -5766,7 +5863,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.delete("/api/pipelines/attachments/:id", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const att = await storage.getCardAttachment(Number(req.params.id));
     if (!att) return sendError(res, "File tidak ditemukan", 404);
     const card = await storage.getCard(att.cardId);
@@ -5784,21 +5881,21 @@ async function saveOneAttachment(opts: {
   });
 
   router.get("/api/pipelines/cards/:cardId/followers", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
     sendSuccess(res, await storage.listFollowers(card.id));
   });
 
   router.get("/api/pipelines/cards/:cardId/related", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
     sendSuccess(res, await storage.getRelatedCards(card.id));
   });
 
   router.post("/api/pipelines/cards/:cardId/followers", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     const { userId } = req.body ?? {};
@@ -5812,7 +5909,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.delete("/api/pipelines/cards/:cardId/followers/:userId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     await storage.removeFollower(card.id, Number(req.params.userId), req.authUser!.id);
@@ -5820,14 +5917,14 @@ async function saveOneAttachment(opts: {
   });
 
   router.get("/api/pipelines/cards/:cardId/assignees", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
     if (!card) return;
     sendSuccess(res, await storage.listCardAssignees(card.id));
   });
 
   router.post("/api/pipelines/cards/:cardId/assignees", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     const { userId } = req.body ?? {};
@@ -5836,17 +5933,19 @@ async function saveOneAttachment(opts: {
     if (aerr) return sendError(res, aerr, 400);
     await storage.addCardAssignee(card.id, Number(userId), req.authUser!.id);
     if (Number(userId) !== req.authUser!.id) {
+      const assigneeTeam = await storage.getTeamByPipelineId(card.pipelineId);
       await storage.createNotification({
         userId: Number(userId), type: "pipeline_card",
         title: "Ditugaskan ke kartu", message: `Anda ditambahkan sebagai penanggung jawab "${card.title}"`,
-        link: `/pipelines/${card.pipelineId}`, entityType: "pipeline_card", entityId: card.id, fromUserId: req.authUser!.id,
+        link: assigneeTeam ? `/teamspace/boards/${card.pipelineId}` : `/pipelines/${card.pipelineId}`,
+        entityType: "pipeline_card", entityId: card.id, fromUserId: req.authUser!.id,
       });
     }
     sendSuccess(res, { ok: true });
   });
 
   router.delete("/api/pipelines/cards/:cardId/assignees/:userId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
     if (!card) return;
     await storage.removeCardAssignee(card.id, Number(req.params.userId), req.authUser!.id);
@@ -5855,13 +5954,13 @@ async function saveOneAttachment(opts: {
 
   // ── Field routes — registered BEFORE GET /:id to avoid :id swallowing "fields" ──
   router.get("/api/pipelines/:id/fields", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
     sendSuccess(res, await storage.listFields(Number(req.params.id)));
   });
 
   router.post("/api/pipelines/:id/fields", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "fields"))) return;
     const { label, type, options, required, showOnCard, config } = req.body ?? {};
     if (!label || !type) return sendError(res, "label & type wajib diisi", 400);
@@ -5877,7 +5976,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.patch("/api/pipelines/:id/fields/:fieldId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "fields"))) return;
     const { label, options, required, showOnCard, config } = req.body ?? {};
     if (config !== undefined) {
@@ -5893,14 +5992,14 @@ async function saveOneAttachment(opts: {
   });
 
   router.delete("/api/pipelines/:id/fields/:fieldId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "fields"))) return;
     await storage.deleteField(Number(req.params.fieldId));
     sendSuccess(res, { ok: true });
   });
 
   router.post("/api/pipelines/:id/fields/reorder", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "fields"))) return;
     const { orderedIds } = req.body ?? {};
     if (!Array.isArray(orderedIds)) return sendError(res, "orderedIds wajib array", 400);
@@ -5909,7 +6008,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.put("/api/pipelines/cards/:cardId/values", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const cardId = Number(req.params.cardId);
     const { values } = req.body ?? {};
     if (!Array.isArray(values)) return sendError(res, "values wajib array", 400);
@@ -5950,12 +6049,12 @@ async function saveOneAttachment(opts: {
   });
 
   router.get("/api/pipelines/:id/access", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "manage"))) return;
     sendSuccess(res, await storage.getPipelineAccess(Number(req.params.id)));
   });
   router.put("/api/pipelines/:id/access", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "manage"))) return;
     const { restricted, grants } = req.body ?? {};
     if (typeof restricted !== "boolean" || !Array.isArray(grants)) return sendError(res, "restricted (boolean) & grants (array) wajib", 400);
@@ -5975,7 +6074,7 @@ async function saveOneAttachment(opts: {
   // ── Collection config ────────────────────────────────────────────────────────
   router.get("/api/pipelines/:id/collection-metrics", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, pid))) return;
     const metrics = await getCollectionMetrics(pid);
     return sendSuccess(res, metrics);
@@ -5985,7 +6084,7 @@ async function saveOneAttachment(opts: {
 
   router.get("/api/pipelines/:id/metrics", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, pid))) return;
     const rowFilter = await getCardFilterForRequest(req, pid);
     const presetRaw = typeof req.query.ctx === "string" ? req.query.ctx : "";
@@ -5998,14 +6097,14 @@ async function saveOneAttachment(opts: {
 
   router.get("/api/pipelines/:id/metric-defs", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, pid))) return;
     return sendSuccess(res, await storage.listMetricDefs(pid));
   });
 
   router.post("/api/pipelines/:id/metric-defs", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, pid, "manage"))) return;
     const err = await validateMetricDef(pid, req.body);
     if (err) return sendError(res, err, 400);
@@ -6014,7 +6113,7 @@ async function saveOneAttachment(opts: {
 
   router.patch("/api/pipelines/:id/metric-defs/:metricId", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, pid, "manage"))) return;
     const existing = await storage.getMetricDef(Number(req.params.metricId));
     if (!existing || existing.pipelineId !== pid) return sendError(res, "Metric tidak ditemukan", 404);
@@ -6026,7 +6125,7 @@ async function saveOneAttachment(opts: {
 
   router.delete("/api/pipelines/:id/metric-defs/:metricId", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, pid, "manage"))) return;
     const existing = await storage.getMetricDef(Number(req.params.metricId));
     if (!existing || existing.pipelineId !== pid) return sendError(res, "Metric tidak ditemukan", 404);
@@ -6036,7 +6135,7 @@ async function saveOneAttachment(opts: {
 
   // ── Automation rules ─────────────────────────────────────────────────────────
   router.get("/api/pipelines/:id/rules", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "automation"))) return;
     const pid = Number(req.params.id);
     const rules = await storage.listRules(pid);
@@ -6105,7 +6204,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.post("/api/pipelines/:id/rules", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "automation"))) return;
     const pid = Number(req.params.id);
     const b = req.body ?? {};
@@ -6146,7 +6245,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.patch("/api/pipelines/:id/rules/:ruleId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "automation"))) return;
     const pid = Number(req.params.id);
     const ruleId = Number(req.params.ruleId);
@@ -6207,7 +6306,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.delete("/api/pipelines/:id/rules/:ruleId", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "automation"))) return;
     const pid = Number(req.params.id);
     const ruleId = Number(req.params.ruleId);
@@ -6219,7 +6318,7 @@ async function saveOneAttachment(opts: {
 
   // ── Pipeline detail — registered AFTER all /cards/... literals and /:id/fields ──
   router.get("/api/pipelines/:id", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     const pipeline = await storage.getPipeline(Number(req.params.id));
     if (!pipeline) return sendError(res, "Pipeline tidak ditemukan", 404);
     const caps = await getPipelineCapabilities(req, pipeline.id);
@@ -6234,12 +6333,12 @@ async function saveOneAttachment(opts: {
   // ── Pipeline Templates ──
 
   router.get("/api/pipeline-templates", async (req, res) => {
-    if (!requirePermission(req, res, "pipelines")) return;
+    if (!requirePipelinesFeature(req, res)) return;
     sendSuccess(res, await storage.listTemplates());
   });
 
   router.post("/api/pipeline-templates", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const { fromPipelineId, name, description } = req.body ?? {};
     if (!name || !fromPipelineId) return sendError(res, "name + fromPipelineId wajib", 400);
     if (!(await requirePipelineCapability(req, res, Number(fromPipelineId), "view"))) return;
@@ -6252,7 +6351,7 @@ async function saveOneAttachment(opts: {
   });
 
   router.post("/api/pipeline-templates/:id/apply", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const { name, color, icon } = req.body ?? {};
     if (!name) return sendError(res, "name pipeline baru wajib", 400);
     try {
@@ -6265,11 +6364,454 @@ async function saveOneAttachment(opts: {
   });
 
   router.delete("/api/pipeline-templates/:id", async (req, res) => {
-    if (!requireWritePermission(req, res, "pipelines")) return;
+    if (!requireWritePipelinesFeature(req, res)) return;
     const n = await storage.deleteTemplate(Number(req.params.id));
     if (n === 0) return sendError(res, "Template tidak ditemukan atau bawaan", 404);
     sendSuccess(res, { ok: true });
   });
+
+// ==================== TEAMSPACE (v5.0 Fase 1) ====================
+// Tim internal + board tugas + Semua Tugas (PRD-JABNET-TEAMSPACE.md §7).
+// Board tugas tim memakai endpoint /api/pipelines/* eksisting (kapabilitas via
+// keanggotaan tim di getPipelineCapabilities); di sini hanya CRUD tim + agregasi.
+
+function teamsKeyLevelOf(req: Request): PermKeyLevel {
+  return (req.authUser!.permLevels["teams"] ?? "none") as PermKeyLevel;
+}
+
+/** Gerbang masuk modul Teamspace: minimal team_tasks read ATAU teams read. */
+function requireTeamspaceAccess(req: Request, res: Response): boolean {
+  if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
+  if (hasPermission(req, "team_tasks") || hasPermission(req, "teams")) return true;
+  sendError(res, "Akses ditolak: tidak memiliki izin 'team_tasks' (read)", 403);
+  return false;
+}
+
+/** Load tim :id + cek boleh kelola (admin / teams:write / manager tim). 403/404 sudah dikirim bila gagal. */
+async function loadTeamForManage(req: Request, res: Response): Promise<import("../shared/schema.js").Team | null> {
+  const team = await storage.getTeam(Number(req.params.id));
+  if (!team) { sendError(res, "Tim tidak ditemukan", 404); return null; }
+  const membership = await storage.getTeamMembership(team.id, req.authUser!.id);
+  const ok = canManageTeam({
+    isAdmin: isPipelineAdmin(req),
+    teamsKeyLevel: teamsKeyLevelOf(req),
+    teamRole: membership ? parseTeamRole(membership.role) : null,
+  });
+  if (!ok) { sendError(res, "Akses ditolak: hanya manager tim / admin yang boleh mengelola tim ini", 403); return null; }
+  return team;
+}
+
+/** Load tim :id untuk BACA — anggota, admin, atau pemegang teams:read. */
+async function loadTeamForView(req: Request, res: Response): Promise<{ team: import("../shared/schema.js").Team; myRole: string | null } | null> {
+  const team = await storage.getTeam(Number(req.params.id));
+  if (!team) { sendError(res, "Tim tidak ditemukan", 404); return null; }
+  const membership = await storage.getTeamMembership(team.id, req.authUser!.id);
+  const myRole = membership ? parseTeamRole(membership.role) : null;
+  if (myRole || isPipelineAdmin(req) || teamsKeyLevelOf(req) !== "none") return { team, myRole };
+  sendError(res, "Akses ditolak: Anda bukan anggota tim ini", 403);
+  return null;
+}
+
+/** Enrich daftar tim dengan jumlah anggota + ringkasan tugas (batched). */
+async function enrichTeams(teamsList: Array<any>): Promise<Array<any>> {
+  const memberCounts = await storage.getTeamMemberCounts(teamsList.map((t) => t.id));
+  const pipelineIds = teamsList.map((t) => t.taskPipelineId).filter((x): x is number => x != null);
+  const summaries = await storage.getTeamTaskSummaries(pipelineIds);
+  return teamsList.map((t) => ({
+    ...t,
+    enabledViews: parseEnabledViews(t.enabledViews),
+    memberCount: memberCounts.get(t.id) ?? 0,
+    taskSummary: (t.taskPipelineId != null ? summaries.get(t.taskPipelineId) : null) ?? { total: 0, done: 0, overdue: 0 },
+  }));
+}
+
+router.get("/api/teamspace/teams", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const includeArchived = req.query.archived === "1";
+  const wantAll = req.query.all === "1";
+  const canSeeAll = isPipelineAdmin(req) || teamsKeyLevelOf(req) !== "none";
+  let list: any[];
+  if (wantAll && canSeeAll) {
+    const all = await storage.listTeams(includeArchived);
+    const mine = await storage.listTeamsForUser(req.authUser!.id, true);
+    const roleByTeam = new Map(mine.map((t) => [t.id, t.myRole]));
+    list = all.map((t) => ({ ...t, myRole: roleByTeam.get(t.id) ?? null }));
+  } else {
+    list = await storage.listTeamsForUser(req.authUser!.id, includeArchived);
+  }
+  sendSuccess(res, await enrichTeams(list));
+});
+
+router.post("/api/teamspace/teams", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  if (!canCreateTeam({ isAdmin: isPipelineAdmin(req), teamsKeyLevel: teamsKeyLevelOf(req) })) {
+    return sendError(res, "Akses ditolak: butuh izin 'teams' (write) untuk membuat tim", 403);
+  }
+  const { name, description, icon, color, type, memberIds, managerIds } = req.body ?? {};
+  if (!name || typeof name !== "string" || !name.trim()) return sendError(res, "Nama tim wajib diisi", 400);
+  const team = await storage.createTeam(
+    { name: name.trim(), description, icon, color, type },
+    req.authUser!.id,
+  );
+  // Anggota awal (pembuat sudah otomatis manager di storage.createTeam).
+  const managers = new Set<number>(Array.isArray(managerIds) ? managerIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : []);
+  const members: number[] = Array.isArray(memberIds) ? memberIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : [];
+  for (const uid of new Set<number>([...members, ...managers])) {
+    if (uid === req.authUser!.id) continue;
+    const u = await storage.getUser(uid);
+    if (!u || (u as any).isActive === 0) continue;
+    await storage.addTeamMember(team.id, uid, managers.has(uid) ? "manager" : "member");
+  }
+  await logAudit(req, "TEAM_CREATE", "team", team.id, team.name);
+  const [enriched] = await enrichTeams([{ ...team, myRole: "manager" }]);
+  sendSuccess(res, enriched);
+});
+
+router.get("/api/teamspace/teams/:id", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const loaded = await loadTeamForView(req, res);
+  if (!loaded) return;
+  const members = await storage.listTeamMembers(loaded.team.id);
+  const [enriched] = await enrichTeams([loaded.team]);
+  const membership = loaded.myRole;
+  const manageable = canManageTeam({
+    isAdmin: isPipelineAdmin(req), teamsKeyLevel: teamsKeyLevelOf(req),
+    teamRole: membership ? parseTeamRole(membership) : null,
+  });
+  sendSuccess(res, { ...enriched, myRole: loaded.myRole, canManage: manageable, members });
+});
+
+router.patch("/api/teamspace/teams/:id", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);
+  if (!team) return;
+  const { name, description, icon, color, type, enabledViews } = req.body ?? {};
+  if (name !== undefined && (!name || typeof name !== "string" || !name.trim())) return sendError(res, "Nama tim tidak valid", 400);
+  const views = enabledViews !== undefined ? parseEnabledViews(JSON.stringify(enabledViews)) : undefined;
+  const updated = await storage.updateTeam(team.id, {
+    name: name?.trim(), description, icon, color, type,
+    enabledViews: views as string[] | undefined,
+  });
+  await logAudit(req, "TEAM_UPDATE", "team", team.id, updated.name);
+  sendSuccess(res, updated);
+});
+
+router.post("/api/teamspace/teams/:id/archive", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);
+  if (!team) return;
+  const archived = req.body?.archived !== false;
+  await storage.setTeamArchived(team.id, archived);
+  await logAudit(req, archived ? "TEAM_ARCHIVE" : "TEAM_UNARCHIVE", "team", team.id, team.name);
+  sendSuccess(res, { ok: true });
+});
+
+router.get("/api/teamspace/teams/:id/members", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const loaded = await loadTeamForView(req, res);
+  if (!loaded) return;
+  sendSuccess(res, await storage.listTeamMembers(loaded.team.id));
+});
+
+router.post("/api/teamspace/teams/:id/members", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);
+  if (!team) return;
+  const userId = Number(req.body?.userId);
+  const role = req.body?.role === "manager" ? "manager" : "member";
+  if (!Number.isFinite(userId) || userId <= 0) return sendError(res, "userId wajib diisi", 400);
+  const u = await storage.getUser(userId);
+  if (!u || (u as any).isActive === 0) return sendError(res, "User tidak ditemukan atau nonaktif", 400);
+  await storage.addTeamMember(team.id, userId, role);
+  await logAudit(req, "TEAM_MEMBER_ADD", "team", team.id, team.name, { userId, role });
+  sendSuccess(res, { ok: true });
+});
+
+router.patch("/api/teamspace/teams/:id/members/:userId", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);
+  if (!team) return;
+  const userId = Number(req.params.userId);
+  const role = req.body?.role === "manager" ? "manager" : "member";
+  const existing = await storage.getTeamMembership(team.id, userId);
+  if (!existing) return sendError(res, "Anggota tidak ditemukan di tim ini", 404);
+  // Cegah tim tanpa manager: demote manager terakhir ditolak.
+  if (existing.role === "manager" && role === "member") {
+    const members = await storage.listTeamMembers(team.id);
+    if (members.filter((m) => m.teamRole === "manager").length <= 1) {
+      return sendError(res, "Tim harus punya minimal satu manager", 400);
+    }
+  }
+  await storage.addTeamMember(team.id, userId, role);   // upsert role
+  await logAudit(req, "TEAM_MEMBER_ROLE", "team", team.id, team.name, { userId, role });
+  sendSuccess(res, { ok: true });
+});
+
+router.delete("/api/teamspace/teams/:id/members/:userId", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const team = await loadTeamForManage(req, res);
+  if (!team) return;
+  const userId = Number(req.params.userId);
+  const existing = await storage.getTeamMembership(team.id, userId);
+  if (!existing) return sendError(res, "Anggota tidak ditemukan di tim ini", 404);
+  if (existing.role === "manager") {
+    const members = await storage.listTeamMembers(team.id);
+    if (members.filter((m) => m.teamRole === "manager").length <= 1) {
+      return sendError(res, "Tim harus punya minimal satu manager — tunjuk manager lain dulu", 400);
+    }
+  }
+  await storage.removeTeamMember(team.id, userId);
+  await logAudit(req, "TEAM_MEMBER_REMOVE", "team", team.id, team.name, { userId });
+  sendSuccess(res, { ok: true });
+});
+
+/** Semua Tugas (FR-412): agregasi kartu dari seluruh tim milik user — batched, hormati Rahasia. */
+router.get("/api/teamspace/tasks", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const myTeams = await storage.listTeamsForUser(req.authUser!.id);
+  const withBoard = myTeams.filter((t) => t.taskPipelineId != null);
+  const pipelineIds = withBoard.map((t) => t.taskPipelineId!) as number[];
+  let cards = await storage.listCardsForPipelines(pipelineIds);
+  const stagesMap = await storage.listStagesForPipelines(pipelineIds);
+  const secondaryByCard = await storage.getSecondaryAssigneesForCards(cards.map((c) => c.id));
+  // Filter kartu Rahasia (server-side).
+  if (!isPipelineAdmin(req) && cards.some((c) => (c as any).isPrivate === 1)) {
+    const followersByCard = await storage.getFollowersForCards(cards.filter((c) => (c as any).isPrivate === 1).map((c) => c.id));
+    const uid = req.authUser!.id;
+    cards = cards.filter((c) => (c as any).isPrivate !== 1 || canSeePrivateCard({
+      isAdmin: false, userId: uid, createdBy: c.createdBy,
+      assigneeIds: [c.assigneeId ?? -1, ...(secondaryByCard.get(c.id) ?? [])],
+      followerIds: followersByCard.get(c.id) ?? [],
+    }));
+  }
+  const labelsByCard = await storage.getLabelsForCards(cards.map((c) => c.id));
+  const checklistByCard = await storage.getChecklistProgressForCards(cards.map((c) => c.id));
+  const teamByPipeline = new Map(withBoard.map((t) => [t.taskPipelineId!, t]));
+  sendSuccess(res, {
+    teams: withBoard.map((t) => ({ id: t.id, name: t.name, color: t.color, icon: t.icon, pipelineId: t.taskPipelineId })),
+    stages: Object.fromEntries([...stagesMap.entries()].map(([pid, stages]) => [pid, stages])),
+    cards: cards.map((c) => ({
+      ...c,
+      teamId: teamByPipeline.get(c.pipelineId)?.id ?? null,
+      teamName: teamByPipeline.get(c.pipelineId)?.name ?? null,
+      secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [],
+      labels: labelsByCard.get(c.id) ?? [],
+      checklistProgress: checklistByCard.get(c.id) ?? null,
+    })),
+  });
+});
+
+// ── Ekstensi kartu: checklist (FR-406) ──
+
+router.get("/api/pipelines/cards/:cardId/checklists", async (req, res) => {
+  if (!requirePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "view");
+  if (!card) return;
+  sendSuccess(res, await storage.listChecklistsForCard(card.id));
+});
+
+router.post("/api/pipelines/cards/:cardId/checklists", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  const title = String(req.body?.title ?? "").trim();
+  if (!title) return sendError(res, "Judul checklist wajib diisi", 400);
+  sendSuccess(res, await storage.createChecklist(card.id, title, req.authUser!.id));
+});
+
+/** Resolve checklist :id → kartunya, jalankan guardCard. */
+async function loadGuardedChecklist(req: Request, res: Response, gate: PipelineCapability): Promise<{ checklistId: number; cardId: number } | null> {
+  const checklist = await storage.getChecklist(Number(req.params.id));
+  if (!checklist) { sendError(res, "Checklist tidak ditemukan", 404); return null; }
+  const card = await storage.getCard(checklist.cardId);
+  if (!(await guardCard(req, res, card, gate))) return null;
+  return { checklistId: checklist.id, cardId: checklist.cardId };
+}
+
+router.patch("/api/pipelines/checklists/:id", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const ref = await loadGuardedChecklist(req, res, "cards");
+  if (!ref) return;
+  const title = String(req.body?.title ?? "").trim();
+  if (!title) return sendError(res, "Judul checklist wajib diisi", 400);
+  await storage.updateChecklist(ref.checklistId, title);
+  sendSuccess(res, { ok: true });
+});
+
+router.delete("/api/pipelines/checklists/:id", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const ref = await loadGuardedChecklist(req, res, "cards");
+  if (!ref) return;
+  await storage.deleteChecklist(ref.checklistId);
+  await storage.recordCardActivity(ref.cardId, req.authUser!.id, "checklist_removed");
+  sendSuccess(res, { ok: true });
+});
+
+router.post("/api/pipelines/checklists/:id/items", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const ref = await loadGuardedChecklist(req, res, "cards");
+  if (!ref) return;
+  const text = String(req.body?.text ?? "").trim();
+  if (!text) return sendError(res, "Isi item wajib diisi", 400);
+  sendSuccess(res, await storage.addChecklistItem(ref.checklistId, text));
+});
+
+/** Resolve item :id → checklist → kartu, jalankan guardCard. */
+async function loadGuardedChecklistItem(req: Request, res: Response): Promise<{ itemId: number } | null> {
+  const item = await storage.getChecklistItem(Number(req.params.id));
+  if (!item) { sendError(res, "Item checklist tidak ditemukan", 404); return null; }
+  const checklist = await storage.getChecklist(item.checklistId);
+  if (!checklist) { sendError(res, "Checklist tidak ditemukan", 404); return null; }
+  const card = await storage.getCard(checklist.cardId);
+  if (!(await guardCard(req, res, card, "cards"))) return null;
+  return { itemId: item.id };
+}
+
+router.patch("/api/pipelines/checklist-items/:id", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const ref = await loadGuardedChecklistItem(req, res);
+  if (!ref) return;
+  const patch: { text?: string; isChecked?: boolean } = {};
+  if (req.body?.text !== undefined) {
+    const text = String(req.body.text).trim();
+    if (!text) return sendError(res, "Isi item wajib diisi", 400);
+    patch.text = text;
+  }
+  if (req.body?.isChecked !== undefined) patch.isChecked = Boolean(req.body.isChecked);
+  await storage.updateChecklistItem(ref.itemId, patch);
+  sendSuccess(res, { ok: true });
+});
+
+router.delete("/api/pipelines/checklist-items/:id", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const ref = await loadGuardedChecklistItem(req, res);
+  if (!ref) return;
+  await storage.deleteChecklistItem(ref.itemId);
+  sendSuccess(res, { ok: true });
+});
+
+// ── Ekstensi kartu: label berwarna (FR-413) ──
+
+router.get("/api/pipelines/:id/labels", async (req, res) => {
+  if (!requirePipelinesFeature(req, res)) return;
+  if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
+  sendSuccess(res, await storage.listLabels(Number(req.params.id)));
+});
+
+router.post("/api/pipelines/:id/labels", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  if (!(await requirePipelineCapability(req, res, Number(req.params.id), "cards"))) return;
+  const name = String(req.body?.name ?? "").trim();
+  if (!name) return sendError(res, "Nama label wajib diisi", 400);
+  const colorHex = typeof req.body?.colorHex === "string" && /^#[0-9A-Fa-f]{6}$/.test(req.body.colorHex) ? req.body.colorHex : undefined;
+  sendSuccess(res, await storage.createLabel(Number(req.params.id), { name, colorHex }));
+});
+
+router.patch("/api/pipelines/labels/:labelId", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const label = await storage.getLabel(Number(req.params.labelId));
+  if (!label) return sendError(res, "Label tidak ditemukan", 404);
+  if (!(await requirePipelineCapability(req, res, label.pipelineId, "cards"))) return;
+  const patch: { name?: string; colorHex?: string } = {};
+  if (req.body?.name !== undefined) {
+    const name = String(req.body.name).trim();
+    if (!name) return sendError(res, "Nama label wajib diisi", 400);
+    patch.name = name;
+  }
+  if (req.body?.colorHex !== undefined) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(String(req.body.colorHex))) return sendError(res, "Warna label tidak valid", 400);
+    patch.colorHex = String(req.body.colorHex);
+  }
+  sendSuccess(res, await storage.updateLabel(label.id, patch));
+});
+
+router.delete("/api/pipelines/labels/:labelId", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const label = await storage.getLabel(Number(req.params.labelId));
+  if (!label) return sendError(res, "Label tidak ditemukan", 404);
+  if (!(await requirePipelineCapability(req, res, label.pipelineId, "cards"))) return;
+  await storage.deleteLabel(label.id);
+  sendSuccess(res, { ok: true });
+});
+
+router.put("/api/pipelines/cards/:cardId/labels", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  const labelIds: number[] = Array.isArray(req.body?.labelIds)
+    ? req.body.labelIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : [];
+  // Validasi scope: semua label harus milik pipeline kartu ini.
+  const valid = await storage.listLabels(card.pipelineId);
+  const validIds = new Set(valid.map((l) => l.id));
+  if (labelIds.some((id) => !validIds.has(id))) return sendError(res, "Label tidak valid untuk board ini", 400);
+  await storage.setCardLabels(card.id, labelIds, req.authUser!.id);
+  sendSuccess(res, { ok: true });
+});
+
+// ── Ekstensi kartu: selesai / rahasia / arsip / salin (FR-405, 409, 414) ──
+
+router.post("/api/pipelines/cards/:cardId/complete", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  const completed = req.body?.completed !== false;
+  const updated = await storage.setCardCompleted(card.id, completed, req.authUser!.id);
+  if (completed) {
+    await notifyPipelineCardWatchers(card.id, req.authUser!.id, "Tugas selesai", `"${card.title}" ditandai selesai`);
+  }
+  sendSuccess(res, updated);
+});
+
+router.post("/api/pipelines/cards/:cardId/private", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  // §9: tandai Rahasia = admin / manager tim / creator kartu.
+  let allowed = isPipelineAdmin(req) || card.createdBy === req.authUser!.id;
+  if (!allowed) {
+    const pipe = await storage.getPipeline(card.pipelineId);
+    if (pipe && (pipe as any).teamId != null) {
+      const membership = await storage.getTeamMembership(Number((pipe as any).teamId), req.authUser!.id);
+      allowed = membership?.role === "manager";
+    }
+  }
+  if (!allowed) return sendError(res, "Hanya pembuat kartu, manager tim, atau admin yang boleh mengubah kerahasiaan", 403);
+  sendSuccess(res, await storage.setCardPrivate(card.id, Boolean(req.body?.isPrivate), req.authUser!.id));
+});
+
+router.post("/api/pipelines/cards/:cardId/archive", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  await storage.setCardArchived(card.id, req.body?.archived !== false, req.authUser!.id);
+  sendSuccess(res, { ok: true });
+});
+
+router.post("/api/pipelines/cards/:cardId/duplicate", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  sendSuccess(res, await storage.duplicateCard(card.id, req.authUser!.id));
+});
+
+router.get("/api/pipelines/:id/cards/archived", async (req, res) => {
+  if (!requirePipelinesFeature(req, res)) return;
+  if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
+  sendSuccess(res, await storage.listArchivedCards(Number(req.params.id)));
+});
+
+/** FR-403: atur siapa yang boleh memindahkan kartu di sebuah list (manager/admin — capability "stages"). */
+router.patch("/api/pipelines/:id/stages/:stageId/move-permission", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  if (!(await requirePipelineCapability(req, res, Number(req.params.id), "stages"))) return;
+  const stages = await storage.listStages(Number(req.params.id));
+  const stage = stages.find((s) => s.id === Number(req.params.stageId));
+  if (!stage) return sendError(res, "Stage tidak ditemukan", 404);
+  const raw = req.body?.movePermission == null ? null : JSON.stringify(req.body.movePermission);
+  const parsed = parseMovePermission(raw);
+  await storage.setStageMovePermission(stage.id, parsed ? JSON.stringify(parsed) : null);
+  sendSuccess(res, { ok: true, movePermission: parsed });
+});
 
 // ==================== LOYALTY ADMIN (v4.1.8) ====================
 
