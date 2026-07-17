@@ -174,6 +174,18 @@ export function useCardActions(cardId: number) {
     setArchived: useMutation({ mutationFn: (archived: boolean) => api.post(`/pipelines/cards/${cardId}/archive`, { archived }), onSuccess: invalidate }),
     duplicate: useMutation({ mutationFn: () => api.post<PipelineCard>(`/pipelines/cards/${cardId}/duplicate`, {}), onSuccess: invalidate }),
     setRecurrence: useMutation({ mutationFn: (freq: "" | "daily" | "weekly" | "monthly") => api.patch(`/pipelines/cards/${cardId}/recurrence`, { freq }), onSuccess: invalidate }),
+    setCover: useMutation({
+      mutationFn: async (file: File) => {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(`/api/pipelines/cards/${cardId}/cover`, { method: "POST", headers: { ...getAuthHeaders() }, body: form });
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error || "Upload cover gagal");
+        return json.data;
+      },
+      onSuccess: invalidate,
+    }),
+    removeCover: useMutation({ mutationFn: () => api.delete(`/pipelines/cards/${cardId}/cover`), onSuccess: invalidate }),
   };
 }
 
@@ -395,6 +407,43 @@ export function useDocsMutations(teamId: number) {
     archiveFile: useMutation({
       mutationFn: ({ id, archived }: { id: number; archived: boolean }) =>
         api.post(`/teamspace/files/${id}/archive`, { archived }),
+      onSuccess: invalidate,
+    }),
+  };
+}
+
+// ── Pengumuman per-tim (BUG-004 / FR-6xx) ──
+
+export interface TeamAnnouncementRow {
+  id: number; teamId: number; title: string; content: string;
+  authorId: number; publishedAt: string | null; isConfidential: number;
+  expiresAt: string | null; isExpired: boolean; recipientIds: number[]; createdAt: string;
+}
+
+export function useTeamAnnouncements(teamId: number | null, active: boolean) {
+  return useQuery({
+    queryKey: [KEY, "announcements", teamId],
+    queryFn: () => api.get<TeamAnnouncementRow[]>(`/teamspace/teams/${teamId}/announcements`),
+    enabled: !!teamId && active,
+  });
+}
+
+export function useTeamAnnouncementMutations(teamId: number) {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: [KEY, "announcements", teamId] });
+  return {
+    create: useMutation({
+      mutationFn: (b: { title: string; content: string; isConfidential?: boolean; recipientIds?: number[]; expiresInDays?: number | null }) =>
+        api.post(`/teamspace/teams/${teamId}/announcements`, b),
+      onSuccess: invalidate,
+    }),
+    update: useMutation({
+      mutationFn: ({ id, ...b }: { id: number } & Record<string, unknown>) =>
+        api.patch(`/teamspace/announcements/${id}`, b),
+      onSuccess: invalidate,
+    }),
+    remove: useMutation({
+      mutationFn: (id: number) => api.delete(`/teamspace/announcements/${id}`),
       onSuccess: invalidate,
     }),
   };

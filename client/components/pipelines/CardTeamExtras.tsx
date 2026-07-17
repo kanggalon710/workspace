@@ -1,6 +1,6 @@
 /** Teamspace v5.0 — ekstensi modal kartu: selesai, tenggat, label berwarna, checklist,
  *  dan aksi (Salin / Rahasiakan / Arsipkan). Generik untuk semua board (ops + tim). */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   useCardChecklists, useChecklistMutations, usePipelineLabels, useLabelMutations,
   useCardActions, LABEL_COLOR_PALETTE,
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CheckCircle2, Circle, Plus, Tag, Trash2, ListChecks, Copy, Lock, Unlock, Archive, CalendarClock, X, RotateCcw } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Tag, Trash2, ListChecks, Copy, Lock, Unlock, Archive, CalendarClock, X, RotateCcw, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -94,8 +94,43 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: 
     });
   };
 
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const coverPath = card?.coverPath as string | null | undefined;
+
   return (
     <div className="space-y-4">
+      {/* Cover image (BUG-007 / FR-405) */}
+      {(coverPath || writable) && (
+        <div>
+          <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) actions.setCover.mutate(f, {
+                onSuccess: () => toast.success("Cover diperbarui"),
+                onError: (err: any) => toast.error(err?.message || "Gagal upload cover"),
+              });
+              e.target.value = "";
+            }} />
+          {coverPath ? (
+            <div className="group relative overflow-hidden rounded-lg border">
+              <img src={`/api/pipelines/cards/${cardId}/cover/raw`} alt="Cover kartu" className="max-h-40 w-full object-cover" loading="lazy" />
+              {writable && (
+                <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button type="button" size="xs" variant="outline" className="bg-background/90" onClick={() => coverInputRef.current?.click()}>Ganti</Button>
+                  <Button type="button" size="xs" variant="outline" className="bg-background/90 text-destructive"
+                    onClick={() => actions.removeCover.mutate(undefined, { onSuccess: () => toast.success("Cover dihapus") })}>Hapus</Button>
+                </div>
+              )}
+            </div>
+          ) : writable ? (
+            <Button type="button" variant="outline" size="xs" leftIcon={<ImagePlus className="size-3.5" />}
+              loading={actions.setCover.isPending} onClick={() => coverInputRef.current?.click()}>
+              Tambah Cover
+            </Button>
+          ) : null}
+        </div>
+      )}
+
       {/* Selesai + Tenggat */}
       <div className="flex flex-wrap items-center gap-2">
         <Button

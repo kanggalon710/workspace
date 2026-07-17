@@ -17,13 +17,14 @@ import { ChatPanel } from "@/components/teamspace/ChatPanel";
 import { SchedulePanel } from "@/components/teamspace/SchedulePanel";
 import { CheckinPanel } from "@/components/teamspace/CheckinPanel";
 import { DocsPanel } from "@/components/teamspace/DocsPanel";
+import { AnnouncementsPanel } from "@/components/teamspace/AnnouncementsPanel";
 import {
   UsersRound, CheckSquare, AlertTriangle, ClipboardList, Kanban, UserPlus, Shield, ShieldOff,
-  UserMinus, FolderKanban, Archive, LayoutDashboard, MessageCircle, CalendarDays, MessagesSquare, FolderClosed,
+  UserMinus, FolderKanban, Archive, LayoutDashboard, MessageCircle, CalendarDays, MessagesSquare, FolderClosed, Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 
-type TabKey = "summary" | "chat" | "schedule" | "checkins" | "docs";
+type TabKey = "summary" | "chat" | "schedule" | "checkins" | "docs" | "announcements";
 
 const TAB_META: Record<string, { label: string; icon: any }> = {
   summary: { label: "Ringkasan", icon: LayoutDashboard },
@@ -32,6 +33,7 @@ const TAB_META: Record<string, { label: string; icon: any }> = {
   schedule: { label: "Jadwal", icon: CalendarDays },
   checkins: { label: "Pertanyaan", icon: MessagesSquare },
   docs: { label: "Dokumen", icon: FolderClosed },
+  announcements: { label: "Pengumuman", icon: Megaphone },
 };
 
 function initialTab(): TabKey {
@@ -200,6 +202,8 @@ export default function TeamPage() {
         <CheckinPanel teamId={team.id} canManage={team.canManage} active={tab === "checkins"} />
       ) : tab === "docs" ? (
         <DocsPanel teamId={team.id} canManage={team.canManage} active={tab === "docs"} />
+      ) : tab === "announcements" ? (
+        <AnnouncementsPanel teamId={team.id} canManage={team.canManage} active={tab === "announcements"} />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

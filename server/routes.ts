@@ -6825,6 +6825,44 @@ router.post("/api/pipelines/cards/:cardId/duplicate", async (req, res) => {
   sendSuccess(res, await storage.duplicateCard(card.id, req.authUser!.id));
 });
 
+// BUG-007: cover image kartu (upload / stream / hapus)
+router.post("/api/pipelines/cards/:cardId/cover", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  let parsed;
+  try {
+    parsed = await parseMultipart(req, { maxBytes: ATTACHMENT_MAX_BYTES, maxFiles: 1, maxTotalBytes: ATTACHMENT_MAX_BYTES });
+  } catch (e: any) {
+    return sendError(res, e?.message || "Upload gagal", 413);
+  }
+  if (parsed.files.length === 0) return sendError(res, "Pilih satu gambar cover", 400);
+  const f = parsed.files[0];
+  const v = validateAttachment(f.fileName, f.buffer.length);
+  if (!v.ok) return sendError(res, v.error!, 400);
+  if (v.kind !== "image") return sendError(res, "Cover harus berupa gambar", 400);
+  const slug = await storage.getMitraSlug(req.authUser!.activeMitraId);
+  const rel = await saveUploadedFile(slug, `cover-${card.id}`, f.buffer, v.ext!);
+  await storage.setCardCover(card.id, rel, req.authUser!.id);
+  sendSuccess(res, { coverPath: rel });
+});
+
+router.get("/api/pipelines/cards/:cardId/cover/raw", async (req, res) => {
+  if (!requirePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "view");
+  if (!card) return;
+  if (!(card as any).coverPath) return sendError(res, "Kartu belum punya cover", 404);
+  await streamFile((card as any).coverPath, res);
+});
+
+router.delete("/api/pipelines/cards/:cardId/cover", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  await storage.setCardCover(card.id, null, req.authUser!.id);
+  sendSuccess(res, { ok: true });
+});
+
 router.get("/api/pipelines/:id/cards/archived", async (req, res) => {
   if (!requirePipelinesFeature(req, res)) return;
   if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
@@ -6846,7 +6884,7 @@ router.patch("/api/pipelines/:id/stages/:stageId/move-permission", async (req, r
 
 // ── Teamspace Fase 2 — helper guard modul ──
 
-type TeamModuleKey = "team_chat" | "team_schedule" | "team_checkins" | "team_docs";
+type TeamModuleKey = "team_chat" | "team_schedule" | "team_checkins" | "team_docs" | "team_announcements";
 
 /** Gerbang per-modul Teamspace: cek permission key modul (read/write). */
 function requireTeamModule(req: Request, res: Response, key: TeamModuleKey, write = false): boolean {
@@ -7424,6 +7462,113 @@ router.post("/api/teamspace/files/:fileId/archive", async (req, res) => {
     if (!ok) return sendError(res, "Hanya pengunggah atau manager tim yang boleh mengarsipkan file ini", 403);
   }
   await storage.setTeamFileArchived(file.id, req.body?.archived !== false);
+  sendSuccess(res, { ok: true });
+});
+
+// ── Teamspace: Pengumuman per-tim (BUG-004 / FR-6xx) ──
+// Berbeda dari /announcements company-wide (changelog): ini komunikasi internal tim,
+// bertarget + Rahasia + expiry, dikirim manager tim ke anggotanya.
+
+router.get("/api/teamspace/teams/:id/announcements", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_announcements")) return;
+  const loaded = await loadTeamForView(req, res);
+  if (!loaded) return;
+  const list = await storage.listTeamAnnouncements(loaded.team.id);
+  const confidentialIds = list.filter((a) => (a as any).isConfidential === 1).map((a) => a.id);
+  const recipientsMap = await storage.getRecipientsForOwners("announcement", confidentialIds);
+  const nowIso = new Date().toISOString();
+  const visible = list.filter((a) => (a as any).isConfidential !== 1
+    || canSeeConfidential(req, a.authorId, recipientsMap.get(a.id) ?? []));
+  sendSuccess(res, visible.map((a) => ({
+    ...a,
+    recipientIds: (a as any).isConfidential === 1 ? (recipientsMap.get(a.id) ?? []) : [],
+    isExpired: Boolean((a as any).expiresAt && (a as any).expiresAt < nowIso),
+  })));
+});
+
+router.post("/api/teamspace/teams/:id/announcements", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_announcements", true)) return;
+  const team = await loadTeamForManage(req, res);   // kirim pengumuman = manager/admin (§9)
+  if (!team) return;
+  const { title, content, isConfidential, recipientIds, expiresInDays } = req.body ?? {};
+  if (!title || typeof title !== "string" || !title.trim()) return sendError(res, "Judul pengumuman wajib diisi", 400);
+  if (!content || typeof content !== "string" || !content.trim()) return sendError(res, "Isi pengumuman wajib diisi", 400);
+  const targetIds: number[] = Array.isArray(recipientIds) ? recipientIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : [];
+  if (isConfidential && targetIds.length === 0) return sendError(res, "Pengumuman Rahasia butuh minimal satu penerima", 400);
+  const expiresAt = Number.isFinite(Number(expiresInDays)) && Number(expiresInDays) > 0
+    ? new Date(Date.now() + Number(expiresInDays) * 86400_000).toISOString() : null;
+  const row = await storage.createAnnouncement({
+    title: title.trim(), content: content.trim(), category: "announcement",
+    authorId: req.authUser!.id, publishedAt: new Date().toISOString(),
+    teamId: team.id, isConfidential: Boolean(isConfidential), expiresAt,
+  } as any);
+  if (targetIds.length > 0) await storage.setContentRecipients("announcement", row.id, targetIds);
+  // Notifikasi: ke penerima terpilih, atau ke seluruh anggota tim bila broadcast.
+  const notifyIds = targetIds.length > 0 ? targetIds
+    : (await storage.listTeamMembers(team.id)).map((mb) => mb.userId);
+  for (const uid of notifyIds) {
+    if (uid === req.authUser!.id) continue;
+    await storage.createNotification({
+      userId: uid, type: "announcement", title: `📢 ${team.name}: ${row.title}`,
+      message: row.content.length > 140 ? row.content.slice(0, 137) + "..." : row.content,
+      link: `/teamspace/teams/${team.id}?tab=announcements`, entityType: "announcement", entityId: row.id,
+      fromUserId: req.authUser!.id,
+    }).catch(() => {});
+  }
+  await logAudit(req, "TEAM_ANNOUNCEMENT_CREATE", "announcement", row.id, row.title, { teamId: team.id });
+  sendSuccess(res, row);
+});
+
+/** Guard edit pengumuman tim: penulis ATAU manager/admin tim tsb. */
+async function loadTeamAnnouncementForEdit(req: Request, res: Response): Promise<import("../shared/schema.js").Announcement | null> {
+  const row = await storage.getAnnouncement(Number(req.params.aid));
+  if (!row || (row as any).teamId == null) { sendError(res, "Pengumuman tidak ditemukan", 404); return null; }
+  if (row.authorId === req.authUser!.id || isPipelineAdmin(req)) return row;
+  const membership = await storage.getTeamMembership((row as any).teamId, req.authUser!.id);
+  const ok = canManageTeam({
+    isAdmin: false, teamsKeyLevel: teamsKeyLevelOf(req),
+    teamRole: membership ? parseTeamRole(membership.role) : null,
+  });
+  if (!ok) { sendError(res, "Hanya penulis atau manager tim yang boleh mengubah pengumuman ini", 403); return null; }
+  return row;
+}
+
+router.patch("/api/teamspace/announcements/:aid", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_announcements", true)) return;
+  const row = await loadTeamAnnouncementForEdit(req, res);
+  if (!row) return;
+  const patch: any = {};
+  if (req.body?.title !== undefined) {
+    if (!String(req.body.title).trim()) return sendError(res, "Judul tidak valid", 400);
+    patch.title = String(req.body.title).trim();
+  }
+  if (req.body?.content !== undefined) {
+    if (!String(req.body.content).trim()) return sendError(res, "Isi tidak valid", 400);
+    patch.content = String(req.body.content).trim();
+  }
+  if (Object.keys(patch).length > 0) await storage.updateAnnouncement(row.id, patch);
+  if (req.body?.isConfidential !== undefined || req.body?.expiresInDays !== undefined) {
+    const expiresAt = req.body.expiresInDays !== undefined
+      ? (Number(req.body.expiresInDays) > 0 ? new Date(Date.now() + Number(req.body.expiresInDays) * 86400_000).toISOString() : null)
+      : undefined;
+    await storage.setAnnouncementTargeting(row.id, {
+      isConfidential: req.body.isConfidential !== undefined ? Boolean(req.body.isConfidential) : undefined,
+      expiresAt,
+    });
+  }
+  if (Array.isArray(req.body?.recipientIds)) {
+    await storage.setContentRecipients("announcement", row.id, req.body.recipientIds.map(Number).filter((n: number) => n > 0));
+  }
+  sendSuccess(res, { ok: true });
+});
+
+router.delete("/api/teamspace/announcements/:aid", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_announcements", true)) return;
+  const row = await loadTeamAnnouncementForEdit(req, res);
+  if (!row) return;
+  await storage.deleteAnnouncement(row.id);
+  await storage.setContentRecipients("announcement", row.id, []);
+  await logAudit(req, "TEAM_ANNOUNCEMENT_DELETE", "announcement", row.id, row.title);
   sendSuccess(res, { ok: true });
 });
 

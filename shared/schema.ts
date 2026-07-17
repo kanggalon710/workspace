@@ -1655,6 +1655,7 @@ export const ALL_PERMISSIONS = [
   { key: "team_schedule", label: "Jadwal Tim", group: "Teamspace" },
   { key: "team_checkins", label: "Pertanyaan / Check-in", group: "Teamspace" },
   { key: "team_docs", label: "Dokumen & File Tim", group: "Teamspace" },
+  { key: "team_announcements", label: "Pengumuman Tim", group: "Teamspace" },
   { key: "performance_reports", label: "Laporan Kinerja", group: "Teamspace" },
   { key: "cheers", label: "Cheers (Apresiasi)", group: "Teamspace" },
 ] as const;
@@ -1695,7 +1696,7 @@ export const FEATURE_PERMISSIONS: Record<string, string[]> = {
   customer_portal: ["customer_portal_admin"],
   chatwoot: ["chatwoot", "chatwoot_settings"],
   pipelines: ["pipelines"],
-  teamspace: ["teams", "team_tasks", "team_chat", "team_schedule", "team_checkins", "team_docs", "performance_reports", "cheers"],
+  teamspace: ["teams", "team_tasks", "team_chat", "team_schedule", "team_checkins", "team_docs", "team_announcements", "performance_reports", "cheers"],
 };
 
 export const ALL_PERMISSION_KEYS = ALL_PERMISSIONS.map(p => p.key);
@@ -2718,7 +2719,7 @@ export const insertTeamSchema = createInsertSchema(teams, {
 }).omit({ id: true, mitraId: true, taskPipelineId: true, createdBy: true, createdAt: true, updatedAt: true, archivedAt: true });
 
 /** Default views saat tim dibuat — Fase 2 lengkap (bisa di-pin/lepas via pengaturan tim). */
-export const TEAM_DEFAULT_VIEWS = ["summary", "tasks", "chat", "schedule", "checkins", "docs"] as const;
+export const TEAM_DEFAULT_VIEWS = ["summary", "tasks", "chat", "schedule", "checkins", "docs", "announcements"] as const;
 /** Stage default board tugas tim — copywriting mengikuti Cicle agar zero learning curve. */
 export const TEAM_TASK_DEFAULT_STAGES = [
   { label: "To Do List", color: "#64748B", semanticType: "todo" },

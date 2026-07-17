@@ -3008,6 +3008,15 @@ export class DatabaseStorage implements IStorage {
     await this.logCardActivity(cardId, userId, archived ? "archived" : "unarchived");
   }
 
+  /** BUG-007: set/hapus cover image kartu (path relatif JABNET_UPLOAD_ROOT, NULL = hapus). */
+  async setCardCover(cardId: number, coverPath: string | null, userId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(pipelineCards)
+      .set({ coverPath, updatedAt: new Date().toISOString(), updatedBy: userId } as any)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    await this.logCardActivity(cardId, userId, coverPath ? "cover_set" : "cover_removed");
+  }
+
   async listArchivedCards(pipelineId: number): Promise<PipelineCard[]> {
     const mitraId = getMitraId();
     return this.db.select().from(pipelineCards)
@@ -13851,6 +13860,15 @@ export class DatabaseStorage implements IStorage {
   // ════════════════════════════════════════════════════════════════
   // ANNOUNCEMENTS
   // ════════════════════════════════════════════════════════════════
+
+  /** BUG-004: pengumuman milik SATU tim (announcements.team_id = teamId), terbaru dulu.
+   *  Terpisah dari changelog company-wide (team_id NULL). */
+  async listTeamAnnouncements(teamId: number): Promise<Announcement[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(announcements)
+      .where(and(eq(announcements.mitraId, mitraId), eq(announcements.teamId, teamId)))
+      .orderBy(desc(announcements.publishedAt), desc(announcements.id));
+  }
 
   /** Teamspace Fase 2 (FR-601..603): set targeting pengumuman (Rahasia + expiry) tanpa
    *  menyentuh patch generic updateAnnouncement. */
