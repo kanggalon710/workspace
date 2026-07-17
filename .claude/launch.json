@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "/Users/galon/.nvm/versions/node/v24.13.1/bin/node",
+      "runtimeArgs": ["--import", "tsx/esm", "server/index.ts"],
+      "port": 3002,
+      "autoPort": false,
+      "env": {
+        "COVERAGE_API_KEY": "test-coverage-key-dev"
+      }
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "/Users/galon/.nvm/versions/node/v24.13.1/bin/node",
+      "runtimeArgs": ["/Users/galon/Antigravity/FTTH Tools/node_modules/.bin/vite", "--port", "5174"],
+      "port": 5174
+    },
+    {
+      "name": "v5",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/galon/Jabnet/OLT/ftth-v5 && PORT=4321 JABNET_NO_POSTGIS=1 /Users/galon/.nvm/versions/node/v24.13.1/bin/pnpm dev"
+      ],
+      "port": 4321
+    }
+  ]
+}

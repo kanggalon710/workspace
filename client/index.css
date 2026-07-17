@@ -1,0 +1,551 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* ================================================================== */
+/* JABNET Work Order Design Tokens (v4.2.6)                           */
+/* Aligned dengan Jabnet Work Order design — telco navy + clean slate */
+/* ================================================================== */
+:root {
+  /* Brand */
+  --jbn-navy:        #1e40af;
+  --jbn-navy-dark:   #1e3a8a;
+  --jbn-navy-light:  #3b82f6;
+  --jbn-orange:      #f97316;
+
+  /* Surfaces */
+  --jbn-bg:          #f8fafc;
+  --jbn-surface:     #ffffff;
+  --jbn-surface-alt: #f1f5f9;
+  --jbn-border:      #e2e8f0;
+  --jbn-border-strong: #cbd5e1;
+
+  /* Text */
+  --jbn-text:        #0f172a;
+  --jbn-text-muted:  #475569;
+  --jbn-text-subtle: #94a3b8;
+
+  /* Status */
+  --jbn-success:     #10b981;
+  --jbn-success-bg:  #d1fae5;
+  --jbn-warning:     #f59e0b;
+  --jbn-warning-bg:  #fef3c7;
+  --jbn-danger:      #ef4444;
+  --jbn-danger-bg:   #fee2e2;
+  --jbn-info:        #0ea5e9;
+  --jbn-info-bg:     #e0f2fe;
+
+  /* Stage states */
+  --jbn-stage-done:    #10b981;
+  --jbn-stage-active:  #1e40af;
+  --jbn-stage-pending: #cbd5e1;
+
+  /* Type-specific stage colors */
+  --jbn-cat-psb:        #1e40af;  /* navy - Pemasangan */
+  --jbn-cat-gangguan:   #ef4444;  /* red - Corrective */
+  --jbn-cat-preventive: #0ea5e9;  /* sky - Preventive */
+  --jbn-cat-relokasi:   #8b5cf6;  /* violet - Relocation */
+  --jbn-cat-upgrade:    #10b981;  /* emerald - Upgrade */
+  --jbn-cat-dismantle:  #64748b;  /* slate - Dismantle */
+}
+
+/* Pulse animation untuk stage active indicator */
+@keyframes jbn-pulse-ring {
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.5; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+.jbn-pulse-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid var(--jbn-stage-active);
+  animation: jbn-pulse-ring 2s infinite;
+}
+
+/* JABNET typography helpers */
+.jbn-mono { font-family: "JetBrains Mono", "SF Mono", Menlo, monospace; }
+.jbn-tabular { font-variant-numeric: tabular-nums; }
+
+/* JABNET stage timeline connectors */
+.jbn-stage-connector { background: var(--jbn-border); height: 2px; flex: 0 0 12px; }
+.jbn-stage-connector-done { background: var(--jbn-success); }
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 215 28% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 14%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 215 28% 17%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 215 28% 17%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 199 89% 48%;
+    --radius: 0.5rem;
+    --sidebar: 215 28% 14%;
+    --sidebar-foreground: 210 20% 96%;
+
+    /* Semantic status colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Chart palette — used across Recharts consistently */
+    --chart-1: 199 89% 48%;  /* sky blue (primary) */
+    --chart-2: 142 71% 45%;  /* emerald */
+    --chart-3: 38 92% 50%;   /* amber */
+    --chart-4: 262 83% 58%;  /* violet */
+    --chart-5: 0 84% 60%;    /* red */
+    --chart-6: 173 80% 40%;  /* teal */
+    --chart-7: 20 90% 55%;   /* orange */
+    --chart-8: 291 64% 55%;  /* purple */
+
+    /* Asset type colors (network topology) */
+    --asset-pop: 0 84% 60%;       /* red */
+    --asset-odc: 217 91% 60%;     /* blue */
+    --asset-odp: 262 83% 58%;     /* violet */
+    --asset-pole: 38 92% 50%;     /* amber */
+    --asset-cable: 142 71% 45%;   /* emerald */
+
+    /* Elevation shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  }
+
+  .dark {
+    --background: 215 28% 8%;
+    --foreground: 210 20% 96%;
+    --card: 215 28% 11%;
+    --card-foreground: 210 20% 96%;
+    --popover: 215 28% 11%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 16% 57%;
+    --accent: 215 28% 17%;
+    --accent-foreground: 210 20% 96%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 28% 20%;
+    --input: 215 28% 20%;
+    --ring: 199 89% 48%;
+    --sidebar: 215 28% 10%;
+    --sidebar-foreground: 210 20% 90%;
+
+    /* Semantic status colors — slightly desaturated for dark mode */
+    --success: 142 60% 48%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 55%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 55%;
+    --info-foreground: 0 0% 100%;
+
+    /* Chart palette — tuned for dark background contrast */
+    --chart-1: 199 89% 55%;
+    --chart-2: 142 60% 48%;
+    --chart-3: 38 85% 55%;
+    --chart-4: 262 75% 65%;
+    --chart-5: 0 72% 60%;
+    --chart-6: 173 70% 48%;
+    --chart-7: 20 85% 60%;
+    --chart-8: 291 55% 62%;
+
+    /* Asset type colors — dark mode tuned */
+    --asset-pop: 0 72% 60%;
+    --asset-odc: 217 85% 65%;
+    --asset-odp: 262 75% 65%;
+    --asset-pole: 38 85% 55%;
+    --asset-cable: 142 60% 48%;
+
+    /* Elevation shadows — deeper on dark */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-synthesis: none;
+    letter-spacing: -0.01em;
+  }
+
+  /* Professional heading hierarchy — tighter tracking for telco enterprise feel */
+  h1 { letter-spacing: -0.025em; }
+  h2 { letter-spacing: -0.02em; }
+  h3 { letter-spacing: -0.015em; }
+
+  /* Tabular numbers for dashboards/monitoring — every digit same width */
+  .tabular-nums,
+  [class*="text-"][class*="font-bold"],
+  [class*="text-"][class*="font-black"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Selection color — brand primary */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+
+  /* Focus ring — accessibility + brand consistency */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Professional scrollbar — subtle, corporate */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 10px;
+    border: 2px solid hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TELCO-GRADE UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Surface treatments — enterprise card styles */
+.surface-elevated {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-sm);
+}
+.surface-elevated-hover {
+  transition: all 150ms ease;
+}
+.surface-elevated-hover:hover {
+  box-shadow: var(--shadow-md);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+/* Subtle animated grid background (for hero sections) */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, hsl(var(--border) / 0.7) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Gradient mesh background — premium feel */
+.bg-mesh {
+  background-color: hsl(var(--sidebar));
+  background-image:
+    radial-gradient(at 20% 20%, hsl(199 89% 48% / 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsl(262 83% 58% / 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsl(199 89% 48% / 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsl(173 80% 40% / 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsl(217 91% 60% / 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, hsl(199 89% 48% / 0.1) 0px, transparent 50%);
+}
+
+/* Shimmer highlight — for premium CTA buttons */
+@keyframes shine {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.shine-effect {
+  background: linear-gradient(
+    110deg,
+    transparent 40%,
+    hsl(var(--primary-foreground) / 0.2) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shine 3s ease-in-out infinite;
+}
+
+/* Status pulse (for live indicators) */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.7); }
+  70% { box-shadow: 0 0 0 8px hsl(var(--success) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+}
+.pulse-ring-success {
+  animation: pulse-ring 2s infinite;
+}
+@keyframes pulse-ring-warn {
+  0% { box-shadow: 0 0 0 0 hsl(var(--warning) / 0.7); }
+  70% { box-shadow: 0 0 0 8px hsl(var(--warning) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--warning) / 0); }
+}
+.pulse-ring-warning { animation: pulse-ring-warn 2s infinite; }
+@keyframes pulse-ring-danger {
+  0% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.7); }
+  70% { box-shadow: 0 0 0 8px hsl(var(--destructive) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0); }
+}
+.pulse-ring-danger { animation: pulse-ring-danger 1.5s infinite; }
+
+/* Text gradient — brand headline */
+.text-gradient-brand {
+  background: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(217 91% 55%) 50%, hsl(262 83% 58%) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Mono font for IDs, codes, timestamps */
+.font-mono-tight {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-feature-settings: "cv01", "cv02";
+  letter-spacing: -0.01em;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dark .glass {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Map toolbar */
+.map-toolbar-btn {
+  @apply flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-lg transition-all duration-150;
+  @apply hover:bg-black/5 active:scale-95;
+}
+.dark .map-toolbar-btn { @apply hover:bg-white/10; }
+.map-toolbar-btn.active { @apply bg-primary text-white shadow-sm; }
+
+/* Bottom sheet */
+.bottom-sheet-backdrop {
+  @apply fixed inset-0 z-40 bg-black/40;
+  animation: fadeIn 200ms ease;
+}
+.bottom-sheet-container {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-[20px];
+  box-shadow: 0 -8px 40px -8px hsl(var(--foreground) / 0.25);
+  border-top: 1px solid hsl(var(--border) / 0.5);
+  animation: slideUp 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-sheet-handle {
+  @apply w-10 h-[5px] rounded-full bg-muted-foreground/30 mx-auto mt-2.5 mb-2.5;
+  transition: background-color 150ms ease;
+}
+.bottom-sheet-container:hover .bottom-sheet-handle {
+  @apply bg-muted-foreground/45;
+}
+
+/* Bottom nav — premium glass + gradient active */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-30 bg-background/85 backdrop-blur-xl;
+  border-top: 1px solid hsl(var(--border) / 0.6);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 20px -4px hsl(var(--foreground) / 0.08);
+}
+.bottom-nav-item {
+  @apply relative flex flex-col items-center justify-center gap-1 py-2.5 px-1 min-w-0;
+  @apply text-muted-foreground transition-all duration-200;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-item::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 28px; height: 2.5px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+  border-radius: 0 0 4px 4px;
+  transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bottom-nav-item.active {
+  @apply text-primary;
+}
+.bottom-nav-item.active::before { transform: translateX(-50%) scaleX(1); }
+.bottom-nav-item.active .icon-wrap {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.05));
+}
+.bottom-nav-item.active .icon {
+  transform: translateY(-1px) scale(1.05);
+}
+.bottom-nav-item .icon-wrap {
+  @apply flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200;
+}
+.bottom-nav-item .icon {
+  @apply h-[18px] w-[18px] transition-transform duration-200;
+}
+.bottom-nav-item .label { @apply text-[10px] font-semibold leading-tight truncate tracking-tight; }
+.bottom-nav-item:active .icon-wrap { transform: scale(0.92); }
+
+/* FAB */
+.fab-main {
+  @apply w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center;
+  @apply transition-all duration-200 active:scale-90;
+}
+.fab-item {
+  @apply w-11 h-11 rounded-full shadow-md flex items-center justify-center text-white;
+  @apply transition-all duration-200 active:scale-90;
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes slideDown { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes popOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.8); opacity: 0; } }
+@keyframes expandDial { from { transform: scale(0) translateY(0); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+.animate-fade-in { animation: fadeIn 200ms ease; }
+.animate-fade-out { animation: fadeOut 200ms ease; }
+.animate-slide-up { animation: slideUp 250ms cubic-bezier(0.32, 0.72, 0, 1); }
+.animate-slide-in-right { animation: slideInRight 200ms ease; }
+.animate-pop-in { animation: popIn 150ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Map search */
+.map-search-dropdown {
+  @apply absolute top-full left-0 right-0 mt-1 bg-background rounded-xl shadow-xl border max-h-80 overflow-y-auto;
+  animation: popIn 150ms ease;
+}
+.map-search-item {
+  @apply flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors;
+  @apply hover:bg-accent;
+}
+.map-search-item:first-child { @apply rounded-t-xl; }
+.map-search-item:last-child { @apply rounded-b-xl; }
+
+.enriched-infowindow { animation: popIn 150ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+.compass-rose {
+  @apply w-10 h-10 flex items-center justify-center;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+/* Skeleton loader */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.08) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  @apply rounded;
+}
+
+.map-status-bar {
+  @apply text-[10px] font-mono text-muted-foreground/80 px-3 py-1 bg-background/70 backdrop-blur-sm;
+}
+
+@media (max-width: 767px) {
+  .touch-target { min-width: 48px; min-height: 48px; }
+  .map-fullscreen-mobile {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10;
+  }
+}
+
+/* Leaflet */
+.leaflet-container {
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Google Maps InfoWindow override */
+.gm-style-iw-c {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+  background: transparent !important;
+  max-width: none !important;
+}
+.gm-style-iw { padding: 0 !important; background: transparent !important; }
+.gm-style-iw-d { overflow: hidden !important; padding: 0 !important; max-height: none !important; }
+.gm-ui-hover-effect { display: none !important; }
+.gm-style-iw-t::after { background: white !important; }
+
+/* Kanban scrollbars */
+.kanban-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+.kanban-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.kanban-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(118, 119, 125, 0.18);
+  border-radius: 10px;
+}
+.kanban-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(118, 119, 125, 0.35); }
+.kanban-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 119, 125, 0.18) transparent;
+}
+
+.column-scrollbar::-webkit-scrollbar { width: 4px; }
+.column-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.column-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(118, 119, 125, 0.2);
+  border-radius: 10px;
+}
+.column-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(118, 119, 125, 0.4); }
+.column-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 119, 125, 0.2) transparent;
+}
+
+.kanban-scrollbar, .column-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}

@@ -1,0 +1,96 @@
+name: Build & Deploy to cPanel
+
+# Dual-branch deploy:
+#   push ke `main` → build → force-push payload ke branch `deploy`     (cPanel prod pull)
+#   push ke `dev`  → build → force-push payload ke branch `deploy-dev` (cPanel dev pull)
+# Branch `deploy` / `deploy-dev` = orphan branches, history selalu di-rewrite. JANGAN edit langsung.
+
+on:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write  # butuh write untuk push branch `deploy*`
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Determine deploy target
+        id: target
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "branch=deploy"     >> $GITHUB_OUTPUT
+            echo "env=production"    >> $GITHUB_OUTPUT
+            echo "url=workspace.jabnet.id"     >> $GITHUB_OUTPUT
+          else
+            echo "branch=deploy-dev" >> $GITHUB_OUTPUT
+            echo "env=development"   >> $GITHUB_OUTPUT
+            echo "url=dev.workspace.jabnet.id" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (full, for build)
+        run: npm ci
+
+      - name: Build (Vite client + esbuild server bundle)
+        run: npm run build
+
+      - name: Compose deploy payload
+        run: |
+          mkdir -p deploy-payload
+          # Built artifacts
+          cp -r dist deploy-payload/
+          # Manifest untuk npm install di server
+          cp package.json package-lock.json deploy-payload/
+          # Drizzle migrations (kalau ada output dari `drizzle-kit generate`)
+          if [ -d drizzle ]; then cp -r drizzle deploy-payload/; fi
+          # Migration scripts (one-time data import + multi-tenant audit/backfill)
+          mkdir -p deploy-payload/tools
+          cp tools/*.mjs deploy-payload/tools/ 2>/dev/null || true
+          cp tools/*.sh  deploy-payload/tools/ 2>/dev/null || true
+          # Build metadata
+          echo "$GITHUB_SHA" > deploy-payload/.build-sha
+          echo "${{ github.ref_name }}" > deploy-payload/.build-source-branch
+          echo "${{ steps.target.outputs.env }}" > deploy-payload/.build-env
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > deploy-payload/.build-time
+          echo "Build payload contents:"
+          ls -la deploy-payload/
+
+      - name: Force-push to deploy branch (${{ steps.target.outputs.branch }})
+        run: |
+          cd deploy-payload
+          git init -b ${{ steps.target.outputs.branch }}
+          git config user.email "ci@jabnet.id"
+          git config user.name "JABNET CI"
+          git add -A
+          git commit -m "Build ${GITHUB_SHA::7} from ${{ github.ref_name }} ($(date -u +%Y-%m-%d))"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git push --force origin ${{ steps.target.outputs.branch }}:${{ steps.target.outputs.branch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "✓ Build SHA: $GITHUB_SHA"
+          echo "✓ Source branch: ${{ github.ref_name }}"
+          echo "✓ Target env: ${{ steps.target.outputs.env }} (${{ steps.target.outputs.url }})"
+          echo "✓ Deploy branch updated: ${{ steps.target.outputs.branch }}"
+          echo ""
+          echo "Next steps in cPanel:"
+          echo "  1. Git Version Control → ${{ steps.target.outputs.env }} repo → Update from Remote"
+          echo "  2. Setup Node.js App → npm install (kalau ada perubahan deps)"
+          echo "  3. Setup Node.js App → Restart Application"

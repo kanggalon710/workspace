@@ -1,0 +1,46 @@
+node_modules/
+dist/
+data.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build & cache
+.next/
+*.log
+logs/
+
+# Drizzle journal (regenerated on every push)
+drizzle/meta/_journal.json
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Backups
+backups/
+
+# Runtime upload artifacts (foto/dokumen kartu) — disimpan di filesystem, bukan repo
+uploads/
+
+# One-off script bundles
+*.bundle.mjs
+*.sql.gz
+*.tar.gz
+
+# Build artifacts — jangan commit ke repo
+server/public/
+dist.bak*/
+
+# Local one-off bundle artifacts (built via esbuild, scp'd to cPanel — never commit)
+import-collections.mjs
+*.bundle.mjs
