@@ -214,6 +214,7 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { key: "marketing:write", desc: "Push ad campaign data (POST/PATCH /marketing/campaigns). Untuk bot ads manager sync (Meta/TikTok/Google Ads)." },
       { key: "finance:read", desc: "Revenue & billing (aggregate): MRR, ARPU, revenue-at-risk, billing status, collections recovery/aging. No PII." },
       { key: "customers:read", desc: "Subscriber base (aggregate): counts by status/package/type/district/village + activations. No PII." },
+      { key: "teamspace:read", desc: "Teamspace (kolaborasi tim internal): ringkasan tugas per tim + kinerja per anggota. Aggregate, no isi chat/dokumen." },
       { key: "*", desc: "All scopes (admin keys)" },
     ],
     endpoints: [
@@ -269,6 +270,10 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       // Tickets
       { method: "GET", path: "/tickets",       scope: "tickets:read", desc: "Active tickets. Query: ?status=&limit=&offset=" },
       { method: "GET", path: "/tickets/stats", scope: "tickets:read", desc: "Ticket stats: open count, SLA compliance" },
+
+      // ══════ TEAMSPACE (v5.0 — kolaborasi tim internal) ══════
+      { method: "GET", path: "/teamspace/tasks", scope: "teamspace:read", desc: "Ringkasan tugas per tim (total/selesai/terlambat) + daftar kartu ringkas. Query: ?detail=1 untuk daftar kartu" },
+      { method: "GET", path: "/teamspace/performance", scope: "teamspace:read", desc: "Kinerja per anggota: tugas selesai/dikerjakan/terlambat + output ops (tiket/lead/collection/canvassing). Query: ?from=&to= (default 30 hari)" },
     ],
     examples: {
       dailyReport: "curl -H 'Authorization: Bearer jbk_live_xxx' https://fiber-tools.arkanova.id/api/public/v1/reports/daily",
@@ -1023,4 +1028,102 @@ publicApiRouter.get("/api/public/v1/customers/timeseries", requireScope("custome
 publicApiRouter.get("/api/public/v1/reports/executive", requireScope("reports:read"), async (req, res) => {
   try { const { period, from, to } = parsePeriod(req); await storage.ensureKpiSnapshotForToday(); res.json(await storage.getExecutiveReport(period, from, to)); }
   catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
+});
+
+// ==================== TEAMSPACE (v5.0 Fase 3 — FR-16xx) ====================
+// Aggregate untuk n8n / BI / AI agent — tanpa isi chat/dokumen (privacy by design).
+
+publicApiRouter.get("/api/public/v1/teamspace/tasks", requireScope("teamspace:read"), async (req, res) => {
+  try {
+    const detail = req.query.detail === "1";
+    const teamsList = await storage.listTeams(false);
+    const pipelineIds = teamsList.map((t) => t.taskPipelineId).filter((x): x is number => x != null);
+    const summaries = await storage.getTeamTaskSummaries(pipelineIds);
+    const out: any = {
+      teams: teamsList.map((t) => ({
+        id: t.id, name: t.name, type: t.type,
+        taskSummary: (t.taskPipelineId != null ? summaries.get(t.taskPipelineId) : null) ?? { total: 0, done: 0, overdue: 0 },
+      })),
+    };
+    if (detail) {
+      const stagesMap = await storage.listStagesForPipelines(pipelineIds);
+      const cards = await storage.listCardsForPipelines(pipelineIds);
+      const teamByPipeline = new Map(teamsList.filter((t) => t.taskPipelineId != null).map((t) => [t.taskPipelineId as number, t]));
+      const nowIso = new Date().toISOString();
+      out.cards = cards.filter((c) => (c as any).isPrivate !== 1).map((c) => {
+        const st = (stagesMap.get(c.pipelineId) ?? []).find((s) => s.id === c.stageId);
+        const semantic = (st as any)?.semanticType ?? null;
+        const done = (c as any).isCompleted === 1 || semantic === "done";
+        return {
+          id: c.id, title: c.title,
+          teamId: teamByPipeline.get(c.pipelineId)?.id ?? null,
+          teamName: teamByPipeline.get(c.pipelineId)?.name ?? null,
+          stage: st?.label ?? null, semanticType: semantic,
+          status: semantic === "cancelled" ? "batal" : done ? "selesai" : (c.dueDate && c.dueDate < nowIso) ? "terlambat" : semantic === "in_progress" ? "dikerjakan" : "belum",
+          assigneeId: c.assigneeId, priority: c.priority,
+          dueDate: c.dueDate, createdAt: c.createdAt, completedAt: (c as any).completedAt ?? null,
+        };
+      });
+    }
+    res.json(out);
+  } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
+});
+
+publicApiRouter.get("/api/public/v1/teamspace/performance", requireScope("teamspace:read"), async (req, res) => {
+  try {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const from = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.from ?? "")) ? String(req.query.from) : fmt(new Date(now.getTime() - 29 * 86400_000));
+    const to = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.to ?? "")) ? String(req.query.to) : fmt(now);
+    const fromIso = new Date(`${from}T00:00:00`).toISOString();
+    const toIso = new Date(`${to}T23:59:59`).toISOString();
+    const nowIso = new Date().toISOString();
+
+    const teamsList = await storage.listTeams(false);
+    const pipelineIds = teamsList.map((t) => t.taskPipelineId).filter((x): x is number => x != null);
+    const [stagesMap, cards, opsMap] = await Promise.all([
+      storage.listStagesForPipelines(pipelineIds),
+      storage.listCardsForPipelines(pipelineIds),
+      storage.getOpsStatsForUsers(fromIso, toIso),
+    ]);
+    const secondaryByCard = await storage.getSecondaryAssigneesForCards(cards.map((c) => c.id));
+    const doneStages = new Set<number>();
+    const cancelledStages = new Set<number>();
+    for (const stages of stagesMap.values()) {
+      for (const s of stages) {
+        if ((s as any).semanticType === "done") doneStages.add(s.id);
+        if ((s as any).semanticType === "cancelled") cancelledStages.add(s.id);
+      }
+    }
+    const isDone = (c: any) => c.isCompleted === 1 || doneStages.has(c.stageId);
+    const completedDateOf = (c: any): string | null => c.completedAt ?? (doneStages.has(c.stageId) ? (c.stageEnteredAt ?? null) : null);
+    const periodCards = cards.filter((c) => !cancelledStages.has(c.stageId)
+      && c.createdAt <= toIso && (!isDone(c) || (completedDateOf(c) ?? nowIso) >= fromIso));
+
+    const perUser = new Map<number, { selesai: number; dikerjakan: number; belum: number; terlambat: number }>();
+    const agg = (id: number) => {
+      const cur = perUser.get(id) ?? { selesai: 0, dikerjakan: 0, belum: 0, terlambat: 0 };
+      perUser.set(id, cur);
+      return cur;
+    };
+    for (const c of periodCards) {
+      const targets = new Set<number>([c.assigneeId ?? -1, ...(secondaryByCard.get(c.id) ?? [])]);
+      targets.delete(-1);
+      const st = (stagesMap.get(c.pipelineId) ?? []).find((s) => s.id === c.stageId);
+      const status = isDone(c) ? "selesai"
+        : (c.dueDate && c.dueDate < nowIso) ? "terlambat"
+        : (st as any)?.semanticType === "in_progress" ? "dikerjakan" : "belum";
+      for (const t of targets) (agg(t) as any)[status]++;
+    }
+    for (const [uid] of opsMap) agg(uid);
+
+    res.json({
+      period: { from, to },
+      users: [...perUser.entries()].map(([userId, tasks]) => {
+        const ops = opsMap.get(userId) ?? { ticketsResolved: 0, leadsWon: 0, collectionsClosed: 0, canvassingReports: 0 };
+        return { userId, tasks: { ...tasks, total: tasks.selesai + tasks.dikerjakan + tasks.belum + tasks.terlambat }, ops };
+      }),
+    });
+  } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });

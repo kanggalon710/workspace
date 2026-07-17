@@ -3609,6 +3609,52 @@ export class DatabaseStorage implements IStorage {
     return rows.map((r) => ({ userId: r.userId, count: Number(r.c) }));
   }
 
+  /** WORKER §14.4: upsert snapshot KPI Teamspace hari ini untuk SEMUA mitra ber-tim.
+   *  Dipanggil berkala — tulisan terakhir hari itu = keadaan end-of-day. */
+  async writeTeamspaceKpiSnapshots(): Promise<void> {
+    const [mitraRows]: any = await this.pool.execute(`SELECT DISTINCT mitra_id AS mitraId FROM teams WHERE archived_at IS NULL`);
+    const today = (() => { const d = new Date(); const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; })();
+    const nowIso = new Date().toISOString();
+    for (const row of mitraRows as any[]) {
+      const mitraId = Number(row.mitraId);
+      // Ringkasan tugas seluruh tim mitra ini (query langsung — di luar tenant ctx).
+      const [pipeRows]: any = await this.pool.execute(
+        `SELECT task_pipeline_id AS pid FROM teams WHERE mitra_id = ? AND archived_at IS NULL AND task_pipeline_id IS NOT NULL`, [mitraId]);
+      const pids = (pipeRows as any[]).map((r) => Number(r.pid));
+      let total = 0, done = 0, overdue = 0;
+      if (pids.length > 0) {
+        const ph = pids.map(() => "?").join(",");
+        const [stat]: any = await this.pool.execute(
+          `SELECT
+             COUNT(*) AS total,
+             SUM(CASE WHEN c.is_completed = 1 OR s.semantic_type IN ('done','cancelled') THEN 1 ELSE 0 END) AS done,
+             SUM(CASE WHEN c.is_completed = 0 AND (s.semantic_type IS NULL OR s.semantic_type NOT IN ('done','cancelled'))
+                       AND c.due_date IS NOT NULL AND c.due_date < ? THEN 1 ELSE 0 END) AS overdue
+           FROM pipeline_cards c
+           JOIN pipeline_stages s ON s.id = c.stage_id
+           WHERE c.mitra_id = ? AND c.pipeline_id IN (${ph}) AND c.archived_at IS NULL`,
+          [nowIso, mitraId, ...pids],
+        );
+        total = Number((stat as any[])[0]?.total ?? 0);
+        done = Number((stat as any[])[0]?.done ?? 0);
+        overdue = Number((stat as any[])[0]?.overdue ?? 0);
+      }
+      const [ciRows]: any = await this.pool.execute(
+        `SELECT COUNT(*) AS c FROM checkin_responses WHERE mitra_id = ? AND response_date = ?`, [mitraId, today]);
+      const checkinsToday = Number((ciRows as any[])[0]?.c ?? 0);
+      await this.pool.execute(
+        `INSERT INTO kpi_snapshots (mitra_id, snapshot_date, teamspace_tasks_total, teamspace_tasks_done, teamspace_tasks_overdue, teamspace_checkins_today, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           teamspace_tasks_total = VALUES(teamspace_tasks_total),
+           teamspace_tasks_done = VALUES(teamspace_tasks_done),
+           teamspace_tasks_overdue = VALUES(teamspace_tasks_overdue),
+           teamspace_checkins_today = VALUES(teamspace_checkins_today)`,
+        [mitraId, today, total, done, overdue, checkinsToday, nowIso],
+      );
+    }
+  }
+
   // ── Penerima konten Rahasia (polymorphic, FR-1404) ──
 
   async setContentRecipients(ownerType: string, ownerId: number, userIds: number[]): Promise<void> {
@@ -8586,6 +8632,11 @@ export class DatabaseStorage implements IStorage {
       { table: "announcements", column: "is_confidential", ddl: "INT DEFAULT 0" },
       { table: "announcements", column: "expires_at", ddl: "TEXT NULL" },
       { table: "users", column: "calendar_feed_token", ddl: "VARCHAR(64) NULL" },
+      // Fase 3 — tren KPI harian Teamspace (§14.4)
+      { table: "kpi_snapshots", column: "teamspace_tasks_total", ddl: "INT DEFAULT 0" },
+      { table: "kpi_snapshots", column: "teamspace_tasks_done", ddl: "INT DEFAULT 0" },
+      { table: "kpi_snapshots", column: "teamspace_tasks_overdue", ddl: "INT DEFAULT 0" },
+      { table: "kpi_snapshots", column: "teamspace_checkins_today", ddl: "INT DEFAULT 0" },
     ];
     for (const { table, column, ddl } of colAdds) {
       try {

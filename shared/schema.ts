@@ -907,6 +907,11 @@ export const kpiSnapshots = mysqlTable("kpi_snapshots", {
   collectionsOpen: int("collections_open").notNull().default(0),
   collectionsClosedToday: int("collections_closed_today").notNull().default(0),
   outstandingAmount: bigint("outstanding_amount", { mode: "number" }).notNull().default(0),
+  // Teamspace v5.0 Fase 3 (§14.4): tren harian tugas internal — upsert oleh teamspace-worker
+  teamspaceTasksTotal: int("teamspace_tasks_total").default(0),
+  teamspaceTasksDone: int("teamspace_tasks_done").default(0),
+  teamspaceTasksOverdue: int("teamspace_tasks_overdue").default(0),
+  teamspaceCheckinsToday: int("teamspace_checkins_today").default(0),
   createdAt: text("created_at").notNull(),
 });
 

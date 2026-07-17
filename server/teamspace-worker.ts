@@ -19,10 +19,11 @@ function appBaseUrl(): string {
 class TeamspaceWorker {
   private timer: ReturnType<typeof setInterval> | null = null;
   private ticking = false;
+  private tickCount = 0;
 
   async start(): Promise<void> {
     if (this.timer) return;
-    console.log("[TeamspaceWorker] started (tick 60s — check-in scheduler)");
+    console.log("[TeamspaceWorker] started (tick 60s — check-in scheduler + KPI snapshot 30m)");
     this.timer = setInterval(() => { void this.tick(); }, TICK_MS);
   }
 
@@ -43,6 +44,13 @@ class TeamspaceWorker {
         await storage.markCheckinSent(q.id, localDateStr(now));
         await this.dispatchQuestion(q);
       }
+      // §14.4: snapshot KPI Teamspace tiap ~30 menit (upsert per hari — tulisan
+      // terakhir = keadaan end-of-day, dasar grafik tren periode-ke-periode).
+      if (this.tickCount % 30 === 0) {
+        await storage.writeTeamspaceKpiSnapshots().catch((e: any) =>
+          console.warn("[TeamspaceWorker] kpi snapshot failed:", e?.message));
+      }
+      this.tickCount++;
     } catch (e: any) {
       console.warn("[TeamspaceWorker] tick failed:", e?.message);
     } finally {
