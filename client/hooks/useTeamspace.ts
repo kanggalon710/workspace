@@ -173,6 +173,7 @@ export function useCardActions(cardId: number) {
     setPrivate: useMutation({ mutationFn: (isPrivate: boolean) => api.post(`/pipelines/cards/${cardId}/private`, { isPrivate }), onSuccess: invalidate }),
     setArchived: useMutation({ mutationFn: (archived: boolean) => api.post(`/pipelines/cards/${cardId}/archive`, { archived }), onSuccess: invalidate }),
     duplicate: useMutation({ mutationFn: () => api.post<PipelineCard>(`/pipelines/cards/${cardId}/duplicate`, {}), onSuccess: invalidate }),
+    setRecurrence: useMutation({ mutationFn: (freq: "" | "daily" | "weekly" | "monthly") => api.patch(`/pipelines/cards/${cardId}/recurrence`, { freq }), onSuccess: invalidate }),
   };
 }
 

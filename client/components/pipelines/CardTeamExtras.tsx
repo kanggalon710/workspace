@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CheckCircle2, Circle, Plus, Tag, Trash2, ListChecks, Copy, Lock, Unlock, Archive, CalendarClock, X } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Tag, Trash2, ListChecks, Copy, Lock, Unlock, Archive, CalendarClock, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -130,6 +130,32 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: 
           )}
         </div>
       </div>
+
+      {/* Ulangi (FR-408) — instance baru dibuat otomatis saat kartu selesai */}
+      {writable && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+            <RotateCcw className="size-3" /> Ulangi:
+          </span>
+          {([["", "Tidak"], ["daily", "Harian"], ["weekly", "Mingguan"], ["monthly", "Bulanan"]] as const).map(([f, label]) => {
+            const current = (() => { try { return card?.recurrenceRule ? JSON.parse(card.recurrenceRule).freq ?? "" : ""; } catch { return ""; } })();
+            const isActive = current === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => actions.setRecurrence.mutate(f, {
+                  onSuccess: () => toast.success(f ? `Diulang ${label.toLowerCase()} — instance baru dibuat saat selesai` : "Pengulangan dimatikan"),
+                  onError: (e: any) => toast.error(e?.message || "Gagal mengubah pengulangan"),
+                })}
+                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors ${isActive ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Label berwarna (FR-413) */}
       <div>

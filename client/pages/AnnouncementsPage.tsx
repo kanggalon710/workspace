@@ -10,6 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AssigneePicker } from "@/components/pipelines/AssigneePicker";
 import { toast } from "sonner";
 import {
   Megaphone, Plus, Edit3, Trash2, Pin, Rocket, Bug as BugIcon,
@@ -254,6 +255,10 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
   const [version, setVersion] = useState("");
   const [publishNow, setPublishNow] = useState(true);
   const [pinnedUntil, setPinnedUntil] = useState("");
+  // Teamspace FR-601..603: penerima terpilih + Rahasia + selesai otomatis
+  const [recipients, setRecipients] = useState<string[]>([]);
+  const [isConfidential, setIsConfidential] = useState(false);
+  const [expiryPreset, setExpiryPreset] = useState<"" | "1" | "3" | "7">("");
 
   // Initialize when opened (re-run when initial changes)
   useEffect(() => {
@@ -263,10 +268,14 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
       setVersion(initial.version ?? "");
       setPublishNow(!!initial.publishedAt);
       setPinnedUntil(initial.pinnedUntil ? initial.pinnedUntil.slice(0, 16) : "");
+      setRecipients((initial.recipientIds ?? []).map(String));
+      setIsConfidential(initial.isConfidential === 1);
+      setExpiryPreset("");
     } else if (open && !initial) {
       setTitle(""); setContent("");
       setCategory("announcement"); setSeverity("info");
       setVersion(""); setPublishNow(true); setPinnedUntil("");
+      setRecipients([]); setIsConfidential(false); setExpiryPreset("");
     }
   }, [open, initial]);
 
@@ -286,12 +295,20 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
       toast.error("Judul dan konten wajib diisi");
       return;
     }
+    if (isConfidential && recipients.length === 0) {
+      toast.error("Pengumuman Rahasia butuh minimal satu penerima");
+      return;
+    }
     mut.mutate({
       title: title.trim(),
       content: content.trim(),
       category, severity, version: version.trim() || undefined,
       publishedAt: publishNow ? new Date().toISOString() : null,
       pinnedUntil: pinnedUntil || null,
+      // Teamspace FR-601..603
+      recipientIds: recipients.map(Number),
+      isConfidential,
+      expiresAt: expiryPreset ? new Date(Date.now() + Number(expiryPreset) * 86400_000).toISOString() : null,
     });
   };
 
@@ -358,6 +375,37 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
             </div>
           </div>
 
+          {/* Teamspace FR-601..603: penerima terpilih + Rahasia + selesai otomatis */}
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Penerima (opsional)</label>
+            <div className="mt-1">
+              <AssigneePicker mode="multi" showSourceToggle={false} value={recipients} onChange={setRecipients} />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">Kosong = broadcast ke semua staff. Terisi = notifikasi hanya ke penerima terpilih.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30">
+              <input type="checkbox" checked={isConfidential} onChange={(e) => setIsConfidential(e.target.checked)} className="mt-0.5" />
+              <div>
+                <div className="font-semibold text-sm">🔒 Rahasia</div>
+                <div className="text-[11px] text-muted-foreground">Hanya penerima terpilih yang bisa melihat — staff lain tidak melihat sama sekali.</div>
+              </div>
+            </label>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Selesai otomatis</label>
+              <Select value={expiryPreset || "none"} onValueChange={(v) => setExpiryPreset(v === "none" ? "" : (v as any))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Manual (tidak expired)</SelectItem>
+                  <SelectItem value="1">1 hari dari sekarang</SelectItem>
+                  <SelectItem value="3">3 hari dari sekarang</SelectItem>
+                  <SelectItem value="7">7 hari dari sekarang</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30">
             <input type="checkbox" checked={publishNow} onChange={(e) => setPublishNow(e.target.checked)} className="mt-0.5" />
             <div>
@@ -365,7 +413,7 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
                 <Send className="h-3.5 w-3.5" /> Publish sekarang
               </div>
               <div className="text-[11px] text-muted-foreground">
-                Semua staff akan langsung dapat notifikasi bell. Uncheck untuk save sebagai draft.
+                {recipients.length > 0 ? `${recipients.length} penerima terpilih akan dapat notifikasi bell.` : "Semua staff akan langsung dapat notifikasi bell."} Uncheck untuk save sebagai draft.
               </div>
             </div>
           </label>

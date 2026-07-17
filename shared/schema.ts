@@ -561,6 +561,7 @@ export const pipelineCards = mysqlTable("pipeline_cards", {
   coverPath: varchar("cover_path", { length: 255 }),        // cover image relatif JABNET_UPLOAD_ROOT
   isPrivate: int("is_private").notNull().default(0),        // "Rahasiakan" — hanya creator/assignee/follower/admin
   archivedAt: text("archived_at"),                          // arsip kartu (FR-409/414)
+  recurrenceRule: text("recurrence_rule"),                  // FR-408 "Ulangi": JSON {freq,interval} — instance baru saat selesai
 }, (t) => ({
   byMitraPipelineStage: index("idx_pipeline_cards_mitra_pipeline_stage").on(t.mitraId, t.pipelineId, t.stageId, t.position),
   byMaster: index("idx_pipeline_cards_master").on(t.mitraId, t.masterCardId),

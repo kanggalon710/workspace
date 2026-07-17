@@ -14,11 +14,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import { DataTable } from "@/components/ui/data-table";
-import { CheckSquare, Search, LayoutList, Table2, AlertTriangle, CalendarClock, ClipboardList } from "lucide-react";
+import { CheckSquare, Search, LayoutList, Table2, AlertTriangle, CalendarClock, ClipboardList, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 type TaskRow = AllTasksResponse["cards"][number];
 type DateFilter = "all" | "overdue" | "today" | "soon";
-type ViewMode = "list" | "table";
+type ViewMode = "list" | "table" | "calendar";
 
 const DATE_FILTERS: Array<{ key: DateFilter; label: string }> = [
   { key: "all", label: "Semua" },
@@ -51,6 +51,93 @@ function isSoon(iso: string | null): boolean {
   if (!iso) return false;
   const t = new Date(iso).getTime();
   return t >= Date.now() && t <= Date.now() + 3 * 24 * 3600 * 1000;
+}
+
+/** View Kalender tugas (FR-411): grid bulanan, kartu mini per tanggal tenggat. */
+function TasksCalendar({ cards, teams, onOpen }: {
+  cards: TaskRow[];
+  teams: AllTasksResponse["teams"];
+  onOpen: (c: TaskRow) => void;
+}) {
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const colorByTeam = useMemo(() => new Map(teams.map((t) => [t.id, t.color])), [teams]);
+
+  const y = viewMonth.getFullYear(); const mo = viewMonth.getMonth();
+  const startPad = (new Date(y, mo, 1).getDay() + 6) % 7;   // Senin = 0
+  const daysInMonth = new Date(y, mo + 1, 0).getDate();
+  const cells: Array<Date | null> = [
+    ...Array.from({ length: startPad }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => new Date(y, mo, i + 1)),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const byDay = useMemo(() => {
+    const map = new Map<number, TaskRow[]>();
+    for (const c of cards) {
+      if (!c.dueDate) continue;
+      const d = new Date(c.dueDate);
+      if (d.getFullYear() !== y || d.getMonth() !== mo) continue;
+      const arr = map.get(d.getDate()) ?? [];
+      arr.push(c);
+      map.set(d.getDate(), arr);
+    }
+    return map;
+  }, [cards, y, mo]);
+
+  const monthLabel = viewMonth.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  const isToday = (d: Date) => d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+
+  return (
+    <div className="rounded-xl border bg-card p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm font-bold capitalize">{monthLabel}</p>
+        <div className="flex items-center gap-1">
+          <button type="button" aria-label="Bulan sebelumnya" onClick={() => setViewMonth(new Date(y, mo - 1, 1))}
+            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+            <ChevronLeft className="size-4" />
+          </button>
+          <button type="button" onClick={() => setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1))}
+            className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted">
+            Hari Ini
+          </button>
+          <button type="button" aria-label="Bulan berikutnya" onClick={() => setViewMonth(new Date(y, mo + 1, 1))}
+            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted">
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-1 overflow-x-auto">
+        {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
+          <span key={d} className="py-1 text-center text-[9px] font-semibold text-muted-foreground">{d}</span>
+        ))}
+        {cells.map((d, i) => {
+          if (!d) return <span key={i} className="min-h-20 rounded-lg bg-muted/20" />;
+          const dayCards = byDay.get(d.getDate()) ?? [];
+          return (
+            <div key={i} className={`min-h-20 rounded-lg border p-1 ${isToday(d) ? "border-primary bg-primary/5" : "border-transparent bg-muted/30"}`}>
+              <p className={`mb-0.5 text-right text-[10px] tabular-nums ${isToday(d) ? "font-bold text-primary" : "text-muted-foreground"}`}>{d.getDate()}</p>
+              <div className="space-y-0.5">
+                {dayCards.slice(0, 3).map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => onOpen(c)}
+                    title={`${c.title} — ${c.teamName ?? ""}`}
+                    className="flex w-full items-center gap-1 rounded bg-background px-1 py-0.5 text-left shadow-sm ring-1 ring-border transition-colors hover:bg-muted"
+                  >
+                    <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: colorByTeam.get(c.teamId ?? -1) ?? "#94A3B8" }} />
+                    <span className="truncate text-[9px] leading-tight">{c.title}</span>
+                  </button>
+                ))}
+                {dayCards.length > 3 && <p className="text-center text-[8px] text-muted-foreground">+{dayCards.length - 3} lagi</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function AllTasksPage() {
@@ -172,6 +259,14 @@ export default function AllTasksPage() {
             </button>
             <button
               type="button"
+              onClick={() => setView("calendar")}
+              aria-pressed={view === "calendar"}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${view === "calendar" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              <CalendarDays className="size-3.5" /> Kalender
+            </button>
+            <button
+              type="button"
               onClick={() => setView("table")}
               aria-pressed={view === "table"}
               className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${view === "table" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
@@ -254,6 +349,8 @@ export default function AllTasksPage() {
           onRowClick={openCard}
           emptyTitle="Tidak ada tugas"
         />
+      ) : view === "calendar" ? (
+        <TasksCalendar cards={filtered} teams={data?.teams ?? []} onOpen={openCard} />
       ) : (
         <div className="space-y-4">
           {(data?.teams ?? [])

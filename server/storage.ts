@@ -3068,6 +3068,61 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
 
+  /** FR-408 "Ulangi": set aturan pengulangan kartu (JSON {freq,interval} atau NULL). */
+  async setCardRecurrence(cardId: number, recurrenceJson: string | null, userId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(pipelineCards)
+      .set({ recurrenceRule: recurrenceJson, updatedAt: new Date().toISOString(), updatedBy: userId } as any)
+      .where(and(eq(pipelineCards.id, cardId), eq(pipelineCards.mitraId, mitraId)));
+    await this.logCardActivity(cardId, userId, "recurrence_changed", { rule: recurrenceJson });
+  }
+
+  /** FR-408: saat kartu berulang ditandai selesai → buat instance berikutnya.
+   *  Instance baru: salinan (label/checklist/assignee/values) TANPA status selesai,
+   *  checklist di-reset unchecked, tenggat digeser sesuai aturan, rule ikut terbawa. */
+  async spawnRecurringCard(cardId: number, userId: number): Promise<PipelineCard | null> {
+    const mitraId = getMitraId();
+    const src = await this.getCard(cardId);
+    if (!src || !(src as any).recurrenceRule) return null;
+    let rule: { freq?: string; interval?: number } = {};
+    try { rule = JSON.parse((src as any).recurrenceRule); } catch { return null; }
+    const freq = rule.freq;
+    if (freq !== "daily" && freq !== "weekly" && freq !== "monthly") return null;
+    const interval = Number.isInteger(rule.interval) && (rule.interval as number) >= 1 ? (rule.interval as number) : 1;
+
+    const base = src.dueDate ? new Date(src.dueDate) : new Date();
+    let nextDue: Date;
+    if (freq === "daily") nextDue = new Date(base.getTime() + interval * 86400_000);
+    else if (freq === "weekly") nextDue = new Date(base.getTime() + interval * 7 * 86400_000);
+    else {
+      // monthly: tanggal sama bulan+interval; clamp ke akhir bulan bila tanggal tidak ada.
+      const y = base.getFullYear(); const mo = base.getMonth() + interval;
+      const lastDay = new Date(y, mo + 1, 0).getDate();
+      nextDue = new Date(y, mo, Math.min(base.getDate(), lastDay), base.getHours(), base.getMinutes());
+    }
+
+    const copy = await this.duplicateCard(cardId, userId);
+    const strippedTitle = copy.title.endsWith(" (salinan)") ? copy.title.slice(0, -" (salinan)".length) : copy.title;
+    await this.db.update(pipelineCards).set({
+      title: strippedTitle,
+      dueDate: nextDue.toISOString(),
+      isCompleted: 0, completedAt: null,
+      recurrenceRule: (src as any).recurrenceRule,
+      updatedAt: new Date().toISOString(), updatedBy: userId,
+    } as any).where(and(eq(pipelineCards.id, copy.id), eq(pipelineCards.mitraId, mitraId)));
+    // Reset checklist instance baru → unchecked semua.
+    const lists = await this.db.select().from(cardChecklists)
+      .where(and(eq(cardChecklists.mitraId, mitraId), eq(cardChecklists.cardId, copy.id)));
+    if (lists.length > 0) {
+      await this.db.update(cardChecklistItems).set({ isChecked: 0 } as any)
+        .where(inArray(cardChecklistItems.checklistId, lists.map((l) => l.id)));
+    }
+    await this.logCardActivity(copy.id, userId, "recurring_spawned", { fromCardId: cardId, freq, interval });
+    const [row] = await this.db.select().from(pipelineCards)
+      .where(and(eq(pipelineCards.id, copy.id), eq(pipelineCards.mitraId, mitraId)));
+    return row!;
+  }
+
   // ── Teamspace Fase 2: Chat Grup (FR-5xx) ──
 
   /** Pesan chat tim, cursor pagination mundur (beforeId) — hasil urut ASC untuk render. */
@@ -8627,6 +8682,7 @@ export class DatabaseStorage implements IStorage {
       { table: "pipeline_cards", column: "cover_path", ddl: "VARCHAR(255) NULL" },
       { table: "pipeline_cards", column: "is_private", ddl: "INT NOT NULL DEFAULT 0" },
       { table: "pipeline_cards", column: "archived_at", ddl: "TEXT NULL" },
+      { table: "pipeline_cards", column: "recurrence_rule", ddl: "TEXT NULL" },
       // Fase 2
       { table: "announcements", column: "team_id", ddl: "INT NULL" },
       { table: "announcements", column: "is_confidential", ddl: "INT DEFAULT 0" },
@@ -13796,6 +13852,18 @@ export class DatabaseStorage implements IStorage {
   // ANNOUNCEMENTS
   // ════════════════════════════════════════════════════════════════
 
+  /** Teamspace Fase 2 (FR-601..603): set targeting pengumuman (Rahasia + expiry) tanpa
+   *  menyentuh patch generic updateAnnouncement. */
+  async setAnnouncementTargeting(id: number, data: { isConfidential?: boolean; expiresAt?: string | null }): Promise<void> {
+    const mitraId = getMitraId();
+    const patch: any = {};
+    if (data.isConfidential !== undefined) patch.isConfidential = data.isConfidential ? 1 : 0;
+    if (data.expiresAt !== undefined) patch.expiresAt = data.expiresAt;
+    if (Object.keys(patch).length === 0) return;
+    await this.db.update(announcements).set(patch)
+      .where(and(eq(announcements.id, id), eq(announcements.mitraId, mitraId)));
+  }
+
   async listAnnouncements(options?: { publishedOnly?: boolean; category?: string; limit?: number }): Promise<any[]> {
     const mitraId = getMitraId();
     const pubClause = options?.publishedOnly
@@ -13827,6 +13895,7 @@ export class DatabaseStorage implements IStorage {
   async createAnnouncement(data: {
     title: string; content: string; category: string; severity?: string;
     version?: string; authorId: number; publishedAt?: string | null; pinnedUntil?: string | null;
+    isConfidential?: boolean; expiresAt?: string | null;
   }): Promise<Announcement> {
     const mitraId = getMitraId();
     const now = new Date().toISOString();
@@ -13840,6 +13909,8 @@ export class DatabaseStorage implements IStorage {
       authorId: data.authorId,
       publishedAt: data.publishedAt ?? null,
       pinnedUntil: data.pinnedUntil ?? null,
+      isConfidential: data.isConfidential ? 1 : 0,
+      expiresAt: data.expiresAt ?? null,
       createdAt: now,
       updatedAt: now,
     } as any);

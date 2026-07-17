@@ -6763,10 +6763,34 @@ router.post("/api/pipelines/cards/:cardId/complete", async (req, res) => {
   if (!card) return;
   const completed = req.body?.completed !== false;
   const updated = await storage.setCardCompleted(card.id, completed, req.authUser!.id);
+  let nextCard = null;
   if (completed) {
     await notifyPipelineCardWatchers(card.id, req.authUser!.id, "Tugas selesai", `"${card.title}" ditandai selesai`);
+    // FR-408 "Ulangi": kartu berulang → buat instance berikutnya otomatis.
+    if ((card as any).recurrenceRule) {
+      nextCard = await storage.spawnRecurringCard(card.id, req.authUser!.id);
+      if (nextCard) {
+        await notifyPipelineCardWatchers(nextCard.id, req.authUser!.id, "Tugas berulang dibuat",
+          `Instance baru "${nextCard.title}" — tenggat ${nextCard.dueDate ? new Date(nextCard.dueDate).toLocaleDateString("id-ID") : "-"}`);
+      }
+    }
   }
-  sendSuccess(res, updated);
+  sendSuccess(res, { ...updated, nextCard });
+});
+
+/** FR-408: set aturan "Ulangi" kartu. */
+router.patch("/api/pipelines/cards/:cardId/recurrence", async (req, res) => {
+  if (!requireWritePipelinesFeature(req, res)) return;
+  const card = await loadGuardedCard(req, res, "cards");
+  if (!card) return;
+  const freq = req.body?.freq;
+  if (freq != null && freq !== "" && !["daily", "weekly", "monthly"].includes(freq)) {
+    return sendError(res, "freq harus daily/weekly/monthly atau kosong", 400);
+  }
+  const interval = Number.isInteger(req.body?.interval) && req.body.interval >= 1 ? req.body.interval : 1;
+  const json = freq ? JSON.stringify({ freq, interval }) : null;
+  await storage.setCardRecurrence(card.id, json, req.authUser!.id);
+  sendSuccess(res, { ok: true, recurrenceRule: json });
 });
 
 router.post("/api/pipelines/cards/:cardId/private", async (req, res) => {
@@ -8943,7 +8967,19 @@ router.get("/api/announcements", async (req: Request, res: Response) => {
       category,
       limit: Math.min(200, Number(req.query.limit) || 100),
     });
-    sendSuccess(res, list);
+    // Teamspace FR-601/603: pengumuman Rahasia hanya untuk penerima/penulis/admin;
+    // status expired dianotasi (riwayat tetap terbaca penerima — FR-603).
+    const confidentialIds = list.filter((a: any) => a.isConfidential === 1).map((a: any) => a.id);
+    const recipientsMap = await storage.getRecipientsForOwners("announcement", confidentialIds);
+    const uid = req.authUser.id;
+    const nowIsoAnn = new Date().toISOString();
+    const visible = list.filter((a: any) => a.isConfidential !== 1 || isAdmin
+      || a.authorId === uid || (recipientsMap.get(a.id) ?? []).includes(uid));
+    sendSuccess(res, visible.map((a: any) => ({
+      ...a,
+      recipientIds: a.isConfidential === 1 ? (recipientsMap.get(a.id) ?? []) : [],
+      isExpired: Boolean(a.expiresAt && a.expiresAt < nowIsoAnn),
+    })));
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
@@ -8957,6 +8993,11 @@ router.get("/api/announcements/:id", async (req: Request, res: Response) => {
     if (!row.publishedAt && !hasPermission(req, "announcements_admin")) {
       return sendError(res, "Akses ditolak", 403);
     }
+    // Teamspace FR-601: Rahasia → hanya penerima/penulis/admin (404 sembunyikan keberadaan).
+    if ((row as any).isConfidential === 1 && !hasPermission(req, "announcements_admin") && row.authorId !== req.authUser.id) {
+      const rcpts = await storage.getContentRecipients("announcement", row.id);
+      if (!rcpts.includes(req.authUser.id)) return sendError(res, "Pengumuman tidak ditemukan", 404);
+    }
     sendSuccess(res, row);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -8966,11 +9007,14 @@ router.post("/api/announcements", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "announcements_admin")) return sendError(res, "Akses ditolak", 403);
   try {
-    const { title, content, category, severity, version, publishedAt, pinnedUntil } = req.body;
+    const { title, content, category, severity, version, publishedAt, pinnedUntil, isConfidential, expiresAt, recipientIds } = req.body;
     if (!title?.trim() || !content?.trim() || !category) return sendError(res, "title, content, category wajib");
     if (!["feature_update", "bug_fix", "announcement", "maintenance", "training"].includes(category)) {
       return sendError(res, "category tidak valid");
     }
+    // Teamspace FR-601: penerima terpilih + Rahasia + expiry otomatis.
+    const targetIds: number[] = Array.isArray(recipientIds) ? recipientIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0) : [];
+    if (isConfidential && targetIds.length === 0) return sendError(res, "Pengumuman Rahasia butuh minimal satu penerima");
     const row = await storage.createAnnouncement({
       title: String(title).trim(),
       content: String(content).trim(),
@@ -8978,10 +9022,25 @@ router.post("/api/announcements", async (req: Request, res: Response) => {
       authorId: req.authUser.id,
       publishedAt: publishedAt ? String(publishedAt) : null,
       pinnedUntil: pinnedUntil ? String(pinnedUntil) : null,
+      isConfidential: Boolean(isConfidential),
+      expiresAt: expiresAt ? String(expiresAt) : null,
     });
+    if (targetIds.length > 0) await storage.setContentRecipients("announcement", row.id, targetIds);
 
-    // Kalau published sekarang → broadcast notif
-    if (row.publishedAt) {
+    // Publish → notif: bertarget bila ada penerima terpilih, broadcast bila tidak.
+    if (row.publishedAt && targetIds.length > 0) {
+      const catLabel: any = { feature_update: "🚀 Fitur Baru", bug_fix: "🐛 Perbaikan Bug", announcement: "📢 Pengumuman", maintenance: "🔧 Maintenance", training: "📚 Training" };
+      for (const uidTarget of targetIds) {
+        if (uidTarget === req.authUser.id) continue;
+        await storage.createNotification({
+          userId: uidTarget, type: "announcement",
+          title: `${catLabel[row.category] ?? "📢"}: ${row.title}`,
+          message: row.content.length > 150 ? row.content.slice(0, 147) + "..." : row.content,
+          link: `/announcements/${row.id}`, entityType: "announcement", entityId: row.id,
+          fromUserId: req.authUser.id,
+        }).catch(() => {});
+      }
+    } else if (row.publishedAt) {
       const categoryLabel: any = {
         feature_update: "🚀 Fitur Baru",
         bug_fix: "🐛 Perbaikan Bug",
@@ -9016,6 +9075,17 @@ router.patch("/api/announcements/:id", async (req: Request, res: Response) => {
     const before = await storage.getAnnouncement(id);
     if (!before) return sendError(res, "Tidak ditemukan", 404);
     const row = await storage.updateAnnouncement(id, req.body);
+    // Teamspace FR-601: update targeting (Rahasia/expiry/penerima) bila dikirim.
+    if (req.body?.isConfidential !== undefined || req.body?.expiresAt !== undefined) {
+      await storage.setAnnouncementTargeting(id, {
+        isConfidential: req.body.isConfidential !== undefined ? Boolean(req.body.isConfidential) : undefined,
+        expiresAt: req.body.expiresAt !== undefined ? (req.body.expiresAt ? String(req.body.expiresAt) : null) : undefined,
+      });
+    }
+    if (Array.isArray(req.body?.recipientIds)) {
+      await storage.setContentRecipients("announcement", id,
+        req.body.recipientIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0));
+    }
     // Kalau baru dipublish sekarang → broadcast notif
     if (!before.publishedAt && row?.publishedAt) {
       const categoryLabel: any = {

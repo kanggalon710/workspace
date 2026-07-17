@@ -5,6 +5,45 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
+## [v5.0.0] - 2026-07-17 — Teamspace Fase 3 + pelengkap Fase 2: LENGKAP (pengganti Cicle penuh)
+
+### Added — Fase 3
+- **Laporan Kinerja terpadu** (FR-10xx + FR-1006, `/teamspace/performance`):
+  - Skor deterministik 0-100 per anggota (`shared/performanceScore`, 7 test): bobot
+    on-time 40 / penyelesaian 25 / check-in 15 / ops 20 — configurable via
+    `app_settings.teamspace_score_weights`; bintang 1-5 + label; AI TIDAK menilai
+  - Scope 3 tingkat: supervisor lihat semua · manager lihat timnya · member lihat dirinya
+  - **Output ops disandingkan** (pembeda vs Cicle): tiket resolved, lead won,
+    collection closed, laporan canvassing per user per periode
+  - Donut distribusi status, on-time rate, cycle time, **Kemungkinan Penghambat**
+    (> `teamspace_stuck_threshold_days`, default 40 — configurable, klik → buka kartu)
+  - **Saran AI** (FR-1004): 1 paragraf via Claude API (`claude-haiku-4-5`), prompt
+    angka-aktual anti-halusinasi, cache 24 jam; aktifkan via `teamspace_ai_enabled`
+    + `anthropic_api_key` di app_settings
+- **Cheers** (FR-1203, `/teamspace/cheers`): kirim apresiasi + notifikasi, kotak
+  diterima/dikirim, leaderboard 30 hari
+- **KPI snapshot harian** (§14.4): kolom teamspace di `kpi_snapshots`, di-upsert
+  worker tiap 30 menit — dasar grafik tren
+- **Open API scope `teamspace:read`** (FR-16xx): `/api/public/v1/teamspace/tasks`
+  + `/teamspace/performance` untuk n8n/BI/AI (kartu Rahasia dikecualikan)
+
+### Added — pelengkap Fase 2
+- **Pengumuman bertarget** (FR-601..603): penerima terpilih (notifikasi hanya ke
+  mereka), toggle **Rahasia** (staff lain tidak melihat sama sekali — filter
+  server-side), **Selesai otomatis** (1/3/7 hari, status expired dianotasi)
+- **View Kalender tugas** (FR-411): grid bulanan di Semua Tugas, kartu mini per
+  tanggal tenggat dengan dot warna tim, klik → buka kartu
+- **Recurring card** (FR-408) "Ulangi": harian/mingguan/bulanan per kartu — saat
+  ditandai selesai, instance baru dibuat otomatis (checklist di-reset, tenggat
+  digeser month-anchored, rule terbawa) + notifikasi
+
+### Verifikasi
+- typecheck 0 error · **426/426 unit test** (41 test Teamspace) · build produksi sukses
+- Backlog tersisa (non-blocking): nested team tree UI, pencarian ⌘K konten
+  Teamspace, voice note, Tiptap editor, WA digest — lihat PRD §3 Fase 3 opsional
+
+---
+
 ## [v5.0.0-fase2] - 2026-07-17 — Teamspace Fase 2: Chat, Jadwal, Check-in, Dokumen & File
 
 ### Added
