@@ -79,8 +79,12 @@ export default function PipelineBoardPage() {
     if (c) setSelectedCard(c);
   }, []);
 
-  const openCard = useCallback((cardId: number) => { setSelectedCard(cardId); navigate(`/pipelines/${pid}?card=${cardId}`); }, [navigate, pid]);
-  const closeCard = () => { setSelectedCard(null); navigate(`/pipelines/${pid}`, { replace: true }); };
+  // Teamspace: pertahankan base path sesuai route asal — board tim harus tetap di
+  // /teamspace/boards (gate `team_tasks`); navigasi ke /pipelines akan memblokir
+  // anggota tim yang tidak punya izin ops `pipelines`.
+  const basePath = teamParams ? `/teamspace/boards/${pid}` : `/pipelines/${pid}`;
+  const openCard = useCallback((cardId: number) => { setSelectedCard(cardId); navigate(`${basePath}?card=${cardId}`); }, [navigate, basePath]);
+  const closeCard = () => { setSelectedCard(null); navigate(basePath, { replace: true }); };
   const [search, setSearch] = useState("");
   const [dateField, setDateField] = useState<DateField>("created");
   const [range, setRange] = useState<DateRange>("all");
@@ -184,7 +188,9 @@ export default function PipelineBoardPage() {
             icon={ShieldAlert}
             title="Tidak dapat membuka pipeline"
             description={(pipelineError as Error).message || "Anda tidak memiliki akses ke pipeline ini."}
-            action={{ label: "Kembali ke Pipelines", onClick: () => navigate("/pipelines") }}
+            action={teamParams
+              ? { label: "Kembali ke Tim Saya", onClick: () => navigate("/teamspace/teams") }
+              : { label: "Kembali ke Pipelines", onClick: () => navigate("/pipelines") }}
           />
         </div>
       </section>
@@ -346,7 +352,7 @@ export default function PipelineBoardPage() {
           onClose={closeCard}
           writable={writable}
           caps={pipeline?.capabilities ?? []}
-          newTabHref={`/pipelines/${pid}?card=${selectedCard}`}
+          newTabHref={`${basePath}?card=${selectedCard}`}
         />
       )}
       {showFields && pid != null && (
@@ -360,7 +366,7 @@ export default function PipelineBoardPage() {
       )}
       {showSettings && pipeline && (
         <PipelineSettingsDialog pipeline={pipeline} open={showSettings} onClose={() => setShowSettings(false)}
-          onDeleted={() => { setShowSettings(false); navigate("/pipelines"); }} />
+          onDeleted={() => { setShowSettings(false); navigate(teamParams ? "/teamspace/teams" : "/pipelines"); }} />
       )}
       {showImport && pid != null && (
         <CardImportDialog pipelineId={pid} fields={fields} open={showImport} onClose={() => setShowImport(false)} />
