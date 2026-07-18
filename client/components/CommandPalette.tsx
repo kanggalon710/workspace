@@ -21,7 +21,7 @@ import {
   Cpu, Wifi, AlertCircle, Heart, Server, Rows3, Split, Link2, GitBranch,
   Calculator, FileSpreadsheet, ClipboardList, Megaphone, Bug, KeyRound,
   MessageCircle, Settings, TrendingUp, Sun, Moon, LogOut, User, Building2, Kanban,
-  UsersRound, FileText, SquareCheckBig, Trophy,
+  UsersRound, FileText, SquareCheckBig, Trophy, History,
 } from "lucide-react";
 
 interface CommandItemDef {
@@ -41,13 +41,30 @@ interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const RECENT_KEY = "jabnet_recent_pages";
+
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { canRead, logout, user } = useAuth();
   const isSysAdmin = !!user?.isSystemAdmin;
   const [darkMode, setDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
+
+  // ── Terakhir Dikunjungi: rekam route (dedupe, max 12) → grup teratas saat ⌘K dibuka ──
+  useEffect(() => {
+    if (!location || location === "/login") return;
+    try {
+      const prev: string[] = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+      const next = [location, ...prev.filter((p) => p !== location)].slice(0, 12);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    } catch { /* storage blocked — abaikan */ }
+  }, [location]);
+  const [recents, setRecents] = useState<string[]>([]);
+  useEffect(() => {
+    if (!open) return;
+    try { setRecents(JSON.parse(localStorage.getItem(RECENT_KEY) || "[]")); } catch { setRecents([]); }
+  }, [open]);
 
   // ── Search All Teamspace (gaya Cicle): cari tim/kartu/dokumen dari ⌘K ──
   const [search, setSearch] = useState("");
@@ -178,6 +195,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     },
   ];
 
+  // Terakhir Dikunjungi: resolve path riwayat → item nav dikenal (permission-aware, skip halaman aktif)
+  const allNavDefs = [...navigationItems, ...assetItems, ...billingItems, ...toolsItems, ...teamspaceItems, ...adminItems];
+  const recentItems = recents
+    .filter((p) => p !== location)
+    .map((p) => allNavDefs.find((i) => i.path === p))
+    .filter((i): i is CommandItemDef => !!i)
+    .filter((i) => (!i.requireSystemAdmin || isSysAdmin) && (!i.permission || canRead(i.permission)))
+    .slice(0, 5);
+
   const filterByPerm = (items: CommandItemDef[]) =>
     items.filter((item) => {
       if (item.requireSystemAdmin && !isSysAdmin) return false;
@@ -229,6 +255,21 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 <p className="text-xs text-muted-foreground/60">Coba kata kunci lain.</p>
               </div>
             </CommandEmpty>
+            {/* Terakhir Dikunjungi: lompat balik cepat ke halaman yang baru dibuka */}
+            {!search && recentItems.length > 0 && (
+              <>
+                <CommandGroup heading="Terakhir Dikunjungi">
+                  {recentItems.map((item) => (
+                    <CommandItem key={`recent-${item.id}`} value={`riwayat-${item.label}`} onSelect={() => item.path && navigate(item.path)}>
+                      <History />
+                      <span>{item.label}</span>
+                      <span className="ml-auto text-2xs text-muted-foreground">Riwayat</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
             {/* Search All Teamspace (gaya Cicle): hasil konten live — value diberi suffix
                 search agar lolos filter cmdk (match tim bisa dari deskripsi). */}
             {tsResults && (tsResults.teams.length + tsResults.cards.length + tsResults.docs.length) > 0 && (

@@ -7,10 +7,10 @@ import {
   MapPinned, ListChecks, Search, BarChart3, Contact, TrendingUp, ChevronRight,
   ChevronDown, Network, Wrench, Megaphone, Settings,
   Router, Wifi, Activity, Package, AlertCircle, MessageCircle, Camera, Heart, KeyRound,
-  Bug, Building2, Kanban, MessageSquare, UsersRound, CheckSquare,
+  Bug, Building2, Kanban, MessageSquare, UsersRound, CheckSquare, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
 
@@ -164,6 +164,37 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+// ─── Favorit + persist state (localStorage, per-browser) ───
+const FAV_KEY = "jabnet_nav_favorites";
+const EXP_KEY = "jabnet_nav_expanded";
+
+function loadJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch { return fallback; }
+}
+function saveJson(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage penuh/blocked — abaikan */ }
+}
+
+type FlatLeaf = { label: string; path: string; icon: any; groupLabel: string };
+
+/** Flatten semua leaf (termasuk nested children) yang visible — dipakai filter & Favorit. */
+function flattenLeaves(groups: NavGroup[]): FlatLeaf[] {
+  const out: FlatLeaf[] = [];
+  for (const g of groups) {
+    for (const item of g.items) {
+      if (item.children) {
+        for (const c of item.children) if (c.path) out.push({ label: c.label, path: c.path, icon: c.icon, groupLabel: `${g.label} · ${item.label}` });
+      } else if (item.path) {
+        out.push({ label: item.label, path: item.path, icon: item.icon, groupLabel: g.label });
+      }
+    }
+  }
+  return out;
+}
+
 // ─── Helpers ───
 function isPathActive(location: string, path: string): boolean {
   if (path === "/") return location === "/";
@@ -189,11 +220,24 @@ export function Sidebar() {
   const { user, logout, canRead } = useAuth();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
 
-  // ── Collapsible state: set of expanded group keys ──
+  // ── Collapsible state: set of expanded group keys (persist per-browser) ──
   const [expanded, setExpanded] = useState<Set<string>>(() => {
+    const saved = loadJson<string[]>(EXP_KEY, []);
     const active = findActiveGroup(location, navGroups);
-    return new Set(active ? [active] : []);
+    return new Set(active ? [...saved, active] : saved);
   });
+  useEffect(() => { saveJson(EXP_KEY, [...expanded]); }, [expanded]);
+
+  // ── Favorit (pin) + quick filter ──
+  const [favorites, setFavorites] = useState<string[]>(() => loadJson<string[]>(FAV_KEY, []));
+  const toggleFavorite = useCallback((path: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path];
+      saveJson(FAV_KEY, next);
+      return next;
+    });
+  }, []);
+  const [navQuery, setNavQuery] = useState("");
 
   // Auto-expand group when navigating to a page in a collapsed group
   useEffect(() => {
@@ -249,6 +293,52 @@ export function Sidebar() {
     }))
     .filter(group => group.items.length > 0);
 
+  // Flatten leaf visible → dipakai Favorit (permission-aware) + quick filter.
+  const flatLeaves = useMemo(() => flattenLeaves(visibleGroups), [visibleGroups]);
+  const favLeaves = useMemo(
+    () => favorites.map((p) => flatLeaves.find((l) => l.path === p)).filter((x): x is FlatLeaf => !!x),
+    [favorites, flatLeaves],
+  );
+  const q = navQuery.trim().toLowerCase();
+  const filteredLeaves = q
+    ? flatLeaves.filter((l) => l.label.toLowerCase().includes(q) || l.groupLabel.toLowerCase().includes(q))
+    : null;
+
+  /** Baris menu flat (dipakai Favorit + hasil filter) dengan tombol pin di hover. */
+  const renderFlatLeaf = (leaf: FlatLeaf, showGroup: boolean) => {
+    const isActive = isPathActive(location, leaf.path);
+    const isFav = favorites.includes(leaf.path);
+    const LeafIcon = leaf.icon;
+    return (
+      <div key={leaf.path} className="group/item relative">
+        <button
+          onClick={() => { setLocation(leaf.path); setMobileOpen(false); setNavQuery(""); }}
+          className={cn(
+            "w-full flex items-center gap-2.5 pl-3 pr-7 py-2 rounded-lg text-sm transition-all",
+            isActive ? "bg-primary text-white font-medium shadow-elev-sm" : "text-white/70 hover:text-white hover:bg-white/10"
+          )}
+        >
+          <LeafIcon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 min-w-0 text-left">
+            <span className="block truncate">{leaf.label}</span>
+            {showGroup && <span className={cn("block truncate text-[9px] uppercase tracking-wider", isActive ? "text-white/60" : "text-white/30")}>{leaf.groupLabel}</span>}
+          </span>
+        </button>
+        <button
+          type="button"
+          aria-label={isFav ? `Hapus ${leaf.label} dari Favorit` : `Pin ${leaf.label} ke Favorit`}
+          onClick={(e) => { e.stopPropagation(); toggleFavorite(leaf.path); }}
+          className={cn(
+            "absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 transition-all",
+            isFav ? "flex text-amber-400" : "hidden group-hover/item:flex text-white/40 hover:text-amber-300"
+          )}
+        >
+          <Star className={cn("h-3 w-3", isFav && "fill-current")} />
+        </button>
+      </div>
+    );
+  };
+
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo — refined enterprise header */}
@@ -276,9 +366,55 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* Quick filter menu */}
+      <div className="px-3 pt-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40 pointer-events-none" />
+          <input
+            value={navQuery}
+            onChange={(e) => setNavQuery(e.target.value)}
+            placeholder="Filter menu…"
+            className="w-full rounded-lg bg-white/5 border border-white/10 pl-8 pr-7 py-1.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary/60 focus:bg-white/10 transition-colors"
+          />
+          {navQuery && (
+            <button
+              type="button"
+              aria-label="Bersihkan filter menu"
+              onClick={() => setNavQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Navigation (fully scrollable) */}
       <nav className="flex-1 p-3 overflow-y-auto space-y-1">
-        {visibleGroups.map((group) => {
+        {/* ── Hasil filter (flat, semua grup) ── */}
+        {filteredLeaves && (
+          <div className="space-y-0.5">
+            {filteredLeaves.length === 0 ? (
+              <p className="px-3 py-4 text-xs text-white/40">Tidak ada menu cocok "{navQuery}".</p>
+            ) : (
+              filteredLeaves.map((l) => renderFlatLeaf(l, true))
+            )}
+          </div>
+        )}
+
+        {/* ── Favorit (pinned, persist per-browser) ── */}
+        {!filteredLeaves && favLeaves.length > 0 && (
+          <div>
+            <p className="text-[10px] uppercase text-amber-300/70 px-3 mb-1 font-semibold tracking-wider flex items-center gap-1.5">
+              <Star className="h-3 w-3 fill-current" /> Favorit
+            </p>
+            <div className="space-y-0.5 mb-2">
+              {favLeaves.map((l) => renderFlatLeaf(l, false))}
+            </div>
+          </div>
+        )}
+
+        {!filteredLeaves && visibleGroups.map((group) => {
           const isCollapsible = group.collapsible !== false;
           const isExpanded = !isCollapsible || expanded.has(group.key);
           const GroupIcon = group.icon;
@@ -366,20 +502,35 @@ export function Sidebar() {
                             <div className="ml-2 pl-2 border-l border-white/10 space-y-0.5">
                               {visibleChildren.map(child => {
                                 const isActive = child.path ? isPathActive(location, child.path) : false;
+                                const isFav = child.path ? favorites.includes(child.path) : false;
                                 return (
-                                  <button
-                                    key={child.path ?? child.label}
-                                    onClick={() => { if (child.path) { setLocation(child.path); setMobileOpen(false); } }}
-                                    className={cn(
-                                      "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] transition-all",
-                                      isActive
-                                        ? "bg-primary text-white font-medium"
-                                        : "text-white/60 hover:text-white hover:bg-white/10"
+                                  <div key={child.path ?? child.label} className="group/item relative">
+                                    <button
+                                      onClick={() => { if (child.path) { setLocation(child.path); setMobileOpen(false); } }}
+                                      className={cn(
+                                        "w-full flex items-center gap-2 pl-3 pr-7 py-1.5 rounded-md text-[13px] transition-all",
+                                        isActive
+                                          ? "bg-primary text-white font-medium"
+                                          : "text-white/60 hover:text-white hover:bg-white/10"
+                                      )}
+                                    >
+                                      <span className="text-white/30">○</span>
+                                      <span className="truncate">{child.label}</span>
+                                    </button>
+                                    {child.path && (
+                                      <button
+                                        type="button"
+                                        aria-label={isFav ? `Hapus ${child.label} dari Favorit` : `Pin ${child.label} ke Favorit`}
+                                        onClick={(e) => { e.stopPropagation(); toggleFavorite(child.path!); }}
+                                        className={cn(
+                                          "absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 transition-all",
+                                          isFav ? "flex text-amber-400" : "hidden group-hover/item:flex text-white/40 hover:text-amber-300"
+                                        )}
+                                      >
+                                        <Star className={cn("h-3 w-3", isFav && "fill-current")} />
+                                      </button>
                                     )}
-                                  >
-                                    <span className="text-white/30">○</span>
-                                    <span className="truncate">{child.label}</span>
-                                  </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -390,20 +541,33 @@ export function Sidebar() {
                     // ── Leaf item (no children) ──
                     if (!item.path) return null;
                     const isActive = isPathActive(location, item.path);
+                    const isFav = favorites.includes(item.path);
                     return (
-                      <button
-                        key={item.path}
-                        onClick={() => { setLocation(item.path!); setMobileOpen(false); }}
-                        className={cn(
-                          "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all",
-                          isActive
-                            ? "bg-primary text-white font-medium"
-                            : "text-white/70 hover:text-white hover:bg-white/10"
-                        )}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        <span className="flex-1 min-w-0 truncate text-left">{item.label}</span>
-                      </button>
+                      <div key={item.path} className="group/item relative">
+                        <button
+                          onClick={() => { setLocation(item.path!); setMobileOpen(false); }}
+                          className={cn(
+                            "w-full flex items-center gap-2.5 pl-3 pr-7 py-2 rounded-lg text-sm transition-all",
+                            isActive
+                              ? "bg-primary text-white font-medium shadow-elev-sm"
+                              : "text-white/70 hover:text-white hover:bg-white/10"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1 min-w-0 truncate text-left">{item.label}</span>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={isFav ? `Hapus ${item.label} dari Favorit` : `Pin ${item.label} ke Favorit`}
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(item.path!); }}
+                          className={cn(
+                            "absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 transition-all",
+                            isFav ? "flex text-amber-400" : "hidden group-hover/item:flex text-white/40 hover:text-amber-300"
+                          )}
+                        >
+                          <Star className={cn("h-3 w-3", isFav && "fill-current")} />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -471,7 +635,7 @@ export function Sidebar() {
           <div className="flex items-center justify-between gap-2 px-3 pt-3 mt-2 border-t border-white/5">
             <div className="flex items-center gap-1.5 text-[10px] text-white/40">
               <span className="inline-flex h-1.5 w-1.5 rounded-full bg-success pulse-ring-success" />
-              <span className="font-medium tracking-wider">v4.2.1</span>
+              <span className="font-medium tracking-wider">v5.0</span>
             </div>
             <span className="text-[9px] text-white/30 uppercase tracking-widest font-semibold">
               JABNET · Garut

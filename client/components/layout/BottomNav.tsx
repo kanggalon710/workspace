@@ -5,6 +5,7 @@ import {
   Radio, CircleDot, Landmark, Cable, Wrench,
   Server, Split, Calculator, FileSpreadsheet, ClipboardList,
   X, MapPinned, ListChecks, BarChart3, Contact, Search, TrendingUp, Kanban,
+  UsersRound, CheckSquare,
 } from "lucide-react";
 import { BottomSheet } from "@/components/shared/BottomSheet";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +38,8 @@ const ASSET_SUBMENU = [
 ] as const;
 
 const NETWORK_TOOLS_SUBMENU = [
+  { icon: UsersRound, label: "Tim Saya", path: "/teamspace/teams" },
+  { icon: CheckSquare, label: "Semua Tugas", path: "/teamspace/tasks" },
   { icon: Kanban, label: "Pipelines", path: "/pipelines" },
   { icon: Server, label: "OTB Manager", path: "/otb-manager" },
   { icon: Split, label: "Splitter Chain", path: "/splitter-chain" },
@@ -46,6 +49,8 @@ const NETWORK_TOOLS_SUBMENU = [
 ];
 
 const MARKETING_TOOLS_SUBMENU = [
+  { icon: UsersRound, label: "Tim Saya", path: "/teamspace/teams" },
+  { icon: CheckSquare, label: "Semua Tugas", path: "/teamspace/tasks" },
   { icon: Search, label: "Prospect Finder", path: "/prospects" },
   { icon: TrendingUp, label: "Keputusan Bisnis", path: "/marketing/bisnis" },
 ];
@@ -69,7 +74,7 @@ export function BottomNav() {
     if (key === "leads") return location.startsWith("/pipelines");
     if (key === "contacts") return location === "/contacts";
     if (key === "assets") return ["/pops", "/odcs", "/odps", "/poles", "/cables"].some(p => location.startsWith(p));
-    if (key === "tools") return ["/otb-manager", "/splitter-chain", "/power-budget", "/export-import", "/audit-logs", "/bestray-manager", "/splitters", "/cable-cores", "/core-connections", "/marketing", "/canvassing", "/contacts", "/prospects"].some(p => location.startsWith(p));
+    if (key === "tools") return ["/teamspace", "/otb-manager", "/splitter-chain", "/power-budget", "/export-import", "/audit-logs", "/bestray-manager", "/splitters", "/cable-cores", "/core-connections", "/marketing", "/canvassing", "/contacts", "/prospects"].some(p => location.startsWith(p));
     return false;
   };
 
