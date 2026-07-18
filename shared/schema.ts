@@ -2865,6 +2865,39 @@ export const hrOvertime = mysqlTable("hr_overtime", {
 export type HrEmployeeProfile = typeof hrEmployeeProfiles.$inferSelect;
 export type HrOvertime = typeof hrOvertime.$inferSelect;
 
+// ── PRD-HR HR-2: komponen gaji + slip (FR-HR-6xx) ──
+export const hrSalaryComponents = mysqlTable("hr_salary_components", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  baseSalary: double("base_salary").notNull().default(0),
+  fixedAllowance: double("fixed_allowance").notNull().default(0),
+  fixedDeduction: double("fixed_deduction").notNull().default(0),
+  workingDays: int("working_days").notNull().default(22),
+  enrollBpjsTk: int("enroll_bpjs_tk").notNull().default(1),
+  enrollBpjsKes: int("enroll_bpjs_kes").notNull().default(1),
+  updatedAt: text("updated_at"),
+}, (t) => ({ uniqUser: uniqueIndex("uq_hr_salary_user").on(t.mitraId, t.userId) }));
+
+export const hrPayslips = mysqlTable("hr_payslips", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  period: varchar("period", { length: 7 }).notNull(),          // YYYY-MM
+  userId: int("user_id").notNull(),
+  detail: text("detail").notNull(),                            // JSON PayslipResult + input ringkas
+  gross: double("gross").notNull(),
+  totalAllowance: double("total_allowance").notNull(),
+  totalDeduction: double("total_deduction").notNull(),
+  takeHomePay: double("take_home_pay").notNull(),
+  status: varchar("status", { length: 10 }).notNull().default("ready"),  // ready|paid
+  generatedBy: int("generated_by").notNull(),
+  generatedAt: text("generated_at").notNull(),
+  paidAt: text("paid_at"),
+}, (t) => ({ uniqSlip: uniqueIndex("uq_hr_payslip").on(t.mitraId, t.period, t.userId) }));
+
+export type HrSalaryComponent = typeof hrSalaryComponents.$inferSelect;
+export type HrPayslip = typeof hrPayslips.$inferSelect;
+
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {
   id: int("id").autoincrement().primaryKey(),

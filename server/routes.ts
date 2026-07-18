@@ -8234,6 +8234,95 @@ router.post("/api/hr/overtime/:id/review", async (req, res) => {
   sendSuccess(res, row);
 });
 
+// ── HR-2: PAYROLL (FR-HR-6xx) — metode GROSS + TER bulanan; data gaji = hr_sdm write only ──
+
+router.get("/api/hr/salary", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: data gaji butuh 'hr_sdm' (write)", 403);
+  sendSuccess(res, await storage.listSalaryComponents());
+});
+router.post("/api/hr/salary/:userId", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const b = req.body ?? {};
+  await storage.saveSalaryComponent(Number(req.params.userId), {
+    baseSalary: Number(b.baseSalary) || 0, fixedAllowance: Number(b.fixedAllowance) || 0,
+    fixedDeduction: Number(b.fixedDeduction) || 0, workingDays: Number(b.workingDays) || 22,
+    enrollBpjsTk: b.enrollBpjsTk !== false, enrollBpjsKes: b.enrollBpjsKes !== false,
+  });
+  sendSuccess(res, { ok: true });
+});
+
+/** Generate payroll massal 1 periode (FR-HR-604/608): kehadiran + lembur + cuti unpaid otomatis. */
+router.post("/api/hr/payroll/generate", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const period = String((req.body ?? {}).period ?? "").slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(period)) return sendError(res, "period wajib YYYY-MM", 400);
+  const { computePayslip } = await import("../shared/payroll.js");
+  const comps = await storage.listSalaryComponents();
+  const employees = (await storage.listEmployees()).filter((e) => e.isEmployee === 1 && e.isActive !== 0);
+  const attSummary = await storage.attendanceSummary(period);
+  const overtime = (await storage.listOvertime({ status: "approved" })).filter((o) => o.date.startsWith(period));
+  const unpaidLeaves = (await storage.listLeaves({ status: "approved", limit: 500 }))
+    .filter((l) => l.type === "unpaid" && l.startDate.startsWith(period));
+  let generated = 0; const skipped: string[] = [];
+  for (const emp of employees) {
+    const c = comps.find((x) => x.userId === emp.id);
+    if (!c || c.baseSalary <= 0) { skipped.push(emp.username); continue; }
+    const profile = await storage.getEmployeeProfile(emp.id);
+    const alphaDays = attSummary.find((a) => a.userId === emp.id && a.status === "alpha")?.c ?? 0;
+    const otHours = overtime.filter((o) => o.userId === emp.id).reduce((s, o) => s + o.hours, 0);
+    const unpaidDays = unpaidLeaves.filter((l) => l.userId === emp.id)
+      .reduce((s, l) => s + (Math.round((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 86400_000) + 1), 0);
+    const result = computePayslip({
+      baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, variableAllowance: 0,
+      overtimeHours: otHours, alphaDays, unpaidLeaveDays: unpaidDays, workingDays: c.workingDays,
+      fixedDeduction: c.fixedDeduction, ptkp: (profile?.ptkpStatus as any) || "TK/0",
+      enrollBpjsTk: c.enrollBpjsTk === 1, enrollBpjsKes: c.enrollBpjsKes === 1,
+    });
+    await storage.upsertPayslip({
+      period, userId: emp.id,
+      detail: JSON.stringify({ ...result, input: { baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, fixedDeduction: c.fixedDeduction, otHours, alphaDays, unpaidDays, ptkp: profile?.ptkpStatus || "TK/0" } }),
+      gross: result.gross, totalAllowance: result.totalAllowance,
+      totalDeduction: result.totalDeduction, takeHomePay: result.takeHomePay,
+      generatedBy: req.authUser.id,
+    });
+    generated++;
+  }
+  sendSuccess(res, { generated, skipped });
+});
+
+router.get("/api/hr/payroll", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, await storage.listPayslips({ period: req.query.period ? String(req.query.period) : undefined }));
+});
+router.post("/api/hr/payroll/:id/status", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { status } = req.body ?? {};
+  if (status !== "ready" && status !== "paid") return sendError(res, "status wajib ready/paid", 400);
+  await storage.setPayslipStatus(Number(req.params.id), status);
+  sendSuccess(res, { ok: true });
+});
+/** ESS: slip gaji milik sendiri — hanya yang SUDAH dibayar (FR-HR-1104). */
+router.get("/api/hr/my/payslips", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  sendSuccess(res, await storage.listPayslips({ userId: req.authUser.id, paidOnly: true }));
+});
+/** Ekspor jurnal CSV per periode (default keputusan §15.1 = CSV). */
+router.get("/api/hr/payroll/export", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const period = String(req.query.period ?? "").slice(0, 7);
+  const slips = await storage.listPayslips({ period });
+  const users = await storage.listEmployees();
+  const nameOf = (id: number) => users.find((u) => u.id === id)?.name ?? `#${id}`;
+  const rows = [["Periode", "Karyawan", "Bruto", "Total Tunjangan", "Total Potongan", "PPh21", "THP", "Status"].join(";")];
+  for (const s of slips) {
+    let pph = ""; try { pph = String(JSON.parse(s.detail).pph21 ?? ""); } catch { /* biarkan kosong */ }
+    rows.push([s.period, nameOf(s.userId), s.gross, s.totalAllowance, s.totalDeduction, pph, s.takeHomePay, s.status].join(";"));
+  }
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="payroll-${period}.csv"`);
+  res.send(rows.join("\n"));
+});
+
 /** Saldo cuti milik sendiri (FR-HR-403). Kuota configurable via app_settings hr_leave_quota. */
 router.get("/api/hr/leaves/balance", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);

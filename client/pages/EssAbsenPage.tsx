@@ -11,6 +11,43 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { CalendarCheck2, LogIn, LogOut, MapPin, Camera } from "lucide-react";
 import { toast } from "sonner";
 
+/** Slip gaji milik sendiri (paid only) dengan rincian. */
+function PayslipCard() {
+  const { data: slips } = useQuery({
+    queryKey: ["/api/hr/my/payslips"],
+    queryFn: () => api.get<any[]>(`/hr/my/payslips`),
+  });
+  const [open, setOpen] = useState<number | null>(null);
+  if ((slips ?? []).length === 0) return null;
+  const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+  return (
+    <Card padding="md">
+      <p className="text-sm font-semibold">Slip Gaji Saya</p>
+      {(slips ?? []).map((s: any) => {
+        let d: any = {}; try { d = JSON.parse(s.detail); } catch { /* rincian tak terbaca */ }
+        const expanded = open === s.id;
+        return (
+          <div key={s.id} className="mt-2 rounded-lg border">
+            <button type="button" onClick={() => setOpen(expanded ? null : s.id)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm">
+              <span className="font-medium tabular-nums">{s.period}</span>
+              <span className="ml-auto font-bold tabular-nums">{rp(s.takeHomePay)}</span>
+            </button>
+            {expanded && (
+              <div className="border-t px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+                <p>Bruto: <b className="tabular-nums">{rp(s.gross)}</b> · Tunjangan+Lembur: <b className="tabular-nums">{rp(s.totalAllowance)}</b></p>
+                <p>BPJS TK: <b className="tabular-nums">{rp(d.bpjsTkEmp ?? 0)}</b> · BPJS Kes: <b className="tabular-nums">{rp(d.bpjsKesEmp ?? 0)}</b> · PPh 21 ({d.terRatePct ?? 0}%): <b className="tabular-nums">{rp(d.pph21 ?? 0)}</b></p>
+                {(d.absenceDeduction ?? 0) > 0 && <p>Potongan absen/cuti tidak dibayar: <b className="tabular-nums">{rp(d.absenceDeduction)}</b></p>}
+                <p className="text-foreground">Take Home Pay: <b className="tabular-nums">{rp(s.takeHomePay)}</b></p>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
 /** Ajukan lembur + riwayat milik sendiri (FR-HR-207). */
 function OvertimeCard() {
   const qc = useQueryClient();
@@ -146,6 +183,9 @@ export default function EssAbsenPage() {
           ))}
         </Card>
       )}
+
+      {/* Slip gaji saya (FR-HR-1104) — hanya yang sudah dibayar */}
+      <PayslipCard />
 
       {/* Ajukan lembur (FR-HR-207) */}
       <OvertimeCard />

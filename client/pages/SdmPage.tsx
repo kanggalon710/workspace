@@ -83,7 +83,7 @@ export default function SdmPage() {
     return u ? (u.name || u.username) : id != null ? `#${id}` : "–";
   };
 
-  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "pengaturan">(readable ? "kehadiran" : "cuti");
+  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "pengaturan">(readable ? "kehadiran" : "cuti");
   const [date, setDate] = useState(todayIso());
   const [month, setMonth] = useState(todayIso().slice(0, 7));
   // Draft kehadiran: userId -> status (belum tersimpan)
@@ -264,8 +264,42 @@ export default function SdmPage() {
       { key: "rekap", label: "Rekap Bulanan", icon: BarChart3 },
     ] : []),
     { key: "cuti", label: "Cuti", icon: Plane },
+    ...(writable ? [{ key: "payroll", label: "Payroll", icon: BarChart3 }] : []),
     ...(readable ? [{ key: "pengaturan", label: "Pengaturan", icon: IdCard }] : []),
   ] as const;
+
+  // ── HR-2: payroll ──
+  const [payPeriod, setPayPeriod] = useState(todayIso().slice(0, 7));
+  const { data: salaries } = useQuery({
+    queryKey: ["/api/hr/salary"],
+    queryFn: () => api.get<any[]>(`/hr/salary`),
+    enabled: writable && tab === "payroll",
+  });
+  const { data: payslips } = useQuery({
+    queryKey: ["/api/hr/payroll", payPeriod],
+    queryFn: () => api.get<any[]>(`/hr/payroll?period=${payPeriod}`),
+    enabled: writable && tab === "payroll",
+  });
+  const [salaryEdit, setSalaryEdit] = useState<Record<number, { baseSalary: string; fixedAllowance: string }>>({});
+  const saveSalary = useMutation({
+    mutationFn: ({ userId, baseSalary, fixedAllowance }: { userId: number; baseSalary: number; fixedAllowance: number }) =>
+      api.post(`/hr/salary/${userId}`, { baseSalary, fixedAllowance }),
+    onSuccess: () => { toast.success("Komponen gaji tersimpan"); qc.invalidateQueries({ queryKey: ["/api/hr/salary"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  const genPayroll = useMutation({
+    mutationFn: () => api.post(`/hr/payroll/generate`, { period: payPeriod }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.generated} slip dibuat${r.skipped?.length ? ` · ${r.skipped.length} dilewati (gaji belum diisi)` : ""}`);
+      qc.invalidateQueries({ queryKey: ["/api/hr/payroll"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Gagal generate"),
+  });
+  const markPaid = useMutation({
+    mutationFn: (id: number) => api.post(`/hr/payroll/${id}/status`, { status: "paid" }),
+    onSuccess: () => { toast.success("Ditandai sudah bayar — slip tampil di ESS karyawan"); qc.invalidateQueries({ queryKey: ["/api/hr/payroll"] }); },
+  });
+  const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
 
   return (
     <PageContainer>
@@ -412,6 +446,62 @@ export default function SdmPage() {
             </Card>
           )}
         </PageSection>
+      )}
+
+      {tab === "payroll" && writable && (
+        <>
+          <PageSection title="Komponen Gaji" description="Gaji pokok + tunjangan tetap per karyawan (BPJS & PPh 21 TER dihitung otomatis; PTKP dari profil)">
+            <Card padding="none" className="divide-y overflow-hidden">
+              {activeUsers.map((u: any) => {
+                const cur = (salaries ?? []).find((s) => s.userId === u.id);
+                const ed = salaryEdit[u.id] ?? { baseSalary: String(cur?.baseSalary ?? ""), fixedAllowance: String(cur?.fixedAllowance ?? "") };
+                return (
+                  <div key={u.id} className="flex flex-wrap items-center gap-2 px-4 py-2 text-sm">
+                    <span className="min-w-32 flex-1 truncate">{u.name || u.username}</span>
+                    <input type="number" placeholder="Gaji pokok" value={ed.baseSalary}
+                      onChange={(e) => setSalaryEdit((p) => ({ ...p, [u.id]: { ...ed, baseSalary: e.target.value } }))}
+                      className="h-8 w-32 rounded-lg border bg-background px-2 text-xs tabular-nums" />
+                    <input type="number" placeholder="Tunjangan tetap" value={ed.fixedAllowance}
+                      onChange={(e) => setSalaryEdit((p) => ({ ...p, [u.id]: { ...ed, fixedAllowance: e.target.value } }))}
+                      className="h-8 w-32 rounded-lg border bg-background px-2 text-xs tabular-nums" />
+                    <Button size="xs" variant="outline" loading={saveSalary.isPending}
+                      onClick={() => saveSalary.mutate({ userId: u.id, baseSalary: Number(ed.baseSalary) || 0, fixedAllowance: Number(ed.fixedAllowance) || 0 })}>
+                      Simpan
+                    </Button>
+                  </div>
+                );
+              })}
+            </Card>
+          </PageSection>
+
+          <PageSection title="Slip Gaji" description="Generate menghitung: kehadiran (alpha), lembur approved, cuti tidak dibayar, BPJS, PPh 21 TER"
+            actions={<span className="flex items-center gap-2">
+              <input type="month" value={payPeriod} onChange={(e) => setPayPeriod(e.target.value)}
+                className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Periode payroll" />
+              <Button size="sm" loading={genPayroll.isPending} onClick={() => genPayroll.mutate()}>Generate</Button>
+              <a href={`/api/hr/payroll/export?period=${payPeriod}`} className="text-xs text-primary underline">CSV</a>
+            </span>}>
+            {(payslips ?? []).length === 0 ? (
+              <EmptyState icon={BarChart3} size="sm" title="Belum ada slip" description="Isi komponen gaji lalu klik Generate." />
+            ) : (
+              <Card padding="none" className="divide-y overflow-hidden">
+                {(payslips ?? []).map((s: any) => (
+                  <div key={s.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
+                    <span className="min-w-0 flex-1">
+                      <b>{nameOf(s.userId)}</b>
+                      <span className="ml-2 text-xs text-muted-foreground">Bruto {rp(s.gross)} · Potongan {rp(s.totalDeduction)}</span>
+                    </span>
+                    <b className="tabular-nums">{rp(s.takeHomePay)}</b>
+                    <StatusBadge size="sm" variant={s.status === "paid" ? "success" : "pending"} label={s.status === "paid" ? "Sudah Bayar" : "Siap Bayar"} />
+                    {s.status !== "paid" && (
+                      <Button size="xs" variant="success" loading={markPaid.isPending} onClick={() => markPaid.mutate(s.id)}>Tandai Bayar</Button>
+                    )}
+                  </div>
+                ))}
+              </Card>
+            )}
+          </PageSection>
+        </>
       )}
 
       {tab === "pengaturan" && readable && (

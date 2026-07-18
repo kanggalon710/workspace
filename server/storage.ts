@@ -159,7 +159,8 @@ import {
   hrAttendanceEvents, hrOfficeLocations, hrShifts, hrScheduleAssignments, hrHolidays,
   type HrAttendanceEvent, type HrShift,
   hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime, hrShiftRoster,
-  type HrEmployeeProfile, type HrOvertime,
+  hrSalaryComponents, hrPayslips,
+  type HrEmployeeProfile, type HrOvertime, type HrSalaryComponent, type HrPayslip,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -4035,6 +4036,57 @@ export class DatabaseStorage implements IStorage {
     const mitraId = getMitraId();
     await this.db.update(hrLeaves).set({ stage: "hr", managerReviewedBy: managerId })
       .where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
+  }
+
+  // ── HR-2: komponen gaji + slip ──
+  async getSalaryComponent(userId: number): Promise<HrSalaryComponent | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(hrSalaryComponents)
+      .where(and(eq(hrSalaryComponents.mitraId, mitraId), eq(hrSalaryComponents.userId, userId)));
+    return row;
+  }
+
+  async saveSalaryComponent(userId: number, c: { baseSalary: number; fixedAllowance: number; fixedDeduction: number; workingDays: number; enrollBpjsTk: boolean; enrollBpjsKes: boolean }): Promise<void> {
+    const mitraId = getMitraId();
+    await this.pool.execute(
+      `INSERT INTO hr_salary_components (mitra_id, user_id, base_salary, fixed_allowance, fixed_deduction, working_days, enroll_bpjs_tk, enroll_bpjs_kes, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE base_salary=VALUES(base_salary), fixed_allowance=VALUES(fixed_allowance),
+         fixed_deduction=VALUES(fixed_deduction), working_days=VALUES(working_days),
+         enroll_bpjs_tk=VALUES(enroll_bpjs_tk), enroll_bpjs_kes=VALUES(enroll_bpjs_kes), updated_at=VALUES(updated_at)`,
+      [mitraId, userId, c.baseSalary, c.fixedAllowance, c.fixedDeduction, c.workingDays, c.enrollBpjsTk ? 1 : 0, c.enrollBpjsKes ? 1 : 0, new Date().toISOString()]);
+  }
+
+  async listSalaryComponents(): Promise<HrSalaryComponent[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrSalaryComponents).where(eq(hrSalaryComponents.mitraId, mitraId));
+  }
+
+  async upsertPayslip(slip: { period: string; userId: number; detail: string; gross: number; totalAllowance: number; totalDeduction: number; takeHomePay: number; generatedBy: number }): Promise<void> {
+    const mitraId = getMitraId();
+    await this.pool.execute(
+      `INSERT INTO hr_payslips (mitra_id, period, user_id, detail, gross, total_allowance, total_deduction, take_home_pay, status, generated_by, generated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ready', ?, ?)
+       ON DUPLICATE KEY UPDATE detail=VALUES(detail), gross=VALUES(gross), total_allowance=VALUES(total_allowance),
+         total_deduction=VALUES(total_deduction), take_home_pay=VALUES(take_home_pay),
+         status=IF(status='paid','paid','ready'), generated_by=VALUES(generated_by), generated_at=VALUES(generated_at)`,
+      [mitraId, slip.period, slip.userId, slip.detail, slip.gross, slip.totalAllowance, slip.totalDeduction, slip.takeHomePay, slip.generatedBy, new Date().toISOString()]);
+  }
+
+  async listPayslips(opts: { period?: string; userId?: number; paidOnly?: boolean }): Promise<HrPayslip[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrPayslips.mitraId, mitraId)];
+    if (opts.period) conds.push(eq(hrPayslips.period, opts.period));
+    if (opts.userId != null) conds.push(eq(hrPayslips.userId, opts.userId));
+    if (opts.paidOnly) conds.push(eq(hrPayslips.status, "paid"));
+    return this.db.select().from(hrPayslips).where(and(...conds)).orderBy(desc(hrPayslips.id)).limit(500);
+  }
+
+  async setPayslipStatus(id: number, status: "ready" | "paid"): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(hrPayslips)
+      .set({ status, paidAt: status === "paid" ? new Date().toISOString() : null })
+      .where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
   }
 
   async createOvertime(rec: { userId: number; date: string; hours: number; reason?: string | null }): Promise<HrOvertime> {
@@ -9205,6 +9257,28 @@ export class DatabaseStorage implements IStorage {
           reason VARCHAR(255) NULL, status VARCHAR(10) NOT NULL DEFAULT 'pending',
           reviewed_by INT NULL, created_at TEXT NOT NULL,
           KEY idx_hr_ot_user (mitra_id, user_id, date), KEY idx_hr_ot_status (mitra_id, status)
+        )`,
+      },
+      {
+        name: "hr_salary_components",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_salary_components (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1, user_id INT NOT NULL,
+          base_salary DOUBLE NOT NULL DEFAULT 0, fixed_allowance DOUBLE NOT NULL DEFAULT 0,
+          fixed_deduction DOUBLE NOT NULL DEFAULT 0, working_days INT NOT NULL DEFAULT 22,
+          enroll_bpjs_tk INT NOT NULL DEFAULT 1, enroll_bpjs_kes INT NOT NULL DEFAULT 1,
+          updated_at TEXT NULL,
+          UNIQUE KEY uq_hr_salary_user (mitra_id, user_id)
+        )`,
+      },
+      {
+        name: "hr_payslips",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_payslips (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          period VARCHAR(7) NOT NULL, user_id INT NOT NULL, detail TEXT NOT NULL,
+          gross DOUBLE NOT NULL, total_allowance DOUBLE NOT NULL, total_deduction DOUBLE NOT NULL,
+          take_home_pay DOUBLE NOT NULL, status VARCHAR(10) NOT NULL DEFAULT 'ready',
+          generated_by INT NOT NULL, generated_at TEXT NOT NULL, paid_at TEXT NULL,
+          UNIQUE KEY uq_hr_payslip (mitra_id, period, user_id)
         )`,
       },
       {
