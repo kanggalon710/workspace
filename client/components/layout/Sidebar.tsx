@@ -43,6 +43,8 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    // Restrukturisasi (feedback user): SEMUA yang terkait aset jaringan berkumpul di sini —
+    // aset fisik + Core Management + tools jaringan sebagai sub-menu (tab) collapsible.
     key: "aset", label: "Aset Jaringan", icon: Network,
     items: [
       { label: "POP", path: "/pops", icon: Radio, permission: "pops" },
@@ -50,16 +52,26 @@ const navGroups: NavGroup[] = [
       { label: "ODP", path: "/odps", icon: CircleDot, permission: "odps" },
       { label: "Tiang", path: "/poles", icon: Landmark, permission: "poles" },
       { label: "Kabel", path: "/cables", icon: Cable, permission: "cables" },
-    ],
-  },
-  {
-    key: "core", label: "Core Management", icon: Cpu,
-    items: [
-      { label: "OTB Manager", path: "/otb-manager", icon: Server, permission: "otbs" },
-      { label: "Bestray", path: "/bestray-manager", icon: Rows3, permission: "bestrays" },
-      { label: "Splitter", path: "/splitters", icon: Split, permission: "splitters" },
-      { label: "Core Manager", path: "/cable-cores", icon: Cpu, permission: "cable_cores" },
-      { label: "Koneksi Core", path: "/core-connections", icon: Link2, permission: "core_connections" },
+      {
+        label: "Core Management",
+        icon: Cpu,
+        children: [
+          { label: "OTB Manager", path: "/otb-manager", icon: Server, permission: "otbs" },
+          { label: "Bestray", path: "/bestray-manager", icon: Rows3, permission: "bestrays" },
+          { label: "Splitter", path: "/splitters", icon: Split, permission: "splitters" },
+          { label: "Core Manager", path: "/cable-cores", icon: Cpu, permission: "cable_cores" },
+          { label: "Koneksi Core", path: "/core-connections", icon: Link2, permission: "core_connections" },
+        ],
+      },
+      {
+        label: "Tools Jaringan",
+        icon: Wrench,
+        children: [
+          { label: "Splitter Chain", path: "/splitter-chain", icon: GitBranch, permission: "splitter_chain" },
+          { label: "Power Budget", path: "/power-budget", icon: Calculator, permission: "power_budget" },
+          { label: "Export / Import", path: "/export-import", icon: FileSpreadsheet, permission: "export_import" },
+        ],
+      },
     ],
   },
   {
@@ -83,12 +95,10 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    key: "tools", label: "Tools", icon: Wrench,
+    // Feedback user: Pipelines berdiri sendiri, tidak bergabung di Tools.
+    key: "pipelines", label: "Pipelines", icon: Kanban,
     items: [
       { label: "Pipelines", path: "/pipelines", icon: Kanban, permission: "pipelines" },
-      { label: "Splitter Chain", path: "/splitter-chain", icon: GitBranch, permission: "splitter_chain" },
-      { label: "Power Budget", path: "/power-budget", icon: Calculator, permission: "power_budget" },
-      { label: "Export / Import", path: "/export-import", icon: FileSpreadsheet, permission: "export_import" },
     ],
   },
   {

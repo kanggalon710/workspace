@@ -35,7 +35,7 @@ import {
   insertCableCoreSchema, insertCoreConnectionSchema,
   LEAD_STAGES, LEAD_STAGE_LABELS,
   ALL_PERMISSION_KEYS, type PermissionLevel, checkPermLevel, cleansePermissionMatrix,
-  ALL_FEATURES,
+  ALL_FEATURES, TEAM_DEFAULT_VIEWS,
   type RuleTriggerType,
   type PipelineCard,
   type PipelineCardAttachment,
@@ -6423,13 +6423,19 @@ async function enrichTeams(teamsList: Array<any>, forUserId?: number): Promise<A
   const unread = forUserId != null
     ? await storage.getUnreadChatCounts(forUserId, teamsList.map((t) => t.id))
     : new Map<number, number>();
-  return teamsList.map((t) => ({
+  return teamsList.map((t) => {
+    // Tim lama menyimpan enabledViews sebelum view default baru (mis. "announcements")
+    // ada — merge default agar tab baru langsung muncul tanpa migrasi data.
+    const stored = parseEnabledViews(t.enabledViews);
+    const views = [...stored, ...TEAM_DEFAULT_VIEWS.filter((v) => !stored.includes(v))];
+    return {
     ...t,
-    enabledViews: parseEnabledViews(t.enabledViews),
+    enabledViews: views,
     memberCount: memberCounts.get(t.id) ?? 0,
     taskSummary: (t.taskPipelineId != null ? summaries.get(t.taskPipelineId) : null) ?? { total: 0, done: 0, overdue: 0 },
     unreadChat: unread.get(t.id) ?? 0,
-  }));
+    };
+  });
 }
 
 router.get("/api/teamspace/teams", async (req, res) => {

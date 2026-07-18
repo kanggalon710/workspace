@@ -22,6 +22,8 @@ import { MoreVertical, Download, Upload, CheckSquare, ShieldAlert } from "lucide
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { BulkActionBar } from "@/components/pipelines/BulkActionBar";
+import { TeamModuleNav } from "@/components/teamspace/TeamModuleNav";
+import { useTeam } from "@/hooks/useTeamspace";
 import { MetricsStrip } from "@/components/pipelines/MetricsStrip";
 import { MetricsConfigDialog } from "@/components/pipelines/MetricsConfigDialog";
 
@@ -83,6 +85,9 @@ export default function PipelineBoardPage() {
   // /teamspace/boards (gate `team_tasks`); navigasi ke /pipelines akan memblokir
   // anggota tim yang tidak punya izin ops `pipelines`.
   const basePath = teamParams ? `/teamspace/boards/${pid}` : `/pipelines/${pid}`;
+  // UX Cicle: di board tim, tampilkan bar modul tim persisten (Ringkasan/Chat/…) —
+  // dari board tidak lagi jalan buntu tanpa tombol kembali.
+  const { data: ownerTeam } = useTeam(teamParams && (pipeline as any)?.teamId ? Number((pipeline as any).teamId) : null);
   const openCard = useCallback((cardId: number) => { setSelectedCard(cardId); navigate(`${basePath}?card=${cardId}`); }, [navigate, basePath]);
   const closeCard = () => { setSelectedCard(null); navigate(basePath, { replace: true }); };
   const [search, setSearch] = useState("");
@@ -205,6 +210,8 @@ export default function PipelineBoardPage() {
       className="flex flex-col h-dvh overflow-hidden md:h-full md:overflow-visible -m-4 md:-m-6 -mt-16 md:-mt-6 pb-20 md:pb-0"
     >
       <header className="sticky top-0 z-10 bg-background pt-16 md:pt-6 px-4 md:px-6 pb-2 border-b border-border/40">
+        {/* UX Cicle: navigasi modul tim selalu terlihat di atas board Tugas */}
+        {teamParams && ownerTeam && <TeamModuleNav team={ownerTeam} active="tasks" />}
         {/* Mobile: tombol aksi wrap ke baris sendiri (basis-full) — kalau satu baris,
             judul pipeline (flex-1) terjepit jadi 0px oleh deretan tombol. */}
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 md:flex-nowrap md:items-start">
