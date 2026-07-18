@@ -11,12 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Combobox } from "@/components/ui/combobox";
 import { AssigneePicker } from "@/components/pipelines/AssigneePicker";
 import { useAuth } from "@/context/AuthContext";
 import { UsersRound, Plus, CheckSquare, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 
-function TeamCard({ t, onOpen }: { t: TeamSummary; onOpen: () => void }) {
+function TeamCard({ t, parentName, onOpen }: { t: TeamSummary; parentName?: string | null; onOpen: () => void }) {
   const pct = t.taskSummary.total > 0 ? Math.round((t.taskSummary.done / t.taskSummary.total) * 100) : 0;
   return (
     <Card
@@ -24,6 +25,10 @@ function TeamCard({ t, onOpen }: { t: TeamSummary; onOpen: () => void }) {
       className="cursor-pointer transition-shadow hover:shadow-elev-md"
       onClick={onOpen}
     >
+      {/* FR-302 nested: penanda sub-tim */}
+      {parentName && (
+        <p className="mb-1.5 truncate text-[10px] text-muted-foreground">↳ Sub-tim dari <b>{parentName}</b></p>
+      )}
       <div className="flex items-start gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${t.color}1A` }} aria-hidden="true">
           {t.type === "PROJECT"
@@ -78,8 +83,33 @@ export default function TeamListPage() {
   const [color, setColor] = useState(TEAM_COLOR_PALETTE[0]);
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [managerIds, setManagerIds] = useState<string[]>([]);
+  const [parentId, setParentId] = useState<string>("");   // FR-302: tim induk (opsional)
 
-  const resetCreate = () => { setName(""); setDesc(""); setType("TEAM"); setColor(TEAM_COLOR_PALETTE[0]); setMemberIds([]); setManagerIds([]); };
+  const resetCreate = () => { setName(""); setDesc(""); setType("TEAM"); setColor(TEAM_COLOR_PALETTE[0]); setMemberIds([]); setManagerIds([]); setParentId(""); };
+
+  // FR-302: urutkan hierarki — root diikuti sub-timnya (depth-first); yatim (induk tak
+  // terlihat, mis. bukan anggota induknya) tampil sebagai root.
+  const ordered = (() => {
+    const list = teamsData ?? [];
+    const byParent = new Map<number | null, TeamSummary[]>();
+    const ids = new Set(list.map((t) => t.id));
+    for (const t of list) {
+      const key = t.parentId != null && ids.has(t.parentId) ? t.parentId : null;
+      const arr = byParent.get(key) ?? [];
+      arr.push(t);
+      byParent.set(key, arr);
+    }
+    const nameById = new Map(list.map((t) => [t.id, t.name]));
+    const out: Array<{ t: TeamSummary; parentName: string | null }> = [];
+    const walk = (parent: number | null) => {
+      for (const t of byParent.get(parent) ?? []) {
+        out.push({ t, parentName: parent != null ? (nameById.get(parent) ?? null) : null });
+        walk(t.id);
+      }
+    };
+    walk(null);
+    return out;
+  })();
 
   const onCreate = async () => {
     if (!name.trim()) return;
@@ -90,6 +120,7 @@ export default function TeamListPage() {
         type, color,
         memberIds: memberIds.map(Number),
         managerIds: managerIds.map(Number),
+        parentId: parentId ? Number(parentId) : null,
       });
       toast.success(`Tim "${name.trim()}" dibuat`);
       setShowCreate(false);
@@ -154,8 +185,8 @@ export default function TeamListPage() {
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {teamsData.map((t) => (
-            <TeamCard key={t.id} t={t} onOpen={() => navigate(`/teamspace/teams/${t.id}`)} />
+          {ordered.map(({ t, parentName }) => (
+            <TeamCard key={t.id} t={t} parentName={parentName} onOpen={() => navigate(`/teamspace/teams/${t.id}`)} />
           ))}
         </div>
       )}
@@ -202,6 +233,16 @@ export default function TeamListPage() {
               <div>
                 <label className="mb-1 block text-xs font-medium" htmlFor="team-desc">Deskripsi (opsional)</label>
                 <Textarea id="team-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Fokus kerja tim ini…" rows={2} />
+              </div>
+              <div>
+                <span className="mb-1 block text-xs font-medium">Tim induk (opsional)</span>
+                <Combobox
+                  placeholder="Tanpa induk (root)"
+                  options={(teamsData ?? []).map((t) => ({ value: String(t.id), label: t.name }))}
+                  value={parentId}
+                  onChange={(v) => setParentId(v ?? "")}
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">Untuk struktur bertingkat: Divisi → Tim → Proyek (FR-302).</p>
               </div>
               <div>
                 <span className="mb-1 block text-xs font-medium">Anggota</span>

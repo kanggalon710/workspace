@@ -19,6 +19,9 @@ interface Props {
   card: any;               // CardDetail — kolom Teamspace (isCompleted/isPrivate/dueDate) dibaca dinamis
   writable: boolean;
   onClose: () => void;
+  /** BUG-008 layout 2 kolom: "side" = cover/selesai/tenggat/ulangi/label/aksi (panel kanan),
+   *  "main" = checklist (kolom konten). Default "all" = semuanya (backward compat). */
+  section?: "all" | "side" | "main";
 }
 
 /** Konversi ISO ↔ nilai input datetime-local (waktu lokal). */
@@ -30,7 +33,9 @@ function isoToLocalInput(iso: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: Props) {
+export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, section = "all" }: Props) {
+  const showSide = section !== "main";
+  const showMain = section !== "side";
   const actions = useCardActions(cardId);
   const m = usePipelineMutations(pipelineId);
   const { data: checklists } = useCardChecklists(cardId);
@@ -100,7 +105,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: 
   return (
     <div className="space-y-4">
       {/* Cover image (BUG-007 / FR-405) */}
-      {(coverPath || writable) && (
+      {showSide && (coverPath || writable) && (
         <div>
           <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => {
@@ -131,7 +136,8 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: 
         </div>
       )}
 
-      {/* Selesai + Tenggat */}
+      {/* Selesai + Tenggat + Ulangi + Label — panel aksi (side) */}
+      {showSide && (<>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -252,8 +258,10 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: 
           <p className="text-[11px] text-muted-foreground">Belum ada label.</p>
         )}
       </div>
+      </>)}
 
-      {/* Checklist (FR-406) */}
+      {/* Checklist (FR-406) — konten utama (main) */}
+      {showMain && (
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-xs font-semibold text-muted-foreground">Checklist</span>
@@ -337,9 +345,10 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose }: 
           )}
         </div>
       </div>
+      )}
 
-      {/* Aksi (FR-409) */}
-      {writable && (
+      {/* Aksi (FR-409) — panel aksi (side) */}
+      {showSide && writable && (
         <div>
           <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Aksi</span>
           <div className="flex flex-wrap gap-1.5">

@@ -73,7 +73,7 @@ export function useTeamMutations() {
   const invalidate = () => { qc.invalidateQueries({ queryKey: [KEY] }); };
   return {
     createTeam: useMutation({
-      mutationFn: (b: { name: string; description?: string; icon?: string; color?: string; type?: string; memberIds?: number[]; managerIds?: number[] }) =>
+      mutationFn: (b: { name: string; description?: string; icon?: string; color?: string; type?: string; memberIds?: number[]; managerIds?: number[]; parentId?: number | null }) =>
         api.post<TeamSummary>("/teamspace/teams", b),
       onSuccess: invalidate,
     }),

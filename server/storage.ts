@@ -2611,7 +2611,7 @@ export class DatabaseStorage implements IStorage {
   /** Buat tim + provision board tugas (pipeline + 4 stage default Cicle-style) dalam satu alur.
    *  Pipeline tim ditandai team_id sehingga tersembunyi dari daftar pipeline ops (NFR-012). */
   async createTeam(
-    data: { name: string; description?: string | null; icon?: string | null; color?: string | null; type?: string | null },
+    data: { name: string; description?: string | null; icon?: string | null; color?: string | null; type?: string | null; parentId?: number | null },
     userId: number,
   ): Promise<Team> {
     const mitraId = getMitraId();
@@ -2620,6 +2620,7 @@ export class DatabaseStorage implements IStorage {
     const teamResult = await this.db.insert(teams).values({
       mitraId, name: data.name, description: data.description ?? null,
       icon: data.icon ?? null, color: data.color ?? "#8B5CF6", type,
+      parentId: data.parentId ?? null,                      // FR-302: nested tree
       enabledViews: JSON.stringify(TEAM_DEFAULT_VIEWS),
       createdBy: userId, createdAt: now,
     } as any);
@@ -2651,7 +2652,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateTeam(
     id: number,
-    data: { name?: string; description?: string | null; icon?: string | null; color?: string | null; type?: string; enabledViews?: string[] },
+    data: { name?: string; description?: string | null; icon?: string | null; color?: string | null; type?: string; enabledViews?: string[]; parentId?: number | null },
   ): Promise<Team> {
     const mitraId = getMitraId();
     const before = await this.getTeam(id);
@@ -2663,6 +2664,7 @@ export class DatabaseStorage implements IStorage {
     if (data.color !== undefined) patch.color = data.color;
     if (data.type !== undefined) patch.type = data.type === "PROJECT" ? "PROJECT" : "TEAM";
     if (data.enabledViews !== undefined) patch.enabledViews = JSON.stringify(data.enabledViews);
+    if (data.parentId !== undefined) patch.parentId = data.parentId;   // FR-302
     await this.db.update(teams).set(patch).where(and(eq(teams.id, id), eq(teams.mitraId, mitraId)));
     // Sinkronkan kosmetik board dengan tim.
     if (before.taskPipelineId && (data.name !== undefined || data.color !== undefined || data.icon !== undefined)) {

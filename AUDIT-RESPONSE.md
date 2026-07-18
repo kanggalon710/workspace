@@ -20,18 +20,21 @@
 | ID | Temuan | Status | Catatan |
 |---|---|---|---|
 | BUG-007 | Cover image kartu | ✅ Fixed | Upload/ganti/hapus cover di modal kartu (kolom `cover_path`, endpoint upload/stream/delete, hanya gambar) |
-| BUG-008 | Modal kartu single-column panjang | ⏳ Backlog | Refactor layout 2-kolom + panel aksi sticky — belum dikerjakan (perlu redesign modal bersama, dampak besar) |
+| BUG-008 | Modal kartu single-column panjang | ✅ Fixed | Layout 2 kolom di md+: kiri konten (deskripsi/checklist/komentar/aktivitas), kanan panel aksi **sticky** (stage, prioritas, assignee, cover, tenggat, ulangi, label, aksi) — pola Cicle. Mobile tetap 1 kolom (aksi di atas). Modal default diperlebar |
 | BUG-009 | Badge LIST vs TENGGAT sama-sama "Selesai" | ✅ Fixed | Kolom TENGGAT kini "Tepat waktu"/"Selesai telat" (bukan "Selesai" ganda); tanpa due date → tak ada badge |
-| BUG-010 | Kalender Semua Tugas 1 bulan vs Jadwal 2 bulan | ⏳ Backlog | Inkonsistensi minor; Semua Tugas punya navigasi prev/next. Belum diseragamkan |
-| BUG-011 | Voice note di chat | ⏳ Backlog | Perlu perekaman audio; belum dikerjakan (opsional, bukan blocker) |
+| BUG-010 | Kalender Semua Tugas 1 bulan vs Jadwal 2 bulan | ✅ Fixed | Kalender Semua Tugas kini **2 bulan berdampingan** (xl+; menumpuk di layar sempit) + nav prev/next — konsisten dgn Jadwal tim |
+| BUG-011 | Voice note di chat | ✅ Fixed | Tombol mic di composer chat: rekam via MediaRecorder (webm/m4a), timer + Batal/Kirim, dikirim sebagai lampiran audio, bubble render player `<audio>`. Tipe audio ditambahkan ke attachmentRules |
 
 ## Keputusan Scope (§3)
 
 - **§3.1 Pengumuman per-tim** → dibangun sebagai **modul baru** (opsi a), bukan sekadar filter di `/announcements`.
-- **§3.2 Nested team (HQ→Tim→Proyek)** → tetap **Fase 2 backlog** (kolom `parent_id` sudah disiapkan; UI tree menyusul). Sesuai MVP.
+- **§3.2 Nested team (HQ→Tim→Proyek)** → **DIKERJAKAN (versi dasar)**: picker "Tim induk" di form Buat Tim, `parentId` di create/update (validasi anti-siklus), daftar Tim Saya diurutkan hierarkis dgn penanda "↳ Sub-tim dari X". Tanpa node HQ (root = daftar tim, sesuai PRD adaptasi).
 - **§3.3 Billing FR-15xx** → **resmi out-of-scope**. Sudah ditandai `[DROP SELURUHNYA]` di `PRD-JABNET-TEAMSPACE.md` §7 (Teamspace = modul internal, bukan SaaS per-perusahaan).
 - **§3.4 Filter tim chip vs dropdown** → chip dipertahankan untuk jumlah tim saat ini; migrasi ke dropdown dijadwalkan bila tim > 8–10 (backlog).
 
 ## Sisa backlog (menunggu prioritas)
 
-BUG-008 (modal 2-kolom), BUG-010 (seragamkan kalender), BUG-011 (voice note), nested team tree UI, migrasi filter tim ke dropdown. Semua non-blocker untuk pemakaian tim.
+**Semua 11 temuan audit (BUG-001..011) sudah ditangani.** Tersisa polish opsional:
+migrasi filter tim chip → dropdown bila tim > 8–10 (§3.4), pencarian ⌘K konten Teamspace,
+editor Tiptap WYSIWYG penuh (markdown ringan sudah ada), pindah-induk tim dari UI
+pengaturan tim (server sudah mendukung PATCH parentId).

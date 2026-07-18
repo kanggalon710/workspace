@@ -6454,10 +6454,17 @@ router.post("/api/teamspace/teams", async (req, res) => {
   if (!canCreateTeam({ isAdmin: isPipelineAdmin(req), teamsKeyLevel: teamsKeyLevelOf(req) })) {
     return sendError(res, "Akses ditolak: butuh izin 'teams' (write) untuk membuat tim", 403);
   }
-  const { name, description, icon, color, type, memberIds, managerIds } = req.body ?? {};
+  const { name, description, icon, color, type, memberIds, managerIds, parentId } = req.body ?? {};
   if (!name || typeof name !== "string" || !name.trim()) return sendError(res, "Nama tim wajib diisi", 400);
+  // FR-302: nested tree — validasi tim induk ada (& belum diarsip).
+  let parent: number | null = null;
+  if (parentId != null && Number(parentId) > 0) {
+    const p = await storage.getTeam(Number(parentId));
+    if (!p || p.archivedAt) return sendError(res, "Tim induk tidak ditemukan", 400);
+    parent = p.id;
+  }
   const team = await storage.createTeam(
-    { name: name.trim(), description, icon, color, type },
+    { name: name.trim(), description, icon, color, type, parentId: parent },
     req.authUser!.id,
   );
   // Anggota awal (pembuat sudah otomatis manager di storage.createTeam).
@@ -6492,12 +6499,30 @@ router.patch("/api/teamspace/teams/:id", async (req, res) => {
   if (!requireTeamspaceAccess(req, res)) return;
   const team = await loadTeamForManage(req, res);
   if (!team) return;
-  const { name, description, icon, color, type, enabledViews } = req.body ?? {};
+  const { name, description, icon, color, type, enabledViews, parentId } = req.body ?? {};
   if (name !== undefined && (!name || typeof name !== "string" || !name.trim())) return sendError(res, "Nama tim tidak valid", 400);
   const views = enabledViews !== undefined ? parseEnabledViews(JSON.stringify(enabledViews)) : undefined;
+  // FR-302: validasi pindah induk — ada, bukan diri sendiri, dan tidak membentuk siklus
+  // (walk rantai induk calon parent; jumlah tim kecil sehingga loop murah).
+  let parentPatch: number | null | undefined = undefined;
+  if (parentId !== undefined) {
+    if (parentId == null || Number(parentId) <= 0) parentPatch = null;
+    else {
+      const target = Number(parentId);
+      if (target === team.id) return sendError(res, "Tim tidak bisa menjadi induk dirinya sendiri", 400);
+      let cursor = await storage.getTeam(target);
+      if (!cursor || cursor.archivedAt) return sendError(res, "Tim induk tidak ditemukan", 400);
+      for (let i = 0; i < 20 && cursor; i++) {
+        if (cursor.id === team.id) return sendError(res, "Tidak bisa: membentuk siklus induk-anak", 400);
+        cursor = cursor.parentId ? await storage.getTeam(cursor.parentId) : undefined;
+      }
+      parentPatch = target;
+    }
+  }
   const updated = await storage.updateTeam(team.id, {
     name: name?.trim(), description, icon, color, type,
     enabledViews: views as string[] | undefined,
+    parentId: parentPatch,
   });
   await logAudit(req, "TEAM_UPDATE", "team", team.id, updated.name);
   sendSuccess(res, updated);

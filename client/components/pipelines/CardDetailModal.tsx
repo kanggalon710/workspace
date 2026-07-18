@@ -124,7 +124,8 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
   return (
     <>
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className={`${wide ? "max-w-3xl" : "max-w-lg"} w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0`}>
+      {/* BUG-008: default lebih lebar agar layout 2 kolom lega; toggle wide = ekstra lebar */}
+      <DialogContent className={`${wide ? "max-w-5xl" : "max-w-3xl"} w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0`}>
         <DialogTitle className="sr-only">{card?.title ?? "Detail Kartu"}</DialogTitle>
         {isLoading ? (
           <div className="p-6"><div className="h-40 animate-pulse rounded bg-muted" /></div>
@@ -167,8 +168,12 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
               </div>
             </div>
 
-            {/* Body (scrolls) */}
-            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+            {/* Body (scrolls). BUG-008: md+ = 2 kolom — kiri konten (deskripsi/checklist/
+                komentar), kanan panel aksi STICKY (stage/prioritas/assignee/label/aksi)
+                supaya aksi sering dipakai tidak butuh scroll panjang (pola Cicle). */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="md:grid md:grid-cols-[minmax(0,1fr)_16.5rem] md:items-start md:gap-6">
+              <aside className="space-y-4 md:order-2 md:sticky md:top-0">
               {/* Pindah Stage — click-based, mobile-friendly chips (no drag needed). The move
                   endpoint runs automation + timeline + audit server-side, same as drag. */}
               <div>
@@ -248,18 +253,8 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 </div>
               )}
 
-              {/* BUG-002: deskripsi mendukung markdown (bold/italic/list/heading/link) + preview */}
-              <div>
-                <span className="mb-1 block text-[10px] font-medium text-muted-foreground">Deskripsi / catatan</span>
-                <MarkdownField
-                  value={card.description ?? ""}
-                  disabled={!writable}
-                  onSave={(text) => { if (writable && text !== (card.description ?? "")) m.updateCard.mutateAsync({ cardId, description: text }); }}
-                />
-              </div>
-
-              {/* Teamspace v5.0: selesai + tenggat + label + checklist + aksi (salin/rahasia/arsip) */}
-              <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} />
+              {/* Teamspace: cover + selesai/tenggat + ulangi + label + aksi — panel aksi */}
+              <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} section="side" />
 
               {/* Lead link — show linked lead or "Buat Lead" button */}
               <div className="flex items-center gap-2 pt-1">
@@ -273,6 +268,22 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                   </Button>
                 ) : null}
               </div>
+              </aside>
+
+              {/* ── Kolom konten (kiri di md+) ── */}
+              <div className="mt-4 min-w-0 space-y-4 md:order-1 md:mt-0">
+              {/* BUG-002: deskripsi mendukung markdown (bold/italic/list/heading/link) + preview */}
+              <div>
+                <span className="mb-1 block text-[10px] font-medium text-muted-foreground">Deskripsi / catatan</span>
+                <MarkdownField
+                  value={card.description ?? ""}
+                  disabled={!writable}
+                  onSave={(text) => { if (writable && text !== (card.description ?? "")) m.updateCard.mutateAsync({ cardId, description: text }); }}
+                />
+              </div>
+
+              {/* Teamspace: checklist — konten utama */}
+              <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} section="main" />
 
               {/* Custom fields — inputs here; the Simpan Field button lives in the pinned footer. */}
               {cf.visibleFields.length > 0 && (
@@ -329,6 +340,8 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                   {card.activity.length === 0 && <li className="text-[10px] text-muted-foreground">Belum ada aktivitas.</li>}
                 </ul>
               </section>
+              </div>
+              </div>
             </div>
 
             {/* Pinned footer — primary actions grouped together, always reachable (mobile-first).

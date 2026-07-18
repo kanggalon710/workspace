@@ -2,7 +2,7 @@
 
 export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024; // 25 MB/file
 
-export interface AttachmentType { ext: string; mime: string; kind: "image" | "file" }
+export interface AttachmentType { ext: string; mime: string; kind: "image" | "file" | "audio" }
 
 export const ATTACHMENT_TYPES: AttachmentType[] = [
   { ext: "jpg",  mime: "image/jpeg", kind: "image" },
@@ -13,6 +13,11 @@ export const ATTACHMENT_TYPES: AttachmentType[] = [
   { ext: "docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", kind: "file" },
   { ext: "xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", kind: "file" },
   { ext: "zip",  mime: "application/zip", kind: "file" },
+  // Teamspace BUG-011 (FR-502): voice note chat — hasil MediaRecorder browser
+  { ext: "webm", mime: "audio/webm", kind: "audio" },
+  { ext: "ogg",  mime: "audio/ogg",  kind: "audio" },
+  { ext: "m4a",  mime: "audio/mp4",  kind: "audio" },
+  { ext: "mp3",  mime: "audio/mpeg", kind: "audio" },
 ];
 
 /** Lowercased extension after the final dot; "" when none or leading-dot only. */
@@ -24,7 +29,7 @@ export function fileExt(name: string): string {
 }
 
 export type AttachmentValidation =
-  | { ok: true; ext: string; mime: string; kind: "image" | "file" }
+  | { ok: true; ext: string; mime: string; kind: "image" | "file" | "audio" }
   | { ok: false; error: string };
 
 /** Validate by EXTENSION (browser mime is unreliable for zip/docx/xlsx). */

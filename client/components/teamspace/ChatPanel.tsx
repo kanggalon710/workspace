@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { MessageCircle, Send, Paperclip, Images, Trash2, FileText, Download, X } from "lucide-react";
+import { MessageCircle, Send, Paperclip, Images, Trash2, FileText, Download, X, Mic } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -53,6 +53,62 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
+
+  // ── Voice note (BUG-011 / FR-502) — MediaRecorder browser ──
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const discardRef = useRef(false);
+
+  const stopTracks = () => recorderRef.current?.stream.getTracks().forEach((t) => t.stop());
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Chrome/Firefox → webm; Safari → mp4 (m4a). Ext harus cocok dgn attachmentRules.
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "";
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      discardRef.current = false;
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.onstop = async () => {
+        stopTracks();
+        if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        setRecording(false); setRecordSec(0);
+        if (discardRef.current || chunksRef.current.length === 0) return;
+        const type = rec.mimeType || "audio/webm";
+        const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+        const blob = new Blob(chunksRef.current, { type });
+        const voice = new File([blob], `pesan-suara-${Date.now()}.${ext}`, { type });
+        try {
+          await m.sendMessage.mutateAsync({ body: "", file: voice });
+        } catch (e: any) {
+          toast.error(e?.message || "Gagal mengirim pesan suara");
+        }
+      };
+      recorderRef.current = rec;
+      rec.start();
+      setRecording(true); setRecordSec(0);
+      recordTimerRef.current = setInterval(() => setRecordSec((s) => s + 1), 1000);
+    } catch {
+      toast.error("Mikrofon tidak tersedia — izinkan akses mic di browser");
+    }
+  };
+
+  const finishRecording = (discard: boolean) => {
+    discardRef.current = discard;
+    recorderRef.current?.stop();
+  };
+
+  // Bersihkan recorder saat panel unmount.
+  useEffect(() => () => {
+    discardRef.current = true;
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+    if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+  }, []);
 
   const { data: media } = useChatMedia(teamId, showMedia);
 
@@ -127,7 +183,13 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
                     ) : (
                       <>
                         {msg.attachmentPath && (
-                          isImage(msg.attachmentMime) ? (
+                          msg.attachmentMime?.startsWith("audio/") ? (
+                            <div className="my-1 flex items-center gap-1.5">
+                              <Mic className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
+                              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                              <audio controls preload="metadata" src={`/api/teamspace/chat/${msg.id}/attachment`} className="h-9 max-w-56" />
+                            </div>
+                          ) : isImage(msg.attachmentMime) ? (
                             <a href={`/api/teamspace/chat/${msg.id}/attachment`} target="_blank" rel="noreferrer">
                               <img
                                 src={`/api/teamspace/chat/${msg.id}/attachment`}
@@ -183,26 +245,44 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
             </button>
           </div>
         )}
-        <div className="flex items-end gap-1.5">
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Lampirkan file" onClick={() => fileInputRef.current?.click()}>
-            <Paperclip className="size-4" />
-          </Button>
-          <Input
-            placeholder="Tulis pesan…"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-          />
-          <Button type="button" size="icon" aria-label="Kirim" loading={m.sendMessage.isPending} onClick={send} disabled={!draft.trim() && !file}>
-            <Send className="size-4" />
-          </Button>
-        </div>
+        {recording ? (
+          /* Mode rekam voice note (BUG-011): timer + batal + kirim */
+          <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2">
+            <span className="size-2.5 animate-pulse rounded-full bg-destructive" aria-hidden="true" />
+            <span className="text-xs font-semibold text-destructive tabular-nums">
+              Merekam… {String(Math.floor(recordSec / 60)).padStart(2, "0")}:{String(recordSec % 60).padStart(2, "0")}
+            </span>
+            <span className="flex-1" />
+            <Button type="button" variant="ghost" size="xs" onClick={() => finishRecording(true)}>Batal</Button>
+            <Button type="button" size="sm" leftIcon={<Send className="size-3.5" />} onClick={() => finishRecording(false)}>
+              Kirim
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-end gap-1.5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Lampirkan file" onClick={() => fileInputRef.current?.click()}>
+              <Paperclip className="size-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Rekam pesan suara" title="Rekam pesan suara" onClick={startRecording}>
+              <Mic className="size-4" />
+            </Button>
+            <Input
+              placeholder="Tulis pesan…"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            />
+            <Button type="button" size="icon" aria-label="Kirim" loading={m.sendMessage.isPending} onClick={send} disabled={!draft.trim() && !file}>
+              <Send className="size-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Panel Media (FR-504) */}
