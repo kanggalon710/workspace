@@ -8870,6 +8870,32 @@ export class DatabaseStorage implements IStorage {
         )`,
       },
     ];
+    // v5.1.1: rule intake lead default — lead canvassing/marketing OTOMATIS jadi kartu
+    // di pipeline leads tanpa perlu setup manual di menu Otomasi (idempotent: hanya
+    // seed bila belum ada rule lead_created aktif sama sekali).
+    try {
+      const [pl]: any = await this.pool.execute(
+        `SELECT id FROM pipelines WHERE mitra_id = 1 AND team_id IS NULL AND LOWER(name) LIKE '%lead%' ORDER BY id LIMIT 1`);
+      const leadsPipelineId = (pl as any[])[0]?.id;
+      if (leadsPipelineId) {
+        const [cnt]: any = await this.pool.execute(
+          `SELECT COUNT(*) AS c FROM pipeline_rules WHERE mitra_id = 1 AND trigger_type = 'lead_created' AND enabled = 1`);
+        if (Number((cnt as any[])[0]?.c ?? 0) === 0) {
+          const [st]: any = await this.pool.execute(
+            `SELECT id FROM pipeline_stages WHERE mitra_id = 1 AND pipeline_id = ? ORDER BY position, id LIMIT 1`, [leadsPipelineId]);
+          const stageId = (st as any[])[0]?.id ?? null;
+          const cfg = JSON.stringify({ sources: [], entryStageId: stageId, titleSource: "name", fieldMap: [], onDuplicate: "update", dedupBy: "phone" });
+          await this.pool.execute(
+            `INSERT INTO pipeline_rules (mitra_id, pipeline_id, name, action_type, target_stage_id, enabled, created_by, created_at, trigger_type, trigger_config, recurrence)
+             VALUES (1, ?, 'Auto: Lead baru (canvassing/marketing) → pipeline', 'create_card', ?, 1, 1, ?, 'lead_created', ?, 'every_time')`,
+            [leadsPipelineId, stageId, new Date().toISOString(), cfg]);
+          console.log(`[migration] Seeded default lead_created intake rule → pipeline ${leadsPipelineId}`);
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[migration] seed lead intake rule: ${err.message}`);
+    }
+
     // v5.1 SDM: penanda karyawan pada akun user (HRD cek username = karyawan/bukan)
     try {
       await this.pool.execute(`ALTER TABLE users ADD COLUMN is_employee INT NOT NULL DEFAULT 0`);
