@@ -205,6 +205,16 @@ export function useTeamChat(teamId: number | null, active: boolean) {
   });
 }
 
+/** Read-by gaya Cicle: state baca anggota utk indikator "Dibaca oleh …". */
+export function useChatReadStates(teamId: number | null, active: boolean) {
+  return useQuery({
+    queryKey: [KEY, "chat-read-states", teamId],
+    queryFn: () => api.get<Array<{ userId: number; name: string; lastReadChatAt: string | null }>>(`/teamspace/teams/${teamId}/chat/read-states`),
+    enabled: !!teamId && active,
+    refetchInterval: active ? 10_000 : false,
+  });
+}
+
 export function useChatMedia(teamId: number | null, open: boolean) {
   return useQuery({
     queryKey: [KEY, "chat-media", teamId],

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import {
   Command,
@@ -19,6 +21,7 @@ import {
   Cpu, Wifi, AlertCircle, Heart, Server, Rows3, Split, Link2, GitBranch,
   Calculator, FileSpreadsheet, ClipboardList, Megaphone, Bug, KeyRound,
   MessageCircle, Settings, TrendingUp, Sun, Moon, LogOut, User, Building2, Kanban,
+  UsersRound, FileText, SquareCheckBig, Trophy,
 } from "lucide-react";
 
 interface CommandItemDef {
@@ -45,6 +48,25 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [darkMode, setDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
+
+  // ── Search All Teamspace (gaya Cicle): cari tim/kartu/dokumen dari ⌘K ──
+  const [search, setSearch] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => { if (!open) { setSearch(""); setDebouncedQ(""); } }, [open]);
+  const { data: tsResults } = useQuery({
+    queryKey: ["teamspace-search", debouncedQ],
+    queryFn: () => api.get<{
+      teams: Array<{ id: number; name: string }>;
+      cards: Array<{ id: number; title: string; pipelineId: number; teamName: string }>;
+      docs: Array<{ id: number; title: string; teamId: number; teamName: string }>;
+    }>(`/teamspace/search?q=${encodeURIComponent(debouncedQ)}`),
+    enabled: open && debouncedQ.length >= 2 && (canRead("team_tasks") || canRead("teams")),
+    staleTime: 30_000,
+  });
 
   // Global Cmd+K shortcut to toggle palette
   useEffect(() => {
@@ -113,6 +135,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { id: "export", label: "Export / Import", icon: FileSpreadsheet, path: "/export-import", permission: "export_import" },
     { id: "bisnis", label: "Keputusan Bisnis", icon: TrendingUp, path: "/marketing/bisnis", permission: "marketing_dashboard" },
     { id: "ads", label: "Marketing Ads", icon: Megaphone, path: "/marketing/ads", permission: "marketing_ads" },
+  ];
+
+  const teamspaceItems: CommandItemDef[] = [
+    { id: "ts-teams", label: "Tim Saya", icon: UsersRound, path: "/teamspace/teams", permission: "team_tasks", keywords: ["teamspace", "tim", "team", "ruangan"] },
+    { id: "ts-tasks", label: "Semua Tugas", icon: SquareCheckBig, path: "/teamspace/tasks", permission: "team_tasks", keywords: ["teamspace", "tugas", "task", "todo"] },
+    { id: "ts-perf", label: "Laporan Kinerja", icon: BarChart3, path: "/teamspace/performance", permission: "performance_reports", keywords: ["teamspace", "kinerja", "performance", "report", "kpi"] },
+    { id: "ts-cheers", label: "Cheers", icon: Trophy, path: "/teamspace/cheers", permission: "cheers", keywords: ["teamspace", "cheers", "apresiasi"] },
   ];
 
   const adminItems: CommandItemDef[] = [
@@ -191,7 +220,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           if (!search) return 1;
           return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
         }}>
-          <CommandInput placeholder="Cari halaman, aksi, atau fitur..." />
+          <CommandInput placeholder="Cari halaman, tugas, tim, dokumen..." value={search} onValueChange={setSearch} />
           <CommandList>
             <CommandEmpty>
               <div className="flex flex-col items-center gap-2 py-6">
@@ -200,7 +229,39 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 <p className="text-xs text-muted-foreground/60">Coba kata kunci lain.</p>
               </div>
             </CommandEmpty>
+            {/* Search All Teamspace (gaya Cicle): hasil konten live — value diberi suffix
+                search agar lolos filter cmdk (match tim bisa dari deskripsi). */}
+            {tsResults && (tsResults.teams.length + tsResults.cards.length + tsResults.docs.length) > 0 && (
+              <>
+                <CommandGroup heading="Teamspace — Hasil Pencarian">
+                  {tsResults.teams.map((t) => (
+                    <CommandItem key={`ts-team-${t.id}`} value={`${t.name} ${search}`} onSelect={() => navigate(`/teamspace/teams/${t.id}`)}>
+                      <UsersRound />
+                      <span>{t.name}</span>
+                      <span className="ml-auto text-2xs text-muted-foreground">Tim</span>
+                    </CommandItem>
+                  ))}
+                  {tsResults.cards.map((c) => (
+                    <CommandItem key={`ts-card-${c.id}`} value={`${c.title} ${search}`} onSelect={() => navigate(`/teamspace/boards/${c.pipelineId}?card=${c.id}`)}>
+                      <SquareCheckBig />
+                      <span className="truncate">{c.title}</span>
+                      <span className="ml-auto shrink-0 text-2xs text-muted-foreground">Tugas · {c.teamName}</span>
+                    </CommandItem>
+                  ))}
+                  {tsResults.docs.map((d) => (
+                    <CommandItem key={`ts-doc-${d.id}`} value={`${d.title} ${search}`} onSelect={() => navigate(`/teamspace/teams/${d.teamId}?tab=docs`)}>
+                      <FileText />
+                      <span className="truncate">{d.title}</span>
+                      <span className="ml-auto shrink-0 text-2xs text-muted-foreground">Dokumen · {d.teamName}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
             {renderGroup("Navigasi Utama", navigationItems)}
+            <CommandSeparator />
+            {renderGroup("Teamspace", teamspaceItems)}
             <CommandSeparator />
             {renderGroup("Aset Jaringan", assetItems)}
             <CommandSeparator />

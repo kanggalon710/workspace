@@ -6438,6 +6438,15 @@ async function enrichTeams(teamsList: Array<any>, forUserId?: number): Promise<A
   });
 }
 
+/** Search All gaya Cicle: tim + kartu board tim + dokumen (scoped keanggotaan) — dipakai ⌘K. */
+router.get("/api/teamspace/search", async (req, res) => {
+  if (!requireTeamspaceAccess(req, res)) return;
+  const q = String(req.query.q ?? "").trim();
+  if (q.length < 2) return sendSuccess(res, { teams: [], cards: [], docs: [] });
+  const isAdmin = isPipelineAdmin(req) || teamsKeyLevelOf(req) !== "none";
+  sendSuccess(res, await storage.searchTeamspace(req.authUser!.id, q, { isAdmin }));
+});
+
 router.get("/api/teamspace/teams", async (req, res) => {
   if (!requireTeamspaceAccess(req, res)) return;
   const includeArchived = req.query.archived === "1";
@@ -6994,6 +7003,14 @@ router.post("/api/teamspace/teams/:id/chat/read", async (req, res) => {
   if (!loaded) return;
   await storage.markChatRead(loaded.team.id, req.authUser!.id);
   sendSuccess(res, { ok: true });
+});
+
+/** Read-by gaya Cicle: state baca tiap anggota, dipoll bareng chat. */
+router.get("/api/teamspace/teams/:id/chat/read-states", async (req, res) => {
+  if (!requireTeamModule(req, res, "team_chat")) return;
+  const loaded = await loadTeamForMember(req, res);
+  if (!loaded) return;
+  sendSuccess(res, await storage.getChatReadStates(loaded.team.id));
 });
 
 router.get("/api/teamspace/teams/:id/chat/media", async (req, res) => {

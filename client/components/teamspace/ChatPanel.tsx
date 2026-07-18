@@ -1,14 +1,14 @@
 /** Teamspace Fase 2 — Chat Grup tim (FR-5xx): bubble WA-style, lampiran, panel Media.
  *  Realtime via polling 5s (pause-on-blur otomatis) — sesuai NFR-002 (cPanel, no WS). */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTeamChat, useChatMedia, useChatMutations } from "@/hooks/useTeamspace";
+import { useTeamChat, useChatMedia, useChatMutations, useChatReadStates } from "@/hooks/useTeamspace";
 import { useAssignableUsers } from "@/hooks/usePipelines";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { MessageCircle, Send, Paperclip, Images, Trash2, FileText, Download, X, Mic } from "lucide-react";
+import { MessageCircle, Send, Paperclip, Images, Trash2, FileText, Download, X, Mic, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -39,7 +39,19 @@ function fmtSize(bytes: number | null): string {
 export function ChatPanel({ teamId, canManage, active }: Props) {
   const { user } = useAuth();
   const { data: messages, isLoading } = useTeamChat(teamId, active);
+  const { data: readStates } = useChatReadStates(teamId, active);
   const m = useChatMutations(teamId);
+  // Read-by gaya Cicle: anggota lain yang lastReadChatAt-nya >= waktu pesan sudah membacanya
+  // (ISO string sebanding leksikografis). Nama ditampilkan di pesan terakhir milik sendiri.
+  const readersFor = (iso: string) =>
+    (readStates ?? []).filter((r) => r.userId !== user?.id && r.lastReadChatAt != null && r.lastReadChatAt >= iso);
+  const lastMineId = useMemo(() => {
+    for (let i = (messages ?? []).length - 1; i >= 0; i--) {
+      const msg = (messages ?? [])[i];
+      if (msg.senderId === user?.id && !msg.deletedAt) return msg.id;
+    }
+    return null;
+  }, [messages, user?.id]);
   const { data: users } = useAssignableUsers();
   const nameOf = useMemo(() => {
     const map = new Map((users ?? []).map((u: any) => [u.id, u.name || u.username]));
@@ -162,6 +174,7 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
           (messages ?? []).map((msg, i) => {
             const prev = (messages ?? [])[i - 1];
             const mine = msg.senderId === user?.id;
+            const readers = mine && !msg.deletedAt ? readersFor(msg.createdAt) : [];
             const newDay = !prev || fmtDay(prev.createdAt) !== fmtDay(msg.createdAt);
             const sameSender = prev && prev.senderId === msg.senderId && !newDay;
             return (
@@ -212,8 +225,13 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
                         {msg.body && <p className="whitespace-pre-wrap break-words text-sm">{msg.body}</p>}
                       </>
                     )}
-                    <p className={`mt-0.5 text-right text-[9px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                    <p className={`mt-0.5 flex items-center justify-end gap-1 text-right text-[9px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                       {fmtTime(msg.createdAt)}
+                      {mine && !msg.deletedAt && (readers.length > 0 ? (
+                        <CheckCheck className="size-3" aria-label={`Dibaca oleh ${readers.map((r) => r.name).join(", ")}`} />
+                      ) : (
+                        <Check className="size-3 opacity-60" aria-label="Terkirim" />
+                      ))}
                     </p>
                     {!msg.deletedAt && (mine || canManage) && (
                       <button
@@ -227,6 +245,11 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
                     )}
                   </div>
                 </div>
+                {mine && msg.id === lastMineId && readers.length > 0 && (
+                  <p className="mt-0.5 text-right text-[9px] text-muted-foreground" title={readers.map((r) => r.name).join(", ")}>
+                    Dibaca oleh {readers.slice(0, 3).map((r) => r.name.split(" ")[0]).join(", ")}{readers.length > 3 ? ` +${readers.length - 3}` : ""}
+                  </p>
+                )}
               </div>
             );
           })

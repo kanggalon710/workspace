@@ -2572,6 +2572,79 @@ export class DatabaseStorage implements IStorage {
     return this.db.select().from(teams).where(and(...conds)).orderBy(asc(teams.name));
   }
 
+  /** Search All (gaya Cicle): cari tim + kartu board tim + dokumen tim — scoped keanggotaan.
+   *  Kartu Rahasia hanya muncul untuk creator/penanggung jawab/admin. */
+  async searchTeamspace(userId: number, q: string, opts?: { isAdmin?: boolean; limit?: number }): Promise<{
+    teams: Array<{ id: number; name: string; color: string; icon: string | null; type: string }>;
+    cards: Array<{ id: number; title: string; pipelineId: number; teamId: number; teamName: string }>;
+    docs: Array<{ id: number; title: string; teamId: number; teamName: string }>;
+  }> {
+    const mitraId = getMitraId();
+    const limit = Math.min(Math.max(opts?.limit ?? 6, 1), 20);
+    const needle = q.toLowerCase();
+    const pat = `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+    const myTeams = opts?.isAdmin ? await this.listTeams(false) : await this.listTeamsForUser(userId, false);
+    const teamNameById = new Map(myTeams.map((t) => [t.id, t.name]));
+    const result = {
+      teams: myTeams
+        .filter((t) => `${t.name} ${t.description ?? ""}`.toLowerCase().includes(needle))
+        .slice(0, limit)
+        .map((t) => ({ id: t.id, name: t.name, color: t.color, icon: t.icon, type: t.type })),
+      cards: [] as Array<{ id: number; title: string; pipelineId: number; teamId: number; teamName: string }>,
+      docs: [] as Array<{ id: number; title: string; teamId: number; teamName: string }>,
+    };
+    const teamIds = myTeams.map((t) => t.id);
+    if (teamIds.length === 0) return result;
+
+    const boards = await this.db
+      .select({ id: pipelines.id, teamId: pipelines.teamId })
+      .from(pipelines)
+      .where(and(eq(pipelines.mitraId, mitraId), inArray(pipelines.teamId, teamIds)));
+    const teamByBoard = new Map(boards.map((b) => [b.id, b.teamId as number]));
+    if (boards.length > 0) {
+      const rows = await this.db
+        .select({
+          id: pipelineCards.id, title: pipelineCards.title, pipelineId: pipelineCards.pipelineId,
+          isPrivate: pipelineCards.isPrivate, createdBy: pipelineCards.createdBy, assigneeId: pipelineCards.assigneeId,
+        })
+        .from(pipelineCards)
+        .where(and(
+          eq(pipelineCards.mitraId, mitraId),
+          inArray(pipelineCards.pipelineId, boards.map((b) => b.id)),
+          isNull(pipelineCards.archivedAt),
+          like(pipelineCards.title, pat),
+        ))
+        .orderBy(desc(pipelineCards.id))
+        .limit(limit * 4);
+      result.cards = rows
+        .filter((c) => !c.isPrivate || opts?.isAdmin || c.createdBy === userId || c.assigneeId === userId)
+        .slice(0, limit)
+        .map((c) => {
+          const teamId = teamByBoard.get(c.pipelineId)!;
+          return { id: c.id, title: c.title, pipelineId: c.pipelineId, teamId, teamName: teamNameById.get(teamId) ?? "" };
+        });
+    }
+
+    const docRows = await this.db
+      .select({ id: teamDocuments.id, title: teamDocuments.title, teamId: teamDocuments.teamId, isConfidential: teamDocuments.isConfidential, createdBy: teamDocuments.createdBy })
+      .from(teamDocuments)
+      .where(and(
+        eq(teamDocuments.mitraId, mitraId),
+        inArray(teamDocuments.teamId, teamIds),
+        isNull(teamDocuments.archivedAt),
+        like(teamDocuments.title, pat),
+      ))
+      .orderBy(desc(teamDocuments.updatedAt))
+      .limit(limit * 2);
+    result.docs = docRows
+      // Dokumen Rahasia disembunyikan dari search kecuali pembuat/admin (aman-by-default,
+      // penerima Rahasia tetap bisa akses lewat tab Dokumen).
+      .filter((d) => !d.isConfidential || opts?.isAdmin || d.createdBy === userId)
+      .slice(0, limit)
+      .map((d) => ({ id: d.id, title: d.title, teamId: d.teamId, teamName: teamNameById.get(d.teamId) ?? "" }));
+    return result;
+  }
+
   /** Tim yang user ikuti, plus role membership-nya. */
   async listTeamsForUser(userId: number, includeArchived = false): Promise<Array<Team & { myRole: string }>> {
     const mitraId = getMitraId();
@@ -3199,6 +3272,17 @@ export class DatabaseStorage implements IStorage {
     const mitraId = getMitraId();
     await this.db.update(teamMembers).set({ lastReadChatAt: new Date().toISOString() })
       .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId), eq(teamMembers.mitraId, mitraId)));
+  }
+
+  /** Read-by gaya Cicle: lastReadChatAt tiap anggota — client hitung siapa sudah baca pesan mana. */
+  async getChatReadStates(teamId: number): Promise<Array<{ userId: number; name: string; lastReadChatAt: string | null }>> {
+    const mitraId = getMitraId();
+    const rows = await this.db
+      .select({ userId: teamMembers.userId, name: users.name, lastReadChatAt: teamMembers.lastReadChatAt })
+      .from(teamMembers)
+      .innerJoin(users, eq(users.id, teamMembers.userId))
+      .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.mitraId, mitraId)));
+    return rows as any;
   }
 
   /** teamId -> jumlah pesan belum dibaca (pesan orang lain setelah lastReadChatAt), batched. */
