@@ -214,9 +214,8 @@ export default function PipelineBoardPage() {
         {/* UX Cicle: board tim = SATU baris bersih — nav modul tim + Pilih + kebab.
             Judul/deskripsi board & deretan tombol disembunyikan (redundan dgn nav tim). */}
         {teamParams && ownerTeam && (
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1"><TeamModuleNav team={ownerTeam} active="tasks" /></div>
-            <div className="mb-3 flex shrink-0 items-center gap-1">
+          <TeamModuleNav team={ownerTeam} active="tasks" trailing={
+            <>
               {pipeline && (
                 <Button
                   type="button"
@@ -252,8 +251,8 @@ export default function PipelineBoardPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-            </div>
-          </div>
+            </>
+          } />
         )}
         {/* Mobile: tombol aksi wrap ke baris sendiri (basis-full) — kalau satu baris,
             judul pipeline (flex-1) terjepit jadi 0px oleh deretan tombol. */}

@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useTeam, useTeamMutations } from "@/hooks/useTeamspace";
-import { PageHeader } from "@/components/ui/page-header";
 import { PageContainer, PageSection } from "@/components/ui/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import { CheckinPanel } from "@/components/teamspace/CheckinPanel";
 import { DocsPanel } from "@/components/teamspace/DocsPanel";
 import { AnnouncementsPanel } from "@/components/teamspace/AnnouncementsPanel";
 import { TeamReportPanel } from "@/components/teamspace/TeamReportPanel";
+import { TeamModuleNav } from "@/components/teamspace/TeamModuleNav";
 import {
   UsersRound, CheckSquare, AlertTriangle, ClipboardList, Kanban, UserPlus, Shield, ShieldOff,
   UserMinus, FolderKanban, Archive, LayoutDashboard, MessageCircle, CalendarDays, MessagesSquare, FolderClosed, Megaphone,
@@ -50,7 +50,7 @@ export default function TeamPage() {
   const teamId = params ? Number(params.id) : null;
   const [, navigate] = useLocation();
 
-  const { data: team, isLoading, refetch, isRefetching } = useTeam(teamId);
+  const { data: team, isLoading } = useTeam(teamId);
   const m = useTeamMutations();
 
   const [tab, setTab] = useState<TabKey>(initialTab);
@@ -145,55 +145,23 @@ export default function TeamPage() {
     );
   }
 
-  const TypeIcon = team.type === "PROJECT" ? FolderKanban : UsersRound;
   const pct = team.taskSummary.total > 0 ? Math.round((team.taskSummary.done / team.taskSummary.total) * 100) : 0;
   const views = team.enabledViews.length > 0 ? team.enabledViews : ["summary", "tasks"];
 
   return (
     <PageContainer>
-      <PageHeader
-        icon={TypeIcon}
-        title={team.name}
-        description={team.description || (team.type === "PROJECT" ? "Proyek" : "Tim / divisi")}
-        accent="violet"
-        breadcrumbs={[{ label: "Tim Saya", path: "/teamspace/teams" }, { label: team.name }]}
-        onRefresh={() => refetch()}
-        refreshing={isRefetching}
-        actions={
+      {/* v5.1 (feedback user): header gaya Cicle — breadcrumb + tab underline,
+          tanpa blok judul besar duplikat. Komponen sama dengan board Tugas. */}
+      <TeamModuleNav
+        team={{ ...team, enabledViews: views }}
+        active={tab}
+        onSelect={(v) => (v === "tasks" ? openBoard() : setTab(v as TabKey))}
+        trailing={
           team.myRole
-            ? <StatusBadge variant={team.myRole === "manager" ? "info" : "neutral"} label={team.myRole === "manager" ? "Manager" : "Member"} appearance="subtle" />
+            ? <StatusBadge variant={team.myRole === "manager" ? "info" : "neutral"} label={team.myRole === "manager" ? "Manager" : "Member"} size="sm" appearance="subtle" />
             : undefined
         }
-      >
-        {/* Tab chips sesuai enabledViews (FR-305) */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-          {views.map((v) => {
-            const meta = TAB_META[v];
-            if (!meta) return null;
-            const Icon = meta.icon;
-            const isActive = v === tab;
-            const isTasks = v === "tasks";
-            const badge = v === "chat" && team.unreadChat > 0 ? team.unreadChat : null;
-            return (
-              <button
-                key={v}
-                type="button"
-                onClick={() => (isTasks ? openBoard() : setTab(v as TabKey))}
-                aria-current={isActive ? "page" : undefined}
-                className={`relative inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors
-                  ${isActive ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
-              >
-                <Icon className="size-3.5" /> {meta.label}
-                {badge != null && (
-                  <span className="ml-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </PageHeader>
+      />
 
       {tab === "chat" ? (
         <ChatPanel teamId={team.id} canManage={team.canManage} active={tab === "chat"} />
