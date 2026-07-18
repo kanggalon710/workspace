@@ -49,6 +49,43 @@ const ATT_STATUSES = [
 ] as const;
 const LEAVE_TYPES = [["tahunan", "Cuti Tahunan"], ["khusus", "Cuti Khusus"], ["sakit", "Sakit"], ["izin", "Izin"], ["unpaid", "Cuti Tidak Dibayar"]] as const;
 
+/** Antrean approval kasbon + reimburse (HR). */
+function MoneyApprovalList({ writable, nameOf }: { writable: boolean; nameOf: (id: number | null) => string | null }) {
+  const qc = useQueryClient();
+  const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+  const { data: kasbon } = useQuery({ queryKey: ["/api/hr/kasbon", "pending"], queryFn: () => api.get<any[]>(`/hr/kasbon?status=pending`), refetchInterval: 60_000 });
+  const { data: reimburse } = useQuery({ queryKey: ["/api/hr/reimburse", "pending"], queryFn: () => api.get<any[]>(`/hr/reimburse?status=pending`), refetchInterval: 60_000 });
+  const review = useMutation({
+    mutationFn: ({ kind, id, status }: { kind: "kasbon" | "reimburse"; id: number; status: "approved" | "rejected" }) =>
+      api.post(`/hr/${kind}/${id}/review`, { status }),
+    onSuccess: () => { toast.success("Diproses"); qc.invalidateQueries({ queryKey: ["/api/hr/kasbon"] }); qc.invalidateQueries({ queryKey: ["/api/hr/reimburse"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  const rows = [
+    ...(kasbon ?? []).map((k: any) => ({ kind: "kasbon" as const, id: k.id, userId: k.userId, label: `Kasbon ${rp(k.amount)} · ${k.months}x cicilan`, extra: k.reason })),
+    ...(reimburse ?? []).map((r: any) => ({ kind: "reimburse" as const, id: r.id, userId: r.userId, label: `Reimburse ${r.category} ${rp(r.amount)}`, extra: r.note })),
+  ];
+  if (rows.length === 0) return <p className="text-xs text-muted-foreground">Tidak ada pengajuan keuangan menunggu.</p>;
+  return (
+    <Card padding="none" className="divide-y overflow-hidden">
+      {rows.map((r) => (
+        <div key={`${r.kind}-${r.id}`} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
+          <span className="min-w-0 flex-1"><b>{nameOf(r.userId)}</b> · {r.label}
+            {r.extra && <span className="ml-1.5 text-xs text-muted-foreground">— {r.extra}</span>}</span>
+          {writable && (
+            <span className="flex gap-1">
+              <Button type="button" size="icon-sm" variant="success" aria-label="Setujui" loading={review.isPending}
+                onClick={() => review.mutate({ kind: r.kind, id: r.id, status: "approved" })}><Check className="size-4" /></Button>
+              <Button type="button" size="icon-sm" variant="destructive" aria-label="Tolak" loading={review.isPending}
+                onClick={() => review.mutate({ kind: r.kind, id: r.id, status: "rejected" })}><X className="size-4" /></Button>
+            </span>
+          )}
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 function todayIso(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -420,6 +457,12 @@ export default function SdmPage() {
               ))}
             </Card>
           )}
+        </PageSection>
+      )}
+
+      {tab === "approval" && readable && (
+        <PageSection title="Approval Kasbon & Reimburse" description="Kasbon disetujui = cicilan otomatis dipotong slip; reimburse disetujui = dibayarkan lewat slip berikutnya">
+          <MoneyApprovalList writable={writable} nameOf={nameOf} />
         </PageSection>
       )}
 

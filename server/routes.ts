@@ -8261,6 +8261,8 @@ router.post("/api/hr/payroll/generate", async (req, res) => {
   const employees = (await storage.listEmployees()).filter((e) => e.isEmployee === 1 && e.isActive !== 0);
   const attSummary = await storage.attendanceSummary(period);
   const overtime = (await storage.listOvertime({ status: "approved" })).filter((o) => o.date.startsWith(period));
+  const activeKasbon = (await storage.listCashAdvances({ status: "approved" })).filter((k) => k.remaining > 0);
+  const approvedReimburse = await storage.listReimbursements({ status: "approved" });
   const unpaidLeaves = (await storage.listLeaves({ status: "approved", limit: 500 }))
     .filter((l) => l.type === "unpaid" && l.startDate.startsWith(period));
   let generated = 0; const skipped: string[] = [];
@@ -8272,15 +8274,23 @@ router.post("/api/hr/payroll/generate", async (req, res) => {
     const otHours = overtime.filter((o) => o.userId === emp.id).reduce((s, o) => s + o.hours, 0);
     const unpaidDays = unpaidLeaves.filter((l) => l.userId === emp.id)
       .reduce((s, l) => s + (Math.round((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 86400_000) + 1), 0);
+    // FR-HR-701/702: cicilan kasbon aktif dipotong; reimburse approved dibayarkan lewat slip.
+    const kasbon = activeKasbon.find((k) => k.userId === emp.id);
+    const installment = kasbon ? Math.min(kasbon.monthlyInstallment, kasbon.remaining) : 0;
+    const myReimburse = approvedReimburse.filter((r) => r.userId === emp.id);
+    const reimburseTotal = myReimburse.reduce((s, r) => s + r.amount, 0);
     const result = computePayslip({
       baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, variableAllowance: 0,
       overtimeHours: otHours, alphaDays, unpaidLeaveDays: unpaidDays, workingDays: c.workingDays,
-      fixedDeduction: c.fixedDeduction, ptkp: (profile?.ptkpStatus as any) || "TK/0",
+      fixedDeduction: c.fixedDeduction + installment, ptkp: (profile?.ptkpStatus as any) || "TK/0",
       enrollBpjsTk: c.enrollBpjsTk === 1, enrollBpjsKes: c.enrollBpjsKes === 1,
     });
+    // Reimburse bukan objek pajak — ditambahkan SETELAH hitung PPh/BPJS.
+    result.totalAllowance += reimburseTotal;
+    result.takeHomePay += reimburseTotal;
     await storage.upsertPayslip({
       period, userId: emp.id,
-      detail: JSON.stringify({ ...result, input: { baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, fixedDeduction: c.fixedDeduction, otHours, alphaDays, unpaidDays, ptkp: profile?.ptkpStatus || "TK/0" } }),
+      detail: JSON.stringify({ ...result, kasbonId: kasbon?.id ?? null, installment, reimburseIds: myReimburse.map((r) => r.id), reimburseTotal, input: { baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, fixedDeduction: c.fixedDeduction, otHours, alphaDays, unpaidDays, ptkp: profile?.ptkpStatus || "TK/0" } }),
       gross: result.gross, totalAllowance: result.totalAllowance,
       totalDeduction: result.totalDeduction, takeHomePay: result.takeHomePay,
       generatedBy: req.authUser.id,
@@ -8298,7 +8308,71 @@ router.post("/api/hr/payroll/:id/status", async (req, res) => {
   if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   const { status } = req.body ?? {};
   if (status !== "ready" && status !== "paid") return sendError(res, "status wajib ready/paid", 400);
-  await storage.setPayslipStatus(Number(req.params.id), status);
+  const slip = await storage.getPayslip(Number(req.params.id));
+  if (!slip) return sendError(res, "Slip tidak ditemukan", 404);
+  await storage.setPayslipStatus(slip.id, status);
+  // Efek pembayaran: kurangi sisa kasbon + tandai reimburse terbayar (idempotent-ish:
+  // hanya saat transisi ready→paid).
+  if (status === "paid" && slip.status !== "paid") {
+    try {
+      const d = JSON.parse(slip.detail);
+      if (d.kasbonId && d.installment > 0) await storage.payCashAdvanceInstallment(Number(d.kasbonId), Number(d.installment));
+      for (const rid of d.reimburseIds ?? []) await storage.setReimbursementStatus(Number(rid), "paid");
+    } catch (e: any) { console.warn(`[payroll] efek paid slip ${slip.id}: ${e.message}`); }
+  }
+  sendSuccess(res, { ok: true });
+});
+
+// ── FR-HR-701/702: kasbon + reimburse (self-service + review HR) ──
+router.get("/api/hr/kasbon", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
+  sendSuccess(res, await storage.listCashAdvances({ userId: mineOnly ? req.authUser.id : undefined, status: req.query.status ? String(req.query.status) : undefined }));
+});
+router.post("/api/hr/kasbon", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const { amount, months, reason } = req.body ?? {};
+  const amt = Number(amount), m = Number(months) || 1;
+  if (!Number.isFinite(amt) || amt <= 0) return sendError(res, "amount wajib > 0", 400);
+  if (m < 1 || m > 12) return sendError(res, "months 1–12", 400);
+  // Plafon: configurable via app_settings hr_kasbon_plafon (default 1× gaji pokok; tanpa gaji → 5jt)
+  let plafon = 5_000_000;
+  try {
+    const raw = await storage.getSetting("hr_kasbon_plafon");
+    if (raw) plafon = Number(raw) || plafon;
+    else { const c = await storage.getSalaryComponent(req.authUser.id); if (c && c.baseSalary > 0) plafon = c.baseSalary; }
+  } catch { /* default */ }
+  const outstanding = (await storage.listCashAdvances({ userId: req.authUser.id }))
+    .filter((k) => k.status === "approved" || k.status === "pending").reduce((s, k) => s + k.remaining, 0);
+  if (amt + outstanding > plafon) return sendError(res, `Melebihi plafon kasbon (sisa plafon Rp ${Math.max(0, plafon - outstanding).toLocaleString("id-ID")})`, 400);
+  sendSuccess(res, await storage.createCashAdvance({ userId: req.authUser.id, amount: amt, months: m, reason: reason ? String(reason).slice(0, 255) : null }));
+});
+router.post("/api/hr/kasbon/:id/review", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { status } = req.body ?? {};
+  if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
+  await storage.reviewCashAdvance(Number(req.params.id), status, req.authUser.id);
+  sendSuccess(res, { ok: true });
+});
+router.get("/api/hr/reimburse", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
+  sendSuccess(res, await storage.listReimbursements({ userId: mineOnly ? req.authUser.id : undefined, status: req.query.status ? String(req.query.status) : undefined }));
+});
+router.post("/api/hr/reimburse", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const { date, category, amount, note } = req.body ?? {};
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date ?? ""))) return sendError(res, "date wajib YYYY-MM-DD", 400);
+  if (!category) return sendError(res, "category wajib", 400);
+  const amt = Number(amount);
+  if (!Number.isFinite(amt) || amt <= 0) return sendError(res, "amount wajib > 0", 400);
+  sendSuccess(res, await storage.createReimbursement({ userId: req.authUser.id, date: String(date), category: String(category).slice(0, 48), amount: amt, note: note ? String(note).slice(0, 255) : null }));
+});
+router.post("/api/hr/reimburse/:id/review", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { status } = req.body ?? {};
+  if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
+  await storage.setReimbursementStatus(Number(req.params.id), status, req.authUser.id);
   sendSuccess(res, { ok: true });
 });
 /** ESS: slip gaji milik sendiri — hanya yang SUDAH dibayar (FR-HR-1104). */

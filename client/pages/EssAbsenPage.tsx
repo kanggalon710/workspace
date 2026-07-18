@@ -48,6 +48,72 @@ function PayslipCard() {
   );
 }
 
+const stBadge = (s: string) => (
+  <StatusBadge size="sm" variant={s === "approved" || s === "paid" || s === "settled" ? "success" : s === "rejected" ? "danger" : "pending"}
+    label={s === "approved" ? "Disetujui" : s === "paid" ? "Dibayar" : s === "settled" ? "Lunas" : s === "rejected" ? "Ditolak" : "Menunggu"} />
+);
+
+/** Kasbon (plafon + cicilan auto-potong slip) & Reimburse — self-service. */
+function MoneyCard() {
+  const qc = useQueryClient();
+  const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+  const [kb, setKb] = useState({ amount: "", months: "3", reason: "" });
+  const [rb, setRb] = useState({ date: new Date().toISOString().slice(0, 10), category: "Transport", amount: "", note: "" });
+  const { data: kasbon } = useQuery({ queryKey: ["/api/hr/kasbon", "mine"], queryFn: () => api.get<any[]>(`/hr/kasbon?mine=1`) });
+  const { data: reimburse } = useQuery({ queryKey: ["/api/hr/reimburse", "mine"], queryFn: () => api.get<any[]>(`/hr/reimburse?mine=1`) });
+  const submitKb = useMutation({
+    mutationFn: () => api.post(`/hr/kasbon`, { amount: Number(kb.amount), months: Number(kb.months), reason: kb.reason }),
+    onSuccess: () => { toast.success("Kasbon diajukan — cicilan otomatis dipotong dari gaji setelah disetujui"); qc.invalidateQueries({ queryKey: ["/api/hr/kasbon"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  const submitRb = useMutation({
+    mutationFn: () => api.post(`/hr/reimburse`, { ...rb, amount: Number(rb.amount) }),
+    onSuccess: () => { toast.success("Reimburse diajukan"); qc.invalidateQueries({ queryKey: ["/api/hr/reimburse"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  return (
+    <Card padding="md" className="space-y-3">
+      <div>
+        <p className="text-sm font-semibold">Kasbon</p>
+        <div className="mt-1.5 flex flex-wrap items-end gap-2">
+          <input type="number" placeholder="Jumlah (Rp)" value={kb.amount} onChange={(e) => setKb((p) => ({ ...p, amount: e.target.value }))} className="h-9 w-32 rounded-lg border bg-background px-2.5 text-sm tabular-nums" />
+          <select value={kb.months} onChange={(e) => setKb((p) => ({ ...p, months: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
+            {[1, 2, 3, 4, 6, 12].map((m) => <option key={m} value={m}>{m}x cicilan</option>)}
+          </select>
+          <input placeholder="Alasan" value={kb.reason} onChange={(e) => setKb((p) => ({ ...p, reason: e.target.value }))} className="h-9 w-40 rounded-lg border bg-background px-2.5 text-sm" />
+          <Button size="sm" loading={submitKb.isPending} disabled={!kb.amount} onClick={() => submitKb.mutate()}>Ajukan</Button>
+        </div>
+        {(kasbon ?? []).slice(0, 3).map((k: any) => (
+          <div key={k.id} className="mt-1.5 flex items-center gap-2 text-xs">
+            <span className="tabular-nums">{rp(k.amount)} · {k.months}x</span>
+            {k.status === "approved" && <span className="text-muted-foreground tabular-nums">sisa {rp(k.remaining)}</span>}
+            <span className="ml-auto" />{stBadge(k.status)}
+          </div>
+        ))}
+      </div>
+      <div className="border-t pt-3">
+        <p className="text-sm font-semibold">Reimburse</p>
+        <div className="mt-1.5 flex flex-wrap items-end gap-2">
+          <input type="date" value={rb.date} onChange={(e) => setRb((p) => ({ ...p, date: e.target.value }))} className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" />
+          <select value={rb.category} onChange={(e) => setRb((p) => ({ ...p, category: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
+            {["Transport", "BBM", "Makan", "Material", "Pulsa/Data", "Lainnya"].map((c) => <option key={c}>{c}</option>)}
+          </select>
+          <input type="number" placeholder="Jumlah (Rp)" value={rb.amount} onChange={(e) => setRb((p) => ({ ...p, amount: e.target.value }))} className="h-9 w-28 rounded-lg border bg-background px-2.5 text-sm tabular-nums" />
+          <Button size="sm" loading={submitRb.isPending} disabled={!rb.amount} onClick={() => submitRb.mutate()}>Ajukan</Button>
+        </div>
+        {(reimburse ?? []).slice(0, 3).map((r: any) => (
+          <div key={r.id} className="mt-1.5 flex items-center gap-2 text-xs">
+            <span className="tabular-nums text-muted-foreground">{r.date}</span>
+            <span>{r.category}</span>
+            <span className="tabular-nums">{rp(r.amount)}</span>
+            <span className="ml-auto" />{stBadge(r.status)}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 /** Ajukan lembur + riwayat milik sendiri (FR-HR-207). */
 function OvertimeCard() {
   const qc = useQueryClient();
@@ -189,6 +255,9 @@ export default function EssAbsenPage() {
 
       {/* Ajukan lembur (FR-HR-207) */}
       <OvertimeCard />
+
+      {/* Kasbon + Reimburse (FR-HR-701/702) */}
+      <MoneyCard />
 
       {/* Sisa cuti (FR-HR-403) */}
       {(balance ?? []).length > 0 && (

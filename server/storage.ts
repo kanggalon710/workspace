@@ -159,8 +159,9 @@ import {
   hrAttendanceEvents, hrOfficeLocations, hrShifts, hrScheduleAssignments, hrHolidays,
   type HrAttendanceEvent, type HrShift,
   hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime, hrShiftRoster,
-  hrSalaryComponents, hrPayslips,
+  hrSalaryComponents, hrPayslips, hrCashAdvances, hrReimbursements,
   type HrEmployeeProfile, type HrOvertime, type HrSalaryComponent, type HrPayslip,
+  type HrCashAdvance, type HrReimbursement,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -4087,6 +4088,75 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(hrPayslips)
       .set({ status, paidAt: status === "paid" ? new Date().toISOString() : null })
       .where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
+  }
+
+  // ── FR-HR-7xx: kasbon + reimburse ──
+  async createCashAdvance(rec: { userId: number; amount: number; months: number; reason?: string | null }): Promise<HrCashAdvance> {
+    const mitraId = getMitraId();
+    const monthly = Math.ceil(rec.amount / Math.max(1, rec.months));
+    const result = await this.db.insert(hrCashAdvances).values({
+      mitraId, userId: rec.userId, amount: rec.amount, months: rec.months,
+      monthlyInstallment: monthly, remaining: rec.amount, reason: rec.reason ?? null,
+      status: "pending", createdAt: new Date().toISOString(),
+    });
+    const [row] = await this.db.select().from(hrCashAdvances).where(eq(hrCashAdvances.id, Number((result[0] as any).insertId)));
+    return row!;
+  }
+
+  async listCashAdvances(opts?: { userId?: number; status?: string }): Promise<HrCashAdvance[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrCashAdvances.mitraId, mitraId)];
+    if (opts?.userId != null) conds.push(eq(hrCashAdvances.userId, opts.userId));
+    if (opts?.status) conds.push(eq(hrCashAdvances.status, opts.status));
+    return this.db.select().from(hrCashAdvances).where(and(...conds)).orderBy(desc(hrCashAdvances.id)).limit(300);
+  }
+
+  async reviewCashAdvance(id: number, status: "approved" | "rejected", reviewedBy: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(hrCashAdvances).set({ status, reviewedBy })
+      .where(and(eq(hrCashAdvances.id, id), eq(hrCashAdvances.mitraId, mitraId)));
+  }
+
+  /** Kurangi sisa kasbon saat slip DIBAYAR; settle otomatis di 0. */
+  async payCashAdvanceInstallment(id: number, amount: number): Promise<void> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(hrCashAdvances).where(and(eq(hrCashAdvances.id, id), eq(hrCashAdvances.mitraId, mitraId)));
+    if (!row) return;
+    const remaining = Math.max(0, row.remaining - amount);
+    await this.db.update(hrCashAdvances).set({ remaining, status: remaining <= 0 ? "settled" : row.status })
+      .where(and(eq(hrCashAdvances.id, id), eq(hrCashAdvances.mitraId, mitraId)));
+  }
+
+  async createReimbursement(rec: { userId: number; date: string; category: string; amount: number; note?: string | null }): Promise<HrReimbursement> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(hrReimbursements).values({
+      mitraId, userId: rec.userId, date: rec.date, category: rec.category, amount: rec.amount,
+      note: rec.note ?? null, status: "pending", createdAt: new Date().toISOString(),
+    });
+    const [row] = await this.db.select().from(hrReimbursements).where(eq(hrReimbursements.id, Number((result[0] as any).insertId)));
+    return row!;
+  }
+
+  async listReimbursements(opts?: { userId?: number; status?: string }): Promise<HrReimbursement[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrReimbursements.mitraId, mitraId)];
+    if (opts?.userId != null) conds.push(eq(hrReimbursements.userId, opts.userId));
+    if (opts?.status) conds.push(eq(hrReimbursements.status, opts.status));
+    return this.db.select().from(hrReimbursements).where(and(...conds)).orderBy(desc(hrReimbursements.id)).limit(300);
+  }
+
+  async setReimbursementStatus(id: number, status: "approved" | "rejected" | "paid", reviewedBy?: number): Promise<void> {
+    const mitraId = getMitraId();
+    const patch: any = { status };
+    if (reviewedBy != null) patch.reviewedBy = reviewedBy;
+    await this.db.update(hrReimbursements).set(patch)
+      .where(and(eq(hrReimbursements.id, id), eq(hrReimbursements.mitraId, mitraId)));
+  }
+
+  async getPayslip(id: number): Promise<HrPayslip | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(hrPayslips).where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
+    return row;
   }
 
   async createOvertime(rec: { userId: number; date: string; hours: number; reason?: string | null }): Promise<HrOvertime> {
@@ -9279,6 +9349,26 @@ export class DatabaseStorage implements IStorage {
           take_home_pay DOUBLE NOT NULL, status VARCHAR(10) NOT NULL DEFAULT 'ready',
           generated_by INT NOT NULL, generated_at TEXT NOT NULL, paid_at TEXT NULL,
           UNIQUE KEY uq_hr_payslip (mitra_id, period, user_id)
+        )`,
+      },
+      {
+        name: "hr_cash_advances",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_cash_advances (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1, user_id INT NOT NULL,
+          amount DOUBLE NOT NULL, months INT NOT NULL DEFAULT 1, monthly_installment DOUBLE NOT NULL,
+          remaining DOUBLE NOT NULL, reason VARCHAR(255) NULL,
+          status VARCHAR(10) NOT NULL DEFAULT 'pending', reviewed_by INT NULL, created_at TEXT NOT NULL,
+          KEY idx_hr_ca_user (mitra_id, user_id), KEY idx_hr_ca_status (mitra_id, status)
+        )`,
+      },
+      {
+        name: "hr_reimbursements",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_reimbursements (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1, user_id INT NOT NULL,
+          date VARCHAR(10) NOT NULL, category VARCHAR(48) NOT NULL, amount DOUBLE NOT NULL,
+          note VARCHAR(255) NULL, status VARCHAR(10) NOT NULL DEFAULT 'pending',
+          reviewed_by INT NULL, created_at TEXT NOT NULL,
+          KEY idx_hr_rb_user (mitra_id, user_id), KEY idx_hr_rb_status (mitra_id, status)
         )`,
       },
       {
