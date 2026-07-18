@@ -138,24 +138,30 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
 
       {/* Selesai + Tenggat + Ulangi + Label — panel aksi (side) */}
       {showSide && (<>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={isCompleted ? "success" : "outline"}
-          leftIcon={isCompleted ? <CheckCircle2 className="size-4" /> : <Circle className="size-4" />}
-          disabled={!writable}
-          loading={actions.setCompleted.isPending}
-          onClick={toggleCompleted}
-        >
-          {isCompleted ? "Selesai" : "Tandai Selesai"}
-        </Button>
-        <div className="inline-flex items-center gap-1.5">
-          <CalendarClock className="size-4 text-muted-foreground" aria-hidden="true" />
+      <Button
+        type="button"
+        size="sm"
+        variant={isCompleted ? "success" : "outline-primary"}
+        className="w-full"
+        leftIcon={isCompleted ? <CheckCircle2 className="size-4" /> : <Circle className="size-4" />}
+        disabled={!writable}
+        loading={actions.setCompleted.isPending}
+        onClick={toggleCompleted}
+      >
+        {isCompleted ? "Selesai" : "Tandai Selesai"}
+      </Button>
+
+      {/* Tenggat — label jelas + input dirapikan + quick set (feedback: fungsi tanggal samar) */}
+      <div>
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <CalendarClock className="size-3" aria-hidden="true" /> Tenggat
+        </span>
+        <div className="mt-1 flex items-center gap-1.5">
           <input
+            key={card?.dueDate ?? "none"}   /* remount saat quick-set supaya nilai uncontrolled ikut segar */
             type="datetime-local"
             aria-label="Tanggal jatuh tempo"
-            className="h-8 rounded-md border bg-background px-2 text-xs"
+            className="h-9 w-full min-w-0 rounded-lg border bg-background px-2.5 text-sm font-medium tabular-nums shadow-elev-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             defaultValue={isoToLocalInput(card?.dueDate)}
             disabled={!writable}
             onBlur={(e) => {
@@ -170,13 +176,32 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
             </Button>
           )}
         </div>
+        {writable && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {([["Hari ini", 0], ["Besok", 1], ["+1 Minggu", 7]] as const).map(([label, days]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + days);
+                  d.setHours(17, 0, 0, 0);
+                  m.updateCard.mutateAsync({ cardId, dueDate: d.toISOString() });
+                }}
+                className="rounded-full border bg-background px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Ulangi (FR-408) — instance baru dibuat otomatis saat kartu selesai */}
       {writable && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-            <RotateCcw className="size-3" /> Ulangi:
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <RotateCcw className="size-3" /> Ulangi
           </span>
           {([["", "Tidak"], ["daily", "Harian"], ["weekly", "Mingguan"], ["monthly", "Bulanan"]] as const).map(([f, label]) => {
             const current = (() => { try { return card?.recurrenceRule ? JSON.parse(card.recurrenceRule).freq ?? "" : ""; } catch { return ""; } })();

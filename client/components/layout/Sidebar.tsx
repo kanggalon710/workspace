@@ -71,7 +71,6 @@ const navGroups: NavGroup[] = [
       { label: "Integrasi API", path: "/integrations", icon: Link2, permission: "integrations" },
       { label: "Public API (Open API)", path: "/api-keys", icon: KeyRound, permission: "api_keys" },
       { label: "Kelola Mitra", path: "/mitra", icon: Building2, requireSystemAdmin: true },
-      { label: "Manajemen Role", path: "/roles", icon: UserCog, permission: "user_management" },
     ],
   },
 ];

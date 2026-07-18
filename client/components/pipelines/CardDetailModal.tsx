@@ -173,11 +173,13 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 supaya aksi sering dipakai tidak butuh scroll panjang (pola Cicle). */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="md:grid md:grid-cols-[minmax(0,1fr)_16.5rem] md:items-start md:gap-6">
-              <aside className="space-y-4 md:order-2 md:sticky md:top-0">
+              {/* Panel aksi diberi latar berbeda (bg-muted) supaya kontrol tidak samar
+                  dengan latar konten — feedback user. */}
+              <aside className="mt-4 space-y-4 rounded-xl border bg-muted/40 p-3 md:order-2 md:mt-0 md:sticky md:top-0 md:max-h-[calc(85vh-7rem)] md:overflow-y-auto">
               {/* Pindah Stage — click-based, mobile-friendly chips (no drag needed). The move
                   endpoint runs automation + timeline + audit server-side, same as drag. */}
               <div>
-                <span className="text-[10px] font-medium text-muted-foreground">Pindah Stage</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pindah Stage</span>
                 <div className="mt-1 flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                   {stages.map((s) => {
                     const active = s.id === card.stageId;
@@ -201,14 +203,14 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
               {/* Quick-edit metadata */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[10px] font-medium text-muted-foreground">Prioritas</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Prioritas</span>
                   <Combobox size="sm" clearable={false} options={PRIORITIES}
                     value={card.priority}
                     onChange={(v) => { if (writable && v && v !== card.priority) m.updateCard.mutateAsync({ cardId, priority: v }); }}
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] font-medium text-muted-foreground">{isTeamBoard ? "Penanggung jawab utama" : "Assignee"}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{isTeamBoard ? "PJ Utama" : "Assignee"}</span>
                   <AssigneePicker
                     mode="single"
                     size="sm"
@@ -230,7 +232,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
 
               {canAssign && (
                 <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-muted-foreground">Penanggung jawab tambahan</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Penanggung Jawab Tambahan</span>
                   <AssigneePicker
                     mode="multi"
                     showSourceToggle={false}
