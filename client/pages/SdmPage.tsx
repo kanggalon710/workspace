@@ -11,6 +11,7 @@ import { PageContainer, PageSection } from "@/components/ui/page-container";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IdCard, CalendarCheck2, BarChart3, Plane, Save, Check, X, Users as UsersIcon, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -107,6 +108,74 @@ function MoneyApprovalList({ writable, nameOf }: { writable: boolean; nameOf: (i
         </div>
       ))}
     </Card>
+  );
+}
+
+/** FR-HR-1501/1502: Dashboard HR — headcount, kehadiran hari ini, approval pending, demografi. */
+function HrDashboardSection({ onGoApproval, onGoCuti }: { onGoApproval: () => void; onGoCuti: () => void }) {
+  const { data } = useQuery({ queryKey: ["/api/hr/dashboard"], queryFn: () => api.get<any>(`/hr/dashboard`), refetchInterval: 120_000 });
+  if (!data) return <div className="h-40 animate-pulse rounded-xl bg-muted" />;
+  const att = data.todayAttendance ?? {};
+  const totalPending = Object.values(data.pending ?? {}).reduce((s: number, n: any) => s + Number(n), 0);
+  const bar = (rows: Array<{ k: string; c: number }>, color: string) => {
+    const max = Math.max(1, ...rows.map((r) => r.c));
+    return (
+      <div className="space-y-1">
+        {rows.slice(0, 6).map((r) => (
+          <div key={r.k} className="flex items-center gap-2 text-xs">
+            <span className="w-24 shrink-0 truncate capitalize">{r.k}</span>
+            <span className="h-3 rounded-full" style={{ width: `${(r.c / max) * 100}%`, minWidth: 8, backgroundColor: color }} />
+            <span className="tabular-nums text-muted-foreground">{r.c}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatTile icon={UsersIcon} label="Total Karyawan" value={String(data.headcount)} accent="violet" description={`${data.activeCount} aktif`} />
+        <StatTile icon={CalendarCheck2} label="Hadir Hari Ini" value={String(att.hadir ?? 0)} accent="success" description={`${att.terlambat ?? 0} terlambat`} />
+        <StatTile icon={Plane} label="Cuti/Izin Hari Ini" value={String((att.cuti ?? 0) + (att.izin ?? 0) + (att.sakit ?? 0))} accent="info" />
+        <StatTile icon={Check} label="Perlu Persetujuan" value={String(totalPending)} accent={totalPending > 0 ? "warning" : "neutral"} onClick={onGoApproval} />
+      </div>
+
+      <PageSection title="Ringkasan Hari Ini">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Card padding="md">
+            <p className="text-sm font-semibold">Kehadiran</p>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center sm:grid-cols-4">
+              {[["Hadir", att.hadir ?? 0, "text-success"], ["Terlambat", att.terlambat ?? 0, "text-warning"], ["Izin", att.izin ?? 0, ""], ["Sakit", att.sakit ?? 0, ""], ["Cuti", att.cuti ?? 0, "text-info"], ["Alpha", att.alpha ?? 0, "text-destructive"]].map(([l, v, cls]) => (
+                <div key={l as string} className="rounded-lg border py-2">
+                  <p className={`text-lg font-black tabular-nums ${cls}`}>{v as number}</p>
+                  <p className="text-[10px] text-muted-foreground">{l as string}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <Card padding="md">
+            <p className="text-sm font-semibold">Antrean Persetujuan</p>
+            <div className="mt-2 space-y-1.5 text-sm">
+              {[["Cuti/Izin", data.pending?.leaves, onGoCuti], ["Presensi luar radius", data.pending?.presensi, onGoApproval], ["Lembur", data.pending?.overtime, onGoApproval], ["Kasbon", data.pending?.kasbon, onGoApproval], ["Reimburse", data.pending?.reimburse, onGoApproval]].map(([l, n, go]: any) => (
+                <button key={l} type="button" onClick={go} className="flex w-full items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted">
+                  <span className="flex-1 text-left">{l}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${n > 0 ? "bg-warning/15 text-warning" : "bg-muted text-muted-foreground"}`}>{n ?? 0}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </PageSection>
+
+      <PageSection title="Demografi Karyawan" description="Distribusi dari data profil (Karyawan → Lengkapi Data)">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Card padding="md"><p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status Karyawan</p>{bar(data.demographics?.employment ?? [], "#8B5CF6")}</Card>
+          <Card padding="md"><p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Pendidikan</p>{bar(data.demographics?.education ?? [], "#0EA5E9")}</Card>
+          <Card padding="md"><p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Agama</p>{bar(data.demographics?.religion ?? [], "#10B981")}</Card>
+          <Card padding="md"><p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status Perkawinan</p>{bar(data.demographics?.marital ?? [], "#F59E0B")}</Card>
+        </div>
+      </PageSection>
+    </>
   );
 }
 
@@ -262,7 +331,7 @@ export default function SdmPage() {
     return u ? (u.name || u.username) : id != null ? `#${id}` : "–";
   };
 
-  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "kpi" | "pengaturan">(readable ? "kehadiran" : "cuti");
+  const [tab, setTab] = useState<"dashboard" | "karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "kpi" | "pengaturan">(readable ? "dashboard" : "cuti");
   const [date, setDate] = useState(todayIso());
   const [month, setMonth] = useState(todayIso().slice(0, 7));
   // Draft kehadiran: userId -> status (belum tersimpan)
@@ -438,6 +507,7 @@ export default function SdmPage() {
 
   const tabs = [
     ...(readable ? [
+      { key: "dashboard", label: "Dashboard", icon: BarChart3 },
       { key: "karyawan", label: "Karyawan", icon: UsersIcon },
       { key: "kehadiran", label: "Catat Kehadiran", icon: CalendarCheck2 },
       { key: "approval", label: "Approval Presensi", icon: Check },
@@ -494,6 +564,8 @@ export default function SdmPage() {
           ))}
         </div>
       </PageHeader>
+
+      {tab === "dashboard" && readable && <HrDashboardSection onGoApproval={() => setTab("approval")} onGoCuti={() => setTab("cuti")} />}
 
       {tab === "karyawan" && readable && (
         <PageSection title="Registry Karyawan" description="Tandai akun user mana yang karyawan resmi — jadi dasar kehadiran, rekap, dan integrasi data lintas divisi"

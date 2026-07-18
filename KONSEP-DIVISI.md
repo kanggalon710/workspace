@@ -73,11 +73,12 @@ reimburse), PPh 21 TER PMK 168/2023 + BPJS TK/Kes (mesin murni ber-unit-test
 (paid-only), tandai bayar (memicu potong sisa kasbon + reimburse paid),
 ekspor jurnal CSV. Kasbon berplafon (default 1× gaji pokok) + reimburse.
 
-**HR-3 SELESAI (scope PRD)** — pelacakan lokasi teknisi (ping 5-menit ESS
+**HR-3 SELESAI + Dashboard HR (FR-HR-15xx)** — pelacakan lokasi teknisi (ping 5-menit ESS
 selama jam kerja, transparan, retensi 30 hari, panel "Posisi Teknisi Hari
 Ini"); master klien + kunjungan dengan validasi RADIUS (check-in luar radius
 ditandai); KPI form builder berbobot + penilaian 1-5 + rekap 0-100; petty
 cash per pemegang; pipeline "Rekrutmen Kandidat" ter-seed; slip gaji versi
-cetak (print→PDF) + rekap PPh 21 CSV. Di luar scope (sesuai §13/§15 PRD):
+cetak (print→PDF) + rekap PPh 21 CSV; Dashboard HR (headcount,
+kehadiran hari ini, antrean approval terpusat, demografi karyawan). Di luar scope (sesuai §13/§15 PRD):
 bukti potong format resmi Coretax (butuh template DJP final), SSO/VA,
 ID card generator, integrasi akuntansi non-CSV, aplikasi native.

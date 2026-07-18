@@ -4192,6 +4192,52 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(hrLocationPings.id)).limit(500);
   }
 
+  // FR-HR-1501/1502: agregasi Dashboard HR (demografi + kehadiran hari ini)
+  async hrDashboard(date: string): Promise<{
+    headcount: number; activeCount: number;
+    todayAttendance: Record<string, number>;
+    pending: { leaves: number; overtime: number; kasbon: number; reimburse: number; presensi: number };
+    demographics: { religion: Array<{ k: string; c: number }>; education: Array<{ k: string; c: number }>; employment: Array<{ k: string; c: number }>; marital: Array<{ k: string; c: number }> };
+  }> {
+    const mitraId = getMitraId();
+    const emps = (await this.listEmployees()).filter((e) => e.isEmployee === 1);
+    const activeCount = emps.filter((e) => e.isActive !== 0).length;
+    const empIds = new Set(emps.map((e) => e.id));
+
+    const att = (await this.listAttendanceByDate(date)).filter((a) => empIds.has(a.userId));
+    const todayAttendance: Record<string, number> = { hadir: 0, terlambat: 0, izin: 0, sakit: 0, cuti: 0, alpha: 0, libur: 0 };
+    for (const a of att) {
+      if (a.status === "hadir" && a.note?.includes("Terlambat")) todayAttendance.terlambat++;
+      else todayAttendance[a.status] = (todayAttendance[a.status] ?? 0) + 1;
+    }
+
+    const countStatus = async (fn: () => Promise<Array<{ status?: string }>>) => (await fn()).length;
+    const pending = {
+      leaves: (await this.listLeaves({ status: "pending", limit: 500 })).length,
+      overtime: (await this.listOvertime({ status: "pending" })).length,
+      kasbon: (await this.listCashAdvances({ status: "pending" })).length,
+      reimburse: (await this.listReimbursements({ status: "pending" })).length,
+      presensi: (await this.listAttendanceEvents({ status: "pending" })).length,
+    };
+    void countStatus;
+
+    // Demografi dari profil karyawan
+    const profiles = await this.db.select().from(hrEmployeeProfiles).where(eq(hrEmployeeProfiles.mitraId, mitraId));
+    const tally = (vals: Array<string | null | undefined>) => {
+      const m = new Map<string, number>();
+      for (const v of vals) { const k = (v && String(v).trim()) || "–"; m.set(k, (m.get(k) ?? 0) + 1); }
+      return [...m.entries()].map(([k, c]) => ({ k, c })).sort((a, b) => b.c - a.c);
+    };
+    const forEmp = profiles.filter((p) => empIds.has(p.userId));
+    const demographics = {
+      religion: tally(forEmp.map((p) => p.religion)),
+      education: tally(forEmp.map((p) => p.educationLevel)),
+      employment: tally(forEmp.map((p) => p.employmentStatus)),
+      marital: tally(forEmp.map((p) => p.maritalStatus)),
+    };
+    return { headcount: emps.length, activeCount, todayAttendance, pending, demographics };
+  }
+
   // FR-HR-902/903: klien + kunjungan
   async listClients(): Promise<HrClient[]> {
     const mitraId = getMitraId();

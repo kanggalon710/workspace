@@ -8196,6 +8196,14 @@ router.get("/api/hr/tracking/:userId", async (req, res) => {
   sendSuccess(res, await storage.listUserPings(Number(req.params.userId), date));
 });
 
+// ── FR-HR-1501/1502: Dashboard HR ──
+router.get("/api/hr/dashboard", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  sendSuccess(res, await storage.hrDashboard(date));
+});
+
 // ── FR-HR-902/903: master klien + kunjungan (check-in sah hanya dalam radius) ──
 router.get("/api/hr/clients", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
