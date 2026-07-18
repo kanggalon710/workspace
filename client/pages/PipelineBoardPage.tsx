@@ -18,7 +18,8 @@ import { resolvePipelineIcon, pipelineTint, PIPELINE_DEFAULT_COLOR } from "@/com
 import { reorderByDrag, moveByOffset } from "@/components/pipelines/stageReorder";
 import { edgeScrollDelta } from "@/components/pipelines/dragScroll";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Download, Upload, CheckSquare, ShieldAlert } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreVertical, Download, Upload, CheckSquare, ShieldAlert, ListFilter, KeyRound, Zap, Settings2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { BulkActionBar } from "@/components/pipelines/BulkActionBar";
@@ -210,10 +211,53 @@ export default function PipelineBoardPage() {
       className="flex flex-col h-dvh overflow-hidden md:h-full md:overflow-visible -m-4 md:-m-6 -mt-16 md:-mt-6 pb-20 md:pb-0"
     >
       <header className="sticky top-0 z-10 bg-background pt-16 md:pt-6 px-4 md:px-6 pb-2 border-b border-border/40">
-        {/* UX Cicle: navigasi modul tim selalu terlihat di atas board Tugas */}
-        {teamParams && ownerTeam && <TeamModuleNav team={ownerTeam} active="tasks" />}
+        {/* UX Cicle: board tim = SATU baris bersih — nav modul tim + Pilih + kebab.
+            Judul/deskripsi board & deretan tombol disembunyikan (redundan dgn nav tim). */}
+        {teamParams && ownerTeam && (
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1"><TeamModuleNav team={ownerTeam} active="tasks" /></div>
+            <div className="mb-3 flex shrink-0 items-center gap-1">
+              {pipeline && (
+                <Button
+                  type="button"
+                  variant={selectMode ? "outline" : "ghost"}
+                  size="sm"
+                  aria-pressed={selectMode}
+                  onClick={() => { setSelectMode((v) => !v); setSelectedIds(new Set()); }}
+                  className={selectMode ? "border-primary text-primary" : undefined}
+                >
+                  <CheckSquare className="size-3.5 mr-1" aria-hidden="true" />
+                  {selectMode ? `Pilih (${selectedIds.size})` : "Pilih"}
+                </Button>
+              )}
+              {pipeline && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon-sm" aria-label="Menu board">
+                      <MoreVertical className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    {can("export") && (
+                      <DropdownMenuItem onSelect={async () => { try { await downloadCardsCsv(pid!, pipeline.name); } catch (err: any) { toast.error(err.message ?? "Gagal mengunduh CSV"); } }}>
+                        <Download className="size-3.5 mr-2" /> Export CSV
+                      </DropdownMenuItem>
+                    )}
+                    {can("import") && <DropdownMenuItem onSelect={() => setShowImport(true)}><Upload className="size-3.5 mr-2" /> Import CSV</DropdownMenuItem>}
+                    {(can("export") || can("import")) && <DropdownMenuSeparator />}
+                    {can("fields") && <DropdownMenuItem onSelect={() => setShowFields(true)}><ListFilter className="size-3.5 mr-2" /> Field</DropdownMenuItem>}
+                    {can("manage") && <DropdownMenuItem onSelect={() => setShowAccess(true)}><KeyRound className="size-3.5 mr-2" /> Akses</DropdownMenuItem>}
+                    {can("automation") && <DropdownMenuItem onSelect={() => setShowRules(true)}><Zap className="size-3.5 mr-2" /> Otomasi</DropdownMenuItem>}
+                    {can("manage") && <DropdownMenuItem onSelect={() => setShowSettings(true)}><Settings2 className="size-3.5 mr-2" /> Pengaturan</DropdownMenuItem>}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        )}
         {/* Mobile: tombol aksi wrap ke baris sendiri (basis-full) — kalau satu baris,
             judul pipeline (flex-1) terjepit jadi 0px oleh deretan tombol. */}
+        {!(teamParams && ownerTeam) && (
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 md:flex-nowrap md:items-start">
           {(() => { const Icon = resolvePipelineIcon(pipeline?.icon); return (
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: pipelineTint(pipeline?.color) }}>
@@ -277,7 +321,9 @@ export default function PipelineBoardPage() {
             {can("manage") && <Button type="button" variant="ghost" size="icon-sm" aria-label="Pengaturan pipeline" onClick={() => setShowSettings(true)}><MoreVertical className="size-4" /></Button>}
           </div>
         </div>
-        {pipeline && pid != null && <MetricsStrip pipelineId={pid} canManage={can("manage")} onManage={() => setShowMetricsCfg(true)} />}
+        )}
+        {/* Metrik hanya untuk pipeline ops — board tim tidak perlu (feedback user). */}
+        {pipeline && pid != null && !teamParams && <MetricsStrip pipelineId={pid} canManage={can("manage")} onManage={() => setShowMetricsCfg(true)} />}
         {pipeline && <div className="mt-2"><BoardFilters search={search} onSearch={setSearch} dateField={dateField} onDateField={setDateField} range={range} onRange={setRange} assigneeId={assigneeId} onAssignee={setAssigneeId} assigneeOptions={assigneeOptions} fields={fields} filterFieldId={filterFieldId} onFilterField={setFilterFieldId} filterValue={filterValue} onFilterValue={setFilterValue} sortFieldId={sortFieldId} onSortField={setSortFieldId} sortDir={sortDir} onSortDirToggle={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} visibleCount={visible.length} onReset={() => { setSearch(""); setRange("all"); setAssigneeId(null); setFilterFieldId(null); setFilterValue(""); setSortFieldId(null); setSortDir("asc"); }} /></div>}
       </header>
       <div

@@ -18,6 +18,7 @@ import { SchedulePanel } from "@/components/teamspace/SchedulePanel";
 import { CheckinPanel } from "@/components/teamspace/CheckinPanel";
 import { DocsPanel } from "@/components/teamspace/DocsPanel";
 import { AnnouncementsPanel } from "@/components/teamspace/AnnouncementsPanel";
+import { TeamReportPanel } from "@/components/teamspace/TeamReportPanel";
 import {
   UsersRound, CheckSquare, AlertTriangle, ClipboardList, Kanban, UserPlus, Shield, ShieldOff,
   UserMinus, FolderKanban, Archive, LayoutDashboard, MessageCircle, CalendarDays, MessagesSquare, FolderClosed, Megaphone,
@@ -223,6 +224,9 @@ export default function TeamPage() {
               Buka Board Tugas
             </Button>
           </div>
+
+          {/* Laporan gaya Cicle: rekap status + penghambat + per-list + poin tugas */}
+          <TeamReportPanel teamId={team.id} teamName={team.name} />
 
           <PageSection
             title="Anggota Tim"
