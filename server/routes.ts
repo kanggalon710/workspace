@@ -7954,6 +7954,8 @@ router.get("/api/hr/attendance/summary", async (req, res) => {
 
 router.get("/api/hr/leaves", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  // FR-HR-502: ?approver=1 → cuti tim yang menunggu SAYA (atasan langsung)
+  if (req.query.approver === "1") return sendSuccess(res, await storage.listLeavesForSupervisor(req.authUser.id));
   const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
   const status = req.query.status ? String(req.query.status) : undefined;
   sendSuccess(res, await storage.listLeaves({ userId: mineOnly ? req.authUser.id : undefined, status }));
@@ -7980,10 +7982,25 @@ router.post("/api/hr/leaves", async (req, res) => {
 
 router.post("/api/hr/leaves/:id/review", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
-  if (!hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
   const { status, note } = req.body ?? {};
   if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
-  const row = await storage.reviewLeave(Number(req.params.id), status, req.authUser.id, note ? String(note) : null);
+  const id = Number(req.params.id);
+  const current = (await storage.listLeaves({ limit: 500 })).find((l) => l.id === id);
+  if (!current) return sendError(res, "Pengajuan cuti tidak ditemukan", 404);
+  const isHr = hasWritePermission(req, "hr_sdm");
+  // FR-HR-502: tahap manager — hanya atasan langsung pengaju (atau HR) yang boleh memutus.
+  if (current.status === "pending" && (current as any).stage === "manager" && !isHr) {
+    const profile = await storage.getEmployeeProfile(current.userId);
+    if (profile?.supervisorId !== req.authUser.id) return sendError(res, "Akses ditolak: bukan atasan langsung pengaju", 403);
+    if (status === "approved") {
+      await storage.managerApproveLeave(id, req.authUser.id);   // lanjut ke tahap HR
+      return sendSuccess(res, { ...current, stage: "hr", managerApproved: true });
+    }
+    const rejected = await storage.reviewLeave(id, "rejected", req.authUser.id, note ? String(note) : null);
+    return sendSuccess(res, rejected);
+  }
+  if (!isHr) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
+  const row = await storage.reviewLeave(id, status, req.authUser.id, note ? String(note) : null);
   if (!row) return sendError(res, "Pengajuan cuti tidak ditemukan", 404);
   // Cuti disetujui → otomatis isi kehadiran "cuti" untuk rentang tanggalnya (max 60 hari).
   if (status === "approved") {
@@ -8037,9 +8054,8 @@ router.post("/api/hr/clock", async (req, res) => {
     await storage.applyAttendanceEvent(ev, req.authUser.id);
     // Hitung telat vs shift user (FR-HR-304) — dicatat sebagai note kehadiran.
     if (kind === "in") {
-      const assigns = await storage.listScheduleAssignments();
-      const shifts = await storage.listShifts();
-      const shift = shifts.find((s) => s.id === assigns.find((a) => a.userId === req.authUser!.id)?.shiftId);
+      // FR-HR-301: roster shift per-tanggal menang atas jadwal tetap
+      const shift = await storage.effectiveShift(req.authUser.id, date);
       if (shift) {
         const [h, m] = shift.startTime.split(":").map(Number);
         const lateMin = Math.round((now.getTime() - new Date(now).setHours(h, m, 0, 0)) / 60000) - shift.lateToleranceMin;
@@ -8059,9 +8075,7 @@ router.get("/api/hr/my/today", async (req, res) => {
   const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const events = await storage.listAttendanceEvents({ date, userId: req.authUser.id });
   const att = (await storage.listAttendanceByDate(date)).find((a) => a.userId === req.authUser!.id) ?? null;
-  const assigns = await storage.listScheduleAssignments();
-  const shifts = await storage.listShifts();
-  const shift = shifts.find((s) => s.id === assigns.find((a) => a.userId === req.authUser!.id)?.shiftId) ?? null;
+  const shift = await storage.effectiveShift(req.authUser.id, date);
   sendSuccess(res, { date, events, attendance: att, shift });
 });
 
@@ -8114,6 +8128,21 @@ router.post("/api/hr/shifts", async (req, res) => {
   await storage.saveShift({ id: id ? Number(id) : undefined, name: String(name), startTime: String(startTime), endTime: String(endTime), lateToleranceMin: Number(lateToleranceMin) || 10, workDays: String(workDays || "1,2,3,4,5") });
   sendSuccess(res, { ok: true });
 });
+// FR-HR-301: roster shift per tanggal (rotasi)
+router.get("/api/hr/roster", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const date = String(req.query.date ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return sendError(res, "Param date wajib YYYY-MM-DD", 400);
+  sendSuccess(res, await storage.getRosterByDate(date));
+});
+router.post("/api/hr/roster", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { userId, date, shiftId } = req.body ?? {};
+  if (!Number(userId) || !/^\d{4}-\d{2}-\d{2}$/.test(String(date ?? ""))) return sendError(res, "userId/date wajib", 400);
+  await storage.setRoster(Number(userId), String(date), shiftId ? Number(shiftId) : null);
+  sendSuccess(res, { ok: true });
+});
+
 router.post("/api/hr/schedule", async (req, res) => {
   if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   const { userId, shiftId } = req.body ?? {};

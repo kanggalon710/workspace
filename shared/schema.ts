@@ -2720,6 +2720,8 @@ export const hrLeaves = mysqlTable("hr_leaves", {
   type: varchar("type", { length: 16 }).notNull(),           // tahunan|sakit|izin|khusus
   reason: varchar("reason", { length: 500 }),
   status: varchar("status", { length: 10 }).notNull().default("pending"),  // pending|approved|rejected
+  stage: varchar("stage", { length: 10 }).notNull().default("hr"),         // FR-HR-502: manager|hr (berjenjang)
+  managerReviewedBy: int("manager_reviewed_by"),
   reviewedBy: int("reviewed_by"),
   reviewedAt: text("reviewed_at"),
   reviewNote: varchar("review_note", { length: 255 }),
@@ -2728,6 +2730,16 @@ export const hrLeaves = mysqlTable("hr_leaves", {
   byUser: index("idx_hr_leaves_user").on(t.mitraId, t.userId, t.id),
   byStatus: index("idx_hr_leaves_status").on(t.mitraId, t.status),
 }));
+
+// FR-HR-301: jadwal SHIFT ROTASI — penugasan shift per tanggal per karyawan
+// (prioritas di atas jadwal tetap hr_schedule_assignments saat hitung telat).
+export const hrShiftRoster = mysqlTable("hr_shift_roster", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  date: varchar("date", { length: 10 }).notNull(),
+  shiftId: int("shift_id").notNull(),
+}, (t) => ({ uniqUserDate: uniqueIndex("uq_hr_roster").on(t.mitraId, t.userId, t.date) }));
 
 export type HrAttendance = typeof hrAttendance.$inferSelect;
 export type HrLeave = typeof hrLeaves.$inferSelect;

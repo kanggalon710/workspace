@@ -158,7 +158,7 @@ import {
   hrAttendance, hrLeaves, type HrAttendance, type HrLeave,
   hrAttendanceEvents, hrOfficeLocations, hrShifts, hrScheduleAssignments, hrHolidays,
   type HrAttendanceEvent, type HrShift,
-  hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime,
+  hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime, hrShiftRoster,
   type HrEmployeeProfile, type HrOvertime,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
@@ -3785,9 +3785,12 @@ export class DatabaseStorage implements IStorage {
 
   async createLeave(rec: { userId: number; startDate: string; endDate: string; type: string; reason?: string | null }): Promise<HrLeave> {
     const mitraId = getMitraId();
+    // FR-HR-502: bila punya atasan langsung → tahap manager dulu, baru HR.
+    const profile = await this.getEmployeeProfile(rec.userId);
+    const stage = profile?.supervisorId ? "manager" : "hr";
     const result = await this.db.insert(hrLeaves).values({
       mitraId, userId: rec.userId, startDate: rec.startDate, endDate: rec.endDate,
-      type: rec.type, reason: rec.reason ?? null, status: "pending", createdAt: new Date().toISOString(),
+      type: rec.type, reason: rec.reason ?? null, status: "pending", stage, createdAt: new Date().toISOString(),
     });
     const insertId = Number((result[0] as any).insertId);
     const [row] = await this.db.select().from(hrLeaves).where(eq(hrLeaves.id, insertId));
@@ -3982,6 +3985,56 @@ export class DatabaseStorage implements IStorage {
 
   async savePosition(name: string): Promise<void> {
     await this.db.insert(hrPositions).values({ mitraId: getMitraId(), name });
+  }
+
+  // FR-HR-301: roster shift per tanggal (prioritas di atas jadwal tetap)
+  async getRosterByDate(date: string): Promise<Array<{ userId: number; shiftId: number }>> {
+    const mitraId = getMitraId();
+    return this.db.select({ userId: hrShiftRoster.userId, shiftId: hrShiftRoster.shiftId })
+      .from(hrShiftRoster).where(and(eq(hrShiftRoster.mitraId, mitraId), eq(hrShiftRoster.date, date)));
+  }
+
+  async setRoster(userId: number, date: string, shiftId: number | null): Promise<void> {
+    const mitraId = getMitraId();
+    if (shiftId == null) {
+      await this.db.delete(hrShiftRoster).where(and(eq(hrShiftRoster.mitraId, mitraId), eq(hrShiftRoster.userId, userId), eq(hrShiftRoster.date, date)));
+      return;
+    }
+    await this.pool.execute(
+      `INSERT INTO hr_shift_roster (mitra_id, user_id, date, shift_id) VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE shift_id = VALUES(shift_id)`, [mitraId, userId, date, shiftId]);
+  }
+
+  /** Shift efektif user pada tanggal: roster dulu, fallback jadwal tetap. */
+  async effectiveShift(userId: number, date: string): Promise<HrShift | null> {
+    const roster = (await this.getRosterByDate(date)).find((r) => r.userId === userId);
+    const shifts = await this.listShifts();
+    if (roster) return shifts.find((s) => s.id === roster.shiftId) ?? null;
+    const assigns = await this.listScheduleAssignments();
+    const fixed = assigns.find((a) => a.userId === userId);
+    return fixed ? shifts.find((s) => s.id === fixed.shiftId) ?? null : null;
+  }
+
+  /** FR-HR-502: cuti pending yang menunggu keputusan SAYA sebagai atasan langsung. */
+  async listLeavesForSupervisor(supervisorId: number): Promise<HrLeave[]> {
+    const mitraId = getMitraId();
+    const [rows]: any = await this.pool.execute(
+      `SELECT l.* FROM hr_leaves l
+       JOIN hr_employee_profiles p ON p.user_id = l.user_id AND p.mitra_id = l.mitra_id
+       WHERE l.mitra_id = ? AND l.status = 'pending' AND l.stage = 'manager' AND p.supervisor_id = ?
+       ORDER BY l.id DESC LIMIT 100`, [mitraId, supervisorId]);
+    // snake_case → camelCase kolom penting saja
+    return (rows as any[]).map((r) => ({
+      ...r, userId: r.user_id, startDate: r.start_date, endDate: r.end_date,
+      managerReviewedBy: r.manager_reviewed_by, reviewedBy: r.reviewed_by,
+      reviewedAt: r.reviewed_at, reviewNote: r.review_note, createdAt: r.created_at, mitraId: r.mitra_id,
+    })) as any;
+  }
+
+  async managerApproveLeave(id: number, managerId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(hrLeaves).set({ stage: "hr", managerReviewedBy: managerId })
+      .where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
   }
 
   async createOvertime(rec: { userId: number; date: string; hours: number; reason?: string | null }): Promise<HrOvertime> {
@@ -9137,6 +9190,14 @@ export class DatabaseStorage implements IStorage {
         )`,
       },
       {
+        name: "hr_shift_roster",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_shift_roster (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL, date VARCHAR(10) NOT NULL, shift_id INT NOT NULL,
+          UNIQUE KEY uq_hr_roster (mitra_id, user_id, date)
+        )`,
+      },
+      {
         name: "hr_overtime",
         ddl: `CREATE TABLE IF NOT EXISTS hr_overtime (
           id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
@@ -9190,6 +9251,14 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (err: any) {
       console.warn(`[migration] seed lead intake rule: ${err.message}`);
+    }
+
+    // HR-1c: kolom approval berjenjang di hr_leaves (idempotent errno 1060)
+    for (const ddl of [
+      `ALTER TABLE hr_leaves ADD COLUMN stage VARCHAR(10) NOT NULL DEFAULT 'hr'`,
+      `ALTER TABLE hr_leaves ADD COLUMN manager_reviewed_by INT NULL`,
+    ]) {
+      try { await this.pool.execute(ddl); } catch (err: any) { if (err.errno !== 1060) console.warn(`[migration] hr_leaves alter: ${err.message}`); }
     }
 
     // v5.1 SDM: penanda karyawan pada akun user (HRD cek username = karyawan/bukan)

@@ -152,6 +152,42 @@ export default function SdmPage() {
     onSuccess: () => { toast.success("Lembur diproses"); qc.invalidateQueries({ queryKey: ["/api/hr/overtime"] }); },
     onError: (e: any) => toast.error(e?.message || "Gagal"),
   });
+  // HR-1c: roster shift per tanggal + persetujuan tim (manajer) + import karyawan
+  const [rosterDate, setRosterDate] = useState(todayIso());
+  const { data: roster } = useQuery({
+    queryKey: ["/api/hr/roster", rosterDate],
+    queryFn: () => api.get<Array<{ userId: number; shiftId: number }>>(`/hr/roster?date=${rosterDate}`),
+    enabled: readable && tab === "pengaturan",
+  });
+  const { data: teamLeaves } = useQuery({
+    queryKey: ["/api/hr/leaves", "approver"],
+    queryFn: () => api.get<any[]>(`/hr/leaves?approver=1`),
+    enabled: tab === "cuti",
+    refetchInterval: 60_000,
+  });
+  const [showEmpImport, setShowEmpImport] = useState(false);
+  const [empCsv, setEmpCsv] = useState("");
+  const empImport = useMutation({
+    mutationFn: async () => {
+      const rows = empCsv.split(/\r?\n/).map((l) => l.split(/[;,\t]/).map((c) => c.trim())).filter((c) => c.length >= 2 && c[0]);
+      let ok = 0; const fails: string[] = [];
+      for (const [username, name, employeeId, position, department] of rows) {
+        try {
+          const u: any = await api.post(`/users`, { username, name, password: "Jabnet@2026", role: "viewer", employeeId, position, department });
+          await api.post(`/hr/employees/${u.id ?? u.user?.id}`, { isEmployee: true });
+          ok++;
+        } catch (e: any) { fails.push(`${username}: ${e?.message ?? "gagal"}`); }
+      }
+      return { ok, fails };
+    },
+    onSuccess: (r) => {
+      toast.success(`${r.ok} karyawan terbuat (password awal: Jabnet@2026)`);
+      if (r.fails.length) toast.error(`${r.fails.length} gagal: ${r.fails.slice(0, 2).join("; ")}${r.fails.length > 2 ? "…" : ""}`);
+      setShowEmpImport(false); setEmpCsv("");
+      qc.invalidateQueries({ queryKey: ["/api/hr/employees"] });
+    },
+  });
+
   const [masterForm, setMasterForm] = useState({ kind: "org", name: "" });
   const saveMaster = useMutation({
     mutationFn: () => api.post(`/hr/orgs`, { kind: masterForm.kind === "org" ? "org" : "position", name: masterForm.name }),
@@ -216,7 +252,7 @@ export default function SdmPage() {
   const [holForm, setHolForm] = useState({ date: todayIso(), name: "" });
   const saveCfg = useMutation({
     mutationFn: ({ path, body }: { path: string; body: any }) => api.post(path, body),
-    onSuccess: () => { toast.success("Tersimpan"); invalidateCfg(); },
+    onSuccess: () => { toast.success("Tersimpan"); invalidateCfg(); qc.invalidateQueries({ queryKey: ["/api/hr/roster"] }); },
     onError: (e: any) => toast.error(e?.message || "Gagal menyimpan"),
   });
 
@@ -246,7 +282,8 @@ export default function SdmPage() {
       </PageHeader>
 
       {tab === "karyawan" && readable && (
-        <PageSection title="Registry Karyawan" description="Tandai akun user mana yang karyawan resmi — jadi dasar kehadiran, rekap, dan integrasi data lintas divisi">
+        <PageSection title="Registry Karyawan" description="Tandai akun user mana yang karyawan resmi — jadi dasar kehadiran, rekap, dan integrasi data lintas divisi"
+          actions={writable ? <Button size="sm" variant="outline" leftIcon={<Upload className="size-4" />} onClick={() => setShowEmpImport(true)}>Import Massal</Button> : undefined}>
           <Card padding="none" className="divide-y overflow-hidden">
             {(employees ?? []).map((u: any) => (
               <div key={u.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
@@ -436,6 +473,31 @@ export default function SdmPage() {
             )}
           </PageSection>
 
+          <PageSection title="Roster Shift (Rotasi per Tanggal)" description="Menimpa jadwal tetap pada tanggal terpilih — untuk pola shift bergilir (FR-HR-301)"
+            actions={<input type="date" value={rosterDate} onChange={(e) => setRosterDate(e.target.value)}
+              className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Tanggal roster" />}>
+            {(hrCfg?.shifts?.shifts ?? []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">Buat shift dulu di bagian Shift Kerja.</p>
+            ) : (
+              <Card padding="none" className="divide-y overflow-hidden">
+                {activeUsers.map((u: any) => {
+                  const cur = (roster ?? []).find((r) => r.userId === u.id)?.shiftId ?? "";
+                  return (
+                    <div key={u.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                      <span className="flex-1 truncate">{u.name || u.username}</span>
+                      <select value={cur} disabled={!writable}
+                        onChange={(e) => saveCfg.mutate({ path: `/hr/roster`, body: { userId: u.id, date: rosterDate, shiftId: e.target.value ? Number(e.target.value) : null } })}
+                        className="h-8 rounded-lg border bg-background px-2 text-xs">
+                        <option value="">Ikut jadwal tetap</option>
+                        {(hrCfg?.shifts?.shifts ?? []).map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.startTime})</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+              </Card>
+            )}
+          </PageSection>
+
           <PageSection title="Struktur Organisasi & Jabatan" description="Master data yang dirujuk profil karyawan (FR-HR-104)">
             {writable && (
               <div className="flex flex-wrap items-end gap-2">
@@ -508,7 +570,30 @@ export default function SdmPage() {
 
       {tab === "cuti" && (
         <>
-          <PageSection title="Ajukan Cuti" description="Pengajuan masuk ke HR untuk disetujui — cuti yang disetujui otomatis mengisi kehadiran">
+          {/* FR-HR-502: antrean saya sebagai atasan langsung (tahap 1 sebelum HR) */}
+          {(teamLeaves ?? []).length > 0 && (
+            <PageSection title="Persetujuan Tim Saya" description="Anda atasan langsung pengaju — setelah Anda setujui, lanjut ke HR">
+              <Card padding="none" className="divide-y overflow-hidden">
+                {(teamLeaves ?? []).map((l: any) => (
+                  <div key={l.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
+                    <span className="min-w-0 flex-1">
+                      <b>{nameOf(l.userId)}</b> · {LEAVE_TYPES.find(([k]) => k === l.type)?.[1] ?? l.type}
+                      <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">{l.startDate} → {l.endDate}</span>
+                      {l.reason && <span className="ml-1.5 text-xs text-muted-foreground">— {l.reason}</span>}
+                    </span>
+                    <span className="flex gap-1">
+                      <Button type="button" size="icon-sm" variant="success" aria-label="Setujui (lanjut HR)" loading={reviewLeave.isPending}
+                        onClick={() => reviewLeave.mutate({ id: l.id, status: "approved" })}><Check className="size-4" /></Button>
+                      <Button type="button" size="icon-sm" variant="destructive" aria-label="Tolak" loading={reviewLeave.isPending}
+                        onClick={() => reviewLeave.mutate({ id: l.id, status: "rejected" })}><X className="size-4" /></Button>
+                    </span>
+                  </div>
+                ))}
+              </Card>
+            </PageSection>
+          )}
+
+          <PageSection title="Ajukan Cuti" description="Alur: atasan langsung (bila ada) → HR — cuti disetujui otomatis mengisi kehadiran">
             <Card padding="md" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <label className="text-xs font-medium text-muted-foreground">Mulai
                 <input type="date" value={leaveForm.startDate} onChange={(e) => setLeaveForm((p) => ({ ...p, startDate: e.target.value }))}
@@ -559,6 +644,26 @@ export default function SdmPage() {
             )}
           </PageSection>
         </>
+      )}
+
+      {/* Import karyawan massal (FR-HR-103): buat akun + tandai karyawan */}
+      {showEmpImport && (
+        <Dialog open onOpenChange={(o) => { if (!o) setShowEmpImport(false); }}>
+          <DialogContent className="max-w-lg w-[calc(100vw-2rem)]">
+            <DialogTitle>Import Karyawan Massal</DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Satu baris satu karyawan: <code className="rounded bg-muted px-1 font-mono-tight">username, nama, NIK, jabatan, departemen</code>.
+              Akun dibuat dengan password awal <b>Jabnet@2026</b> (role Viewer) dan langsung ditandai karyawan.
+            </p>
+            <textarea value={empCsv} onChange={(e) => setEmpCsv(e.target.value)}
+              placeholder={"asep, Asep Sunandar, JB010, Teknisi FTTH, Teknik\nnina, Nina Kurnia, JB011, CS, Layanan"}
+              className="h-36 w-full rounded-lg border bg-background p-2.5 font-mono-tight text-xs" />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowEmpImport(false)}>Batal</Button>
+              <Button size="sm" loading={empImport.isPending} disabled={!empCsv.trim()} onClick={() => empImport.mutate()}>Import</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {wizardUser && (
