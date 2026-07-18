@@ -8168,6 +8168,34 @@ router.delete("/api/hr/holidays/:id", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
+// ── FR-HR-901: pelacakan lokasi (aktif hanya saat status kerja; transparan ke karyawan) ──
+router.post("/api/hr/ping", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const { lat, lng, accuracy } = req.body ?? {};
+  if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return sendError(res, "lat/lng wajib", 400);
+  // Hanya rekam saat sedang jam kerja: sudah clock-in hari ini dan belum clock-out.
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const att = (await storage.listAttendanceByDate(date)).find((a) => a.userId === req.authUser!.id);
+  const working = !!att?.checkIn && !att?.checkOut;
+  if (!working) return sendSuccess(res, { tracked: false, reason: "di luar jam kerja" });
+  await storage.addLocationPing(req.authUser.id, Number(lat), Number(lng), accuracy != null ? Number(accuracy) : null);
+  sendSuccess(res, { tracked: true });
+});
+
+router.get("/api/hr/tracking", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasPermission(req, "hr_sdm") && !hasPermission(req, "map")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, await storage.latestLocations());
+});
+
+router.get("/api/hr/tracking/:userId", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasPermission(req, "hr_sdm") && !hasPermission(req, "map")) return sendError(res, "Akses ditolak", 403);
+  const date = String(req.query.date ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
+  sendSuccess(res, await storage.listUserPings(Number(req.params.userId), date));
+});
+
 // ── HR-1b: profil karyawan (wizard), org/jabatan, lembur ──
 
 router.get("/api/hr/profile/:userId", async (req, res) => {

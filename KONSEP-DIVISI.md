@@ -56,17 +56,26 @@ Pola implementasi: tambah selector KPI di `DivisionHubPage` (atau ganti hub jadi
 halaman laporan penuh gaya Cicle seperti `TeamReportPanel`) — struktur navigasi
 tidak perlu berubah lagi.
 
-## Modul SDM / HRD (adaptasi SDM_Jabnet.xlsx)
+## Modul HR & Payroll (PRD-HR / PRDHR.md — pengganti GajiHub)
 
-**Fase 1 (SUDAH — v5.1)**: halaman `/hrd/sdm` (izin `hr_sdm`, grup HRD) —
-Catat Kehadiran harian (hadir/izin/sakit/cuti/alpha/libur, upsert + koreksi),
-Rekap Bulanan per karyawan, dan Cuti self-service: SEMUA staff bisa ajukan
-cuti untuk dirinya (tanpa izin khusus) → HR approve/reject → kehadiran
-otomatis terisi "cuti". Karyawan = user apps (tanpa master data ganda; profil
-users sudah punya employeeId/position/department/joinDate dst.).
+Status implementasi (di stack workspace: Express + Drizzle MySQL, bukan Next/Prisma):
 
-**Fase 2 (roadmap, dari sheet Excel)**: slip gaji + perubahan gaji & jabatan
-(sensitif — butuh keputusan penyimpanan), target & evaluasi performa (bisa
-digabung skor Teamspace), kalender cuti visual, struktur jabatan, kontrak &
-dokumen karyawan, training/sertifikasi, onboarding/offboarding, disiplin SP,
-BPJS, rekrutmen kandidat, manpower planning, talent 9-box.
+**HR-1 SELESAI** — registry karyawan + wizard profil 3 langkah + import massal;
+struktur organisasi/jabatan/pangkat; presensi ESS `/hr/absen` (GPS+selfie+IP,
+radius multi-kantor, di luar radius → Approval Presensi); shift tetap + roster
+rotasi per tanggal (telat otomatis); cuti 5 jenis + saldo + alur berjenjang
+Manajer→HR; lembur; kalender libur; import mesin fingerprint (Fingerspot).
+
+**HR-2 SELESAI** — payroll: komponen gaji per karyawan, generate massal per
+periode (otomatis: alpha, lembur approved, cuti unpaid, cicilan kasbon,
+reimburse), PPh 21 TER PMK 168/2023 + BPJS TK/Kes (mesin murni ber-unit-test
+`shared/payroll.ts` — VERIFIKASI tarif sebelum bayar sungguhan), slip ESS
+(paid-only), tandai bayar (memicu potong sisa kasbon + reimburse paid),
+ekspor jurnal CSV. Kasbon berplafon (default 1× gaji pokok) + reimburse.
+
+**HR-3 sebagian** — pelacakan lokasi teknisi (ping 5-menit dari ESS selama
+jam kerja, transparan ke karyawan, retensi 30 hari, panel "Posisi Teknisi
+Hari Ini" + link peta); pipeline "Rekrutmen Kandidat" di-seed otomatis
+(pakai engine Pipelines). Belum: slip PDF + bukti potong/Coretax formal,
+KPI form builder, kunjungan klien radius, integrasi akuntansi non-CSV,
+peta live penuh — lanjutkan sesuai prioritas.

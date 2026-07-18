@@ -1,6 +1,6 @@
 /** ESS Absen (PRD-HR FR-HR-1101/1102): semua staff absen Masuk/Keluar dari HP —
  *  GPS + selfie kamera. Di luar radius kantor → masuk antrean Approval Presensi. */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, getAuthHeaders } from "@/lib/api";
 import { PageHeader } from "@/components/ui/page-header";
@@ -193,6 +193,21 @@ export default function EssAbsenPage() {
   });
 
   const att = today?.attendance;
+  // FR-HR-901/904: auto-ping lokasi tiap 5 menit SELAMA jam kerja (clock-in tanpa
+  // clock-out) & halaman terbuka — transparan lewat indikator di bawah.
+  const working = !!att?.checkIn && !att?.checkOut;
+  useEffect(() => {
+    if (!working || !navigator.geolocation) return;
+    const send = () => {
+      if (document.visibilityState !== "visible") return;
+      navigator.geolocation.getCurrentPosition(
+        (p) => { api.post(`/hr/ping`, { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }).catch(() => { /* offline — coba lagi tick berikutnya */ }); },
+        () => { /* izin ditolak — tidak dilacak */ }, { enableHighAccuracy: false, timeout: 8000 });
+    };
+    send();
+    const t = setInterval(send, 5 * 60_000);
+    return () => clearInterval(t);
+  }, [working]);
   const LEAVE_LABEL: Record<string, string> = { tahunan: "Cuti Tahunan", khusus: "Cuti Khusus", sakit: "Sakit", izin: "Izin", unpaid: "Tanpa Dibayar" };
 
   return (
@@ -231,6 +246,11 @@ export default function EssAbsenPage() {
         <p className="mt-3 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
           <MapPin className="size-3.5" /> Lokasi GPS direkam; di luar radius kantor otomatis menunggu persetujuan HR.
         </p>
+        {working && (
+          <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium text-success">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-success pulse-ring-success" /> Pelacakan lokasi aktif selama jam kerja (berhenti otomatis saat absen keluar)
+          </p>
+        )}
       </Card>
 
       {/* Riwayat scan hari ini */}

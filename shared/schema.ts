@@ -2929,6 +2929,20 @@ export const hrReimbursements = mysqlTable("hr_reimbursements", {
 export type HrCashAdvance = typeof hrCashAdvances.$inferSelect;
 export type HrReimbursement = typeof hrReimbursements.$inferSelect;
 
+// FR-HR-901: pelacakan lokasi teknisi lapangan — ping berkala dari ESS selama
+// jam kerja; transparan ke karyawan (FR-HR-904), retensi dibersihkan worker.
+export const hrLocationPings = mysqlTable("hr_location_pings", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  at: text("at").notNull(),
+  lat: double("lat").notNull(),
+  lng: double("lng").notNull(),
+  accuracy: double("accuracy"),
+}, (t) => ({ byUser: index("idx_hr_ping_user").on(t.mitraId, t.userId, t.id) }));
+
+export type HrLocationPing = typeof hrLocationPings.$inferSelect;
+
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {
   id: int("id").autoincrement().primaryKey(),

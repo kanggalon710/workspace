@@ -159,7 +159,8 @@ import {
   hrAttendanceEvents, hrOfficeLocations, hrShifts, hrScheduleAssignments, hrHolidays,
   type HrAttendanceEvent, type HrShift,
   hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime, hrShiftRoster,
-  hrSalaryComponents, hrPayslips, hrCashAdvances, hrReimbursements,
+  hrSalaryComponents, hrPayslips, hrCashAdvances, hrReimbursements, hrLocationPings,
+  type HrLocationPing,
   type HrEmployeeProfile, type HrOvertime, type HrSalaryComponent, type HrPayslip,
   type HrCashAdvance, type HrReimbursement,
 } from "../shared/schema.js";
@@ -4157,6 +4158,36 @@ export class DatabaseStorage implements IStorage {
     const mitraId = getMitraId();
     const [row] = await this.db.select().from(hrPayslips).where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
     return row;
+  }
+
+  // FR-HR-901: pelacakan lokasi
+  async addLocationPing(userId: number, lat: number, lng: number, accuracy?: number | null): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.insert(hrLocationPings).values({ mitraId, userId, at: new Date().toISOString(), lat, lng, accuracy: accuracy ?? null });
+    // Retensi 30 hari (NFR-HR-002) — bersihkan berkala secara murah (1% peluang per ping).
+    if (Math.floor(lat * 1e6) % 100 === 0) {
+      const cutoff = new Date(Date.now() - 30 * 86400_000).toISOString();
+      await this.pool.execute(`DELETE FROM hr_location_pings WHERE mitra_id = ? AND at < ?`, [mitraId, cutoff]);
+    }
+  }
+
+  /** Posisi terakhir tiap karyawan hari ini + jumlah ping (buat peta dispatch). */
+  async latestLocations(): Promise<Array<{ userId: number; at: string; lat: number; lng: number; pings: number }>> {
+    const mitraId = getMitraId();
+    const today = new Date().toISOString().slice(0, 10);
+    const [rows]: any = await this.pool.execute(
+      `SELECT p.user_id AS userId, p.at, p.lat, p.lng, c.pings FROM hr_location_pings p
+       JOIN (SELECT user_id, MAX(id) AS max_id, COUNT(*) AS pings FROM hr_location_pings
+             WHERE mitra_id = ? AND at LIKE ? GROUP BY user_id) c ON c.max_id = p.id`,
+      [mitraId, `${today}%`]);
+    return (rows as any[]).map((r) => ({ userId: Number(r.userId), at: r.at, lat: Number(r.lat), lng: Number(r.lng), pings: Number(r.pings) }));
+  }
+
+  async listUserPings(userId: number, date: string): Promise<HrLocationPing[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrLocationPings)
+      .where(and(eq(hrLocationPings.mitraId, mitraId), eq(hrLocationPings.userId, userId), like(hrLocationPings.at, `${date}%`)))
+      .orderBy(asc(hrLocationPings.id)).limit(500);
   }
 
   async createOvertime(rec: { userId: number; date: string; hours: number; reason?: string | null }): Promise<HrOvertime> {
@@ -9372,6 +9403,15 @@ export class DatabaseStorage implements IStorage {
         )`,
       },
       {
+        name: "hr_location_pings",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_location_pings (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL, at TEXT NOT NULL, lat DOUBLE NOT NULL, lng DOUBLE NOT NULL,
+          accuracy DOUBLE NULL,
+          KEY idx_hr_ping_user (mitra_id, user_id, id)
+        )`,
+      },
+      {
         name: "hr_leaves",
         ddl: `CREATE TABLE IF NOT EXISTS hr_leaves (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -9416,6 +9456,25 @@ export class DatabaseStorage implements IStorage {
     } catch (err: any) {
       console.warn(`[migration] seed lead intake rule: ${err.message}`);
     }
+
+    // FR-HR-1003: seed pipeline Rekrutmen Kandidat (pakai engine pipeline existing)
+    try {
+      const [pl]: any = await this.pool.execute(
+        `SELECT id FROM pipelines WHERE mitra_id = 1 AND LOWER(name) LIKE '%rekrut%' LIMIT 1`);
+      if (!(pl as any[]).length) {
+        const now = new Date().toISOString();
+        const [ins]: any = await this.pool.execute(
+          `INSERT INTO pipelines (mitra_id, name, description, created_by, created_at) VALUES (1, 'Rekrutmen Kandidat', 'Pipeline kandidat pelamar (PRD-HR FR-HR-1003) — pindahkan kartu antar tahapan', 1, ?)`, [now]);
+        const pid = (ins as any).insertId;
+        const stages: Array<[string, string]> = [["Lamaran Masuk", "#0EA5E9"], ["Screening", "#F59E0B"], ["Interview", "#8B5CF6"], ["Offer", "#10B981"], ["Diterima", "#22C55E"], ["Ditolak", "#94A3B8"]];
+        for (let i = 0; i < stages.length; i++) {
+          await this.pool.execute(
+            `INSERT INTO pipeline_stages (mitra_id, pipeline_id, label, color, position, created_at) VALUES (1, ?, ?, ?, ?, ?)`,
+            [pid, stages[i][0], stages[i][1], i, now]);
+        }
+        console.log(`[migration] Seeded pipeline Rekrutmen Kandidat (#${pid})`);
+      }
+    } catch (err: any) { console.warn(`[migration] seed rekrutmen: ${err.message}`); }
 
     // HR-1c: kolom approval berjenjang di hr_leaves (idempotent errno 1060)
     for (const ddl of [

@@ -49,6 +49,30 @@ const ATT_STATUSES = [
 ] as const;
 const LEAVE_TYPES = [["tahunan", "Cuti Tahunan"], ["khusus", "Cuti Khusus"], ["sakit", "Sakit"], ["izin", "Izin"], ["unpaid", "Cuti Tidak Dibayar"]] as const;
 
+/** FR-HR-901: posisi terakhir karyawan yang sedang jam kerja hari ini — dispatch teknisi terdekat. */
+function TrackingSection({ nameOf }: { nameOf: (id: number | null) => string | null }) {
+  const { data: locs } = useQuery({
+    queryKey: ["/api/hr/tracking"],
+    queryFn: () => api.get<Array<{ userId: number; at: string; lat: number; lng: number; pings: number }>>(`/hr/tracking`),
+    refetchInterval: 60_000,
+  });
+  if ((locs ?? []).length === 0) return null;
+  return (
+    <PageSection title="Posisi Teknisi Hari Ini" description="Ping GPS tiap 5 menit selama jam kerja (berhenti saat absen keluar) — retensi 30 hari">
+      <Card padding="none" className="divide-y overflow-hidden">
+        {(locs ?? []).map((l) => (
+          <div key={l.userId} className="flex items-center gap-2.5 px-4 py-2 text-sm">
+            <span className="inline-flex h-2 w-2 rounded-full bg-success pulse-ring-success" aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate font-medium">{nameOf(l.userId)}</span>
+            <span className="text-xs tabular-nums text-muted-foreground">{new Date(l.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} · {l.pings} ping</span>
+            <a href={`https://www.google.com/maps?q=${l.lat},${l.lng}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline">lihat peta</a>
+          </div>
+        ))}
+      </Card>
+    </PageSection>
+  );
+}
+
 /** Antrean approval kasbon + reimburse (HR). */
 function MoneyApprovalList({ writable, nameOf }: { writable: boolean; nameOf: (id: number | null) => string | null }) {
   const qc = useQueryClient();
@@ -459,6 +483,8 @@ export default function SdmPage() {
           )}
         </PageSection>
       )}
+
+      {tab === "kehadiran" && readable && <TrackingSection nameOf={nameOf} />}
 
       {tab === "approval" && readable && (
         <PageSection title="Approval Kasbon & Reimburse" description="Kasbon disetujui = cicilan otomatis dipotong slip; reimburse disetujui = dibayarkan lewat slip berikutnya">
