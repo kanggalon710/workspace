@@ -12,6 +12,8 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 // ── Lazy-loaded pages ──
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const BerandaPage = lazy(() => import("@/pages/BerandaPage"));
+const DivisionHubPage = lazy(() => import("@/pages/DivisionHubPage"));
 const MapPage = lazy(() => import("@/pages/MapPage"));
 const PopsPage = lazy(() => import("@/pages/PopsPage"));
 const OdcsPage = lazy(() => import("@/pages/OdcsPage"));
@@ -226,8 +228,11 @@ function ProtectedRouter() {
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Switch>
-          {/* Dashboard & profil — selalu accessible untuk user login */}
-          <Route path="/" component={Dashboard} />
+          {/* v5.1: Beranda per-divisi menggantikan dashboard global; dashboard
+              jaringan lama pindah ke /dashboard-jaringan (rumah divisi NOC). */}
+          <Route path="/" component={BerandaPage} />
+          <Route path="/divisi/:key" component={DivisionHubPage} />
+          <Route path="/dashboard-jaringan" component={Dashboard} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/showcase" component={ShowcasePage} />
           {/* Aset jaringan — guarded per feature permission */}

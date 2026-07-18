@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
+import { DIVISIONS } from "@/lib/divisions";
 
 // ─── Types ───
 type NavItem = {
@@ -23,6 +24,7 @@ type NavItem = {
   permission?: string;
   requireSystemAdmin?: boolean;  // true = hanya JABNET system admin yang lihat item ini
   children?: NavItem[];      // v4.2.20: support nested submenu (1 level)
+  hub?: boolean;             // v5.1: item Beranda divisi — tidak membuat group visible sendirian
 };
 type NavGroup = {
   key: string;           // unique key for state tracking
@@ -33,120 +35,32 @@ type NavGroup = {
   items: NavItem[];
 };
 
-// ─── Navigation Structure ───
+// ─── Navigation Structure (v5.1: berbasis DIVISI — sumber: client/lib/divisions.ts) ───
+const divisionGroups: NavGroup[] = DIVISIONS.map((d) => ({
+  key: `div-${d.key}`,
+  label: d.short,
+  icon: d.icon,
+  items: [
+    // Item hub selalu lolos filter izin — group tetap disembunyikan bila TIDAK ada
+    // modul lain yang visible (lihat filter hub-only di visibleGroups).
+    { label: `Beranda ${d.short}`, path: `/divisi/${d.key}`, icon: d.icon, hub: true },
+    ...(d.modules as NavItem[]),
+  ],
+}));
+
 const navGroups: NavGroup[] = [
   {
     key: "utama", label: "Utama", icon: LayoutDashboard, collapsible: false,
     items: [
-      { label: "Dashboard", path: "/", icon: LayoutDashboard, permission: "dashboard" },
-      { label: "Peta Jaringan", path: "/map", icon: Map, permission: "map" },
+      { label: "Beranda", path: "/", icon: LayoutDashboard },
     ],
   },
+  ...divisionGroups,
   {
-    // Restrukturisasi (feedback user): SEMUA yang terkait aset jaringan berkumpul di sini —
-    // aset fisik + Core Management + tools jaringan sebagai sub-menu (tab) collapsible.
-    key: "aset", label: "Aset Jaringan", icon: Network,
-    items: [
-      { label: "POP", path: "/pops", icon: Radio, permission: "pops" },
-      { label: "ODC", path: "/odcs", icon: Box, permission: "odcs" },
-      { label: "ODP", path: "/odps", icon: CircleDot, permission: "odps" },
-      { label: "Tiang", path: "/poles", icon: Landmark, permission: "poles" },
-      { label: "Kabel", path: "/cables", icon: Cable, permission: "cables" },
-      {
-        label: "Core Management",
-        icon: Cpu,
-        children: [
-          { label: "OTB Manager", path: "/otb-manager", icon: Server, permission: "otbs" },
-          { label: "Bestray", path: "/bestray-manager", icon: Rows3, permission: "bestrays" },
-          { label: "Splitter", path: "/splitters", icon: Split, permission: "splitters" },
-          { label: "Core Manager", path: "/cable-cores", icon: Cpu, permission: "cable_cores" },
-          { label: "Koneksi Core", path: "/core-connections", icon: Link2, permission: "core_connections" },
-        ],
-      },
-      {
-        label: "Tools Jaringan",
-        icon: Wrench,
-        children: [
-          { label: "Splitter Chain", path: "/splitter-chain", icon: GitBranch, permission: "splitter_chain" },
-          { label: "Power Budget", path: "/power-budget", icon: Calculator, permission: "power_budget" },
-          { label: "Export / Import", path: "/export-import", icon: FileSpreadsheet, permission: "export_import" },
-        ],
-      },
-    ],
-  },
-  {
-    key: "marketing", label: "Marketing", icon: Megaphone,
-    items: [
-      // ── Overview ──
-      { label: "Dashboard Marketing", path: "/marketing", icon: BarChart3, permission: "marketing_dashboard" },
-      // ── Lead Generation (top of funnel) ──
-      { label: "Canvassing Lapangan", path: "/canvassing", icon: MapPinned, permission: "canvassing" },
-      { label: "Prospect Finder", path: "/prospects", icon: Search, permission: "prospects" },
-      // ── Pipeline Management ──
-      // "Lead Pipeline" (/leads) disembunyikan — lead sekarang mengalir ke /pipelines/2 (Leads Marketing).
-      // Route masih aktif di App.tsx untuk akses langsung; cukup hapus dari nav.
-      { label: "Database Kontak", path: "/contacts", icon: Contact, permission: "contacts" },
-      // ── Field Analytics ──
-      { label: "Riwayat Sesi", path: "/canvassing/history", icon: ClipboardList, permission: "canvassing" },
-      { label: "Laporan Lapangan", path: "/canvassing/reports", icon: Camera, permission: "canvassing" },
-      { label: "Area Insights", path: "/marketing/bisnis", icon: TrendingUp, permission: "marketing_dashboard" },
-      // ── Campaigns ──
-      { label: "Iklan & Kampanye", path: "/marketing/ads", icon: Megaphone, permission: "marketing_ads" },
-    ],
-  },
-  {
-    // Feedback user: Pipelines berdiri sendiri, tidak bergabung di Tools.
+    // Feedback user: Pipelines berdiri sendiri.
     key: "pipelines", label: "Pipelines", icon: Kanban,
     items: [
       { label: "Pipelines", path: "/pipelines", icon: Kanban, permission: "pipelines" },
-    ],
-  },
-  {
-    key: "billing", label: "Billing", icon: Package,
-    items: [
-      { label: "Pelanggan", path: "/customers", icon: Users, permission: "customers" },
-      { label: "Komunikasi", path: "/communications", icon: MessageSquare, permission: "chatwoot" },
-      { label: "Paket Internet", path: "/billing/packages", icon: Package, permission: "packages" },
-      { label: "Work Order", path: "/tickets", icon: ClipboardList, permission: "tickets" },
-      { label: "Collection (Penagihan)", path: "/collections", icon: AlertCircle, permission: "collections" },
-      { label: "JABNET Sahabat", path: "/loyalty", icon: Heart, permission: "loyalty_admin" },
-    ],
-  },
-  {
-    key: "mikrotik", label: "MikroTik", icon: Router,
-    items: [
-      { label: "Sesi Aktif", path: "/billing/sessions", icon: Activity, permission: "sessions" },
-      { label: "Perangkat ONT", path: "/devices", icon: Cpu, permission: "devices" },
-      { label: "Monitoring", path: "/billing/monitoring", icon: BarChart3, permission: "monitoring" },
-      { label: "Router MikroTik", path: "/billing/routers", icon: Wifi, permission: "routers" },
-    ],
-  },
-  {
-    // v4.2.20 (PRD WA Feature v2): Notifikasi group dengan parent collapsible Whatsapp
-    key: "notifikasi", label: "Notifikasi", icon: MessageCircle,
-    items: [
-      {
-        label: "Whatsapp",
-        icon: MessageCircle,
-        permission: "whatsapp",
-        children: [
-          { label: "Nomor Whatsapp",       path: "/whatsapp/devices",            icon: MessageCircle, permission: "whatsapp" },
-          { label: "Template Whatsapp",    path: "/whatsapp/templates",          icon: MessageCircle, permission: "whatsapp" },
-          { label: "Phonebook",            path: "/whatsapp/phonebook",          icon: MessageCircle, permission: "phonebooks" },
-          { label: "Broadcast Pelanggan",  path: "/whatsapp/broadcast/pelanggan", icon: Megaphone,    permission: "whatsapp" },
-          { label: "Broadcast Reseller",   path: "/whatsapp/broadcast/reseller",  icon: Megaphone,    permission: "whatsapp" },
-        ],
-      },
-    ],
-  },
-  {
-    // Teamspace v5.0 — kolaborasi tim internal (PRD-JABNET-TEAMSPACE.md)
-    key: "teamspace", label: "Teamspace", icon: UsersRound,
-    items: [
-      { label: "Semua Tugas", path: "/teamspace/tasks", icon: CheckSquare, permission: "team_tasks" },
-      { label: "Tim Saya", path: "/teamspace/teams", icon: UsersRound, permission: "team_tasks" },
-      { label: "Laporan Kinerja", path: "/teamspace/performance", icon: BarChart3, permission: "performance_reports" },
-      { label: "Cheers", path: "/teamspace/cheers", icon: Heart, permission: "cheers" },
     ],
   },
   {
@@ -156,9 +70,7 @@ const navGroups: NavGroup[] = [
       { label: "Lapor Bug", path: "/bugs", icon: Bug },
       { label: "Integrasi API", path: "/integrations", icon: Link2, permission: "integrations" },
       { label: "Public API (Open API)", path: "/api-keys", icon: KeyRound, permission: "api_keys" },
-      { label: "Activity & Produktivitas", path: "/audit-logs", icon: ClipboardList, permission: "audit_logs" },
       { label: "Kelola Mitra", path: "/mitra", icon: Building2, requireSystemAdmin: true },
-      { label: "Manajemen User", path: "/users", icon: UserCog, permission: "user_management" },
       { label: "Manajemen Role", path: "/roles", icon: UserCog, permission: "user_management" },
     ],
   },
@@ -291,7 +203,7 @@ export function Sidebar() {
           return isItemVisible(item);
         }),
     }))
-    .filter(group => group.items.length > 0);
+    .filter(group => group.items.some(item => !item.hub));   // group tampil hanya bila ada modul non-hub yang visible
 
   // Flatten leaf visible → dipakai Favorit (permission-aware) + quick filter.
   const flatLeaves = useMemo(() => flattenLeaves(visibleGroups), [visibleGroups]);

@@ -111,7 +111,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   // ── Navigation items ──
   const navigationItems: CommandItemDef[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/", permission: "dashboard", shortcut: "⌘D" },
+    { id: "beranda", label: "Beranda (Pilih Divisi)", icon: LayoutDashboard, path: "/", keywords: ["beranda", "home", "divisi"], shortcut: "⌘D" },
+    { id: "dashboard", label: "Dashboard Jaringan", icon: LayoutDashboard, path: "/dashboard-jaringan", permission: "dashboard", keywords: ["dashboard", "jaringan", "noc"] },
     { id: "map", label: "Peta Jaringan", icon: Map, path: "/map", permission: "map", shortcut: "⌘M", keywords: ["peta", "map", "jaringan", "gis"] },
     { id: "customers", label: "Pelanggan", icon: Users, path: "/customers", permission: "customers", keywords: ["customer", "pelanggan", "user"] },
     { id: "marketing", label: "Marketing Dashboard", icon: BarChart3, path: "/marketing", permission: "marketing_dashboard" },
