@@ -548,7 +548,8 @@ export default function SdmPage() {
               <input type="month" value={payPeriod} onChange={(e) => setPayPeriod(e.target.value)}
                 className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Periode payroll" />
               <Button size="sm" loading={genPayroll.isPending} onClick={() => genPayroll.mutate()}>Generate</Button>
-              <a href={`/api/hr/payroll/export?period=${payPeriod}`} className="text-xs text-primary underline">CSV</a>
+              <a href={`/api/hr/payroll/export?period=${payPeriod}`} className="text-xs text-primary underline">Jurnal CSV</a>
+              <a href={`/api/hr/payroll/export-pph?period=${payPeriod}`} className="text-xs text-primary underline">PPh 21 CSV</a>
             </span>}>
             {(payslips ?? []).length === 0 ? (
               <EmptyState icon={BarChart3} size="sm" title="Belum ada slip" description="Isi komponen gaji lalu klik Generate." />
@@ -562,6 +563,7 @@ export default function SdmPage() {
                     </span>
                     <b className="tabular-nums">{rp(s.takeHomePay)}</b>
                     <StatusBadge size="sm" variant={s.status === "paid" ? "success" : "pending"} label={s.status === "paid" ? "Sudah Bayar" : "Siap Bayar"} />
+                    <a href={`/api/hr/payslip/${s.id}/print`} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Slip</a>
                     {s.status !== "paid" && (
                       <Button size="xs" variant="success" loading={markPaid.isPending} onClick={() => markPaid.mutate(s.id)}>Tandai Bayar</Button>
                     )}

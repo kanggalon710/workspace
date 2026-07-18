@@ -351,3 +351,30 @@ Lalu manual step di cPanel `https://103.194.47.165:2083`:
 ssh -i ~/.ssh/access-jabnet-cpanel jabnet@103.194.47.165   # passphrase Zero1902!
 mysql -u jabnet_crm_user -p'Galon@12345' jabnet_fiber      # DB CLI
 ```
+
+---
+
+## v5.2.0 — Teamspace + Struktur Divisi + Modul HR (Juli 2026)
+
+Pengembangan besar setelah v4.3.0 — SEMUA sudah live di branch
+`claude/fiber-jabnet-access-2nn8mp` (repo kanggalon710/workspace). Dokumen wajib baca:
+
+| Dokumen | Isi |
+|---|---|
+| `PRD-JABNET-TEAMSPACE.md` | Teamspace (clone Cicle): tim, board tugas, chat+read-by, jadwal, check-in WA, dokumen, pengumuman, kinerja+AI, cheers |
+| `AUDIT-RESPONSE.md` | 11 bug audit eksternal — semua fixed; keputusan scope |
+| `KONSEP-DIVISI.md` | Restrukturisasi navigasi per DIVISI + status implementasi PRD-HR |
+| `PRDHR.md` (upload) | PRD HR & Payroll (reverse-eng GajiHub) — HR-1 & HR-2 selesai, HR-3 sebagian |
+| `LOCAL-DEV.md` | Cara run lokal (Docker MySQL → db:push → dev) |
+
+Arsitektur singkat v5.x:
+- **Navigasi berbasis divisi**: `client/lib/divisions.ts` = satu sumber kebenaran
+  (Sidebar/Beranda/hub `/divisi/:key` semua baca dari sini). Dashboard lama → `/dashboard-jaringan` (NOC).
+- **Teamspace**: board tim = pipeline dengan `pipelines.team_id`; header konsisten `TeamModuleNav`.
+- **HR/SDM**: halaman HR `/hrd/sdm` (izin `hr_sdm`) + ESS `/hr/absen` (semua staff).
+  Storage section "SDM / HRD" di storage.ts; endpoint prefix `/api/hr/*`.
+  Payroll engine murni: `shared/payroll.ts` (TER PPh21 + BPJS, unit-tested) —
+  VERIFIKASI tarif vs referensi resmi sebelum bayar gaji sungguhan.
+- **Lead intake**: rule `lead_created` di-seed otomatis → lead canvassing langsung jadi kartu pipeline (dedup phone).
+- Migrasi DB semuanya idempotent di startup (`runTeamspaceMigrations` + blok HR) — deploy tetap pull+build+restart.
+- Test: `npx tsx --test shared/*.test.ts` (262 test). Typecheck & build wajib hijau sebelum push.

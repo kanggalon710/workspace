@@ -1,6 +1,6 @@
 {
   "name": "jabnet-ftth-manager",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "description": "JABNET Workspace — Platform operasional terpadu untuk ISP",
   "type": "module",
   "scripts": {

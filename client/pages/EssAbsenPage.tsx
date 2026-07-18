@@ -33,6 +33,8 @@ function PayslipCard() {
               <span className="font-medium tabular-nums">{s.period}</span>
               <span className="ml-auto font-bold tabular-nums">{rp(s.takeHomePay)}</span>
             </button>
+            <a href={`/api/hr/payslip/${s.id}/print`} target="_blank" rel="noreferrer"
+              className="block border-t px-3 py-1.5 text-center text-xs text-primary underline">Cetak / Simpan PDF</a>
             {expanded && (
               <div className="border-t px-3 py-2 text-xs text-muted-foreground space-y-0.5">
                 <p>Bruto: <b className="tabular-nums">{rp(s.gross)}</b> · Tunjangan+Lembur: <b className="tabular-nums">{rp(s.totalAllowance)}</b></p>

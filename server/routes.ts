@@ -8408,6 +8408,60 @@ router.get("/api/hr/my/payslips", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   sendSuccess(res, await storage.listPayslips({ userId: req.authUser.id, paidOnly: true }));
 });
+/** FR-HR-606: slip gaji versi cetak (HTML print-friendly → Simpan sebagai PDF dari browser).
+ *  Akses: pemilik slip (hanya bila sudah dibayar) atau HR. */
+router.get("/api/hr/payslip/:id/print", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const slip = await storage.getPayslip(Number(req.params.id));
+  if (!slip) return sendError(res, "Slip tidak ditemukan", 404);
+  const isHr = hasWritePermission(req, "hr_sdm");
+  if (!isHr && (slip.userId !== req.authUser.id || slip.status !== "paid")) return sendError(res, "Akses ditolak", 403);
+  const emp = (await storage.listEmployees()).find((u) => u.id === slip.userId);
+  const profile = await storage.getEmployeeProfile(slip.userId);
+  let d: any = {}; try { d = JSON.parse(slip.detail); } catch { /* rincian kosong */ }
+  const rp = (n: number) => `Rp ${Math.round(n || 0).toLocaleString("id-ID")}`;
+  const row = (label: string, val: string, bold = false) =>
+    `<tr><td style="padding:4px 8px">${label}</td><td style="padding:4px 8px;text-align:right;${bold ? "font-weight:700" : ""}">${val}</td></tr>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Slip Gaji ${slip.period} — ${emp?.name ?? ""}</title>
+<style>body{font-family:Arial,sans-serif;max-width:640px;margin:24px auto;color:#111}h1{font-size:18px;margin:0}h2{font-size:13px;color:#555;font-weight:400;margin:2px 0 16px}table{width:100%;border-collapse:collapse;font-size:13px}thead td{font-weight:700;border-bottom:2px solid #111;padding:6px 8px}tfoot td{border-top:2px solid #111}@media print{button{display:none}}</style></head><body>
+<h1>PT Arkanova Cipta Inovasi — JABNET</h1><h2>Slip Gaji Periode ${slip.period} · RAHASIA</h2>
+<table><tr><td style="padding:2px 8px"><b>${emp?.name ?? "-"}</b> (${emp?.username ?? "-"})</td><td style="padding:2px 8px;text-align:right">NIK: ${emp?.employeeId ?? "-"} · PTKP: ${profile?.ptkpStatus ?? "-"}</td></tr>
+<tr><td style="padding:2px 8px">${emp?.position ?? ""} ${emp?.department ? "· " + emp.department : ""}</td><td style="padding:2px 8px;text-align:right">Bank: ${profile?.bankName ?? "-"} ${profile?.bankAccount ?? ""}</td></tr></table><br>
+<table><thead><tr><td>Komponen</td><td style="text-align:right">Jumlah</td></tr></thead><tbody>
+${row("Gaji Pokok", rp(d.input?.baseSalary))}
+${row("Tunjangan Tetap", rp(d.input?.fixedAllowance))}
+${d.overtimePay ? row(`Lembur (${d.input?.otHours ?? 0} jam)`, rp(d.overtimePay)) : ""}
+${d.reimburseTotal ? row("Reimburse", rp(d.reimburseTotal)) : ""}
+${d.absenceDeduction ? row("Potongan Absen/Cuti Tidak Dibayar", "− " + rp(d.absenceDeduction)) : ""}
+${d.installment ? row("Cicilan Kasbon", "− " + rp(d.installment)) : ""}
+${row("BPJS Ketenagakerjaan (karyawan)", "− " + rp(d.bpjsTkEmp))}
+${row("BPJS Kesehatan (karyawan)", "− " + rp(d.bpjsKesEmp))}
+${row(`PPh 21 (TER ${d.terRatePct ?? 0}%)`, "− " + rp(d.pph21))}
+</tbody><tfoot>${row("TAKE HOME PAY", rp(slip.takeHomePay), true)}</tfoot></table>
+<p style="font-size:11px;color:#666">Status: ${slip.status === "paid" ? "SUDAH DIBAYAR" + (slip.paidAt ? " · " + slip.paidAt.slice(0, 10) : "") : "Siap Bayar"} · Dibuat otomatis oleh JABNET Workspace.</p>
+<button onclick="window.print()" style="padding:8px 16px">Cetak / Simpan PDF</button></body></html>`;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(html);
+});
+
+/** FR-HR-802 (subset): rekap PPh 21 bulanan per karyawan — CSV siap lapor. */
+router.get("/api/hr/payroll/export-pph", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const period = String(req.query.period ?? "").slice(0, 7);
+  const slips = await storage.listPayslips({ period });
+  const emps = await storage.listEmployees();
+  const rows = [["Periode", "Nama", "NIK", "NPWP", "PTKP", "Bruto", "Tarif TER %", "PPh 21"].join(";")];
+  for (const s of slips) {
+    const e = emps.find((u) => u.id === s.userId);
+    const p = await storage.getEmployeeProfile(s.userId);
+    let d: any = {}; try { d = JSON.parse(s.detail); } catch { /* skip */ }
+    rows.push([s.period, e?.name ?? "", e?.employeeId ?? "", p?.npwp ?? "", p?.ptkpStatus ?? "", s.gross, d.terRatePct ?? "", d.pph21 ?? ""].join(";"));
+  }
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="pph21-${period}.csv"`);
+  res.send(rows.join("\n"));
+});
+
 /** Ekspor jurnal CSV per periode (default keputusan §15.1 = CSV). */
 router.get("/api/hr/payroll/export", async (req, res) => {
   if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
