@@ -2733,7 +2733,60 @@ export type HrAttendance = typeof hrAttendance.$inferSelect;
 export type HrLeave = typeof hrLeaves.$inferSelect;
 
 export const HR_ATTENDANCE_STATUSES = ["hadir", "izin", "sakit", "cuti", "alpha", "libur"] as const;
-export const HR_LEAVE_TYPES = ["tahunan", "sakit", "izin", "khusus"] as const;
+// PRD-HR FR-HR-401: 5 jenis cuti (tahunan/khusus/sakit/izin/tidak dibayar)
+export const HR_LEAVE_TYPES = ["tahunan", "khusus", "sakit", "izin", "unpaid"] as const;
+
+// ── PRD-HR Fase HR-1: presensi ESS (GPS+selfie), lokasi kantor, shift, libur ──
+export const hrAttendanceEvents = mysqlTable("hr_attendance_events", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  date: varchar("date", { length: 10 }).notNull(),
+  kind: varchar("kind", { length: 8 }).notNull(),             // in|out
+  at: text("at").notNull(),                                   // ISO timestamp asli device
+  lat: double("lat"), lng: double("lng"),
+  selfiePath: varchar("selfie_path", { length: 255 }),
+  ip: varchar("ip", { length: 45 }),
+  withinRadius: int("within_radius").notNull().default(1),
+  approvalStatus: varchar("approval_status", { length: 10 }).notNull().default("approved"), // approved|pending|rejected
+  reviewedBy: int("reviewed_by"),
+  note: varchar("note", { length: 255 }),
+}, (t) => ({ byDate: index("idx_hr_ev_date").on(t.mitraId, t.date), byUser: index("idx_hr_ev_user").on(t.mitraId, t.userId, t.date) }));
+
+export const hrOfficeLocations = mysqlTable("hr_office_locations", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  name: varchar("name", { length: 128 }).notNull(),
+  lat: double("lat").notNull(), lng: double("lng").notNull(),
+  radiusM: int("radius_m").notNull().default(150),
+});
+
+export const hrShifts = mysqlTable("hr_shifts", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  name: varchar("name", { length: 64 }).notNull(),
+  startTime: varchar("start_time", { length: 5 }).notNull(),  // HH:MM
+  endTime: varchar("end_time", { length: 5 }).notNull(),
+  lateToleranceMin: int("late_tolerance_min").notNull().default(10),
+  workDays: varchar("work_days", { length: 32 }).notNull().default("1,2,3,4,5"), // 1=Sen..7=Min
+});
+
+export const hrScheduleAssignments = mysqlTable("hr_schedule_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  shiftId: int("shift_id").notNull(),
+}, (t) => ({ uniqUser: uniqueIndex("uq_hr_sched_user").on(t.mitraId, t.userId) }));
+
+export const hrHolidays = mysqlTable("hr_holidays", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  date: varchar("date", { length: 10 }).notNull(),
+  name: varchar("name", { length: 128 }).notNull(),
+}, (t) => ({ uniqDate: uniqueIndex("uq_hr_holiday").on(t.mitraId, t.date) }));
+
+export type HrAttendanceEvent = typeof hrAttendanceEvents.$inferSelect;
+export type HrShift = typeof hrShifts.$inferSelect;
 
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {

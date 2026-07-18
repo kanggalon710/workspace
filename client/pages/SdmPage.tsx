@@ -46,7 +46,7 @@ const ATT_STATUSES = [
   { key: "alpha", label: "Alpha", variant: "danger" },
   { key: "libur", label: "Libur", variant: "neutral" },
 ] as const;
-const LEAVE_TYPES = [["tahunan", "Cuti Tahunan"], ["sakit", "Sakit"], ["izin", "Izin"], ["khusus", "Cuti Khusus"]] as const;
+const LEAVE_TYPES = [["tahunan", "Cuti Tahunan"], ["khusus", "Cuti Khusus"], ["sakit", "Sakit"], ["izin", "Izin"], ["unpaid", "Cuti Tidak Dibayar"]] as const;
 
 function todayIso(): string {
   const d = new Date();
@@ -82,7 +82,7 @@ export default function SdmPage() {
     return u ? (u.name || u.username) : id != null ? `#${id}` : "–";
   };
 
-  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "rekap" | "cuti">(readable ? "kehadiran" : "cuti");
+  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "pengaturan">(readable ? "kehadiran" : "cuti");
   const [date, setDate] = useState(todayIso());
   const [month, setMonth] = useState(todayIso().slice(0, 7));
   // Draft kehadiran: userId -> status (belum tersimpan)
@@ -168,13 +168,46 @@ export default function SdmPage() {
     onError: (e: any) => toast.error(e?.message || "Gagal import"),
   });
 
+  // ── HR-1a: approval presensi + pengaturan (lokasi/shift/jadwal/libur) ──
+  const { data: pendingEvents } = useQuery({
+    queryKey: ["/api/hr/attendance/events", "pending"],
+    queryFn: () => api.get<any[]>(`/hr/attendance/events?status=pending`),
+    enabled: readable && tab === "approval",
+    refetchInterval: 30_000,
+  });
+  const reviewEvent = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: "approved" | "rejected" }) => api.post(`/hr/attendance/events/${id}/review`, { status }),
+    onSuccess: () => { toast.success("Diproses"); qc.invalidateQueries({ queryKey: ["/api/hr/attendance/events"] }); qc.invalidateQueries({ queryKey: ["/api/hr/attendance"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  const { data: hrCfg } = useQuery({
+    queryKey: ["/api/hr/config"],
+    queryFn: async () => ({
+      locations: await api.get<any[]>(`/hr/locations`),
+      shifts: await api.get<{ shifts: any[]; assignments: Array<{ userId: number; shiftId: number }> }>(`/hr/shifts`),
+      holidays: await api.get<any[]>(`/hr/holidays`),
+    }),
+    enabled: readable && tab === "pengaturan",
+  });
+  const invalidateCfg = () => qc.invalidateQueries({ queryKey: ["/api/hr/config"] });
+  const [locForm, setLocForm] = useState({ name: "", lat: "", lng: "", radiusM: "150" });
+  const [shiftForm, setShiftForm] = useState({ name: "", startTime: "08:00", endTime: "17:00", lateToleranceMin: "10" });
+  const [holForm, setHolForm] = useState({ date: todayIso(), name: "" });
+  const saveCfg = useMutation({
+    mutationFn: ({ path, body }: { path: string; body: any }) => api.post(path, body),
+    onSuccess: () => { toast.success("Tersimpan"); invalidateCfg(); },
+    onError: (e: any) => toast.error(e?.message || "Gagal menyimpan"),
+  });
+
   const tabs = [
     ...(readable ? [
       { key: "karyawan", label: "Karyawan", icon: UsersIcon },
       { key: "kehadiran", label: "Catat Kehadiran", icon: CalendarCheck2 },
+      { key: "approval", label: "Approval Presensi", icon: Check },
       { key: "rekap", label: "Rekap Bulanan", icon: BarChart3 },
     ] : []),
     { key: "cuti", label: "Cuti", icon: Plane },
+    ...(readable ? [{ key: "pengaturan", label: "Pengaturan", icon: IdCard }] : []),
   ] as const;
 
   return (
@@ -260,6 +293,117 @@ export default function SdmPage() {
             </div>
           )}
         </PageSection>
+      )}
+
+      {tab === "approval" && readable && (
+        <PageSection title="Approval Presensi" description="Absen ESS di luar radius kantor menunggu keputusan HR — disetujui = tercatat hadir">
+          {(pendingEvents ?? []).length === 0 ? (
+            <EmptyState icon={Check} size="sm" title="Tidak ada antrean" description="Semua presensi dalam radius kantor tercatat otomatis." />
+          ) : (
+            <Card padding="none" className="divide-y overflow-hidden">
+              {(pendingEvents ?? []).map((e: any) => (
+                <div key={e.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
+                  <span className="min-w-0 flex-1">
+                    <b>{nameOf(e.userId)}</b> · {e.kind === "in" ? "Masuk" : "Keluar"}
+                    <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">{e.date} {new Date(e.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
+                    {e.lat != null && (
+                      <a className="ml-1.5 text-xs text-primary underline" target="_blank" rel="noreferrer"
+                        href={`https://www.google.com/maps?q=${e.lat},${e.lng}`}>lokasi</a>
+                    )}
+                    {e.ip && <span className="ml-1.5 text-[10px] text-muted-foreground">IP {e.ip}</span>}
+                  </span>
+                  <StatusBadge size="sm" variant="warning" label="Luar radius" />
+                  <span className="flex gap-1">
+                    <Button type="button" size="icon-sm" variant="success" aria-label="Setujui" loading={reviewEvent.isPending}
+                      onClick={() => reviewEvent.mutate({ id: e.id, status: "approved" })}><Check className="size-4" /></Button>
+                    <Button type="button" size="icon-sm" variant="destructive" aria-label="Tolak" loading={reviewEvent.isPending}
+                      onClick={() => reviewEvent.mutate({ id: e.id, status: "rejected" })}><X className="size-4" /></Button>
+                  </span>
+                </div>
+              ))}
+            </Card>
+          )}
+        </PageSection>
+      )}
+
+      {tab === "pengaturan" && readable && (
+        <>
+          <PageSection title="Lokasi Kantor (Radius Presensi)" description="Absen di luar semua radius = antre approval. Kosong = semua lokasi diterima.">
+            <Card padding="none" className="divide-y overflow-hidden">
+              {(hrCfg?.locations ?? []).map((l: any) => (
+                <div key={l.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                  <span className="flex-1">{l.name} <span className="text-xs tabular-nums text-muted-foreground">({l.lat}, {l.lng}) · {l.radiusM} m</span></span>
+                  {writable && <Button size="icon-sm" variant="ghost" aria-label="Hapus" onClick={async () => { await api.delete(`/hr/locations/${l.id}`); invalidateCfg(); }}><X className="size-4" /></Button>}
+                </div>
+              ))}
+            </Card>
+            {writable && (
+              <div className="mt-2 flex flex-wrap items-end gap-2">
+                {([["name", "Nama", "Kantor Garut"], ["lat", "Lat", "-7.216"], ["lng", "Lng", "107.897"], ["radiusM", "Radius (m)", "150"]] as const).map(([k, l, ph]) => (
+                  <label key={k} className="text-xs font-medium text-muted-foreground">{l}
+                    <input value={(locForm as any)[k]} placeholder={ph} onChange={(e) => setLocForm((p) => ({ ...p, [k]: e.target.value }))}
+                      className="mt-1 h-9 w-32 rounded-lg border bg-background px-2.5 text-sm" /></label>
+                ))}
+                <Button size="sm" loading={saveCfg.isPending} onClick={() => saveCfg.mutate({ path: `/hr/locations`, body: { ...locForm, lat: Number(locForm.lat), lng: Number(locForm.lng), radiusM: Number(locForm.radiusM) } })}>Tambah</Button>
+              </div>
+            )}
+          </PageSection>
+
+          <PageSection title="Shift Kerja & Jadwal" description="Shift menentukan basis keterlambatan (FR-HR-301/304)">
+            <Card padding="none" className="divide-y overflow-hidden">
+              {(hrCfg?.shifts?.shifts ?? []).map((s: any) => (
+                <div key={s.id} className="px-4 py-2 text-sm">{s.name} · <span className="tabular-nums">{s.startTime}–{s.endTime}</span> · toleransi {s.lateToleranceMin} mnt</div>
+              ))}
+            </Card>
+            {writable && (
+              <div className="mt-2 flex flex-wrap items-end gap-2">
+                {([["name", "Nama", "Reguler"], ["startTime", "Masuk", "08:00"], ["endTime", "Keluar", "17:00"], ["lateToleranceMin", "Toleransi (mnt)", "10"]] as const).map(([k, l, ph]) => (
+                  <label key={k} className="text-xs font-medium text-muted-foreground">{l}
+                    <input value={(shiftForm as any)[k]} placeholder={ph} onChange={(e) => setShiftForm((p) => ({ ...p, [k]: e.target.value }))}
+                      className="mt-1 h-9 w-28 rounded-lg border bg-background px-2.5 text-sm" /></label>
+                ))}
+                <Button size="sm" loading={saveCfg.isPending} onClick={() => saveCfg.mutate({ path: `/hr/shifts`, body: { ...shiftForm, lateToleranceMin: Number(shiftForm.lateToleranceMin) } })}>Tambah Shift</Button>
+              </div>
+            )}
+            {(hrCfg?.shifts?.shifts ?? []).length > 0 && (
+              <Card padding="none" className="mt-3 divide-y overflow-hidden">
+                {activeUsers.map((u: any) => {
+                  const cur = hrCfg?.shifts?.assignments.find((a) => a.userId === u.id)?.shiftId ?? "";
+                  return (
+                    <div key={u.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                      <span className="flex-1 truncate">{u.name || u.username}</span>
+                      <select value={cur} disabled={!writable}
+                        onChange={(e) => saveCfg.mutate({ path: `/hr/schedule`, body: { userId: u.id, shiftId: e.target.value ? Number(e.target.value) : null } })}
+                        className="h-8 rounded-lg border bg-background px-2 text-xs">
+                        <option value="">Tanpa shift</option>
+                        {(hrCfg?.shifts?.shifts ?? []).map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.startTime})</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+              </Card>
+            )}
+          </PageSection>
+
+          <PageSection title={`Kalender Libur ${new Date().getFullYear()}`}>
+            <Card padding="none" className="divide-y overflow-hidden">
+              {(hrCfg?.holidays ?? []).map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                  <span className="tabular-nums text-muted-foreground">{h.date}</span>
+                  <span className="flex-1">{h.name}</span>
+                  {writable && <Button size="icon-sm" variant="ghost" aria-label="Hapus" onClick={async () => { await api.delete(`/hr/holidays/${h.id}`); invalidateCfg(); }}><X className="size-4" /></Button>}
+                </div>
+              ))}
+            </Card>
+            {writable && (
+              <div className="mt-2 flex flex-wrap items-end gap-2">
+                <input type="date" value={holForm.date} onChange={(e) => setHolForm((p) => ({ ...p, date: e.target.value }))} className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" />
+                <input value={holForm.name} placeholder="Nama libur (mis. Idul Fitri)" onChange={(e) => setHolForm((p) => ({ ...p, name: e.target.value }))} className="h-9 w-56 rounded-lg border bg-background px-2.5 text-sm" />
+                <Button size="sm" loading={saveCfg.isPending} onClick={() => saveCfg.mutate({ path: `/hr/holidays`, body: holForm })}>Tambah Libur</Button>
+              </div>
+            )}
+          </PageSection>
+        </>
       )}
 
       {tab === "rekap" && readable && (

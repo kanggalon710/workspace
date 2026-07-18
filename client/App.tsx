@@ -15,6 +15,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const BerandaPage = lazy(() => import("@/pages/BerandaPage"));
 const DivisionHubPage = lazy(() => import("@/pages/DivisionHubPage"));
 const SdmPage = lazy(() => import("@/pages/SdmPage"));
+const EssAbsenPage = lazy(() => import("@/pages/EssAbsenPage"));
 const MapPage = lazy(() => import("@/pages/MapPage"));
 const PopsPage = lazy(() => import("@/pages/PopsPage"));
 const OdcsPage = lazy(() => import("@/pages/OdcsPage"));
@@ -236,6 +237,8 @@ function ProtectedRouter() {
           <Route path="/dashboard-jaringan" component={Dashboard} />
           {/* SDM: tanpa WithPerm — cuti self-service untuk semua staff; tab HR di-gate izin hr_sdm di halaman */}
           <Route path="/hrd/sdm" component={SdmPage} />
+          {/* ESS absen: semua staff (GPS+selfie) — PRD-HR FR-HR-1102 */}
+          <Route path="/hr/absen" component={EssAbsenPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/showcase" component={ShowcasePage} />
           {/* Aset jaringan — guarded per feature permission */}

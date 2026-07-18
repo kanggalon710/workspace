@@ -156,6 +156,8 @@ import {
   // Teamspace v5.0 Fase 3
   cheers, type Cheer,
   hrAttendance, hrLeaves, type HrAttendance, type HrLeave,
+  hrAttendanceEvents, hrOfficeLocations, hrShifts, hrScheduleAssignments, hrHolidays,
+  type HrAttendanceEvent, type HrShift,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -3806,6 +3808,132 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
     const [row] = await this.db.select().from(hrLeaves).where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
     return row;
+  }
+
+  // ── PRD-HR HR-1a: presensi ESS, shift, lokasi kantor, libur, saldo cuti ──
+
+  async createAttendanceEvent(ev: { userId: number; date: string; kind: "in" | "out"; at: string; lat?: number | null; lng?: number | null; selfiePath?: string | null; ip?: string | null; withinRadius: boolean; approvalStatus: "approved" | "pending" }): Promise<HrAttendanceEvent> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(hrAttendanceEvents).values({
+      mitraId, userId: ev.userId, date: ev.date, kind: ev.kind, at: ev.at,
+      lat: ev.lat ?? null, lng: ev.lng ?? null, selfiePath: ev.selfiePath ?? null, ip: ev.ip ?? null,
+      withinRadius: ev.withinRadius ? 1 : 0, approvalStatus: ev.approvalStatus,
+    });
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(hrAttendanceEvents).where(eq(hrAttendanceEvents.id, insertId));
+    return row!;
+  }
+
+  async listAttendanceEvents(opts: { date?: string; status?: string; userId?: number }): Promise<HrAttendanceEvent[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrAttendanceEvents.mitraId, mitraId)];
+    if (opts.date) conds.push(eq(hrAttendanceEvents.date, opts.date));
+    if (opts.status) conds.push(eq(hrAttendanceEvents.approvalStatus, opts.status));
+    if (opts.userId != null) conds.push(eq(hrAttendanceEvents.userId, opts.userId));
+    return this.db.select().from(hrAttendanceEvents).where(and(...conds)).orderBy(desc(hrAttendanceEvents.id)).limit(300);
+  }
+
+  async getAttendanceEvent(id: number): Promise<HrAttendanceEvent | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(hrAttendanceEvents)
+      .where(and(eq(hrAttendanceEvents.id, id), eq(hrAttendanceEvents.mitraId, mitraId)));
+    return row;
+  }
+
+  async reviewAttendanceEvent(id: number, status: "approved" | "rejected", reviewedBy: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(hrAttendanceEvents).set({ approvalStatus: status, reviewedBy })
+      .where(and(eq(hrAttendanceEvents.id, id), eq(hrAttendanceEvents.mitraId, mitraId)));
+  }
+
+  /** Terapkan event approved ke rekap hr_attendance (jam masuk/keluar + status hadir). */
+  async applyAttendanceEvent(ev: HrAttendanceEvent, actorId: number): Promise<void> {
+    const time = new Date(ev.at);
+    const hhmm = `${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
+    const existing = (await this.listAttendanceByDate(ev.date)).find((a) => a.userId === ev.userId);
+    await this.upsertAttendance({
+      userId: ev.userId, date: ev.date, status: "hadir",
+      checkIn: ev.kind === "in" ? hhmm : existing?.checkIn ?? null,
+      checkOut: ev.kind === "out" ? hhmm : existing?.checkOut ?? null,
+      note: existing?.note ?? null, createdBy: actorId,
+    });
+  }
+
+  async listOfficeLocations(): Promise<Array<{ id: number; name: string; lat: number; lng: number; radiusM: number }>> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrOfficeLocations).where(eq(hrOfficeLocations.mitraId, mitraId)) as any;
+  }
+
+  async saveOfficeLocation(loc: { id?: number; name: string; lat: number; lng: number; radiusM: number }): Promise<void> {
+    const mitraId = getMitraId();
+    if (loc.id) await this.db.update(hrOfficeLocations).set({ name: loc.name, lat: loc.lat, lng: loc.lng, radiusM: loc.radiusM }).where(and(eq(hrOfficeLocations.id, loc.id), eq(hrOfficeLocations.mitraId, mitraId)));
+    else await this.db.insert(hrOfficeLocations).values({ mitraId, name: loc.name, lat: loc.lat, lng: loc.lng, radiusM: loc.radiusM });
+  }
+
+  async deleteOfficeLocation(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.delete(hrOfficeLocations).where(and(eq(hrOfficeLocations.id, id), eq(hrOfficeLocations.mitraId, mitraId)));
+  }
+
+  async listShifts(): Promise<HrShift[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrShifts).where(eq(hrShifts.mitraId, mitraId));
+  }
+
+  async saveShift(s: { id?: number; name: string; startTime: string; endTime: string; lateToleranceMin: number; workDays: string }): Promise<void> {
+    const mitraId = getMitraId();
+    if (s.id) await this.db.update(hrShifts).set({ name: s.name, startTime: s.startTime, endTime: s.endTime, lateToleranceMin: s.lateToleranceMin, workDays: s.workDays }).where(and(eq(hrShifts.id, s.id), eq(hrShifts.mitraId, mitraId)));
+    else await this.db.insert(hrShifts).values({ mitraId, name: s.name, startTime: s.startTime, endTime: s.endTime, lateToleranceMin: s.lateToleranceMin, workDays: s.workDays });
+  }
+
+  async listScheduleAssignments(): Promise<Array<{ userId: number; shiftId: number }>> {
+    const mitraId = getMitraId();
+    return this.db.select({ userId: hrScheduleAssignments.userId, shiftId: hrScheduleAssignments.shiftId })
+      .from(hrScheduleAssignments).where(eq(hrScheduleAssignments.mitraId, mitraId));
+  }
+
+  async setScheduleAssignment(userId: number, shiftId: number | null): Promise<void> {
+    const mitraId = getMitraId();
+    if (shiftId == null) {
+      await this.db.delete(hrScheduleAssignments).where(and(eq(hrScheduleAssignments.mitraId, mitraId), eq(hrScheduleAssignments.userId, userId)));
+      return;
+    }
+    await this.pool.execute(
+      `INSERT INTO hr_schedule_assignments (mitra_id, user_id, shift_id) VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE shift_id = VALUES(shift_id)`, [mitraId, userId, shiftId]);
+  }
+
+  async listHolidays(year: string): Promise<Array<{ id: number; date: string; name: string }>> {
+    const mitraId = getMitraId();
+    return this.db.select({ id: hrHolidays.id, date: hrHolidays.date, name: hrHolidays.name })
+      .from(hrHolidays).where(and(eq(hrHolidays.mitraId, mitraId), like(hrHolidays.date, `${year}-%`)))
+      .orderBy(asc(hrHolidays.date)) as any;
+  }
+
+  async saveHoliday(date: string, name: string): Promise<void> {
+    const mitraId = getMitraId();
+    await this.pool.execute(
+      `INSERT INTO hr_holidays (mitra_id, date, name) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)`,
+      [mitraId, date, name]);
+  }
+
+  async deleteHoliday(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.delete(hrHolidays).where(and(eq(hrHolidays.id, id), eq(hrHolidays.mitraId, mitraId)));
+  }
+
+  /** Saldo cuti per jenis untuk 1 user pada tahun berjalan (kuota - approved days). */
+  async leaveBalance(userId: number, year: string, quotas: Record<string, number>): Promise<Array<{ type: string; quota: number; used: number; remaining: number }>> {
+    const mitraId = getMitraId();
+    const [rows]: any = await this.pool.execute(
+      `SELECT type, SUM(DATEDIFF(end_date, start_date) + 1) AS days FROM hr_leaves
+       WHERE mitra_id = ? AND user_id = ? AND status = 'approved' AND start_date LIKE ? GROUP BY type`,
+      [mitraId, userId, `${year}-%`]);
+    const used = new Map((rows as any[]).map((r) => [String(r.type), Number(r.days)]));
+    return Object.entries(quotas).map(([type, quota]) => {
+      const u = used.get(type) ?? 0;
+      return { type, quota, used: u, remaining: quota > 0 ? Math.max(0, quota - u) : -1 };  // -1 = tanpa kuota
+    });
   }
 
   async listCheersReceived(userId: number, limit = 100): Promise<Cheer[]> {
@@ -8848,6 +8976,59 @@ export class DatabaseStorage implements IStorage {
           updated_at TEXT NULL,
           UNIQUE KEY uq_hr_att_user_date (mitra_id, user_id, date),
           KEY idx_hr_att_date (mitra_id, date)
+        )`,
+      },
+      {
+        name: "hr_attendance_events",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_attendance_events (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL,
+          date VARCHAR(10) NOT NULL,
+          kind VARCHAR(8) NOT NULL,
+          at TEXT NOT NULL,
+          lat DOUBLE NULL, lng DOUBLE NULL,
+          selfie_path VARCHAR(255) NULL,
+          ip VARCHAR(45) NULL,
+          within_radius INT NOT NULL DEFAULT 1,
+          approval_status VARCHAR(10) NOT NULL DEFAULT 'approved',
+          reviewed_by INT NULL,
+          note VARCHAR(255) NULL,
+          KEY idx_hr_ev_date (mitra_id, date),
+          KEY idx_hr_ev_user (mitra_id, user_id, date)
+        )`,
+      },
+      {
+        name: "hr_office_locations",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_office_locations (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          name VARCHAR(128) NOT NULL, lat DOUBLE NOT NULL, lng DOUBLE NOT NULL,
+          radius_m INT NOT NULL DEFAULT 150
+        )`,
+      },
+      {
+        name: "hr_shifts",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_shifts (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          name VARCHAR(64) NOT NULL, start_time VARCHAR(5) NOT NULL, end_time VARCHAR(5) NOT NULL,
+          late_tolerance_min INT NOT NULL DEFAULT 10,
+          work_days VARCHAR(32) NOT NULL DEFAULT '1,2,3,4,5'
+        )`,
+      },
+      {
+        name: "hr_schedule_assignments",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_schedule_assignments (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL, shift_id INT NOT NULL,
+          UNIQUE KEY uq_hr_sched_user (mitra_id, user_id)
+        )`,
+      },
+      {
+        name: "hr_holidays",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_holidays (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          date VARCHAR(10) NOT NULL, name VARCHAR(128) NOT NULL,
+          UNIQUE KEY uq_hr_holiday (mitra_id, date)
         )`,
       },
       {

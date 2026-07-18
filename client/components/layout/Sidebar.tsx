@@ -53,6 +53,7 @@ const navGroups: NavGroup[] = [
     key: "utama", label: "Utama", icon: LayoutDashboard, collapsible: false,
     items: [
       { label: "Beranda", path: "/", icon: LayoutDashboard },
+      { label: "Absen", path: "/hr/absen", icon: ListChecks },   // ESS: semua staff
     ],
   },
   ...divisionGroups,

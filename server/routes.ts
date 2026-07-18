@@ -7997,6 +7997,157 @@ router.post("/api/hr/leaves/:id/review", async (req, res) => {
   sendSuccess(res, row);
 });
 
+// ── PRD-HR HR-1a: presensi ESS (GPS+selfie) + approval + shift + libur + saldo cuti ──
+
+function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000, toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+/** ESS clock in/out: semua staff. Radius kantor → di luar = antre approval (FR-HR-204/205). */
+router.post("/api/hr/clock", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  let parsed;
+  try { parsed = await parseMultipart(req, { maxBytes: 8 * 1024 * 1024, maxFiles: 1, maxTotalBytes: 8 * 1024 * 1024 }); }
+  catch (e: any) { return sendError(res, e?.message || "Upload gagal", 413); }
+  const kind = parsed.fields.kind === "out" ? "out" : "in";
+  const lat = parsed.fields.lat ? Number(parsed.fields.lat) : null;
+  const lng = parsed.fields.lng ? Number(parsed.fields.lng) : null;
+  let selfiePath: string | null = null;
+  if (parsed.files.length > 0) {
+    const f = parsed.files[0];
+    const ext = (f.fileName.split(".").pop() || "jpg").toLowerCase();
+    if (!["jpg", "jpeg", "png", "webp"].includes(ext)) return sendError(res, "Selfie harus gambar (jpg/png/webp)", 400);
+    const slug = await storage.getMitraSlug(req.authUser.activeMitraId);
+    selfiePath = await saveUploadedFile(slug, `hr-selfie-${req.authUser.id}`, f.buffer, ext);
+  }
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const offices = await storage.listOfficeLocations();
+  const withinRadius = offices.length === 0 || (lat != null && lng != null &&
+    offices.some((o) => haversineM(lat, lng, o.lat, o.lng) <= o.radiusM));
+  const approvalStatus = withinRadius ? "approved" as const : "pending" as const;
+  const ip = String(req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "").split(",")[0].trim();
+  const ev = await storage.createAttendanceEvent({
+    userId: req.authUser.id, date, kind, at: now.toISOString(), lat, lng, selfiePath, ip, withinRadius, approvalStatus,
+  });
+  if (approvalStatus === "approved") {
+    await storage.applyAttendanceEvent(ev, req.authUser.id);
+    // Hitung telat vs shift user (FR-HR-304) — dicatat sebagai note kehadiran.
+    if (kind === "in") {
+      const assigns = await storage.listScheduleAssignments();
+      const shifts = await storage.listShifts();
+      const shift = shifts.find((s) => s.id === assigns.find((a) => a.userId === req.authUser!.id)?.shiftId);
+      if (shift) {
+        const [h, m] = shift.startTime.split(":").map(Number);
+        const lateMin = Math.round((now.getTime() - new Date(now).setHours(h, m, 0, 0)) / 60000) - shift.lateToleranceMin;
+        if (lateMin > 0) {
+          await storage.upsertAttendance({ userId: req.authUser.id, date, status: "hadir", checkIn: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`, note: `Terlambat ${lateMin} mnt`, createdBy: req.authUser.id });
+        }
+      }
+    }
+  }
+  sendSuccess(res, { ...ev, needsApproval: approvalStatus === "pending" });
+});
+
+/** Status absen hari ini milik sendiri (beranda ESS). */
+router.get("/api/hr/my/today", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const now = new Date();
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const events = await storage.listAttendanceEvents({ date, userId: req.authUser.id });
+  const att = (await storage.listAttendanceByDate(date)).find((a) => a.userId === req.authUser!.id) ?? null;
+  const assigns = await storage.listScheduleAssignments();
+  const shifts = await storage.listShifts();
+  const shift = shifts.find((s) => s.id === assigns.find((a) => a.userId === req.authUser!.id)?.shiftId) ?? null;
+  sendSuccess(res, { date, events, attendance: att, shift });
+});
+
+router.get("/api/hr/attendance/events", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm'", 403);
+  sendSuccess(res, await storage.listAttendanceEvents({
+    date: req.query.date ? String(req.query.date) : undefined,
+    status: req.query.status ? String(req.query.status) : undefined,
+  }));
+});
+
+router.post("/api/hr/attendance/events/:id/review", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
+  const { status } = req.body ?? {};
+  if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
+  const ev = await storage.getAttendanceEvent(Number(req.params.id));
+  if (!ev) return sendError(res, "Event tidak ditemukan", 404);
+  await storage.reviewAttendanceEvent(ev.id, status, req.authUser.id);
+  if (status === "approved") await storage.applyAttendanceEvent(ev, req.authUser.id);
+  sendSuccess(res, { ok: true });
+});
+
+// Pengaturan HR-1: lokasi kantor (radius), shift, jadwal, libur (izin hr_sdm)
+router.get("/api/hr/locations", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, await storage.listOfficeLocations());
+});
+router.post("/api/hr/locations", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { id, name, lat, lng, radiusM } = req.body ?? {};
+  if (!name || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return sendError(res, "name/lat/lng wajib", 400);
+  await storage.saveOfficeLocation({ id: id ? Number(id) : undefined, name: String(name), lat: Number(lat), lng: Number(lng), radiusM: Math.max(20, Number(radiusM) || 150) });
+  sendSuccess(res, { ok: true });
+});
+router.delete("/api/hr/locations/:id", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  await storage.deleteOfficeLocation(Number(req.params.id));
+  sendSuccess(res, { ok: true });
+});
+router.get("/api/hr/shifts", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, { shifts: await storage.listShifts(), assignments: await storage.listScheduleAssignments() });
+});
+router.post("/api/hr/shifts", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { id, name, startTime, endTime, lateToleranceMin, workDays } = req.body ?? {};
+  if (!name || !/^\d{2}:\d{2}$/.test(String(startTime)) || !/^\d{2}:\d{2}$/.test(String(endTime))) return sendError(res, "name/startTime/endTime wajib (HH:MM)", 400);
+  await storage.saveShift({ id: id ? Number(id) : undefined, name: String(name), startTime: String(startTime), endTime: String(endTime), lateToleranceMin: Number(lateToleranceMin) || 10, workDays: String(workDays || "1,2,3,4,5") });
+  sendSuccess(res, { ok: true });
+});
+router.post("/api/hr/schedule", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { userId, shiftId } = req.body ?? {};
+  if (!Number(userId)) return sendError(res, "userId wajib", 400);
+  await storage.setScheduleAssignment(Number(userId), shiftId ? Number(shiftId) : null);
+  sendSuccess(res, { ok: true });
+});
+router.get("/api/hr/holidays", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const year = String(req.query.year ?? new Date().getFullYear()).slice(0, 4);
+  sendSuccess(res, await storage.listHolidays(year));
+});
+router.post("/api/hr/holidays", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { date, name } = req.body ?? {};
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date ?? "")) || !name) return sendError(res, "date/name wajib", 400);
+  await storage.saveHoliday(String(date), String(name).slice(0, 128));
+  sendSuccess(res, { ok: true });
+});
+router.delete("/api/hr/holidays/:id", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  await storage.deleteHoliday(Number(req.params.id));
+  sendSuccess(res, { ok: true });
+});
+
+/** Saldo cuti milik sendiri (FR-HR-403). Kuota configurable via app_settings hr_leave_quota. */
+router.get("/api/hr/leaves/balance", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  let quotas: Record<string, number> = { tahunan: 12, khusus: 6, sakit: 0, izin: 0, unpaid: 0 };
+  try { const raw = await storage.getSetting("hr_leave_quota"); if (raw) quotas = { ...quotas, ...JSON.parse(raw) }; } catch { /* pakai default */ }
+  const userId = req.query.userId && hasPermission(req, "hr_sdm") ? Number(req.query.userId) : req.authUser.id;
+  sendSuccess(res, await storage.leaveBalance(userId, String(new Date().getFullYear()), quotas));
+});
+
 router.post("/api/teamspace/cheers", async (req, res) => {
   if (!requireWritePermission(req, res, "cheers")) return;
   const toUserId = Number(req.body?.toUserId);
