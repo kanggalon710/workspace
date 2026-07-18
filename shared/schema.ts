@@ -2943,6 +2943,67 @@ export const hrLocationPings = mysqlTable("hr_location_pings", {
 
 export type HrLocationPing = typeof hrLocationPings.$inferSelect;
 
+// FR-HR-902/903: master klien + kunjungan (check-in sah hanya dalam radius klien)
+export const hrClients = mysqlTable("hr_clients", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  name: varchar("name", { length: 128 }).notNull(),
+  phone: varchar("phone", { length: 24 }),
+  lat: double("lat").notNull(), lng: double("lng").notNull(),
+  radiusM: int("radius_m").notNull().default(100),
+});
+
+export const hrClientVisits = mysqlTable("hr_client_visits", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  clientId: int("client_id").notNull(),
+  userId: int("user_id").notNull(),
+  at: text("at").notNull(),
+  lat: double("lat").notNull(), lng: double("lng").notNull(),
+  withinRadius: int("within_radius").notNull().default(1),
+  note: varchar("note", { length: 255 }),
+}, (t) => ({ byClient: index("idx_hr_visit_client").on(t.mitraId, t.clientId), byUser: index("idx_hr_visit_user").on(t.mitraId, t.userId) }));
+
+// FR-HR-12xx: formulir KPI (pertanyaan berbobot) + penilaian per karyawan per periode
+export const hrKpiForms = mysqlTable("hr_kpi_forms", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  name: varchar("name", { length: 128 }).notNull(),
+  questions: text("questions").notNull(),        // JSON [{text, weight}]
+  status: varchar("status", { length: 10 }).notNull().default("active"),  // active|draft
+  createdAt: text("created_at").notNull(),
+});
+
+export const hrKpiAssessments = mysqlTable("hr_kpi_assessments", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  formId: int("form_id").notNull(),
+  userId: int("user_id").notNull(),              // yang dinilai
+  assessorId: int("assessor_id").notNull(),
+  period: varchar("period", { length: 7 }).notNull(),
+  scores: text("scores").notNull(),              // JSON [angka 1-5 per pertanyaan]
+  total: double("total").notNull(),              // 0-100 (weighted)
+  createdAt: text("created_at").notNull(),
+}, (t) => ({ byUser: index("idx_hr_kpi_user").on(t.mitraId, t.userId, t.period) }));
+
+// FR-HR-703: petty cash — ledger per pemegang (topup / expense)
+export const hrPettyCash = mysqlTable("hr_petty_cash", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  holderId: int("holder_id").notNull(),
+  kind: varchar("kind", { length: 8 }).notNull(),   // topup|expense
+  amount: double("amount").notNull(),
+  note: varchar("note", { length: 255 }),
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({ byHolder: index("idx_hr_pc_holder").on(t.mitraId, t.holderId) }));
+
+export type HrClient = typeof hrClients.$inferSelect;
+export type HrClientVisit = typeof hrClientVisits.$inferSelect;
+export type HrKpiForm = typeof hrKpiForms.$inferSelect;
+export type HrKpiAssessment = typeof hrKpiAssessments.$inferSelect;
+export type HrPettyCash = typeof hrPettyCash.$inferSelect;
+
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {
   id: int("id").autoincrement().primaryKey(),

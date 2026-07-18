@@ -8196,6 +8196,80 @@ router.get("/api/hr/tracking/:userId", async (req, res) => {
   sendSuccess(res, await storage.listUserPings(Number(req.params.userId), date));
 });
 
+// ── FR-HR-902/903: master klien + kunjungan (check-in sah hanya dalam radius) ──
+router.get("/api/hr/clients", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  sendSuccess(res, await storage.listClients());
+});
+router.post("/api/hr/clients", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { id, name, phone, lat, lng, radiusM } = req.body ?? {};
+  if (!name || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return sendError(res, "name/lat/lng wajib", 400);
+  await storage.saveClient({ id: id ? Number(id) : undefined, name: String(name), phone: phone ? String(phone) : null, lat: Number(lat), lng: Number(lng), radiusM: Math.max(20, Number(radiusM) || 100) });
+  sendSuccess(res, { ok: true });
+});
+router.post("/api/hr/visits", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const { clientId, lat, lng, note } = req.body ?? {};
+  const client = (await storage.listClients()).find((c) => c.id === Number(clientId));
+  if (!client) return sendError(res, "Klien tidak ditemukan", 404);
+  if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return sendError(res, "GPS wajib untuk kunjungan", 400);
+  const within = haversineM(Number(lat), Number(lng), client.lat, client.lng) <= client.radiusM;
+  const visit = await storage.createVisit({ clientId: client.id, userId: req.authUser.id, lat: Number(lat), lng: Number(lng), withinRadius: within, note: note ? String(note).slice(0, 255) : null });
+  sendSuccess(res, { ...visit, valid: within });
+});
+router.get("/api/hr/visits", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
+  sendSuccess(res, await storage.listVisits({ userId: mineOnly ? req.authUser.id : undefined }));
+});
+
+// ── FR-HR-12xx: KPI formulir + penilaian ──
+router.get("/api/hr/kpi", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, { forms: await storage.listKpiForms(), assessments: await storage.listKpiAssessments(req.query.period ? String(req.query.period) : undefined) });
+});
+router.post("/api/hr/kpi/forms", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { name, questions } = req.body ?? {};
+  if (!name || !Array.isArray(questions) || questions.length === 0) return sendError(res, "name + questions wajib", 400);
+  const clean = questions.filter((q: any) => q?.text).map((q: any) => ({ text: String(q.text).slice(0, 255), weight: Math.max(1, Number(q.weight) || 1) }));
+  if (clean.length === 0) return sendError(res, "Minimal 1 pertanyaan", 400);
+  await storage.saveKpiForm(String(name).slice(0, 128), JSON.stringify(clean));
+  sendSuccess(res, { ok: true });
+});
+router.post("/api/hr/kpi/assess", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { formId, userId, period, scores } = req.body ?? {};
+  const form = (await storage.listKpiForms()).find((f) => f.id === Number(formId));
+  if (!form) return sendError(res, "Formulir tidak ditemukan", 404);
+  if (!/^\d{4}-\d{2}$/.test(String(period ?? ""))) return sendError(res, "period wajib YYYY-MM", 400);
+  let questions: Array<{ weight: number }> = [];
+  try { questions = JSON.parse(form.questions); } catch { /* invalid */ }
+  if (!Array.isArray(scores) || scores.length !== questions.length) return sendError(res, "scores harus sesuai jumlah pertanyaan", 400);
+  const vals = scores.map((s: any) => Math.min(5, Math.max(1, Number(s) || 1)));
+  const totalWeight = questions.reduce((s, q) => s + q.weight, 0) || 1;
+  // Skor 0-100: rata-rata tertimbang (nilai 1-5 → ×20)
+  const total = Math.round(vals.reduce((s, v, i) => s + v * 20 * questions[i].weight, 0) / totalWeight);
+  await storage.saveKpiAssessment({ formId: form.id, userId: Number(userId), assessorId: req.authUser.id, period: String(period), scores: JSON.stringify(vals), total });
+  sendSuccess(res, { total });
+});
+
+// ── FR-HR-703: petty cash ──
+router.get("/api/hr/pettycash", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, await storage.pettyCashLedger());
+});
+router.post("/api/hr/pettycash", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { holderId, kind, amount, note } = req.body ?? {};
+  if (!Number(holderId) || (kind !== "topup" && kind !== "expense")) return sendError(res, "holderId + kind (topup/expense) wajib", 400);
+  const amt = Number(amount);
+  if (!Number.isFinite(amt) || amt <= 0) return sendError(res, "amount > 0 wajib", 400);
+  await storage.addPettyCash({ holderId: Number(holderId), kind, amount: amt, note: note ? String(note).slice(0, 255) : null, createdBy: req.authUser.id });
+  sendSuccess(res, { ok: true });
+});
+
 // ── HR-1b: profil karyawan (wizard), org/jabatan, lembur ──
 
 router.get("/api/hr/profile/:userId", async (req, res) => {

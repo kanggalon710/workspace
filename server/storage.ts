@@ -160,7 +160,9 @@ import {
   type HrAttendanceEvent, type HrShift,
   hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime, hrShiftRoster,
   hrSalaryComponents, hrPayslips, hrCashAdvances, hrReimbursements, hrLocationPings,
-  type HrLocationPing,
+  hrClients, hrClientVisits, hrKpiForms, hrKpiAssessments, hrPettyCash,
+  type HrLocationPing, type HrClient, type HrClientVisit, type HrKpiForm,
+  type HrKpiAssessment, type HrPettyCash,
   type HrEmployeeProfile, type HrOvertime, type HrSalaryComponent, type HrPayslip,
   type HrCashAdvance, type HrReimbursement,
 } from "../shared/schema.js";
@@ -4188,6 +4190,64 @@ export class DatabaseStorage implements IStorage {
     return this.db.select().from(hrLocationPings)
       .where(and(eq(hrLocationPings.mitraId, mitraId), eq(hrLocationPings.userId, userId), like(hrLocationPings.at, `${date}%`)))
       .orderBy(asc(hrLocationPings.id)).limit(500);
+  }
+
+  // FR-HR-902/903: klien + kunjungan
+  async listClients(): Promise<HrClient[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrClients).where(eq(hrClients.mitraId, mitraId)).orderBy(asc(hrClients.name));
+  }
+  async saveClient(c: { id?: number; name: string; phone?: string | null; lat: number; lng: number; radiusM: number }): Promise<void> {
+    const mitraId = getMitraId();
+    if (c.id) await this.db.update(hrClients).set({ name: c.name, phone: c.phone ?? null, lat: c.lat, lng: c.lng, radiusM: c.radiusM }).where(and(eq(hrClients.id, c.id), eq(hrClients.mitraId, mitraId)));
+    else await this.db.insert(hrClients).values({ mitraId, name: c.name, phone: c.phone ?? null, lat: c.lat, lng: c.lng, radiusM: c.radiusM });
+  }
+  async createVisit(v: { clientId: number; userId: number; lat: number; lng: number; withinRadius: boolean; note?: string | null }): Promise<HrClientVisit> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(hrClientVisits).values({
+      mitraId, clientId: v.clientId, userId: v.userId, at: new Date().toISOString(),
+      lat: v.lat, lng: v.lng, withinRadius: v.withinRadius ? 1 : 0, note: v.note ?? null,
+    });
+    const [row] = await this.db.select().from(hrClientVisits).where(eq(hrClientVisits.id, Number((result[0] as any).insertId)));
+    return row!;
+  }
+  async listVisits(opts?: { userId?: number; clientId?: number }): Promise<HrClientVisit[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrClientVisits.mitraId, mitraId)];
+    if (opts?.userId != null) conds.push(eq(hrClientVisits.userId, opts.userId));
+    if (opts?.clientId != null) conds.push(eq(hrClientVisits.clientId, opts.clientId));
+    return this.db.select().from(hrClientVisits).where(and(...conds)).orderBy(desc(hrClientVisits.id)).limit(300);
+  }
+
+  // FR-HR-12xx: KPI
+  async listKpiForms(): Promise<HrKpiForm[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrKpiForms).where(eq(hrKpiForms.mitraId, mitraId)).orderBy(desc(hrKpiForms.id));
+  }
+  async saveKpiForm(name: string, questions: string): Promise<void> {
+    await this.db.insert(hrKpiForms).values({ mitraId: getMitraId(), name, questions, status: "active", createdAt: new Date().toISOString() });
+  }
+  async saveKpiAssessment(a: { formId: number; userId: number; assessorId: number; period: string; scores: string; total: number }): Promise<void> {
+    await this.db.insert(hrKpiAssessments).values({ mitraId: getMitraId(), ...a, createdAt: new Date().toISOString() });
+  }
+  async listKpiAssessments(period?: string): Promise<HrKpiAssessment[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrKpiAssessments.mitraId, mitraId)];
+    if (period) conds.push(eq(hrKpiAssessments.period, period));
+    return this.db.select().from(hrKpiAssessments).where(and(...conds)).orderBy(desc(hrKpiAssessments.id)).limit(500);
+  }
+
+  // FR-HR-703: petty cash
+  async addPettyCash(rec: { holderId: number; kind: "topup" | "expense"; amount: number; note?: string | null; createdBy: number }): Promise<void> {
+    await this.db.insert(hrPettyCash).values({ mitraId: getMitraId(), holderId: rec.holderId, kind: rec.kind, amount: rec.amount, note: rec.note ?? null, createdBy: rec.createdBy, createdAt: new Date().toISOString() });
+  }
+  async pettyCashLedger(): Promise<{ balances: Array<{ holderId: number; balance: number }>; entries: HrPettyCash[] }> {
+    const mitraId = getMitraId();
+    const entries = await this.db.select().from(hrPettyCash).where(eq(hrPettyCash.mitraId, mitraId)).orderBy(desc(hrPettyCash.id)).limit(200);
+    const [rows]: any = await this.pool.execute(
+      `SELECT holder_id AS holderId, SUM(CASE WHEN kind='topup' THEN amount ELSE -amount END) AS balance
+       FROM hr_petty_cash WHERE mitra_id = ? GROUP BY holder_id`, [mitraId]);
+    return { balances: (rows as any[]).map((r) => ({ holderId: Number(r.holderId), balance: Number(r.balance) })), entries };
   }
 
   async createOvertime(rec: { userId: number; date: string; hours: number; reason?: string | null }): Promise<HrOvertime> {
@@ -9409,6 +9469,51 @@ export class DatabaseStorage implements IStorage {
           user_id INT NOT NULL, at TEXT NOT NULL, lat DOUBLE NOT NULL, lng DOUBLE NOT NULL,
           accuracy DOUBLE NULL,
           KEY idx_hr_ping_user (mitra_id, user_id, id)
+        )`,
+      },
+      {
+        name: "hr_clients",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_clients (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          name VARCHAR(128) NOT NULL, phone VARCHAR(24) NULL,
+          lat DOUBLE NOT NULL, lng DOUBLE NOT NULL, radius_m INT NOT NULL DEFAULT 100
+        )`,
+      },
+      {
+        name: "hr_client_visits",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_client_visits (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          client_id INT NOT NULL, user_id INT NOT NULL, at TEXT NOT NULL,
+          lat DOUBLE NOT NULL, lng DOUBLE NOT NULL, within_radius INT NOT NULL DEFAULT 1,
+          note VARCHAR(255) NULL,
+          KEY idx_hr_visit_client (mitra_id, client_id), KEY idx_hr_visit_user (mitra_id, user_id)
+        )`,
+      },
+      {
+        name: "hr_kpi_forms",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_kpi_forms (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          name VARCHAR(128) NOT NULL, questions TEXT NOT NULL,
+          status VARCHAR(10) NOT NULL DEFAULT 'active', created_at TEXT NOT NULL
+        )`,
+      },
+      {
+        name: "hr_kpi_assessments",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_kpi_assessments (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          form_id INT NOT NULL, user_id INT NOT NULL, assessor_id INT NOT NULL,
+          period VARCHAR(7) NOT NULL, scores TEXT NOT NULL, total DOUBLE NOT NULL,
+          created_at TEXT NOT NULL,
+          KEY idx_hr_kpi_user (mitra_id, user_id, period)
+        )`,
+      },
+      {
+        name: "hr_petty_cash",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_petty_cash (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          holder_id INT NOT NULL, kind VARCHAR(8) NOT NULL, amount DOUBLE NOT NULL,
+          note VARCHAR(255) NULL, created_by INT NOT NULL, created_at TEXT NOT NULL,
+          KEY idx_hr_pc_holder (mitra_id, holder_id)
         )`,
       },
       {

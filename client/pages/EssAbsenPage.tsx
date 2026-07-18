@@ -50,6 +50,53 @@ function PayslipCard() {
   );
 }
 
+/** FR-HR-903: check-in kunjungan klien dengan validasi radius GPS. */
+function VisitCard() {
+  const qc = useQueryClient();
+  const [clientId, setClientId] = useState("");
+  const [note, setNote] = useState("");
+  const { data: clients } = useQuery({ queryKey: ["/api/hr/clients"], queryFn: () => api.get<any[]>(`/hr/clients`) });
+  const { data: visits } = useQuery({ queryKey: ["/api/hr/visits", "mine"], queryFn: () => api.get<any[]>(`/hr/visits?mine=1`) });
+  const checkin = useMutation({
+    mutationFn: async () => {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) return reject(new Error("GPS tidak tersedia"));
+        navigator.geolocation.getCurrentPosition(resolve, () => reject(new Error("Izinkan akses lokasi")), { enableHighAccuracy: true, timeout: 10000 });
+      });
+      return api.post<any>(`/hr/visits`, { clientId: Number(clientId), lat: pos.coords.latitude, lng: pos.coords.longitude, note });
+    },
+    onSuccess: (v: any) => {
+      v.valid ? toast.success("Kunjungan tercatat — dalam radius klien ✓")
+        : toast.error("Tercatat TAPI di luar radius klien — ditandai untuk HR");
+      setNote(""); qc.invalidateQueries({ queryKey: ["/api/hr/visits"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Gagal check-in"),
+  });
+  if ((clients ?? []).length === 0) return null;
+  const nameOfClient = (id: number) => (clients ?? []).find((c: any) => c.id === id)?.name ?? `#${id}`;
+  return (
+    <Card padding="md">
+      <p className="text-sm font-semibold">Kunjungan Klien</p>
+      <div className="mt-1.5 flex flex-wrap items-end gap-2">
+        <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="h-9 min-w-40 rounded-lg border bg-background px-2 text-sm">
+          <option value="">Pilih klien…</option>
+          {(clients ?? []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <input value={note} placeholder="Catatan (opsional)" onChange={(e) => setNote(e.target.value)} className="h-9 w-44 rounded-lg border bg-background px-2.5 text-sm" />
+        <Button size="sm" leftIcon={<MapPin className="size-4" />} loading={checkin.isPending} disabled={!clientId} onClick={() => checkin.mutate()}>Check-in</Button>
+      </div>
+      {(visits ?? []).slice(0, 3).map((v: any) => (
+        <div key={v.id} className="mt-1.5 flex items-center gap-2 text-xs">
+          <span className="truncate">{nameOfClient(v.clientId)}</span>
+          <span className="tabular-nums text-muted-foreground">{new Date(v.at).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+          <span className="ml-auto" />
+          <StatusBadge size="sm" variant={v.withinRadius ? "success" : "warning"} label={v.withinRadius ? "Dalam radius" : "Luar radius"} />
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 const stBadge = (s: string) => (
   <StatusBadge size="sm" variant={s === "approved" || s === "paid" || s === "settled" ? "success" : s === "rejected" ? "danger" : "pending"}
     label={s === "approved" ? "Disetujui" : s === "paid" ? "Dibayar" : s === "settled" ? "Lunas" : s === "rejected" ? "Ditolak" : "Menunggu"} />
@@ -277,6 +324,9 @@ export default function EssAbsenPage() {
 
       {/* Ajukan lembur (FR-HR-207) */}
       <OvertimeCard />
+
+      {/* Kunjungan klien (FR-HR-903) — check-in sah hanya dalam radius klien */}
+      <VisitCard />
 
       {/* Kasbon + Reimburse (FR-HR-701/702) */}
       <MoneyCard />

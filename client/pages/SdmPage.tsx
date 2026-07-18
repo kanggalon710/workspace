@@ -110,6 +110,124 @@ function MoneyApprovalList({ writable, nameOf }: { writable: boolean; nameOf: (i
   );
 }
 
+/** FR-HR-12xx: formulir KPI berbobot + penilaian 1-5 + rekap skor 0-100. */
+function KpiSection({ users, nameOf }: { users: any[]; nameOf: (id: number | null) => string | null }) {
+  const qc = useQueryClient();
+  const period = new Date().toISOString().slice(0, 7);
+  const { data } = useQuery({ queryKey: ["/api/hr/kpi"], queryFn: () => api.get<{ forms: any[]; assessments: any[] }>(`/hr/kpi`) });
+  const [formName, setFormName] = useState("");
+  const [formQ, setFormQ] = useState("Kualitas kerja; 3\nKecepatan respon; 2\nKedisiplinan; 2\nKerja sama tim; 1");
+  const [assess, setAssess] = useState({ formId: "", userId: "", scores: {} as Record<number, number> });
+  const saveForm = useMutation({
+    mutationFn: () => api.post(`/hr/kpi/forms`, {
+      name: formName,
+      questions: formQ.split(/\n/).map((l) => { const [text, w] = l.split(";"); return { text: text?.trim(), weight: Number(w) || 1 }; }).filter((q) => q.text),
+    }),
+    onSuccess: () => { toast.success("Formulir KPI dibuat"); setFormName(""); qc.invalidateQueries({ queryKey: ["/api/hr/kpi"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  const form = (data?.forms ?? []).find((f) => f.id === Number(assess.formId));
+  const questions: Array<{ text: string; weight: number }> = (() => { try { return form ? JSON.parse(form.questions) : []; } catch { return []; } })();
+  const submitAssess = useMutation({
+    mutationFn: () => api.post<{ total: number }>(`/hr/kpi/assess`, {
+      formId: Number(assess.formId), userId: Number(assess.userId), period,
+      scores: questions.map((_, i) => assess.scores[i] ?? 3),
+    }),
+    onSuccess: (r: any) => { toast.success(`Penilaian tersimpan — skor ${r.total}/100`); setAssess({ formId: "", userId: "", scores: {} }); qc.invalidateQueries({ queryKey: ["/api/hr/kpi"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  return (
+    <>
+      <PageSection title="Formulir Penilaian" description="Satu baris satu pertanyaan: teks; bobot">
+        <div className="flex flex-wrap items-start gap-2">
+          <input value={formName} placeholder="Nama formulir (mis. KPI Teknisi Q3)" onChange={(e) => setFormName(e.target.value)} className="h-9 w-64 rounded-lg border bg-background px-2.5 text-sm" />
+          <textarea value={formQ} onChange={(e) => setFormQ(e.target.value)} className="h-24 w-full max-w-md rounded-lg border bg-background p-2.5 font-mono-tight text-xs" />
+          <Button size="sm" loading={saveForm.isPending} disabled={!formName.trim()} onClick={() => saveForm.mutate()}>Buat Formulir</Button>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">{(data?.forms ?? []).length} formulir tersedia.</p>
+      </PageSection>
+
+      <PageSection title={`Nilai Karyawan — Periode ${period}`} description="Skor 1 (kurang) sampai 5 (sangat baik) per pertanyaan; total tertimbang 0-100">
+        <div className="flex flex-wrap gap-2">
+          <select value={assess.formId} onChange={(e) => setAssess((p) => ({ ...p, formId: e.target.value, scores: {} }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
+            <option value="">Pilih formulir…</option>
+            {(data?.forms ?? []).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+          <select value={assess.userId} onChange={(e) => setAssess((p) => ({ ...p, userId: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
+            <option value="">Pilih karyawan…</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.name || u.username}</option>)}
+          </select>
+        </div>
+        {form && assess.userId && (
+          <Card padding="md" className="mt-2 space-y-2">
+            {questions.map((q, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="min-w-0 flex-1">{q.text} <span className="text-[10px] text-muted-foreground">(bobot {q.weight})</span></span>
+                <span className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((v) => (
+                    <button key={v} type="button" onClick={() => setAssess((p) => ({ ...p, scores: { ...p.scores, [i]: v } }))}
+                      className={`size-8 rounded-full border text-xs font-bold transition-colors ${(assess.scores[i] ?? 3) === v ? "border-primary bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>{v}</button>
+                  ))}
+                </span>
+              </div>
+            ))}
+            <Button size="sm" loading={submitAssess.isPending} onClick={() => submitAssess.mutate()}>Simpan Penilaian</Button>
+          </Card>
+        )}
+        {(data?.assessments ?? []).length > 0 && (
+          <Card padding="none" className="mt-3 divide-y overflow-hidden">
+            {(data?.assessments ?? []).slice(0, 15).map((a) => (
+              <div key={a.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                <span className="flex-1 truncate">{nameOf(a.userId)} <span className="text-xs text-muted-foreground">· {a.period} · dinilai {nameOf(a.assessorId)}</span></span>
+                <b className={`tabular-nums ${a.total >= 80 ? "text-success" : a.total >= 60 ? "" : "text-destructive"}`}>{Math.round(a.total)}/100</b>
+              </div>
+            ))}
+          </Card>
+        )}
+      </PageSection>
+    </>
+  );
+}
+
+/** FR-HR-703: petty cash — saldo per pemegang + topup/expense. */
+function PettyCashSection({ users, nameOf }: { users: any[]; nameOf: (id: number | null) => string | null }) {
+  const qc = useQueryClient();
+  const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
+  const { data } = useQuery({ queryKey: ["/api/hr/pettycash"], queryFn: () => api.get<{ balances: any[]; entries: any[] }>(`/hr/pettycash`) });
+  const [form, setForm] = useState({ holderId: "", kind: "topup", amount: "", note: "" });
+  const submit = useMutation({
+    mutationFn: () => api.post(`/hr/pettycash`, { ...form, holderId: Number(form.holderId), amount: Number(form.amount) }),
+    onSuccess: () => { toast.success("Tercatat"); setForm((p) => ({ ...p, amount: "", note: "" })); qc.invalidateQueries({ queryKey: ["/api/hr/pettycash"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  return (
+    <PageSection title="Petty Cash" description="Kas kecil per pemegang — top-up dan pengeluaran, saldo otomatis">
+      <div className="flex flex-wrap items-end gap-2">
+        <select value={form.holderId} onChange={(e) => setForm((p) => ({ ...p, holderId: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
+          <option value="">Pemegang…</option>
+          {users.map((u) => <option key={u.id} value={u.id}>{u.name || u.username}</option>)}
+        </select>
+        <select value={form.kind} onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
+          <option value="topup">Top-up</option>
+          <option value="expense">Pengeluaran</option>
+        </select>
+        <input type="number" placeholder="Jumlah" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} className="h-9 w-28 rounded-lg border bg-background px-2.5 text-sm tabular-nums" />
+        <input placeholder="Catatan" value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} className="h-9 w-40 rounded-lg border bg-background px-2.5 text-sm" />
+        <Button size="sm" loading={submit.isPending} disabled={!form.holderId || !form.amount} onClick={() => submit.mutate()}>Catat</Button>
+      </div>
+      {(data?.balances ?? []).length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(data?.balances ?? []).map((b) => (
+            <span key={b.holderId} className="rounded-full border px-3 py-1 text-xs">
+              {nameOf(b.holderId)}: <b className="tabular-nums">{rp(b.balance)}</b>
+            </span>
+          ))}
+        </div>
+      )}
+    </PageSection>
+  );
+}
+
 function todayIso(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -144,7 +262,7 @@ export default function SdmPage() {
     return u ? (u.name || u.username) : id != null ? `#${id}` : "–";
   };
 
-  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "pengaturan">(readable ? "kehadiran" : "cuti");
+  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "kpi" | "pengaturan">(readable ? "kehadiran" : "cuti");
   const [date, setDate] = useState(todayIso());
   const [month, setMonth] = useState(todayIso().slice(0, 7));
   // Draft kehadiran: userId -> status (belum tersimpan)
@@ -311,6 +429,7 @@ export default function SdmPage() {
   const [locForm, setLocForm] = useState({ name: "", lat: "", lng: "", radiusM: "150" });
   const [shiftForm, setShiftForm] = useState({ name: "", startTime: "08:00", endTime: "17:00", lateToleranceMin: "10" });
   const [holForm, setHolForm] = useState({ date: todayIso(), name: "" });
+  const [clientForm, setClientForm] = useState({ name: "", lat: "", lng: "", radiusM: "100" });
   const saveCfg = useMutation({
     mutationFn: ({ path, body }: { path: string; body: any }) => api.post(path, body),
     onSuccess: () => { toast.success("Tersimpan"); invalidateCfg(); qc.invalidateQueries({ queryKey: ["/api/hr/roster"] }); },
@@ -325,7 +444,7 @@ export default function SdmPage() {
       { key: "rekap", label: "Rekap Bulanan", icon: BarChart3 },
     ] : []),
     { key: "cuti", label: "Cuti", icon: Plane },
-    ...(writable ? [{ key: "payroll", label: "Payroll", icon: BarChart3 }] : []),
+    ...(writable ? [{ key: "payroll", label: "Payroll", icon: BarChart3 }, { key: "kpi", label: "KPI", icon: Check }] : []),
     ...(readable ? [{ key: "pengaturan", label: "Pengaturan", icon: IdCard }] : []),
   ] as const;
 
@@ -575,6 +694,10 @@ export default function SdmPage() {
         </>
       )}
 
+      {tab === "kpi" && writable && <KpiSection users={activeUsers} nameOf={nameOf} />}
+
+      {tab === "payroll" && writable && <PettyCashSection users={activeUsers} nameOf={nameOf} />}
+
       {tab === "pengaturan" && readable && (
         <>
           <PageSection title="Lokasi Kantor (Radius Presensi)" description="Absen di luar semua radius = antre approval. Kosong = semua lokasi diterima.">
@@ -674,6 +797,20 @@ export default function SdmPage() {
               </div>
             )}
             <p className="mt-2 text-[11px] text-muted-foreground">Daftar lengkap muncul di dropdown wizard profil karyawan (tab Karyawan → Lengkapi Data).</p>
+          </PageSection>
+
+          <PageSection title="Master Klien (Kunjungan)" description="Teknisi hanya bisa check-in kunjungan dalam radius klien (FR-HR-902/903)">
+            {writable && (
+              <div className="flex flex-wrap items-end gap-2">
+                {([["name", "Nama", "PT Mentari"], ["lat", "Lat", "-7.21"], ["lng", "Lng", "107.90"], ["radiusM", "Radius (m)", "100"]] as const).map(([k, l, ph]) => (
+                  <label key={k} className="text-xs font-medium text-muted-foreground">{l}
+                    <input value={(clientForm as any)[k]} placeholder={ph} onChange={(e) => setClientForm((p) => ({ ...p, [k]: e.target.value }))}
+                      className="mt-1 h-9 w-32 rounded-lg border bg-background px-2.5 text-sm" /></label>
+                ))}
+                <Button size="sm" loading={saveCfg.isPending} disabled={!clientForm.name}
+                  onClick={() => saveCfg.mutate({ path: `/hr/clients`, body: { ...clientForm, lat: Number(clientForm.lat), lng: Number(clientForm.lng), radiusM: Number(clientForm.radiusM) } })}>Tambah Klien</Button>
+              </div>
+            )}
           </PageSection>
 
           <PageSection title={`Kalender Libur ${new Date().getFullYear()}`}>
