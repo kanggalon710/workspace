@@ -7892,6 +7892,97 @@ router.get("/api/teamspace/performance/suggestion", async (req, res) => {
 
 // ── Teamspace Fase 3: Cheers (FR-1203) ──
 
+// ==================== SDM / HRD Fase 1 (v5.1) ====================
+// Kehadiran & rekap: butuh izin hr_sdm. Cuti: semua staff boleh ajukan untuk
+// diri sendiri + lihat riwayatnya (self-service, "ngelink ke HRD"); daftar
+// penuh + approve/reject butuh hr_sdm.
+
+router.get("/api/hr/attendance", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm'", 403);
+  const date = String(req.query.date ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return sendError(res, "Param date wajib format YYYY-MM-DD", 400);
+  sendSuccess(res, await storage.listAttendanceByDate(date));
+});
+
+router.post("/api/hr/attendance", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
+  const { records } = req.body ?? {};
+  if (!Array.isArray(records) || records.length === 0) return sendError(res, "records wajib array", 400);
+  if (records.length > 200) return sendError(res, "Maks 200 record per simpan", 400);
+  const { HR_ATTENDANCE_STATUSES } = await import("../shared/schema.js");
+  for (const r of records) {
+    if (!r || !Number(r.userId) || !/^\d{4}-\d{2}-\d{2}$/.test(String(r.date ?? "")) ||
+        !(HR_ATTENDANCE_STATUSES as readonly string[]).includes(String(r.status))) {
+      return sendError(res, "Record tidak valid (userId/date/status)", 400);
+    }
+  }
+  for (const r of records) {
+    await storage.upsertAttendance({
+      userId: Number(r.userId), date: String(r.date), status: String(r.status),
+      checkIn: r.checkIn ? String(r.checkIn).slice(0, 5) : null,
+      checkOut: r.checkOut ? String(r.checkOut).slice(0, 5) : null,
+      note: r.note ? String(r.note).slice(0, 255) : null,
+      createdBy: req.authUser!.id,
+    });
+  }
+  sendSuccess(res, { saved: records.length });
+});
+
+router.get("/api/hr/attendance/summary", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm'", 403);
+  const month = String(req.query.month ?? "").slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(month)) return sendError(res, "Param month wajib format YYYY-MM", 400);
+  sendSuccess(res, await storage.attendanceSummary(month));
+});
+
+router.get("/api/hr/leaves", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
+  const status = req.query.status ? String(req.query.status) : undefined;
+  sendSuccess(res, await storage.listLeaves({ userId: mineOnly ? req.authUser.id : undefined, status }));
+});
+
+router.post("/api/hr/leaves", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const { startDate, endDate, type, reason, userId } = req.body ?? {};
+  const { HR_LEAVE_TYPES } = await import("../shared/schema.js");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(startDate ?? "")) || !/^\d{4}-\d{2}-\d{2}$/.test(String(endDate ?? "")))
+    return sendError(res, "startDate/endDate wajib format YYYY-MM-DD", 400);
+  if (String(endDate) < String(startDate)) return sendError(res, "endDate tidak boleh sebelum startDate", 400);
+  if (!(HR_LEAVE_TYPES as readonly string[]).includes(String(type))) return sendError(res, "Jenis cuti tidak valid", 400);
+  // Ajukan untuk orang lain hanya boleh oleh HR (hr_sdm write)
+  const targetUserId = userId && Number(userId) !== req.authUser.id
+    ? (hasWritePermission(req, "hr_sdm") ? Number(userId) : null)
+    : req.authUser.id;
+  if (targetUserId == null) return sendError(res, "Akses ditolak: hanya HR yang boleh mengajukan untuk user lain", 403);
+  sendSuccess(res, await storage.createLeave({
+    userId: targetUserId, startDate: String(startDate), endDate: String(endDate),
+    type: String(type), reason: reason ? String(reason).slice(0, 500) : null,
+  }));
+});
+
+router.post("/api/hr/leaves/:id/review", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
+  const { status, note } = req.body ?? {};
+  if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
+  const row = await storage.reviewLeave(Number(req.params.id), status, req.authUser.id, note ? String(note) : null);
+  if (!row) return sendError(res, "Pengajuan cuti tidak ditemukan", 404);
+  // Cuti disetujui → otomatis isi kehadiran "cuti" untuk rentang tanggalnya (max 60 hari).
+  if (status === "approved") {
+    const start = new Date(`${row.startDate}T00:00:00`);
+    const end = new Date(`${row.endDate}T00:00:00`);
+    for (let d = new Date(start), i = 0; d <= end && i < 60; d.setDate(d.getDate() + 1), i++) {
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      await storage.upsertAttendance({ userId: row.userId, date: iso, status: "cuti", createdBy: req.authUser!.id });
+    }
+  }
+  sendSuccess(res, row);
+});
+
 router.post("/api/teamspace/cheers", async (req, res) => {
   if (!requireWritePermission(req, res, "cheers")) return;
   const toUserId = Number(req.body?.toUserId);

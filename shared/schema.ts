@@ -1658,6 +1658,8 @@ export const ALL_PERMISSIONS = [
   { key: "team_announcements", label: "Pengumuman Tim", group: "Teamspace" },
   { key: "performance_reports", label: "Laporan Kinerja", group: "Teamspace" },
   { key: "cheers", label: "Cheers (Apresiasi)", group: "Teamspace" },
+  // v5.1 SDM/HRD — kehadiran, absensi, cuti (adaptasi SDM_Jabnet.xlsx)
+  { key: "hr_sdm", label: "SDM (Kehadiran, Absensi, Cuti)", group: "HRD" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -2688,6 +2690,49 @@ export const cheers = mysqlTable("cheers", {
 }));
 
 export type Cheer = typeof cheers.$inferSelect;
+
+// ── v5.1 SDM / HRD (adaptasi SDM_Jabnet.xlsx Fase 1) ──────────────────────
+// Kehadiran harian per karyawan (upsert per user+tanggal) + pengajuan cuti.
+export const hrAttendance = mysqlTable("hr_attendance", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  date: varchar("date", { length: 10 }).notNull(),           // YYYY-MM-DD
+  status: varchar("status", { length: 12 }).notNull(),       // hadir|izin|sakit|cuti|alpha|libur
+  checkIn: varchar("check_in", { length: 5 }),               // HH:MM
+  checkOut: varchar("check_out", { length: 5 }),
+  note: varchar("note", { length: 255 }),
+  createdBy: int("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+}, (t) => ({
+  uniqUserDate: uniqueIndex("uq_hr_att_user_date").on(t.mitraId, t.userId, t.date),
+  byDate: index("idx_hr_att_date").on(t.mitraId, t.date),
+}));
+
+export const hrLeaves = mysqlTable("hr_leaves", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  startDate: varchar("start_date", { length: 10 }).notNull(),
+  endDate: varchar("end_date", { length: 10 }).notNull(),
+  type: varchar("type", { length: 16 }).notNull(),           // tahunan|sakit|izin|khusus
+  reason: varchar("reason", { length: 500 }),
+  status: varchar("status", { length: 10 }).notNull().default("pending"),  // pending|approved|rejected
+  reviewedBy: int("reviewed_by"),
+  reviewedAt: text("reviewed_at"),
+  reviewNote: varchar("review_note", { length: 255 }),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  byUser: index("idx_hr_leaves_user").on(t.mitraId, t.userId, t.id),
+  byStatus: index("idx_hr_leaves_status").on(t.mitraId, t.status),
+}));
+
+export type HrAttendance = typeof hrAttendance.$inferSelect;
+export type HrLeave = typeof hrLeaves.$inferSelect;
+
+export const HR_ATTENDANCE_STATUSES = ["hadir", "izin", "sakit", "cuti", "alpha", "libur"] as const;
+export const HR_LEAVE_TYPES = ["tahunan", "sakit", "izin", "khusus"] as const;
 
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {

@@ -3,11 +3,15 @@
  *  admin / role lintas divisi melihat grid semua divisi yang boleh diakses. */
 import { useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { DIVISIONS, ROLE_HOME_DIVISION } from "@/lib/divisions";
 import { PageContainer } from "@/components/ui/page-container";
+import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Compass, ChevronRight } from "lucide-react";
+import { useAllTasks } from "@/hooks/useTeamspace";
+import { Compass, ChevronRight, Users, UserX, CircleDot, CheckSquare } from "lucide-react";
 
 const ACCENT_BG: Record<string, string> = {
   primary: "bg-primary/10 text-primary",
@@ -17,6 +21,45 @@ const ACCENT_BG: Record<string, string> = {
   violet: "bg-chart-5/10 text-chart-5",
   rose: "bg-destructive/10 text-destructive",
 };
+
+/** KPI ringkas seluruh divisi di Beranda — hanya tile yang izinnya dimiliki user. */
+function DashboardUmum() {
+  const [, navigate] = useLocation();
+  const { canRead } = useAuth();
+  const { data: dash } = useQuery({
+    queryKey: ["/api/dashboard", "beranda"],
+    queryFn: () => api.get<any>("/dashboard"),
+    enabled: canRead("dashboard"),
+    staleTime: 60_000,
+  });
+  const { data: tasks } = useAllTasks();
+  const openTasks = useMemo(
+    () => tasks ? tasks.cards.filter((c) => !c.isCompleted && !(c as any).archivedAt).length : null,
+    [tasks],
+  );
+  const tiles: Array<{ icon: any; label: string; value: string; accent: any; path: string; description?: string }> = [];
+  if (dash) {
+    tiles.push(
+      { icon: Users, label: "Pelanggan Aktif", value: String(dash.activeCustomers ?? "—"), accent: "success", path: "/customers" },
+      { icon: UserX, label: "Isolir", value: String(dash.isolirCustomers ?? "—"), accent: (dash.isolirCustomers ?? 0) > 0 ? "warning" : "neutral", path: "/collections", description: "basis penagihan" },
+      { icon: CircleDot, label: "ODP Kritis", value: String(dash.odpKritisCount ?? "—"), accent: (dash.odpKritisCount ?? 0) > 0 ? "danger" : "success", path: "/odps", description: "> 80% kapasitas" },
+    );
+  }
+  if (openTasks != null && canRead("team_tasks")) {
+    tiles.push({ icon: CheckSquare, label: "Tugas Tim Terbuka", value: String(openTasks), accent: "violet", path: "/teamspace/tasks" });
+  }
+  if (tiles.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Dashboard Umum — Seluruh Divisi</p>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {tiles.map((t) => (
+          <StatTile key={t.label} icon={t.icon} label={t.label} value={t.value} accent={t.accent} description={t.description} onClick={() => navigate(t.path)} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function BerandaPage() {
   const [, navigate] = useLocation();
@@ -58,6 +101,9 @@ export default function BerandaPage() {
           <p className="mt-1 text-sm text-white/70">Pilih divisi untuk mulai bekerja — tiap divisi punya dashboard & modulnya sendiri.</p>
         </div>
       </div>
+
+      {/* Dashboard Umum lintas divisi (permission-aware) — feedback user */}
+      <DashboardUmum />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {accessible.map((d) => {

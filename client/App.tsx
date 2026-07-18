@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const BerandaPage = lazy(() => import("@/pages/BerandaPage"));
 const DivisionHubPage = lazy(() => import("@/pages/DivisionHubPage"));
+const SdmPage = lazy(() => import("@/pages/SdmPage"));
 const MapPage = lazy(() => import("@/pages/MapPage"));
 const PopsPage = lazy(() => import("@/pages/PopsPage"));
 const OdcsPage = lazy(() => import("@/pages/OdcsPage"));
@@ -233,6 +234,8 @@ function ProtectedRouter() {
           <Route path="/" component={BerandaPage} />
           <Route path="/divisi/:key" component={DivisionHubPage} />
           <Route path="/dashboard-jaringan" component={Dashboard} />
+          {/* SDM: tanpa WithPerm — cuti self-service untuk semua staff; tab HR di-gate izin hr_sdm di halaman */}
+          <Route path="/hrd/sdm" component={SdmPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/showcase" component={ShowcasePage} />
           {/* Aset jaringan — guarded per feature permission */}

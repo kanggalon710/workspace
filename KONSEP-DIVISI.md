@@ -55,3 +55,18 @@ Hub v1 (sudah): KPI dari `/api/dashboard` + tugas Teamspace. Berikutnya per divi
 Pola implementasi: tambah selector KPI di `DivisionHubPage` (atau ganti hub jadi
 halaman laporan penuh gaya Cicle seperti `TeamReportPanel`) — struktur navigasi
 tidak perlu berubah lagi.
+
+## Modul SDM / HRD (adaptasi SDM_Jabnet.xlsx)
+
+**Fase 1 (SUDAH — v5.1)**: halaman `/hrd/sdm` (izin `hr_sdm`, grup HRD) —
+Catat Kehadiran harian (hadir/izin/sakit/cuti/alpha/libur, upsert + koreksi),
+Rekap Bulanan per karyawan, dan Cuti self-service: SEMUA staff bisa ajukan
+cuti untuk dirinya (tanpa izin khusus) → HR approve/reject → kehadiran
+otomatis terisi "cuti". Karyawan = user apps (tanpa master data ganda; profil
+users sudah punya employeeId/position/department/joinDate dst.).
+
+**Fase 2 (roadmap, dari sheet Excel)**: slip gaji + perubahan gaji & jabatan
+(sensitif — butuh keputusan penyimpanan), target & evaluasi performa (bisa
+digabung skor Teamspace), kalender cuti visual, struktur jabatan, kontrak &
+dokumen karyawan, training/sertifikasi, onboarding/offboarding, disiplin SP,
+BPJS, rekrutmen kandidat, manpower planning, talent 9-box.

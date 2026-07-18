@@ -155,6 +155,7 @@ import {
   type TeamFolder, type TeamDocument, type TeamFile,
   // Teamspace v5.0 Fase 3
   cheers, type Cheer,
+  hrAttendance, hrLeaves, type HrAttendance, type HrLeave,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -3732,6 +3733,66 @@ export class DatabaseStorage implements IStorage {
     const [row] = await this.db.select().from(cheers)
       .where(and(eq(cheers.id, insertId), eq(cheers.mitraId, mitraId)));
     return row!;
+  }
+
+  // ==================== SDM / HRD Fase 1 (v5.1) ====================
+
+  /** Upsert kehadiran per user+tanggal (idempotent — HR bisa koreksi). */
+  async upsertAttendance(rec: { userId: number; date: string; status: string; checkIn?: string | null; checkOut?: string | null; note?: string | null; createdBy: number }): Promise<void> {
+    const mitraId = getMitraId();
+    await this.pool.execute(
+      `INSERT INTO hr_attendance (mitra_id, user_id, date, status, check_in, check_out, note, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE status = VALUES(status), check_in = VALUES(check_in),
+         check_out = VALUES(check_out), note = VALUES(note), updated_at = VALUES(created_at)`,
+      [mitraId, rec.userId, rec.date, rec.status, rec.checkIn ?? null, rec.checkOut ?? null, rec.note ?? null, rec.createdBy, new Date().toISOString()],
+    );
+  }
+
+  async listAttendanceByDate(date: string): Promise<HrAttendance[]> {
+    const mitraId = getMitraId();
+    return this.db.select().from(hrAttendance)
+      .where(and(eq(hrAttendance.mitraId, mitraId), eq(hrAttendance.date, date)));
+  }
+
+  /** Rekap bulanan: per user, hitung per status (month = "YYYY-MM"). */
+  async attendanceSummary(month: string): Promise<Array<{ userId: number; status: string; c: number }>> {
+    const mitraId = getMitraId();
+    const [rows]: any = await this.pool.execute(
+      `SELECT user_id AS userId, status, COUNT(*) AS c FROM hr_attendance
+       WHERE mitra_id = ? AND date LIKE ? GROUP BY user_id, status`,
+      [mitraId, `${month}-%`],
+    );
+    return (rows as any[]).map((r) => ({ userId: Number(r.userId), status: String(r.status), c: Number(r.c) }));
+  }
+
+  async createLeave(rec: { userId: number; startDate: string; endDate: string; type: string; reason?: string | null }): Promise<HrLeave> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(hrLeaves).values({
+      mitraId, userId: rec.userId, startDate: rec.startDate, endDate: rec.endDate,
+      type: rec.type, reason: rec.reason ?? null, status: "pending", createdAt: new Date().toISOString(),
+    });
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(hrLeaves).where(eq(hrLeaves.id, insertId));
+    return row!;
+  }
+
+  async listLeaves(opts?: { userId?: number; status?: string; limit?: number }): Promise<HrLeave[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrLeaves.mitraId, mitraId)];
+    if (opts?.userId != null) conds.push(eq(hrLeaves.userId, opts.userId));
+    if (opts?.status) conds.push(eq(hrLeaves.status, opts.status));
+    return this.db.select().from(hrLeaves).where(and(...conds))
+      .orderBy(desc(hrLeaves.id)).limit(Math.min(opts?.limit ?? 200, 500));
+  }
+
+  async reviewLeave(id: number, status: "approved" | "rejected", reviewedBy: number, note?: string | null): Promise<HrLeave | undefined> {
+    const mitraId = getMitraId();
+    await this.db.update(hrLeaves)
+      .set({ status, reviewedBy, reviewedAt: new Date().toISOString(), reviewNote: note ?? null })
+      .where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
+    const [row] = await this.db.select().from(hrLeaves).where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
+    return row;
   }
 
   async listCheersReceived(userId: number, limit = 100): Promise<Cheer[]> {
@@ -8756,6 +8817,43 @@ export class DatabaseStorage implements IStorage {
           user_id INT NOT NULL,
           UNIQUE KEY uniq_content_recipient (owner_type, owner_id, user_id),
           KEY idx_content_recipients_user (user_id)
+        )`,
+      },
+      {
+        name: "hr_attendance",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_attendance (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL,
+          date VARCHAR(10) NOT NULL,
+          status VARCHAR(12) NOT NULL,
+          check_in VARCHAR(5) NULL,
+          check_out VARCHAR(5) NULL,
+          note VARCHAR(255) NULL,
+          created_by INT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NULL,
+          UNIQUE KEY uq_hr_att_user_date (mitra_id, user_id, date),
+          KEY idx_hr_att_date (mitra_id, date)
+        )`,
+      },
+      {
+        name: "hr_leaves",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_leaves (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL,
+          start_date VARCHAR(10) NOT NULL,
+          end_date VARCHAR(10) NOT NULL,
+          type VARCHAR(16) NOT NULL,
+          reason VARCHAR(500) NULL,
+          status VARCHAR(10) NOT NULL DEFAULT 'pending',
+          reviewed_by INT NULL,
+          reviewed_at TEXT NULL,
+          review_note VARCHAR(255) NULL,
+          created_at TEXT NOT NULL,
+          KEY idx_hr_leaves_user (mitra_id, user_id, id),
+          KEY idx_hr_leaves_status (mitra_id, status)
         )`,
       },
     ];

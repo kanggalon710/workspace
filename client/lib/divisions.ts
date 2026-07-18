@@ -6,7 +6,7 @@ import {
   Map, Radio, Box, CircleDot, Landmark, Cable, Server, Rows3, Split, Cpu, Link2,
   GitBranch, Calculator, FileSpreadsheet, BarChart3, MapPinned, Search, Contact,
   ClipboardList, Camera, TrendingUp, Users, MessageSquare, Package, AlertCircle,
-  Heart, Wifi, MessageCircle, CheckSquare, Kanban, LayoutDashboard, KeyRound,
+  Heart, Wifi, MessageCircle, CheckSquare, Kanban, LayoutDashboard, KeyRound, CalendarCheck2,
 } from "lucide-react";
 
 export type DivisionModule = {
@@ -115,6 +115,7 @@ export const DIVISIONS: Division[] = [
     key: "hrd", label: "HRD", short: "HRD", icon: IdCard, accent: "violet",
     description: "SDM & akun: manajemen user, role & hak akses, produktivitas staff",
     modules: [
+      { label: "SDM (Kehadiran & Cuti)", path: "/hrd/sdm", icon: CalendarCheck2, permission: "hr_sdm" },
       { label: "Manajemen User", path: "/users", icon: Users, permission: "user_management" },
       { label: "Role & Hak Akses", path: "/roles", icon: KeyRound, permission: "user_management" },
       { label: "Activity & Produktivitas", path: "/audit-logs", icon: ClipboardList, permission: "audit_logs" },
