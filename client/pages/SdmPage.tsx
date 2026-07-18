@@ -12,8 +12,31 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IdCard, CalendarCheck2, BarChart3, Plane, Save, Check, X } from "lucide-react";
+import { IdCard, CalendarCheck2, BarChart3, Plane, Save, Check, X, Users as UsersIcon, Upload } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+
+/** Parser import absensi mesin (Fingerspot dkk): CSV/TSV dengan kolom
+ *  identifier (PIN/NIK/username), tanggal, jam masuk, [jam pulang].
+ *  Tanggal: YYYY-MM-DD atau DD/MM/YYYY. Delimiter koma/semicolon/tab. */
+function parseAttendanceCsv(text: string): Array<{ ident: string; date: string; checkIn: string | null; checkOut: string | null }> {
+  const out: Array<{ ident: string; date: string; checkIn: string | null; checkOut: string | null }> = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const cols = line.split(/[;,\t]/).map((c) => c.trim().replace(/^"|"$/g, ""));
+    if (cols.length < 2) continue;
+    const [ident, dateRaw, inRaw, outRaw] = cols;
+    let date = "";
+    let m = dateRaw?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) date = `${m[1]}-${m[2]}-${m[3]}`;
+    else if ((m = dateRaw?.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})/) ?? null)) date = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    if (!ident || !date) continue;   // baris header / tidak valid — lewati
+    const time = (t?: string) => { const tm = t?.match(/^(\d{1,2}):(\d{2})/); return tm ? `${tm[1].padStart(2, "0")}:${tm[2]}` : null; };
+    out.push({ ident, date, checkIn: time(inRaw), checkOut: time(outRaw) });
+  }
+  return out;
+}
 
 const ATT_STATUSES = [
   { key: "hadir", label: "Hadir", variant: "success" },
@@ -36,13 +59,30 @@ export default function SdmPage() {
   const readable = canRead("hr_sdm");
   const qc = useQueryClient();
   const { data: users } = useAssignableUsers();
-  const activeUsers = useMemo(() => (users ?? []).filter((u: any) => u.isActive !== 0), [users]);
+  // Registry karyawan (HRD memutuskan akun mana karyawan resmi)
+  const { data: employees } = useQuery({
+    queryKey: ["/api/hr/employees"],
+    queryFn: () => api.get<any[]>(`/hr/employees`),
+    enabled: readable,
+  });
+  const toggleEmployee = useMutation({
+    mutationFn: ({ userId, isEmployee }: { userId: number; isEmployee: boolean }) => api.post(`/hr/employees/${userId}`, { isEmployee }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/hr/employees"] }),
+    onError: (e: any) => toast.error(e?.message || "Gagal mengubah status karyawan"),
+  });
+  // Kehadiran & rekap hanya untuk karyawan resmi; fallback semua user aktif bila belum ada yang ditandai.
+  const activeUsers = useMemo(() => {
+    const base = (employees ?? []).filter((u: any) => u.isActive !== 0);
+    const marked = base.filter((u: any) => u.isEmployee === 1);
+    if (marked.length > 0) return marked;
+    return (users ?? []).filter((u: any) => u.isActive !== 0);
+  }, [employees, users]);
   const nameOf = (id: number | null) => {
     const u = (users ?? []).find((x: any) => x.id === id);
     return u ? (u.name || u.username) : id != null ? `#${id}` : "–";
   };
 
-  const [tab, setTab] = useState<"kehadiran" | "rekap" | "cuti">(readable ? "kehadiran" : "cuti");
+  const [tab, setTab] = useState<"karyawan" | "kehadiran" | "rekap" | "cuti">(readable ? "kehadiran" : "cuti");
   const [date, setDate] = useState(todayIso());
   const [month, setMonth] = useState(todayIso().slice(0, 7));
   // Draft kehadiran: userId -> status (belum tersimpan)
@@ -98,8 +138,42 @@ export default function SdmPage() {
     onError: (e: any) => toast.error(e?.message || "Gagal memproses"),
   });
 
+  // ── Import absensi mesin (Fingerspot) ──
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
+  const importParsed = useMemo(() => {
+    if (!importText.trim()) return { matched: [] as any[], unmatched: [] as string[] };
+    const rows = parseAttendanceCsv(importText);
+    const byIdent = new Map<string, number>();
+    for (const u of (employees ?? [])) {
+      if (u.employeeId) byIdent.set(String(u.employeeId).toLowerCase(), u.id);
+      byIdent.set(String(u.username).toLowerCase(), u.id);
+    }
+    const matched: any[] = []; const unmatched: string[] = [];
+    for (const r of rows) {
+      const uid = byIdent.get(r.ident.toLowerCase());
+      if (uid) matched.push({ userId: uid, date: r.date, status: "hadir", checkIn: r.checkIn, checkOut: r.checkOut });
+      else if (!unmatched.includes(r.ident)) unmatched.push(r.ident);
+    }
+    return { matched, unmatched };
+  }, [importText, employees]);
+  const importSave = useMutation({
+    mutationFn: () => api.post(`/hr/attendance`, { records: importParsed.matched }),
+    onSuccess: () => {
+      toast.success(`${importParsed.matched.length} kehadiran terimport`);
+      setShowImport(false); setImportText("");
+      qc.invalidateQueries({ queryKey: ["/api/hr/attendance"] });
+      qc.invalidateQueries({ queryKey: ["/api/hr/attendance/summary"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Gagal import"),
+  });
+
   const tabs = [
-    ...(readable ? [{ key: "kehadiran", label: "Catat Kehadiran", icon: CalendarCheck2 }, { key: "rekap", label: "Rekap Bulanan", icon: BarChart3 }] : []),
+    ...(readable ? [
+      { key: "karyawan", label: "Karyawan", icon: UsersIcon },
+      { key: "kehadiran", label: "Catat Kehadiran", icon: CalendarCheck2 },
+      { key: "rekap", label: "Rekap Bulanan", icon: BarChart3 },
+    ] : []),
     { key: "cuti", label: "Cuti", icon: Plane },
   ] as const;
 
@@ -117,10 +191,45 @@ export default function SdmPage() {
         </div>
       </PageHeader>
 
+      {tab === "karyawan" && readable && (
+        <PageSection title="Registry Karyawan" description="Tandai akun user mana yang karyawan resmi — jadi dasar kehadiran, rekap, dan integrasi data lintas divisi">
+          <Card padding="none" className="divide-y overflow-hidden">
+            {(employees ?? []).map((u: any) => (
+              <div key={u.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{u.name || u.username}
+                    {u.isActive === 0 && <span className="ml-1.5 text-[10px] text-muted-foreground">(nonaktif)</span>}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    @{u.username}{u.employeeId ? ` · NIK ${u.employeeId}` : ""}{u.position ? ` · ${u.position}` : ""}{u.department ? ` · ${u.department}` : ""}
+                  </span>
+                </span>
+                <StatusBadge size="sm" variant={u.isEmployee ? "success" : "neutral"} label={u.isEmployee ? "Karyawan" : "Bukan Karyawan"} />
+                {writable && (
+                  <Button type="button" size="xs" variant={u.isEmployee ? "outline" : "outline-primary"}
+                    loading={toggleEmployee.isPending}
+                    onClick={() => toggleEmployee.mutate({ userId: u.id, isEmployee: !u.isEmployee })}>
+                    {u.isEmployee ? "Hapus Tanda" : "Tandai Karyawan"}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </Card>
+          <p className="mt-2 text-xs text-muted-foreground">
+            NIK (employeeId) & jabatan diisi dari Manajemen User (menu Pengaturan) — dipakai untuk mencocokkan import mesin absensi.
+          </p>
+        </PageSection>
+      )}
+
       {tab === "kehadiran" && readable && (
         <PageSection title="Catat Kehadiran" description="Klik status per karyawan lalu Simpan — bisa dikoreksi kapan saja"
-          actions={<input type="date" value={date} onChange={(e) => { setDate(e.target.value); setDraft({}); }}
-            className="h-9 rounded-lg border bg-background px-2.5 text-sm font-medium tabular-nums" aria-label="Tanggal kehadiran" />}>
+          actions={<span className="flex items-center gap-2">
+            {writable && (
+              <Button type="button" size="sm" variant="outline" leftIcon={<Upload className="size-4" />} onClick={() => setShowImport(true)}>
+                Import Mesin
+              </Button>
+            )}
+            <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setDraft({}); }}
+            className="h-9 rounded-lg border bg-background px-2.5 text-sm font-medium tabular-nums" aria-label="Tanggal kehadiran" /></span>}>
           <Card padding="none" className="divide-y overflow-hidden">
             {activeUsers.map((u: any) => {
               const st = statusFor(u.id);
@@ -238,6 +347,42 @@ export default function SdmPage() {
             )}
           </PageSection>
         </>
+      )}
+
+      {/* Import absensi mesin fingerprint (Fingerspot dkk) */}
+      {showImport && (
+        <Dialog open onOpenChange={(o) => { if (!o) setShowImport(false); }}>
+          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
+            <DialogTitle>Import Absensi Mesin (Fingerspot)</DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Export CSV dari mesin lalu tempel di sini (atau pilih file). Format per baris:
+              <code className="mx-1 rounded bg-muted px-1 py-0.5 font-mono-tight">NIK/username, tanggal, jam masuk, jam pulang</code>
+              — tanggal <code className="rounded bg-muted px-1 font-mono-tight">YYYY-MM-DD</code> atau <code className="rounded bg-muted px-1 font-mono-tight">DD/MM/YYYY</code>.
+              Pencocokan via NIK (employeeId) atau username. Semua baris masuk sebagai status <b>Hadir</b> + jam scan.
+            </p>
+            <input type="file" accept=".csv,.txt" aria-label="Pilih file CSV"
+              onChange={async (e) => { const f = e.target.files?.[0]; if (f) setImportText(await f.text()); }}
+              className="text-xs" />
+            <textarea value={importText} onChange={(e) => setImportText(e.target.value)}
+              placeholder={"JB001, 2026-07-18, 08:02, 17:11\nJB002, 2026-07-18, 08:15, 17:03"}
+              className="h-40 w-full rounded-lg border bg-background p-2.5 font-mono-tight text-xs" />
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span>
+                <b className="text-success tabular-nums">{importParsed.matched.length}</b> cocok
+                {importParsed.unmatched.length > 0 && (
+                  <span className="ml-2 text-destructive" title={importParsed.unmatched.join(", ")}>
+                    {importParsed.unmatched.length} tak dikenal: {importParsed.unmatched.slice(0, 3).join(", ")}{importParsed.unmatched.length > 3 ? "…" : ""}
+                  </span>
+                )}
+              </span>
+              <span className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowImport(false)}>Batal</Button>
+                <Button size="sm" loading={importSave.isPending} disabled={importParsed.matched.length === 0}
+                  onClick={() => importSave.mutate()}>Import {importParsed.matched.length} Baris</Button>
+              </span>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </PageContainer>
   );

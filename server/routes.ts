@@ -7897,6 +7897,20 @@ router.get("/api/teamspace/performance/suggestion", async (req, res) => {
 // diri sendiri + lihat riwayatnya (self-service, "ngelink ke HRD"); daftar
 // penuh + approve/reject butuh hr_sdm.
 
+/** Registry karyawan: cek akun mana yang karyawan resmi — hub data lintas divisi. */
+router.get("/api/hr/employees", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm'", 403);
+  sendSuccess(res, await storage.listEmployees());
+});
+
+router.post("/api/hr/employees/:userId", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
+  await storage.setEmployeeFlag(Number(req.params.userId), !!(req.body ?? {}).isEmployee);
+  sendSuccess(res, { ok: true });
+});
+
 router.get("/api/hr/attendance", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm'", 403);

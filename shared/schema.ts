@@ -1492,6 +1492,7 @@ export const users = mysqlTable("users", {
   createdAt: text("created_at"),
   lastLogin: text("last_login"),
   // Team / HR fields (all optional — filled progressively)
+  isEmployee: int("is_employee").notNull().default(0),   // v5.1 SDM: akun ini karyawan resmi (dasar rekap HRD)
   email: text("email"),
   phone: text("phone"),
   employeeId: text("employee_id"),       // NIK / NIP
@@ -1630,7 +1631,7 @@ export const ALL_PERMISSIONS = [
   { key: "routers", label: "Router MikroTik", group: "NOC" },
   { key: "integrations", label: "Integrasi API", group: "Integrasi & Tools" },
   { key: "audit_logs", label: "Log Aktivitas", group: "HRD" },
-  { key: "user_management", label: "Manajemen User", group: "HRD" },
+  { key: "user_management", label: "Manajemen User", group: "Pengaturan" },
   { key: "customer_portal_admin", label: "Admin Portal Pelanggan", group: "Layanan Pelanggan" },
   { key: "loyalty_admin", label: "Manajemen Loyalitas Pelanggan", group: "Layanan Pelanggan" },
   { key: "mpwa", label: "MPWA WhatsApp Gateway (Legacy)", group: "Integrasi & Tools" },

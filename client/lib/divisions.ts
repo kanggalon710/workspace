@@ -113,11 +113,9 @@ export const DIVISIONS: Division[] = [
   },
   {
     key: "hrd", label: "HRD", short: "HRD", icon: IdCard, accent: "violet",
-    description: "SDM & akun: manajemen user, role & hak akses, produktivitas staff",
+    description: "SDM: data karyawan, kehadiran, cuti, produktivitas staff",
     modules: [
-      { label: "SDM (Kehadiran & Cuti)", path: "/hrd/sdm", icon: CalendarCheck2, permission: "hr_sdm" },
-      { label: "Manajemen User", path: "/users", icon: Users, permission: "user_management" },
-      { label: "Role & Hak Akses", path: "/roles", icon: KeyRound, permission: "user_management" },
+      { label: "SDM (Karyawan, Kehadiran, Cuti)", path: "/hrd/sdm", icon: CalendarCheck2, permission: "hr_sdm" },
       { label: "Activity & Produktivitas", path: "/audit-logs", icon: ClipboardList, permission: "audit_logs" },
     ],
   },

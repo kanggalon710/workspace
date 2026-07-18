@@ -3737,6 +3737,19 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== SDM / HRD Fase 1 (v5.1) ====================
 
+  /** Registry karyawan: semua akun user + flag isEmployee (HRD memutuskan mana karyawan). */
+  async listEmployees(): Promise<Array<{ id: number; name: string; username: string; isActive: number | null; isEmployee: number; position: string | null; department: string | null; employeeId: string | null }>> {
+    const rows = await this.db.select({
+      id: users.id, name: users.name, username: users.username, isActive: users.isActive,
+      isEmployee: users.isEmployee, position: users.position, department: users.department, employeeId: users.employeeId,
+    }).from(users).orderBy(asc(users.name));
+    return rows as any;
+  }
+
+  async setEmployeeFlag(userId: number, isEmployee: boolean): Promise<void> {
+    await this.db.update(users).set({ isEmployee: isEmployee ? 1 : 0 }).where(eq(users.id, userId));
+  }
+
   /** Upsert kehadiran per user+tanggal (idempotent — HR bisa koreksi). */
   async upsertAttendance(rec: { userId: number; date: string; status: string; checkIn?: string | null; checkOut?: string | null; note?: string | null; createdBy: number }): Promise<void> {
     const mitraId = getMitraId();
@@ -8857,6 +8870,14 @@ export class DatabaseStorage implements IStorage {
         )`,
       },
     ];
+    // v5.1 SDM: penanda karyawan pada akun user (HRD cek username = karyawan/bukan)
+    try {
+      await this.pool.execute(`ALTER TABLE users ADD COLUMN is_employee INT NOT NULL DEFAULT 0`);
+      console.log("[migration] Added users.is_employee");
+    } catch (err: any) {
+      if (err.errno !== 1060) console.warn(`[migration] users.is_employee: ${err.message}`);
+    }
+
     for (const t of tables) {
       try {
         await this.pool.execute(t.ddl);
