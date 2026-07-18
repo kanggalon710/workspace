@@ -2788,6 +2788,71 @@ export const hrHolidays = mysqlTable("hr_holidays", {
 export type HrAttendanceEvent = typeof hrAttendanceEvents.$inferSelect;
 export type HrShift = typeof hrShifts.$inferSelect;
 
+// ── PRD-HR HR-1b: profil karyawan lengkap (wizard 3 langkah), org, jabatan, lembur ──
+export const hrEmployeeProfiles = mysqlTable("hr_employee_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  // Step 1 — Personal (FR-HR-102)
+  birthPlace: varchar("birth_place", { length: 64 }),
+  maritalStatus: varchar("marital_status", { length: 16 }),   // lajang|menikah|cerai
+  bloodType: varchar("blood_type", { length: 4 }),
+  religion: varchar("religion", { length: 24 }),
+  nationality: varchar("nationality", { length: 8 }).default("WNI"),
+  idType: varchar("id_type", { length: 12 }).default("KTP"),
+  idNumber: varchar("id_number", { length: 32 }),
+  kkNumber: varchar("kk_number", { length: 32 }),
+  addressKtp: varchar("address_ktp", { length: 255 }),
+  addressDomisili: varchar("address_domisili", { length: 255 }),
+  educationLevel: varchar("education_level", { length: 24 }),
+  educationInstitution: varchar("education_institution", { length: 128 }),
+  educationMajor: varchar("education_major", { length: 96 }),
+  // Step 2 — Kepegawaian
+  orgUnitId: int("org_unit_id"),
+  positionId: int("position_id"),
+  rank: varchar("rank", { length: 48 }),
+  employmentStatus: varchar("employment_status", { length: 16 }).default("tetap"),  // tetap|kontrak|probation|lepas
+  supervisorId: int("supervisor_id"),
+  resignDate: varchar("resign_date", { length: 10 }),
+  // Step 3 — Payroll (dasar; perhitungan di Fase HR-2)
+  bankName: varchar("bank_name", { length: 48 }),
+  bankAccount: varchar("bank_account", { length: 32 }),
+  npwp: varchar("npwp", { length: 25 }),
+  ptkpStatus: varchar("ptkp_status", { length: 8 }),          // TK/0..K/3
+  bpjsTkNumber: varchar("bpjs_tk_number", { length: 24 }),
+  bpjsKesNumber: varchar("bpjs_kes_number", { length: 24 }),
+  updatedAt: text("updated_at"),
+  updatedBy: int("updated_by"),
+}, (t) => ({ uniqUser: uniqueIndex("uq_hr_profile_user").on(t.mitraId, t.userId) }));
+
+export const hrOrgUnits = mysqlTable("hr_org_units", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  name: varchar("name", { length: 96 }).notNull(),
+  parentId: int("parent_id"),
+});
+
+export const hrPositions = mysqlTable("hr_positions", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  name: varchar("name", { length: 96 }).notNull(),
+});
+
+export const hrOvertime = mysqlTable("hr_overtime", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  userId: int("user_id").notNull(),
+  date: varchar("date", { length: 10 }).notNull(),
+  hours: double("hours").notNull(),
+  reason: varchar("reason", { length: 255 }),
+  status: varchar("status", { length: 10 }).notNull().default("pending"),  // pending|approved|rejected
+  reviewedBy: int("reviewed_by"),
+  createdAt: text("created_at").notNull(),
+}, (t) => ({ byUser: index("idx_hr_ot_user").on(t.mitraId, t.userId, t.date), byStatus: index("idx_hr_ot_status").on(t.mitraId, t.status) }));
+
+export type HrEmployeeProfile = typeof hrEmployeeProfiles.$inferSelect;
+export type HrOvertime = typeof hrOvertime.$inferSelect;
+
 /** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {
   id: int("id").autoincrement().primaryKey(),

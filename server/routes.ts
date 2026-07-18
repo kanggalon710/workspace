@@ -8139,6 +8139,72 @@ router.delete("/api/hr/holidays/:id", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
+// ── HR-1b: profil karyawan (wizard), org/jabatan, lembur ──
+
+router.get("/api/hr/profile/:userId", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const target = Number(req.params.userId);
+  if (target !== req.authUser.id && !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, (await storage.getEmployeeProfile(target)) ?? null);
+});
+
+router.post("/api/hr/profile/:userId", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm' (write)", 403);
+  const target = Number(req.params.userId);
+  if (!target) return sendError(res, "userId tidak valid", 400);
+  const body = req.body ?? {};
+  // Whitelist kolom profil — cegah field liar masuk DB.
+  const ALLOWED = ["birthPlace","maritalStatus","bloodType","religion","nationality","idType","idNumber","kkNumber",
+    "addressKtp","addressDomisili","educationLevel","educationInstitution","educationMajor",
+    "orgUnitId","positionId","rank","employmentStatus","supervisorId","resignDate",
+    "bankName","bankAccount","npwp","ptkpStatus","bpjsTkNumber","bpjsKesNumber"] as const;
+  const patch: any = {};
+  for (const k of ALLOWED) if (k in body) patch[k] = body[k] === "" ? null : body[k];
+  if (patch.orgUnitId != null) patch.orgUnitId = Number(patch.orgUnitId) || null;
+  if (patch.positionId != null) patch.positionId = Number(patch.positionId) || null;
+  if (patch.supervisorId != null) patch.supervisorId = Number(patch.supervisorId) || null;
+  sendSuccess(res, await storage.saveEmployeeProfile(target, patch, req.authUser.id));
+});
+
+router.get("/api/hr/orgs", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  sendSuccess(res, { orgUnits: await storage.listOrgUnits(), positions: await storage.listPositions() });
+});
+router.post("/api/hr/orgs", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { kind, name, parentId } = req.body ?? {};
+  if (!name || typeof name !== "string") return sendError(res, "name wajib", 400);
+  if (kind === "position") await storage.savePosition(name.trim());
+  else await storage.saveOrgUnit(name.trim(), parentId ? Number(parentId) : null);
+  sendSuccess(res, { ok: true });
+});
+
+/** Lembur (FR-HR-207): staff ajukan sendiri; HR approve → jadi input payroll HR-2. */
+router.get("/api/hr/overtime", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
+  sendSuccess(res, await storage.listOvertime({
+    userId: mineOnly ? req.authUser.id : undefined,
+    status: req.query.status ? String(req.query.status) : undefined,
+  }));
+});
+router.post("/api/hr/overtime", async (req, res) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  const { date, hours, reason } = req.body ?? {};
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date ?? ""))) return sendError(res, "date wajib YYYY-MM-DD", 400);
+  const h = Number(hours);
+  if (!Number.isFinite(h) || h <= 0 || h > 12) return sendError(res, "hours wajib 0–12", 400);
+  sendSuccess(res, await storage.createOvertime({ userId: req.authUser.id, date: String(date), hours: h, reason: reason ? String(reason).slice(0, 255) : null }));
+});
+router.post("/api/hr/overtime/:id/review", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const { status } = req.body ?? {};
+  if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
+  const row = await storage.reviewOvertime(Number(req.params.id), status, req.authUser.id);
+  if (!row) return sendError(res, "Lembur tidak ditemukan", 404);
+  sendSuccess(res, row);
+});
+
 /** Saldo cuti milik sendiri (FR-HR-403). Kuota configurable via app_settings hr_leave_quota. */
 router.get("/api/hr/leaves/balance", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);

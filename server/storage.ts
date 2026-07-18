@@ -158,6 +158,8 @@ import {
   hrAttendance, hrLeaves, type HrAttendance, type HrLeave,
   hrAttendanceEvents, hrOfficeLocations, hrShifts, hrScheduleAssignments, hrHolidays,
   type HrAttendanceEvent, type HrShift,
+  hrEmployeeProfiles, hrOrgUnits, hrPositions, hrOvertime,
+  type HrEmployeeProfile, type HrOvertime,
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
@@ -3934,6 +3936,79 @@ export class DatabaseStorage implements IStorage {
       const u = used.get(type) ?? 0;
       return { type, quota, used: u, remaining: quota > 0 ? Math.max(0, quota - u) : -1 };  // -1 = tanpa kuota
     });
+  }
+
+  // ── HR-1b: profil karyawan, org unit, jabatan, lembur ──
+
+  async getEmployeeProfile(userId: number): Promise<HrEmployeeProfile | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db.select().from(hrEmployeeProfiles)
+      .where(and(eq(hrEmployeeProfiles.mitraId, mitraId), eq(hrEmployeeProfiles.userId, userId)));
+    return row;
+  }
+
+  /** Upsert profil karyawan (wizard 3 langkah — partial patch aman). */
+  async saveEmployeeProfile(userId: number, patch: Partial<HrEmployeeProfile>, updatedBy: number): Promise<HrEmployeeProfile> {
+    const mitraId = getMitraId();
+    const existing = await this.getEmployeeProfile(userId);
+    const clean: any = { ...patch };
+    delete clean.id; delete clean.mitraId; delete clean.userId;
+    clean.updatedAt = new Date().toISOString();
+    clean.updatedBy = updatedBy;
+    if (existing) {
+      await this.db.update(hrEmployeeProfiles).set(clean)
+        .where(and(eq(hrEmployeeProfiles.mitraId, mitraId), eq(hrEmployeeProfiles.userId, userId)));
+    } else {
+      await this.db.insert(hrEmployeeProfiles).values({ mitraId, userId, ...clean });
+    }
+    return (await this.getEmployeeProfile(userId))!;
+  }
+
+  async listOrgUnits(): Promise<Array<{ id: number; name: string; parentId: number | null }>> {
+    const mitraId = getMitraId();
+    return this.db.select({ id: hrOrgUnits.id, name: hrOrgUnits.name, parentId: hrOrgUnits.parentId })
+      .from(hrOrgUnits).where(eq(hrOrgUnits.mitraId, mitraId)).orderBy(asc(hrOrgUnits.name)) as any;
+  }
+
+  async saveOrgUnit(name: string, parentId?: number | null): Promise<void> {
+    await this.db.insert(hrOrgUnits).values({ mitraId: getMitraId(), name, parentId: parentId ?? null });
+  }
+
+  async listPositions(): Promise<Array<{ id: number; name: string }>> {
+    const mitraId = getMitraId();
+    return this.db.select({ id: hrPositions.id, name: hrPositions.name })
+      .from(hrPositions).where(eq(hrPositions.mitraId, mitraId)).orderBy(asc(hrPositions.name)) as any;
+  }
+
+  async savePosition(name: string): Promise<void> {
+    await this.db.insert(hrPositions).values({ mitraId: getMitraId(), name });
+  }
+
+  async createOvertime(rec: { userId: number; date: string; hours: number; reason?: string | null }): Promise<HrOvertime> {
+    const mitraId = getMitraId();
+    const result = await this.db.insert(hrOvertime).values({
+      mitraId, userId: rec.userId, date: rec.date, hours: rec.hours,
+      reason: rec.reason ?? null, status: "pending", createdAt: new Date().toISOString(),
+    });
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(hrOvertime).where(eq(hrOvertime.id, insertId));
+    return row!;
+  }
+
+  async listOvertime(opts?: { userId?: number; status?: string }): Promise<HrOvertime[]> {
+    const mitraId = getMitraId();
+    const conds = [eq(hrOvertime.mitraId, mitraId)];
+    if (opts?.userId != null) conds.push(eq(hrOvertime.userId, opts.userId));
+    if (opts?.status) conds.push(eq(hrOvertime.status, opts.status));
+    return this.db.select().from(hrOvertime).where(and(...conds)).orderBy(desc(hrOvertime.id)).limit(300);
+  }
+
+  async reviewOvertime(id: number, status: "approved" | "rejected", reviewedBy: number): Promise<HrOvertime | undefined> {
+    const mitraId = getMitraId();
+    await this.db.update(hrOvertime).set({ status, reviewedBy })
+      .where(and(eq(hrOvertime.id, id), eq(hrOvertime.mitraId, mitraId)));
+    const [row] = await this.db.select().from(hrOvertime).where(and(eq(hrOvertime.id, id), eq(hrOvertime.mitraId, mitraId)));
+    return row;
   }
 
   async listCheersReceived(userId: number, limit = 100): Promise<Cheer[]> {
@@ -9029,6 +9104,46 @@ export class DatabaseStorage implements IStorage {
           id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
           date VARCHAR(10) NOT NULL, name VARCHAR(128) NOT NULL,
           UNIQUE KEY uq_hr_holiday (mitra_id, date)
+        )`,
+      },
+      {
+        name: "hr_employee_profiles",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_employee_profiles (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1, user_id INT NOT NULL,
+          birth_place VARCHAR(64) NULL, marital_status VARCHAR(16) NULL, blood_type VARCHAR(4) NULL,
+          religion VARCHAR(24) NULL, nationality VARCHAR(8) NULL DEFAULT 'WNI',
+          id_type VARCHAR(12) NULL DEFAULT 'KTP', id_number VARCHAR(32) NULL, kk_number VARCHAR(32) NULL,
+          address_ktp VARCHAR(255) NULL, address_domisili VARCHAR(255) NULL,
+          education_level VARCHAR(24) NULL, education_institution VARCHAR(128) NULL, education_major VARCHAR(96) NULL,
+          org_unit_id INT NULL, position_id INT NULL, rank VARCHAR(48) NULL,
+          employment_status VARCHAR(16) NULL DEFAULT 'tetap', supervisor_id INT NULL, resign_date VARCHAR(10) NULL,
+          bank_name VARCHAR(48) NULL, bank_account VARCHAR(32) NULL, npwp VARCHAR(25) NULL,
+          ptkp_status VARCHAR(8) NULL, bpjs_tk_number VARCHAR(24) NULL, bpjs_kes_number VARCHAR(24) NULL,
+          updated_at TEXT NULL, updated_by INT NULL,
+          UNIQUE KEY uq_hr_profile_user (mitra_id, user_id)
+        )`,
+      },
+      {
+        name: "hr_org_units",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_org_units (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          name VARCHAR(96) NOT NULL, parent_id INT NULL
+        )`,
+      },
+      {
+        name: "hr_positions",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_positions (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1, name VARCHAR(96) NOT NULL
+        )`,
+      },
+      {
+        name: "hr_overtime",
+        ddl: `CREATE TABLE IF NOT EXISTS hr_overtime (
+          id INT AUTO_INCREMENT PRIMARY KEY, mitra_id INT NOT NULL DEFAULT 1,
+          user_id INT NOT NULL, date VARCHAR(10) NOT NULL, hours DOUBLE NOT NULL,
+          reason VARCHAR(255) NULL, status VARCHAR(10) NOT NULL DEFAULT 'pending',
+          reviewed_by INT NULL, created_at TEXT NOT NULL,
+          KEY idx_hr_ot_user (mitra_id, user_id, date), KEY idx_hr_ot_status (mitra_id, status)
         )`,
       },
       {

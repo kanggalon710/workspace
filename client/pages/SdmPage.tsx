@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IdCard, CalendarCheck2, BarChart3, Plane, Save, Check, X, Users as UsersIcon, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { EmployeeWizard } from "@/components/hr/EmployeeWizard";
 import { toast } from "sonner";
 
 /** Parser import absensi mesin (Fingerspot dkk): CSV/TSV dengan kolom
@@ -138,6 +139,26 @@ export default function SdmPage() {
     onError: (e: any) => toast.error(e?.message || "Gagal memproses"),
   });
 
+  // ── HR-1b: wizard profil + lembur pending + master org/jabatan ──
+  const [wizardUser, setWizardUser] = useState<{ id: number; name: string } | null>(null);
+  const { data: pendingOt } = useQuery({
+    queryKey: ["/api/hr/overtime", "pending"],
+    queryFn: () => api.get<any[]>(`/hr/overtime?status=pending`),
+    enabled: readable && tab === "approval",
+    refetchInterval: 30_000,
+  });
+  const reviewOt = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: "approved" | "rejected" }) => api.post(`/hr/overtime/${id}/review`, { status }),
+    onSuccess: () => { toast.success("Lembur diproses"); qc.invalidateQueries({ queryKey: ["/api/hr/overtime"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+  const [masterForm, setMasterForm] = useState({ kind: "org", name: "" });
+  const saveMaster = useMutation({
+    mutationFn: () => api.post(`/hr/orgs`, { kind: masterForm.kind === "org" ? "org" : "position", name: masterForm.name }),
+    onSuccess: () => { toast.success("Master tersimpan"); setMasterForm((p) => ({ ...p, name: "" })); qc.invalidateQueries({ queryKey: ["/api/hr/orgs"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal"),
+  });
+
   // ── Import absensi mesin (Fingerspot) ──
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState("");
@@ -237,6 +258,11 @@ export default function SdmPage() {
                   </span>
                 </span>
                 <StatusBadge size="sm" variant={u.isEmployee ? "success" : "neutral"} label={u.isEmployee ? "Karyawan" : "Bukan Karyawan"} />
+                {writable && u.isEmployee === 1 && (
+                  <Button type="button" size="xs" variant="outline" onClick={() => setWizardUser({ id: u.id, name: u.name || u.username })}>
+                    Lengkapi Data
+                  </Button>
+                )}
                 {writable && (
                   <Button type="button" size="xs" variant={u.isEmployee ? "outline" : "outline-primary"}
                     loading={toggleEmployee.isPending}
@@ -326,6 +352,31 @@ export default function SdmPage() {
         </PageSection>
       )}
 
+      {tab === "approval" && readable && (
+        <PageSection title="Approval Lembur" description="Lembur disetujui menjadi input payroll (Fase HR-2)">
+          {(pendingOt ?? []).length === 0 ? (
+            <p className="text-xs text-muted-foreground">Tidak ada pengajuan lembur menunggu.</p>
+          ) : (
+            <Card padding="none" className="divide-y overflow-hidden">
+              {(pendingOt ?? []).map((o: any) => (
+                <div key={o.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
+                  <span className="min-w-0 flex-1">
+                    <b>{nameOf(o.userId)}</b> · <span className="tabular-nums">{o.date}</span> · <b className="tabular-nums">{o.hours} jam</b>
+                    {o.reason && <span className="ml-1.5 text-xs text-muted-foreground">— {o.reason}</span>}
+                  </span>
+                  <span className="flex gap-1">
+                    <Button type="button" size="icon-sm" variant="success" aria-label="Setujui" loading={reviewOt.isPending}
+                      onClick={() => reviewOt.mutate({ id: o.id, status: "approved" })}><Check className="size-4" /></Button>
+                    <Button type="button" size="icon-sm" variant="destructive" aria-label="Tolak" loading={reviewOt.isPending}
+                      onClick={() => reviewOt.mutate({ id: o.id, status: "rejected" })}><X className="size-4" /></Button>
+                  </span>
+                </div>
+              ))}
+            </Card>
+          )}
+        </PageSection>
+      )}
+
       {tab === "pengaturan" && readable && (
         <>
           <PageSection title="Lokasi Kantor (Radius Presensi)" description="Absen di luar semua radius = antre approval. Kosong = semua lokasi diterima.">
@@ -383,6 +434,23 @@ export default function SdmPage() {
                 })}
               </Card>
             )}
+          </PageSection>
+
+          <PageSection title="Struktur Organisasi & Jabatan" description="Master data yang dirujuk profil karyawan (FR-HR-104)">
+            {writable && (
+              <div className="flex flex-wrap items-end gap-2">
+                <select value={masterForm.kind} onChange={(e) => setMasterForm((p) => ({ ...p, kind: e.target.value }))}
+                  className="h-9 rounded-lg border bg-background px-2 text-sm">
+                  <option value="org">Struktur Organisasi</option>
+                  <option value="position">Jabatan</option>
+                </select>
+                <input value={masterForm.name} placeholder={masterForm.kind === "org" ? "mis. Divisi Teknik" : "mis. Teknisi FTTH"}
+                  onChange={(e) => setMasterForm((p) => ({ ...p, name: e.target.value }))}
+                  className="h-9 w-56 rounded-lg border bg-background px-2.5 text-sm" />
+                <Button size="sm" loading={saveMaster.isPending} disabled={!masterForm.name.trim()} onClick={() => saveMaster.mutate()}>Tambah</Button>
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-muted-foreground">Daftar lengkap muncul di dropdown wizard profil karyawan (tab Karyawan → Lengkapi Data).</p>
           </PageSection>
 
           <PageSection title={`Kalender Libur ${new Date().getFullYear()}`}>
@@ -491,6 +559,11 @@ export default function SdmPage() {
             )}
           </PageSection>
         </>
+      )}
+
+      {wizardUser && (
+        <EmployeeWizard userId={wizardUser.id} userName={wizardUser.name}
+          users={(employees ?? []) as any} onClose={() => setWizardUser(null)} />
       )}
 
       {/* Import absensi mesin fingerprint (Fingerspot dkk) */}

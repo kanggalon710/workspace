@@ -11,6 +11,42 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { CalendarCheck2, LogIn, LogOut, MapPin, Camera } from "lucide-react";
 import { toast } from "sonner";
 
+/** Ajukan lembur + riwayat milik sendiri (FR-HR-207). */
+function OvertimeCard() {
+  const qc = useQueryClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState({ date: today, hours: "1", reason: "" });
+  const { data: mine } = useQuery({
+    queryKey: ["/api/hr/overtime", "mine"],
+    queryFn: () => api.get<any[]>(`/hr/overtime?mine=1`),
+  });
+  const submit = useMutation({
+    mutationFn: () => api.post(`/hr/overtime`, { ...form, hours: Number(form.hours) }),
+    onSuccess: () => { toast.success("Lembur diajukan — menunggu persetujuan HR"); qc.invalidateQueries({ queryKey: ["/api/hr/overtime"] }); },
+    onError: (e: any) => toast.error(e?.message || "Gagal mengajukan lembur"),
+  });
+  return (
+    <Card padding="md">
+      <p className="text-sm font-semibold">Lembur</p>
+      <div className="mt-2 flex flex-wrap items-end gap-2">
+        <input type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Tanggal lembur" />
+        <input type="number" min={0.5} max={12} step={0.5} value={form.hours} onChange={(e) => setForm((p) => ({ ...p, hours: e.target.value }))} className="h-9 w-20 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Jam lembur" />
+        <input value={form.reason} placeholder="Alasan (opsional)" onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} className="h-9 w-48 rounded-lg border bg-background px-2.5 text-sm" />
+        <Button size="sm" loading={submit.isPending} onClick={() => submit.mutate()}>Ajukan</Button>
+      </div>
+      {(mine ?? []).slice(0, 5).map((o: any) => (
+        <div key={o.id} className="mt-2 flex items-center gap-2 text-xs">
+          <span className="tabular-nums text-muted-foreground">{o.date}</span>
+          <span className="tabular-nums font-semibold">{o.hours} jam</span>
+          <span className="ml-auto" />
+          <StatusBadge size="sm" variant={o.status === "approved" ? "success" : o.status === "rejected" ? "danger" : "pending"}
+            label={o.status === "approved" ? "Disetujui" : o.status === "rejected" ? "Ditolak" : "Menunggu"} />
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 export default function EssAbsenPage() {
   const qc = useQueryClient();
   const { data: today, isLoading } = useQuery({
@@ -110,6 +146,9 @@ export default function EssAbsenPage() {
           ))}
         </Card>
       )}
+
+      {/* Ajukan lembur (FR-HR-207) */}
+      <OvertimeCard />
 
       {/* Sisa cuti (FR-HR-403) */}
       {(balance ?? []).length > 0 && (
