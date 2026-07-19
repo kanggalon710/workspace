@@ -8185,13 +8185,14 @@ router.post("/api/hr/ping", async (req, res) => {
 
 router.get("/api/hr/tracking", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
-  if (!hasPermission(req, "hr_sdm") && !hasPermission(req, "map")) return sendError(res, "Akses ditolak", 403);
+  // QA BUG3: lokasi GPS = PII sensitif → hanya hr_sdm (izin 'map' terlalu luas, dipegang marketing).
+  if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   sendSuccess(res, await storage.latestLocations());
 });
 
 router.get("/api/hr/tracking/:userId", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
-  if (!hasPermission(req, "hr_sdm") && !hasPermission(req, "map")) return sendError(res, "Akses ditolak", 403);
+  if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   const date = String(req.query.date ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
   sendSuccess(res, await storage.listUserPings(Number(req.params.userId), date));
 });
@@ -8367,28 +8368,51 @@ router.post("/api/hr/payroll/generate", async (req, res) => {
   const period = String((req.body ?? {}).period ?? "").slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(period)) return sendError(res, "period wajib YYYY-MM", 400);
   const { computePayslip } = await import("../shared/payroll.js");
+  // Rentang tanggal periode untuk overlap cuti (M1) & filter reimburse (H1).
+  const periodStart = `${period}-01`;
+  const [py, pm] = period.split("-").map(Number);
+  const lastDay = new Date(py, pm, 0).getDate();
+  const periodEnd = `${period}-${String(lastDay).padStart(2, "0")}`;
+  const overlapDays = (start: string, end: string): number => {
+    const s = start > periodStart ? start : periodStart;
+    const e = end < periodEnd ? end : periodEnd;
+    if (e < s) return 0;
+    return Math.round((new Date(`${e}T00:00:00Z`).getTime() - new Date(`${s}T00:00:00Z`).getTime()) / 86400_000) + 1;
+  };
   const comps = await storage.listSalaryComponents();
   const employees = (await storage.listEmployees()).filter((e) => e.isEmployee === 1 && e.isActive !== 0);
   const attSummary = await storage.attendanceSummary(period);
   const overtime = (await storage.listOvertime({ status: "approved" })).filter((o) => o.date.startsWith(period));
   const activeKasbon = (await storage.listCashAdvances({ status: "approved" })).filter((k) => k.remaining > 0);
-  const approvedReimburse = await storage.listReimbursements({ status: "approved" });
+  // QA H1: reimburse hanya untuk periode tanggalnya sendiri → tidak dobel bayar lintas periode.
+  const approvedReimburse = (await storage.listReimbursements({ status: "approved" })).filter((r) => r.date.startsWith(period));
+  // QA M1: cuti unpaid yang OVERLAP periode (bukan hanya yang mulai di periode).
   const unpaidLeaves = (await storage.listLeaves({ status: "approved", limit: 500 }))
-    .filter((l) => l.type === "unpaid" && l.startDate.startsWith(period));
+    .filter((l) => l.type === "unpaid" && l.startDate <= periodEnd && l.endDate >= periodStart);
+  // QA H3 (belt-and-suspenders): slip yang sudah dibayar di periode ini tidak di-generate ulang.
+  const existingPaid = new Set((await storage.listPayslips({ period, paidOnly: true })).map((s) => s.userId));
   let generated = 0; const skipped: string[] = [];
   for (const emp of employees) {
+    if (existingPaid.has(emp.id)) { skipped.push(`${emp.username} (sudah dibayar)`); continue; }
     const c = comps.find((x) => x.userId === emp.id);
     if (!c || c.baseSalary <= 0) { skipped.push(emp.username); continue; }
     const profile = await storage.getEmployeeProfile(emp.id);
     const alphaDays = attSummary.find((a) => a.userId === emp.id && a.status === "alpha")?.c ?? 0;
     const otHours = overtime.filter((o) => o.userId === emp.id).reduce((s, o) => s + o.hours, 0);
-    const unpaidDays = unpaidLeaves.filter((l) => l.userId === emp.id)
-      .reduce((s, l) => s + (Math.round((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 86400_000) + 1), 0);
-    // FR-HR-701/702: cicilan kasbon aktif dipotong; reimburse approved dibayarkan lewat slip.
-    const kasbon = activeKasbon.find((k) => k.userId === emp.id);
-    const installment = kasbon ? Math.min(kasbon.monthlyInstallment, kasbon.remaining) : 0;
+    const unpaidDays = unpaidLeaves.filter((l) => l.userId === emp.id).reduce((s, l) => s + overlapDays(l.startDate, l.endDate), 0);
     const myReimburse = approvedReimburse.filter((r) => r.userId === emp.id);
     const reimburseTotal = myReimburse.reduce((s, r) => s + r.amount, 0);
+    // Hitung slip TANPA kasbon dulu (M4): cicilan di-cap agar THP tidak negatif.
+    const base = computePayslip({
+      baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, variableAllowance: 0,
+      overtimeHours: otHours, alphaDays, unpaidLeaveDays: unpaidDays, workingDays: c.workingDays,
+      fixedDeduction: c.fixedDeduction, ptkp: (profile?.ptkpStatus as any) || "TK/0",
+      enrollBpjsTk: c.enrollBpjsTk === 1, enrollBpjsKes: c.enrollBpjsKes === 1,
+    });
+    const netBeforeKasbon = base.takeHomePay + reimburseTotal;
+    const kasbon = activeKasbon.find((k) => k.userId === emp.id);
+    // FR-HR-701: cicilan tak pernah melebihi sisa kasbon MAUPUN net yang tersedia (cegah THP negatif).
+    const installment = kasbon ? Math.max(0, Math.min(kasbon.monthlyInstallment, kasbon.remaining, netBeforeKasbon)) : 0;
     const result = computePayslip({
       baseSalary: c.baseSalary, fixedAllowance: c.fixedAllowance, variableAllowance: 0,
       overtimeHours: otHours, alphaDays, unpaidLeaveDays: unpaidDays, workingDays: c.workingDays,
@@ -8421,13 +8445,14 @@ router.post("/api/hr/payroll/:id/status", async (req, res) => {
   const slip = await storage.getPayslip(Number(req.params.id));
   if (!slip) return sendError(res, "Slip tidak ditemukan", 404);
   await storage.setPayslipStatus(slip.id, status);
-  // Efek pembayaran: kurangi sisa kasbon + tandai reimburse terbayar (idempotent-ish:
-  // hanya saat transisi ready→paid).
-  if (status === "paid" && slip.status !== "paid") {
+  // QA H2: efek uang (potong sisa kasbon + tandai reimburse paid) dijalankan SEKALI
+  // seumur slip via flag effects_applied — kebal terhadap transisi paid→ready→paid.
+  if (status === "paid" && (slip as any).effectsApplied !== 1) {
     try {
       const d = JSON.parse(slip.detail);
       if (d.kasbonId && d.installment > 0) await storage.payCashAdvanceInstallment(Number(d.kasbonId), Number(d.installment));
       for (const rid of d.reimburseIds ?? []) await storage.setReimbursementStatus(Number(rid), "paid");
+      await storage.markPayslipEffectsApplied(slip.id);
     } catch (e: any) { console.warn(`[payroll] efek paid slip ${slip.id}: ${e.message}`); }
   }
   sendSuccess(res, { ok: true });
@@ -8461,7 +8486,23 @@ router.post("/api/hr/kasbon/:id/review", async (req, res) => {
   if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   const { status } = req.body ?? {};
   if (status !== "approved" && status !== "rejected") return sendError(res, "status wajib approved/rejected", 400);
-  await storage.reviewCashAdvance(Number(req.params.id), status, req.authUser.id);
+  const all = await storage.listCashAdvances({});
+  const target = all.find((k) => k.id === Number(req.params.id));
+  if (!target) return sendError(res, "Kasbon tidak ditemukan", 404);
+  // QA M2: gerbang plafon nyata ada di approve — cegah dua pengajuan konkuren
+  // yang sama-sama lolos cek saat pengajuan lalu di-approve melebihi plafon.
+  if (status === "approved") {
+    let plafon = 5_000_000;
+    try {
+      const raw = await storage.getSetting("hr_kasbon_plafon");
+      if (raw) plafon = Number(raw) || plafon;
+      else { const c = await storage.getSalaryComponent(target.userId); if (c && c.baseSalary > 0) plafon = c.baseSalary; }
+    } catch { /* default */ }
+    const otherOutstanding = all.filter((k) => k.userId === target.userId && k.id !== target.id && k.status === "approved")
+      .reduce((s, k) => s + k.remaining, 0);
+    if (target.remaining + otherOutstanding > plafon) return sendError(res, `Menyetujui kasbon ini akan melebihi plafon (Rp ${plafon.toLocaleString("id-ID")})`, 400);
+  }
+  await storage.reviewCashAdvance(target.id, status, req.authUser.id);
   sendSuccess(res, { ok: true });
 });
 router.get("/api/hr/reimburse", async (req, res) => {

@@ -49,6 +49,17 @@ test("alpha & cuti tidak dibayar memotong harian; lembur menambah", () => {
   assert.ok(ot.takeHomePay > base.takeHomePay);
 });
 
+test("QA M3: dasar BPJS = pokok + tunjangan tetap, TIDAK termasuk lembur", () => {
+  // Tanpa lembur
+  const a = computePayslip({ baseSalary: 5_000_000, fixedAllowance: 1_000_000, variableAllowance: 0, overtimeHours: 0, alphaDays: 0, unpaidLeaveDays: 0, workingDays: 22, fixedDeduction: 0, ptkp: "TK/0" });
+  // Dengan lembur 20 jam — BPJS harus SAMA (lembur tidak menambah dasar iuran)
+  const b = computePayslip({ baseSalary: 5_000_000, fixedAllowance: 1_000_000, variableAllowance: 0, overtimeHours: 20, alphaDays: 0, unpaidLeaveDays: 0, workingDays: 22, fixedDeduction: 0, ptkp: "TK/0" });
+  assert.equal(a.bpjsTkEmp, b.bpjsTkEmp, "BPJS TK tidak boleh berubah karena lembur");
+  assert.equal(a.bpjsKesEmp, b.bpjsKesEmp, "BPJS Kesehatan tidak boleh berubah karena lembur");
+  // Nilai eksplisit: JHT 2% + JP 1% dari 6.000.000 = 120.000 + 60.000 = 180.000
+  assert.equal(a.bpjsTkEmp, Math.round(6_000_000 * 0.02 + 6_000_000 * 0.01));
+});
+
 test("opt-out BPJS meniadakan potongannya", () => {
   const r = computePayslip({ baseSalary: 6_000_000, fixedAllowance: 0, variableAllowance: 0, overtimeHours: 0, alphaDays: 0, unpaidLeaveDays: 0, workingDays: 22, fixedDeduction: 0, ptkp: "TK/0", enrollBpjsTk: false, enrollBpjsKes: false });
   assert.equal(r.bpjsTkEmp, 0);

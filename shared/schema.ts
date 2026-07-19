@@ -2890,6 +2890,7 @@ export const hrPayslips = mysqlTable("hr_payslips", {
   totalDeduction: double("total_deduction").notNull(),
   takeHomePay: double("take_home_pay").notNull(),
   status: varchar("status", { length: 10 }).notNull().default("ready"),  // ready|paid
+  effectsApplied: int("effects_applied").notNull().default(0),  // QA H2: efek kasbon/reimburse dijalankan sekali seumur slip
   generatedBy: int("generated_by").notNull(),
   generatedAt: text("generated_at").notNull(),
   paidAt: text("paid_at"),

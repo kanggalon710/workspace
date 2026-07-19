@@ -104,10 +104,13 @@ export function computePayslip(inp: PayslipInput): PayslipResult {
 
   const bruto = inp.baseSalary + inp.fixedAllowance + inp.variableAllowance + overtimePay;
   const cfg = inp.bpjs ?? DEFAULT_BPJS;
-  const jpBase = Math.min(bruto, cfg.jpCap);
-  const kesBase = Math.min(bruto, cfg.kesCap);
-  const bpjsTkEmp = inp.enrollBpjsTk === false ? 0 : round(bruto * cfg.jhtEmp / 100 + jpBase * cfg.jpEmp / 100);
-  const bpjsTkCo = inp.enrollBpjsTk === false ? 0 : round(bruto * (cfg.jhtCo + cfg.jkk + cfg.jkm) / 100 + jpBase * cfg.jpCo / 100);
+  // QA M3: dasar iuran BPJS = UPAH TETAP (gaji pokok + tunjangan tetap), TIDAK
+  // termasuk lembur & tunjangan tidak tetap — sesuai kaidah umum upah BPJS.
+  const bpjsWage = inp.baseSalary + inp.fixedAllowance;
+  const jpBase = Math.min(bpjsWage, cfg.jpCap);
+  const kesBase = Math.min(bpjsWage, cfg.kesCap);
+  const bpjsTkEmp = inp.enrollBpjsTk === false ? 0 : round(bpjsWage * cfg.jhtEmp / 100 + jpBase * cfg.jpEmp / 100);
+  const bpjsTkCo = inp.enrollBpjsTk === false ? 0 : round(bpjsWage * (cfg.jhtCo + cfg.jkk + cfg.jkm) / 100 + jpBase * cfg.jpCo / 100);
   const bpjsKesEmp = inp.enrollBpjsKes === false ? 0 : round(kesBase * cfg.kesEmp / 100);
   const bpjsKesCo = inp.enrollBpjsKes === false ? 0 : round(kesBase * cfg.kesCo / 100);
 

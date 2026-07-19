@@ -3746,16 +3746,22 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== SDM / HRD Fase 1 (v5.1) ====================
 
-  /** Registry karyawan: semua akun user + flag isEmployee (HRD memutuskan mana karyawan). */
+  /** Registry karyawan: akun user DALAM mitra aktif + flag isEmployee.
+   *  QA BUG1: users tak punya kolom mitra_id — WAJIB filter via user_mitras
+   *  supaya HR tidak melihat staf tenant lain (cross-tenant PII leak). */
   async listEmployees(): Promise<Array<{ id: number; name: string; username: string; isActive: number | null; isEmployee: number; position: string | null; department: string | null; employeeId: string | null }>> {
+    const inMitra = await this.getUserIdsInMitra(getMitraId());
     const rows = await this.db.select({
       id: users.id, name: users.name, username: users.username, isActive: users.isActive,
       isEmployee: users.isEmployee, position: users.position, department: users.department, employeeId: users.employeeId,
     }).from(users).orderBy(asc(users.name));
-    return rows as any;
+    return (rows as any[]).filter((u) => inMitra.has(u.id)) as any;
   }
 
+  /** QA BUG2: verifikasi target ada di mitra pemanggil sebelum menulis flag. */
   async setEmployeeFlag(userId: number, isEmployee: boolean): Promise<void> {
+    const inMitra = await this.getUserIdsInMitra(getMitraId());
+    if (!inMitra.has(userId)) throw new Error("User bukan anggota mitra ini");
     await this.db.update(users).set({ isEmployee: isEmployee ? 1 : 0 }).where(eq(users.id, userId));
   }
 
@@ -4069,11 +4075,19 @@ export class DatabaseStorage implements IStorage {
   async upsertPayslip(slip: { period: string; userId: number; detail: string; gross: number; totalAllowance: number; totalDeduction: number; takeHomePay: number; generatedBy: number }): Promise<void> {
     const mitraId = getMitraId();
     await this.pool.execute(
+      // QA H3: slip yang SUDAH dibayar bersifat immutable — regenerate periode
+      // tidak menimpa angka/rincian slip paid (jaga integritas historis + cegah
+      // corruption reimburse/kasbon). Hanya slip 'ready' yang diperbarui.
       `INSERT INTO hr_payslips (mitra_id, period, user_id, detail, gross, total_allowance, total_deduction, take_home_pay, status, generated_by, generated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ready', ?, ?)
-       ON DUPLICATE KEY UPDATE detail=VALUES(detail), gross=VALUES(gross), total_allowance=VALUES(total_allowance),
-         total_deduction=VALUES(total_deduction), take_home_pay=VALUES(take_home_pay),
-         status=IF(status='paid','paid','ready'), generated_by=VALUES(generated_by), generated_at=VALUES(generated_at)`,
+       ON DUPLICATE KEY UPDATE
+         detail=IF(status='paid',detail,VALUES(detail)),
+         gross=IF(status='paid',gross,VALUES(gross)),
+         total_allowance=IF(status='paid',total_allowance,VALUES(total_allowance)),
+         total_deduction=IF(status='paid',total_deduction,VALUES(total_deduction)),
+         take_home_pay=IF(status='paid',take_home_pay,VALUES(take_home_pay)),
+         generated_by=IF(status='paid',generated_by,VALUES(generated_by)),
+         generated_at=IF(status='paid',generated_at,VALUES(generated_at))`,
       [mitraId, slip.period, slip.userId, slip.detail, slip.gross, slip.totalAllowance, slip.totalDeduction, slip.takeHomePay, slip.generatedBy, new Date().toISOString()]);
   }
 
@@ -4090,6 +4104,13 @@ export class DatabaseStorage implements IStorage {
     const mitraId = getMitraId();
     await this.db.update(hrPayslips)
       .set({ status, paidAt: status === "paid" ? new Date().toISOString() : null })
+      .where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
+  }
+
+  /** QA H2: tandai efek uang (kasbon/reimburse) sudah diterapkan — sekali seumur slip. */
+  async markPayslipEffectsApplied(id: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(hrPayslips).set({ effectsApplied: 1 })
       .where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
   }
 
@@ -4211,7 +4232,6 @@ export class DatabaseStorage implements IStorage {
       else todayAttendance[a.status] = (todayAttendance[a.status] ?? 0) + 1;
     }
 
-    const countStatus = async (fn: () => Promise<Array<{ status?: string }>>) => (await fn()).length;
     const pending = {
       leaves: (await this.listLeaves({ status: "pending", limit: 500 })).length,
       overtime: (await this.listOvertime({ status: "pending" })).length,
@@ -4219,7 +4239,6 @@ export class DatabaseStorage implements IStorage {
       reimburse: (await this.listReimbursements({ status: "pending" })).length,
       presensi: (await this.listAttendanceEvents({ status: "pending" })).length,
     };
-    void countStatus;
 
     // Demografi dari profil karyawan
     const profiles = await this.db.select().from(hrEmployeeProfiles).where(eq(hrEmployeeProfiles.mitraId, mitraId));
@@ -9599,7 +9618,7 @@ export class DatabaseStorage implements IStorage {
           const cfg = JSON.stringify({ sources: [], entryStageId: stageId, titleSource: "name", fieldMap: [], onDuplicate: "update", dedupBy: "phone" });
           await this.pool.execute(
             `INSERT INTO pipeline_rules (mitra_id, pipeline_id, name, action_type, target_stage_id, enabled, created_by, created_at, trigger_type, trigger_config, recurrence)
-             VALUES (1, ?, 'Auto: Lead baru (canvassing/marketing) → pipeline', 'create_card', ?, 1, 1, ?, 'lead_created', ?, 'every_time')`,
+             VALUES (1, ?, 'Auto: Lead baru (canvassing/marketing) → pipeline', 'create_card', ?, 1, 1, ?, 'lead_created', ?, 'always')`,
             [leadsPipelineId, stageId, new Date().toISOString(), cfg]);
           console.log(`[migration] Seeded default lead_created intake rule → pipeline ${leadsPipelineId}`);
         }
@@ -9626,6 +9645,10 @@ export class DatabaseStorage implements IStorage {
         console.log(`[migration] Seeded pipeline Rekrutmen Kandidat (#${pid})`);
       }
     } catch (err: any) { console.warn(`[migration] seed rekrutmen: ${err.message}`); }
+
+    // QA H2: guard efek uang slip (kasbon/reimburse) — dijalankan sekali seumur slip
+    try { await this.pool.execute(`ALTER TABLE hr_payslips ADD COLUMN effects_applied INT NOT NULL DEFAULT 0`); }
+    catch (err: any) { if (err.errno !== 1060 && err.errno !== 1146) console.warn(`[migration] hr_payslips.effects_applied: ${err.message}`); }
 
     // HR-1c: kolom approval berjenjang di hr_leaves (idempotent errno 1060)
     for (const ddl of [
