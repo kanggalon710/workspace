@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { type LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { type LucideIcon, TrendingUp, TrendingDown, Minus, ChevronRight } from "lucide-react";
 
 interface TrendIndicator {
   value: number;
@@ -123,9 +123,10 @@ export function StatTile({
       type={isClickable ? "button" : undefined}
       onClick={onClick}
       className={cn(
-        "group rounded-lg border bg-card transition-all text-left",
+        "group rounded-lg border bg-card transition-all text-left w-full",
         compact ? "p-3" : "p-4",
-        isClickable && "hover:shadow-elev-md cursor-pointer active:scale-[0.98]",
+        // Afordance klik jelas: garis lebih tegas + hover terangkat + panah geser.
+        isClickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-elev-md hover:border-primary/40 active:scale-[0.98]",
         a.accent,
         className
       )}
@@ -155,7 +156,10 @@ export function StatTile({
             {label}
           </p>
         </div>
-        {trend && <TrendBadge trend={trend} compact={compact} />}
+        {trend ? <TrendBadge trend={trend} compact={compact} />
+          : isClickable && (
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
+          )}
       </div>
 
       <div

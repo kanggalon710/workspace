@@ -123,7 +123,7 @@ export default function DivisionHubPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {mod.children.map((c) => (
                         <button key={c.path} type="button" onClick={() => c.path && navigate(c.path)}
-                          className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                          className="rounded-full border bg-muted/50 px-2.5 py-1 text-xs font-medium text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary active:scale-95">
                           {c.label}
                         </button>
                       ))}
@@ -133,12 +133,12 @@ export default function DivisionHubPage() {
               }
               return (
                 <button key={mod.path ?? mod.label} type="button" onClick={() => mod.path && navigate(mod.path)}
-                  className="group flex items-center gap-3 rounded-xl border bg-card p-3.5 text-left transition-all hover:border-primary/40 hover:shadow-elev-md">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  className="group flex items-center gap-3 rounded-xl border bg-card p-3.5 text-left shadow-elev-sm transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/[0.03] hover:shadow-elev-md active:scale-[0.99]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/15">
                     <ModIcon className="size-5 text-primary" />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{mod.label}</span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground/60 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                 </button>
               );
             })}
@@ -153,8 +153,8 @@ export default function DivisionHubPage() {
             const DIcon = d.icon;
             return (
               <button key={d.key} type="button" onClick={() => navigate(`/divisi/${d.key}`)}
-                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                <DIcon className="size-3.5" /> {d.short}
+                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-elev-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary active:scale-95">
+                <DIcon className="size-3.5 text-muted-foreground" /> {d.short}
               </button>
             );
           })}

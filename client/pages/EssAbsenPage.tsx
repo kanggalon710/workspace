@@ -278,7 +278,7 @@ export default function EssAbsenPage() {
         <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden"
           onChange={(e) => setSelfie(e.target.files?.[0] ?? null)} />
         <button type="button" onClick={() => fileRef.current?.click()}
-          className="mx-auto mt-4 flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs text-muted-foreground hover:bg-muted">
+          className={`mx-auto mt-4 flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-elev-sm transition-all active:scale-95 ${selfie ? "border-success/50 bg-success/10 text-success" : "bg-card text-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary"}`}>
           <Camera className="size-4" /> {selfie ? `Selfie siap ✓ (${Math.round(selfie.size / 1024)} KB)` : "Ambil Selfie (opsional)"}
         </button>
 

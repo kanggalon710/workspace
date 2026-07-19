@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IdCard, CalendarCheck2, BarChart3, Plane, Save, Check, X, Users as UsersIcon, Upload } from "lucide-react";
+import { IdCard, CalendarCheck2, BarChart3, Plane, Save, Check, X, Users as UsersIcon, Upload, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EmployeeWizard } from "@/components/hr/EmployeeWizard";
 import { toast } from "sonner";
@@ -157,9 +157,11 @@ function HrDashboardSection({ onGoApproval, onGoCuti }: { onGoApproval: () => vo
             <p className="text-sm font-semibold">Antrean Persetujuan</p>
             <div className="mt-2 space-y-1.5 text-sm">
               {[["Cuti/Izin", data.pending?.leaves, onGoCuti], ["Presensi luar radius", data.pending?.presensi, onGoApproval], ["Lembur", data.pending?.overtime, onGoApproval], ["Kasbon", data.pending?.kasbon, onGoApproval], ["Reimburse", data.pending?.reimburse, onGoApproval]].map(([l, n, go]: any) => (
-                <button key={l} type="button" onClick={go} className="flex w-full items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted">
-                  <span className="flex-1 text-left">{l}</span>
+                <button key={l} type="button" onClick={go}
+                  className="group flex w-full items-center gap-2 rounded-lg border bg-card px-2.5 py-1.5 text-left shadow-elev-sm transition-all hover:border-primary/40 hover:bg-primary/[0.03] active:scale-[0.99]">
+                  <span className="flex-1">{l}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${n > 0 ? "bg-warning/15 text-warning" : "bg-muted text-muted-foreground"}`}>{n ?? 0}</span>
+                  <ChevronRight className="size-3.5 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                 </button>
               ))}
             </div>
