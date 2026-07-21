@@ -176,10 +176,16 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
     queryFn: () => api.get<CollectionStageRow[]>(withDiv("/collections/stages")),
     staleTime: 60_000,
   });
-  // Scoped view: hanya tampilkan kolom stage milik divisi ini (cross-check delegasi).
+  // Scoped view: tampilkan kolom stage milik divisi ini + kolom terminal (Reaktivasi/Lunas,
+  // Dismantel, Loss) supaya CS/Marketing bisa langsung geser kartu ke hasil akhir (otomatis
+  // ke finance saat kartu ditutup). Role terminal = paid | writeoff | dismantel.
   const stages = useMemo(() => {
     if (!division) return allStagesData;
-    return allStagesData.filter((s) => String((s as any).ownerDivision ?? "").toLowerCase() === division);
+    return allStagesData.filter((s) => {
+      const owner = String((s as any).ownerDivision ?? "").toLowerCase();
+      const role = String((s as any).role ?? "none");
+      return owner === division || role === "paid" || role === "writeoff" || role === "dismantel";
+    });
   }, [allStagesData, division]);
   const stageHelpers = useMemo<StageHelpers>(() => {
     const m = new Map(allStagesData.map((s) => [s.key, s]));
@@ -321,13 +327,14 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const submitStageDialog = () => {
     if (!stageDialogFor) return;
     const { id, targetStage, targetRole } = stageDialogFor;
-    const isTerminal = targetRole === "paid" || targetRole === "writeoff";
+    const isTerminal = targetRole === "paid" || targetRole === "writeoff" || targetRole === "dismantel";
     stageMut.mutate({
       id,
       stage: targetStage,
       issueType: !isTerminal && stageIssueType ? stageIssueType : undefined,
       promiseDate: stagePromiseDate || undefined, // opsional di stage manapun
-      closeReason: targetRole === "writeoff" ? (stageCloseReason || "manual_write_off") : undefined,
+      closeReason: targetRole === "writeoff" ? (stageCloseReason || "manual_write_off")
+        : targetRole === "dismantel" ? (stageCloseReason || "manual_dismantel") : undefined,
       note: stageNote.trim() || undefined,
       photoData: stagePhoto ?? undefined,
     });
@@ -597,7 +604,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           <div className="space-y-3 max-h-[50vh] overflow-y-auto -mx-6 px-6">
             {/* Field berdasar PERAN stage tujuan (bukan key) supaya cocok dengan pipeline custom */}
             {/* Janji Bayar + kategori kendala - opsional, untuk stage non-terminal */}
-            {stageDialogFor && stageDialogFor.targetRole !== "paid" && stageDialogFor.targetRole !== "writeoff" && (
+            {stageDialogFor && stageDialogFor.targetRole !== "paid" && stageDialogFor.targetRole !== "writeoff" && stageDialogFor.targetRole !== "dismantel" && (
               <>
                 <div>
                   <Label className="text-xs">Tanggal Janji Bayar (opsional)</Label>
@@ -629,6 +636,19 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
                   <div className="font-semibold">Manual mark sebagai Lunas</div>
                   <div className="mt-0.5 text-[11px]">Pastikan pembayaran sudah diterima. Kalau belum terdeteksi di billing sync, upload bukti transfer di bawah.</div>
                 </div>
+              </div>
+            )}
+            {stageDialogFor?.targetRole === "dismantel" && (
+              <div>
+                <div className="flex items-start gap-2 p-3 rounded-md bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 mb-3">
+                  <div className="text-xs text-purple-800 dark:text-purple-200">
+                    <div className="font-semibold">Dismantel / Bongkar Perangkat</div>
+                    <div className="mt-0.5 text-[11px]">Pelanggan berhenti dan perangkat dibongkar. Kartu ditutup dan hasilnya masuk ke laporan Keuangan.</div>
+                  </div>
+                </div>
+                <Label className="text-xs">Alasan Dismantel</Label>
+                <Textarea value={stageCloseReason} onChange={(e) => setStageCloseReason(e.target.value)}
+                          placeholder="Alasan pelanggan berhenti / dibongkar..." rows={2} className="mt-1" />
               </div>
             )}
 
@@ -1310,8 +1330,9 @@ function AssigneePicker({
 const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "none", label: "- (biasa)" },
   { value: "entry", label: "Awal / Masuk" },
-  { value: "paid", label: "Lunas" },
-  { value: "writeoff", label: "Write-off" },
+  { value: "paid", label: "Lunas / Reaktivasi" },
+  { value: "dismantel", label: "Dismantel (Bongkar)" },
+  { value: "writeoff", label: "Write-off / Loss" },
 ];
 
 function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {

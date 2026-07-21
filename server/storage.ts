@@ -1913,18 +1913,19 @@ export class DatabaseStorage implements IStorage {
     // caller pakai fallback:false supaya auto write-off mati kalau mitra tak punya stage writeoff.
     if (opts?.fallback === false) return null;
     const fallback: Record<CollectionStageRole, string | null> =
-      { entry: "new", paid: "paid", writeoff: "written_off", none: null };
+      { entry: "new", paid: "paid", writeoff: "written_off", dismantel: "dismantel", none: null };
     return fallback[role];
   }
 
-  /** Set keys yang dianggap "terminal" (role paid/writeoff) - dipakai moveCollectionStage. */
+  /** Set keys yang dianggap "terminal" (role paid/writeoff/dismantel) - dipakai moveCollectionStage.
+   *  Terminal = kartu ditutup (reaktivasi/lunas, dismantel/bongkar, atau loss/churn). */
   private async getTerminalStageKeys(): Promise<Set<string>> {
     const mitraId = getMitraId();
     const rows = await this.db.select().from(collectionStages)
-      .where(and(eq(collectionStages.mitraId, mitraId), inArray(collectionStages.role, ["paid", "writeoff"])));
+      .where(and(eq(collectionStages.mitraId, mitraId), inArray(collectionStages.role, ["paid", "writeoff", "dismantel"])));
     const set = new Set(rows.map((r) => r.key));
     // Fallback legacy kalau belum ter-seed
-    if (set.size === 0) { set.add("paid"); set.add("written_off"); }
+    if (set.size === 0) { set.add("paid"); set.add("written_off"); set.add("dismantel"); }
     return set;
   }
 
@@ -1957,8 +1958,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Terapkan ladder SOP churn→reaktivasi ke stages 1 mitra - IDEMPOTENT & aman untuk data lama.
-   *  - Tambah 2 stage delegasi (delegasi_cs, delegasi_marketing) bila belum ada, disisipkan
-   *    setelah 'contacted'.
+   *  - Tambah stage kerja divisi (delegasi_cs, cs_kunjungan, delegasi_marketing, mkt_visit) +
+   *    terminal dismantel bila belum ada.
    *  - Set owner_division / sla_days / next_stage_key + label/color/position untuk key SOP yang
    *    dikenal. Stage custom (key di luar daftar) TIDAK disentuh. */
   async applyCollectionSopLadder(mitraId: number): Promise<{ inserted: number; updated: number }> {
@@ -1968,13 +1969,17 @@ export class DatabaseStorage implements IStorage {
       const byKey = new Map(existing.map((s) => [s.key, s]));
       let inserted = 0, updated = 0;
 
-      // 1. Pastikan 2 stage delegasi ada.
-      for (const key of ["delegasi_cs", "delegasi_marketing"] as const) {
+      // Role default per key SOP (dari template konstanta), supaya terminal dismantel dapat role
+      // yang benar (dismantel) - bukan "none".
+      const roleByKey = new Map(DEFAULT_COLLECTION_STAGES.map((s) => [s.key, s.role]));
+
+      // 1. Pastikan stage kerja divisi + terminal dismantel ada (reaktivasi CS→Marketing + bongkar).
+      for (const key of ["delegasi_cs", "cs_kunjungan", "delegasi_marketing", "mkt_visit", "dismantel"] as const) {
         if (byKey.has(key)) continue;
         await this.db.insert(collectionStages).values({
           mitraId, key,
           label: COLLECTION_STAGE_LABELS[key], color: COLLECTION_STAGE_COLORS[key],
-          position: 999, role: "none", createdAt: now,
+          position: 999, role: (roleByKey.get(key) ?? "none"), createdAt: now,
         } as any);
         inserted++;
       }
@@ -2024,7 +2029,7 @@ export class DatabaseStorage implements IStorage {
     let n = 2;
     while (usedKeys.has(key)) key = `${base}_${n++}`;
     const role = data.role ?? "none";
-    if (role === "entry" || role === "paid" || role === "writeoff") {
+    if (role === "entry" || role === "paid" || role === "writeoff" || role === "dismantel") {
       await this.clearCollectionStageRole(role);
     }
     const now = new Date().toISOString();
@@ -2051,7 +2056,7 @@ export class DatabaseStorage implements IStorage {
     const [target] = await this.db.select().from(collectionStages).where(and(eq(collectionStages.id, id), eq(collectionStages.mitraId, mitraId)));
     if (!target) throw new Error("Stage tidak ditemukan");
     // Role wajib (entry/paid) unik: kalau set role baru, kosongkan dulu pemegang lama.
-    if (data.role && (data.role === "entry" || data.role === "paid" || data.role === "writeoff")) {
+    if (data.role && (data.role === "entry" || data.role === "paid" || data.role === "writeoff" || data.role === "dismantel")) {
       await this.clearCollectionStageRole(data.role);
     }
     const patch: any = { updatedAt: new Date().toISOString() };

@@ -1433,19 +1433,25 @@ export const MPWA_TEMPLATE_CATEGORY_LABELS: Record<MpwaTemplateCategory, string>
 // SOP churn→reaktivasi (v5.3): ladder penagihan lintas-divisi ~1 bulan -
 //   Baru Isolir (H+3, sistem) → Dihubungi (Finance +4h) → Delegasi Layanan Pelanggan (CS +7h)
 //   → Delegasi Marketing (visit/reaktivasi +7h) → Lunas/Reaktivasi ATAU Churn (write-off by age).
-export const COLLECTION_STAGES = ["suspend", "new", "contacted", "delegasi_cs", "delegasi_marketing", "dikunjungi", "issue", "paid", "written_off"] as const;
+// SOP churn→reaktivasi (v5.6): tiap divisi punya sub-stage kerja sendiri +
+//   3 outcome terminal (reaktivasi=paid / dismantel / loss=writeoff) yang menutup
+//   collection sehingga otomatis terlihat di board finance.
+export const COLLECTION_STAGES = ["suspend", "new", "contacted", "delegasi_cs", "cs_kunjungan", "delegasi_marketing", "mkt_visit", "dikunjungi", "issue", "paid", "dismantel", "written_off"] as const;
 export type CollectionStage = typeof COLLECTION_STAGES[number];
 
 export const COLLECTION_STAGE_LABELS: Record<CollectionStage, string> = {
   suspend: "Suspend",
   new: "Baru Isolir",
   contacted: "Dihubungi (Finance)",
-  delegasi_cs: "Delegasi Layanan Pelanggan",
-  delegasi_marketing: "Delegasi Marketing",
+  delegasi_cs: "CS: Delegasi Masuk",
+  cs_kunjungan: "CS: Hubungi & Follow-up",
+  delegasi_marketing: "Marketing: Delegasi Masuk",
+  mkt_visit: "Marketing: Visit / Reaktivasi",
   dikunjungi: "Sudah Dikunjungi",
   issue: "Bermasalah",
-  paid: "Lunas / Reaktivasi",
-  written_off: "Churn / Write-Off",
+  paid: "Reaktivasi / Lunas",
+  dismantel: "Dismantel (Bongkar)",
+  written_off: "Loss / Churn",
 };
 
 export const COLLECTION_STAGE_COLORS: Record<CollectionStage, string> = {
@@ -1453,10 +1459,13 @@ export const COLLECTION_STAGE_COLORS: Record<CollectionStage, string> = {
   new: "#EF4444",
   contacted: "#3B82F6",
   delegasi_cs: "#0EA5E9",
+  cs_kunjungan: "#0284C7",
   delegasi_marketing: "#EC4899",
+  mkt_visit: "#DB2777",
   dikunjungi: "#8B5CF6",
   issue: "#DC2626",
   paid: "#22C55E",
+  dismantel: "#9333EA",
   written_off: "#6B7280",
 };
 
@@ -1468,8 +1477,10 @@ export const COLLECTION_SOP_META: Partial<Record<CollectionStage, { ownerDivisio
   suspend:             { ownerDivision: "finance",   slaDays: 0, nextStageKey: null },
   new:                 { ownerDivision: "sistem",    slaDays: 3, nextStageKey: "contacted" },
   contacted:           { ownerDivision: "finance",   slaDays: 4, nextStageKey: "delegasi_cs" },
-  delegasi_cs:         { ownerDivision: "cs",        slaDays: 7, nextStageKey: "delegasi_marketing" },
-  delegasi_marketing:  { ownerDivision: "marketing", slaDays: 7, nextStageKey: null },
+  delegasi_cs:         { ownerDivision: "cs",        slaDays: 4, nextStageKey: "cs_kunjungan" },
+  cs_kunjungan:        { ownerDivision: "cs",        slaDays: 3, nextStageKey: "delegasi_marketing" },
+  delegasi_marketing:  { ownerDivision: "marketing", slaDays: 4, nextStageKey: "mkt_visit" },
+  mkt_visit:           { ownerDivision: "marketing", slaDays: 3, nextStageKey: "written_off" },
 };
 
 // Template default pipeline collection - dipakai untuk seed mitra 1 (JABNET) saat migrasi,
@@ -1482,7 +1493,7 @@ export const DEFAULT_COLLECTION_STAGES: Array<{ key: string; label: string; colo
       key,
       label: COLLECTION_STAGE_LABELS[key],
       color: COLLECTION_STAGE_COLORS[key],
-      role: key === "new" ? "entry" : key === "paid" ? "paid" : key === "written_off" ? "writeoff" : "none",
+      role: key === "new" ? "entry" : key === "paid" ? "paid" : key === "written_off" ? "writeoff" : key === "dismantel" ? "dismantel" : "none",
       ownerDivision: sop?.ownerDivision ?? null,
       slaDays: sop?.slaDays ?? null,
       nextStageKey: sop?.nextStageKey ?? null,
@@ -1902,7 +1913,7 @@ export type InsertCollection = z.infer<typeof insertCollectionSchema>;
 export type CollectionActivity = typeof collectionActivities.$inferSelect;
 export type InsertCollectionActivity = z.infer<typeof insertCollectionActivitySchema>;
 export type CollectionStageRow = typeof collectionStages.$inferSelect;
-export type CollectionStageRole = "none" | "entry" | "paid" | "writeoff";
+export type CollectionStageRole = "none" | "entry" | "paid" | "writeoff" | "dismantel";
 export type CanvassingSession = typeof canvassingSessions.$inferSelect;
 export type InsertCanvassingSession = z.infer<typeof insertCanvassingSessionSchema>;
 export type CanvassingLog = typeof canvassingLogs.$inferSelect;
