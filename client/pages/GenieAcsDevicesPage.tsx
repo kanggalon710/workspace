@@ -201,9 +201,10 @@ function formatDatetime(iso: string | null): string {
 export default function GenieAcsDevicesPage() {
   const queryClient = useQueryClient();
 
-  // Local state with debounced search
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  // Local state with debounced search. Deep-link: /devices?q=<serial|pppoe> auto-cari.
+  const initialQ = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("q") ?? "") : "";
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [search, setSearch] = useState(initialQ);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const handleSearchChange = useCallback((val: string) => {
     setSearchInput(val);

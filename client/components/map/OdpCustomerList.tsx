@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ExternalLink, Wifi, WifiOff } from "lucide-react";
+import { Link } from "wouter";
+import { ExternalLink, Wifi, WifiOff, Cpu } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CUSTOMER_STATUS_META } from "@shared/customerStatus";
 import { OpticalPowerBadge } from "./OpticalPowerBadge";
@@ -59,7 +60,7 @@ export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
                     )}
                   </div>
                 )}
-                <footer className="mt-2">
+                <footer className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
                   <button
                     type="button"
                     onClick={() => onOpenCustomer(c.customerId)}
@@ -67,6 +68,14 @@ export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
                   >
                     <ExternalLink className="size-3" aria-hidden="true" /> Lihat Detail
                   </button>
+                  {c.ontSerialNumber && (
+                    <Link
+                      href={`/devices?q=${encodeURIComponent(c.ontSerialNumber)}`}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 hover:underline min-h-[24px]"
+                    >
+                      <Cpu className="size-3" aria-hidden="true" /> GenieACS
+                    </Link>
+                  )}
                 </footer>
               </article>
             </li>
