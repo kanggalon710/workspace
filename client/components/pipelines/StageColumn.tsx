@@ -90,7 +90,7 @@ export function StageColumn({
 
   return (
     <div
-      className={`w-72 shrink-0 flex flex-col h-full min-h-0 rounded-xl p-3 transition-colors ${
+      className={`w-[82vw] max-w-[19rem] sm:w-72 shrink-0 snap-start flex flex-col h-full min-h-0 rounded-xl p-3 transition-colors ${
         isDropTarget ? "bg-primary/10 ring-2 ring-primary/40" : "bg-muted/40"
       } ${stageDragId === stage.id ? "opacity-50" : ""}`}
       onDragOver={(e) => {

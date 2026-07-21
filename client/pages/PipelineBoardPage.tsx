@@ -327,7 +327,7 @@ export default function PipelineBoardPage() {
       </header>
       <div
         ref={boardScrollRef}
-        className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar"
+        className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar snap-x snap-mandatory md:snap-none"
         onDragOver={(e) => {
           if ((dragId == null && stageDragId == null) || !boardScrollRef.current) return;
           const r = boardScrollRef.current.getBoundingClientRect();

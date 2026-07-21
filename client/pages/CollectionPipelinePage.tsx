@@ -401,7 +401,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
 
   return (
     <StageCtx.Provider value={stageHelpers}>
-    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] md:h-[calc(100vh-4rem)] overflow-hidden">
       {/* Header (non-scroll) */}
       <div className="px-3 md:px-6 pt-3 md:pt-6 space-y-3 md:space-y-4 shrink-0">
         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -493,7 +493,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         </div>
       ) : viewMode === "kanban" ? (
         /* === KANBAN - horizontal scroll outer, vertical scroll per-column === */
-        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar snap-x snap-mandatory md:snap-none">
           <div className="flex gap-3 h-full items-stretch w-max">
             {stages.filter(s => selectedStage === "all" || selectedStage === s.key).map((sRow) => {
               const stage = sRow.key;
@@ -504,7 +504,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
                   onDragOver={handleColumnDragOver(stage)}
                   onDragLeave={() => setDragOverStage(prev => prev === stage ? null : prev)}
                   onDrop={handleColumnDrop(stage)}
-                  className={`w-72 shrink-0 flex flex-col h-full rounded-xl p-3 transition-colors ${isDropTarget ? "bg-primary/10 ring-2 ring-primary/40" : "bg-muted/40"}`}
+                  className={`w-[82vw] max-w-[19rem] sm:w-72 shrink-0 snap-start flex flex-col h-full rounded-xl p-3 transition-colors ${isDropTarget ? "bg-primary/10 ring-2 ring-primary/40" : "bg-muted/40"}`}
                 >
                   <div className="flex items-center justify-between mb-3 px-1 shrink-0">
                     <div className="flex items-center gap-2">
