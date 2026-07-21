@@ -33,13 +33,13 @@ interface ActivityRow {
 }
 
 const FILTER_GROUPS: Record<string, { label: string; types: string[] }> = {
-  all:        { label: "All",      types: [] },
-  stages:     { label: "Stages",   types: ["stage.completed", "stage.started", "stage_advance"] },
-  edits:      { label: "Edits",    types: ["stage.edited", "stage_edit"] },
-  comments:   { label: "Comments", types: ["comment.added"] },
-  photos:     { label: "Photos",   types: ["attachment.uploaded"] },
-  status:     { label: "Status",   types: ["status.changed", "status_change", "ticket.created", "auto_created"] },
-  team:       { label: "Team",     types: ["ticket.assigned", "team.added", "team.removed", "assigned"] },
+  all: { label: "All", types: [] },
+  stages: { label: "Stages", types: ["stage.completed", "stage.started", "stage_advance"] },
+  edits: { label: "Edits", types: ["stage.edited", "stage_edit"] },
+  comments: { label: "Comments", types: ["comment.added"] },
+  photos: { label: "Photos", types: ["attachment.uploaded"] },
+  status: { label: "Status", types: ["status.changed", "status_change", "ticket.created", "auto_created"] },
+  team: { label: "Team", types: ["ticket.assigned", "team.added", "team.removed", "assigned"] },
 };
 
 function getIconAndColor(type: string): { Icon: any; color: string; bg: string } {
@@ -180,7 +180,7 @@ export function ActivityTimeline({ ticketId }: { ticketId: number }) {
                         <span>·</span>
                         <span title={formatDate(a.createdAt)}>{formatRelative(a.createdAt)}</span>
                         {a.gpsLat != null && a.gpsLng != null && (
-                          <span className="text-[10px] font-mono opacity-60" title={`${a.gpsLat}, ${a.gpsLng}`}>· 📍</span>
+                          <span className="text-[10px] font-mono opacity-60" title={`${a.gpsLat}, ${a.gpsLng}`}>· </span>
                         )}
                       </div>
                     </div>

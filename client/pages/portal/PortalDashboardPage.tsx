@@ -30,12 +30,12 @@ const FEATURE_BILLING_ENABLED = false;
 
 const TAB_DEFS = [
   { key: "overview", label: "Ringkasan", icon: Home },
-  { key: "traffic",  label: "Pemakaian", icon: Activity },
+  { key: "traffic", label: "Pemakaian", icon: Activity },
   ...(FEATURE_BILLING_ENABLED ? [{ key: "billing", label: "Tagihan", icon: Receipt }] : []),
-  { key: "wifi",     label: "WiFi", icon: Wifi },
-  { key: "points",   label: "Boost", icon: Zap },
-  { key: "tickets",  label: "Bantuan", icon: HeadphonesIcon },
-  { key: "loyalty",  label: "Sahabat", icon: Award },
+  { key: "wifi", label: "WiFi", icon: Wifi },
+  { key: "points", label: "Boost", icon: Zap },
+  { key: "tickets", label: "Bantuan", icon: HeadphonesIcon },
+  { key: "loyalty", label: "Sahabat", icon: Award },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ export default function PortalDashboardPage() {
                   Halo, selamat datang
                 </div>
                 <div className="font-black text-base leading-tight truncate text-white tracking-tight">
-                  {firstName}! 👋
+                  {firstName}!
                 </div>
               </div>
               {/* Desktop: brand */}
@@ -589,7 +589,7 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
 
   return (
     <div className="space-y-4 md:space-y-5">
-      {/* ⚡ LIVE SPEED — realtime current bandwidth */}
+      {/* LIVE SPEED — realtime current bandwidth */}
       {pppoeOnline && (
         <Card className="overflow-hidden">
           <CardContent className="p-5 md:p-6">
@@ -1100,11 +1100,11 @@ function TicketsTab({ tickets, apiFetch, qc }: any) {
   });
 
   const STATUS_CFG: Record<string, { label: string; color: string }> = {
-    open:        { label: "Baru",         color: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" },
-    assigned:    { label: "Ditugaskan",   color: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300" },
-    in_progress: { label: "Ditangani",    color: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    resolved:    { label: "Selesai",      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
-    closed:      { label: "Ditutup",      color: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400" },
+    open: { label: "Baru", color: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" },
+    assigned: { label: "Ditugaskan", color: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300" },
+    in_progress: { label: "Ditangani", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
+    resolved: { label: "Selesai", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+    closed: { label: "Ditutup", color: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400" },
   };
 
   return (
@@ -1236,7 +1236,7 @@ function PointsTab({ apiFetch, qc }: any) {
         speedMultiplier: currentActive.speedMultiplier,
         endAt: currentActive.endAt,
       });
-      toast.success(`🚀 ${currentActive.rewardLabel} sudah AKTIF!`, {
+      toast.success(` ${currentActive.rewardLabel} sudah AKTIF!`, {
         description: `Speed kamu di-boost ${currentActive.speedMultiplier}× sampai ${new Date(currentActive.endAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}`,
         duration: 8000,
       });
@@ -1246,7 +1246,7 @@ function PointsTab({ apiFetch, qc }: any) {
     // Detect rejected: prev was pending, now in redemptions list as 'rejected'
     for (const r of currentRedemptions) {
       if (r.status === "rejected" && prevPending.has(r.id)) {
-        toast.error(`❌ Permintaan ${r.rewardLabel} ditolak`, {
+        toast.error(` Permintaan ${r.rewardLabel} ditolak`, {
           description: "Point sudah dikembalikan ke saldo kamu",
           duration: 6000,
         });
@@ -1256,8 +1256,8 @@ function PointsTab({ apiFetch, qc }: any) {
     if (prevActiveIdRef.current && !currentActive) {
       const expiredOne = currentRedemptions.find(r => r.id === prevActiveIdRef.current && r.status === "expired");
       if (expiredOne) {
-        toast.success(`✅ Boost ${expiredOne.rewardLabel} selesai`, {
-          description: "Speed kembali ke paket normal. Kumpulin point lagi untuk boost berikutnya 🚀",
+        toast.success(` Boost ${expiredOne.rewardLabel} selesai`, {
+          description: "Speed kembali ke paket normal. Kumpulin point lagi untuk boost berikutnya ",
           duration: 6000,
         });
       }
@@ -1312,7 +1312,7 @@ function PointsTab({ apiFetch, qc }: any) {
           <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(circle at 90% 10%, rgba(255,255,255,0.5), transparent 40%), radial-gradient(circle at 10% 90%, rgba(250,204,21,0.4), transparent 50%)" }} />
           <div className="relative p-5 flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center shadow-lg shrink-0 ring-2 ring-white/30">
-              <span className="text-3xl">🚀</span>
+              <span className="text-3xl"></span>
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] uppercase tracking-widest font-bold opacity-90">Boost Aktif!</div>
@@ -1561,11 +1561,11 @@ function PointsTab({ apiFetch, qc }: any) {
             </div>
             <div className="space-y-2">
               {redemptions.map((r: any) => {
-                const status = r.status === "active" ? { label: "Aktif",          dot: "bg-emerald-500", color: "text-emerald-700 dark:text-emerald-300" }
-                  : r.status === "pending" ? { label: "Menunggu",                  dot: "bg-amber-500",   color: "text-amber-700 dark:text-amber-300" }
-                  : r.status === "expired" ? { label: "Selesai",                   dot: "bg-slate-400",   color: "text-slate-600 dark:text-slate-400" }
-                  : r.status === "rejected" ? { label: "Ditolak",                  dot: "bg-rose-500",    color: "text-rose-700 dark:text-rose-300" }
-                  : { label: "Dibatalkan",                                          dot: "bg-slate-400",   color: "text-slate-600 dark:text-slate-400" };
+                const status = r.status === "active" ? { label: "Aktif", dot: "bg-emerald-500", color: "text-emerald-700 dark:text-emerald-300" }
+                  : r.status === "pending" ? { label: "Menunggu", dot: "bg-amber-500", color: "text-amber-700 dark:text-amber-300" }
+                  : r.status === "expired" ? { label: "Selesai", dot: "bg-slate-400", color: "text-slate-600 dark:text-slate-400" }
+                  : r.status === "rejected" ? { label: "Ditolak", dot: "bg-rose-500", color: "text-rose-700 dark:text-rose-300" }
+                  : { label: "Dibatalkan", dot: "bg-slate-400", color: "text-slate-600 dark:text-slate-400" };
                 return (
                   <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
                     <div className={`w-2 h-2 rounded-full ${status.dot} shrink-0`} />
@@ -1740,7 +1740,7 @@ https://fiber-tools.arkanova.id/coverage-check`;
       {campaignData?.isActive && campaignData.campaign && (
         <div className="p-4 rounded-xl bg-gradient-to-r from-fuchsia-500 via-violet-500 to-purple-600 text-white shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">🔥</div>
+            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0"></div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] uppercase tracking-widest font-semibold opacity-90">Promo Berjalan</div>
               <div className="font-bold text-base truncate">{campaignData.campaign.name}</div>

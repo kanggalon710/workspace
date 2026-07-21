@@ -1,5 +1,5 @@
 /** Teamspace v5.0 — ekstensi modal kartu: selesai, tenggat, label berwarna, checklist,
- *  dan aksi (Salin / Rahasiakan / Arsipkan). Generik untuk semua board (ops + tim). */
+ * dan aksi (Salin / Rahasiakan / Arsipkan). Generik untuk semua board (ops + tim). */
 import { useRef, useState } from "react";
 import {
   useCardChecklists, useChecklistMutations, usePipelineLabels, useLabelMutations,
@@ -16,11 +16,11 @@ import { toast } from "sonner";
 interface Props {
   cardId: number;
   pipelineId: number;
-  card: any;               // CardDetail — kolom Teamspace (isCompleted/isPrivate/dueDate) dibaca dinamis
+  card: any; // CardDetail — kolom Teamspace (isCompleted/isPrivate/dueDate) dibaca dinamis
   writable: boolean;
   onClose: () => void;
   /** BUG-008 layout 2 kolom: "side" = cover/selesai/tenggat/ulangi/label/aksi (panel kanan),
-   *  "main" = checklist (kolom konten). Default "all" = semuanya (backward compat). */
+   * "main" = checklist (kolom konten). Default "all" = semuanya (backward compat). */
   section?: "all" | "side" | "main";
 }
 
@@ -57,7 +57,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
 
   const toggleCompleted = () => {
     actions.setCompleted.mutate(!isCompleted, {
-      onSuccess: () => toast.success(!isCompleted ? "Tugas ditandai selesai 🎉" : "Tanda selesai dibatalkan"),
+      onSuccess: () => toast.success(!isCompleted ? "Tugas ditandai selesai " : "Tanda selesai dibatalkan"),
       onError: (e: any) => toast.error(e?.message || "Gagal mengubah status"),
     });
   };
@@ -158,7 +158,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
         </span>
         <div className="mt-1 flex items-center gap-1.5">
           <input
-            key={card?.dueDate ?? "none"}   /* remount saat quick-set supaya nilai uncontrolled ikut segar */
+            key={card?.dueDate ?? "none"} /* remount saat quick-set supaya nilai uncontrolled ikut segar */
             type="datetime-local"
             aria-label="Tanggal jatuh tempo"
             className="h-9 w-full min-w-0 rounded-lg border bg-background px-2.5 text-sm font-medium tabular-nums shadow-elev-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"

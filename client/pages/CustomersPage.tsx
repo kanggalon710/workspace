@@ -28,7 +28,7 @@ import {
   Users, RefreshCw, Search, Plus, Pencil, Trash2, WifiOff, CheckCircle, AlertCircle,
   Clock, MapPin, ChevronDown, ChevronUp, Filter, X, ChevronLeft, ChevronRight, Download,
   Building2, Home, Lock, Unlock, ShieldCheck,
-  Eye, EyeOff, Wifi, Shield, Info, Monitor, Activity, ExternalLink, Loader2, Check,
+  Eye, EyeOff, Wifi, Shield, Info, Monitor, Activity, ExternalLink, Loader2, Check, Minus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -208,7 +208,7 @@ function CustomerForm({ item, onSubmit, isPending }: { item: Customer | null; on
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Auto-isi kecamatan & kelurahan dari koordinat</span>
         <Button type="button" variant="outline" size="sm" onClick={detectLocation}>
-          📍 Deteksi Lokasi
+           Deteksi Lokasi
         </Button>
       </div>
 
@@ -1126,14 +1126,14 @@ export default function CustomersPage() {
         const ontMatched = !!ont?.matched;
         const ontOnline = ontMatched && ont.ontStatus === "online";
         switch (filterIntegration) {
-          case "fully":         return hasPppoe && ontMatched;
-          case "pppoe_only":    return hasPppoe && !ontMatched;
-          case "ont_only":      return !hasPppoe && ontMatched;
-          case "none":          return !hasPppoe && !ontMatched;
-          case "pppoe_online":  return pppoeOnline;
+          case "fully": return hasPppoe && ontMatched;
+          case "pppoe_only": return hasPppoe && !ontMatched;
+          case "ont_only": return !hasPppoe && ontMatched;
+          case "none": return !hasPppoe && !ontMatched;
+          case "pppoe_online": return pppoeOnline;
           case "pppoe_offline": return hasPppoe && !pppoeOnline;
-          case "ont_online":    return ontOnline;
-          case "ont_offline":   return ontMatched && !ontOnline;
+          case "ont_online": return ontOnline;
+          case "ont_offline": return ontMatched && !ontOnline;
           default: return true;
         }
       });
@@ -1582,7 +1582,7 @@ export default function CustomersPage() {
                 className="text-[10px] px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold uppercase tracking-wider transition-colors"
                 title={`Cari kandidat ONT untuk ${integrationStats.pppoeOnly} customer "PPPoE saja"`}
               >
-                ⚡ Audit & Auto-Pair ONT
+                 Audit & Auto-Pair ONT
               </button>
             )}
             {filterIntegration !== "all" && (
@@ -1597,21 +1597,21 @@ export default function CustomersPage() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0">
           {[
-            { key: "fully",      label: "Lengkap",         icon: "✓", value: integrationStats.fully,     hint: "PPPoE + ONT terdeteksi", tone: "emerald" },
-            { key: "pppoe_only", label: "PPPoE saja",      icon: "📶", value: integrationStats.pppoeOnly, hint: "Tidak ada ONT di GenieACS", tone: "amber" },
-            { key: "ont_only",   label: "ONT saja",        icon: "🖥", value: integrationStats.ontOnly,   hint: "Tidak ada PPPoE", tone: "sky" },
-            { key: "none",       label: "Belum dihubungkan", icon: "—", value: integrationStats.none,      hint: "Tidak ada PPPoE & ONT", tone: "rose" },
+            { key: "fully", label: "Lengkap", icon: Check, value: integrationStats.fully, hint: "PPPoE + ONT terdeteksi", tone: "emerald" },
+            { key: "pppoe_only", label: "PPPoE saja", icon: Wifi, value: integrationStats.pppoeOnly, hint: "Tidak ada ONT di GenieACS", tone: "amber" },
+            { key: "ont_only", label: "ONT saja", icon: Monitor, value: integrationStats.ontOnly, hint: "Tidak ada PPPoE", tone: "sky" },
+            { key: "none", label: "Belum dihubungkan", icon: Minus, value: integrationStats.none, hint: "Tidak ada PPPoE & ONT", tone: "rose" },
           ].map((kpi) => {
             const isActive = filterIntegration === kpi.key;
             const toneClass =
               kpi.tone === "emerald" ? (isActive ? "bg-emerald-50 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500" : "hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20") :
-              kpi.tone === "amber"   ? (isActive ? "bg-amber-50 dark:bg-amber-950/30 border-l-4 border-l-amber-500"     : "hover:bg-amber-50/40 dark:hover:bg-amber-950/20") :
-              kpi.tone === "sky"     ? (isActive ? "bg-sky-50 dark:bg-sky-950/30 border-l-4 border-l-sky-500"           : "hover:bg-sky-50/40 dark:hover:bg-sky-950/20") :
-                                       (isActive ? "bg-rose-50 dark:bg-rose-950/30 border-l-4 border-l-rose-500"        : "hover:bg-rose-50/40 dark:hover:bg-rose-950/20");
+              kpi.tone === "amber" ? (isActive ? "bg-amber-50 dark:bg-amber-950/30 border-l-4 border-l-amber-500" : "hover:bg-amber-50/40 dark:hover:bg-amber-950/20") :
+              kpi.tone === "sky" ? (isActive ? "bg-sky-50 dark:bg-sky-950/30 border-l-4 border-l-sky-500" : "hover:bg-sky-50/40 dark:hover:bg-sky-950/20") :
+                                       (isActive ? "bg-rose-50 dark:bg-rose-950/30 border-l-4 border-l-rose-500" : "hover:bg-rose-50/40 dark:hover:bg-rose-950/20");
             const valueColor =
               kpi.tone === "emerald" ? "text-emerald-700 dark:text-emerald-400" :
-              kpi.tone === "amber"   ? "text-amber-700 dark:text-amber-400" :
-              kpi.tone === "sky"     ? "text-sky-700 dark:text-sky-400" :
+              kpi.tone === "amber" ? "text-amber-700 dark:text-amber-400" :
+              kpi.tone === "sky" ? "text-sky-700 dark:text-sky-400" :
                                        "text-rose-700 dark:text-rose-400";
             const pct = integrationStats.total > 0 ? Math.round((kpi.value / integrationStats.total) * 100) : 0;
             return (
@@ -1623,7 +1623,7 @@ export default function CustomersPage() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <span className="text-base">{kpi.icon}</span> {kpi.label}
+                    <kpi.icon className="size-3.5" /> {kpi.label}
                   </span>
                   <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{pct}%</span>
                 </div>
@@ -2381,7 +2381,7 @@ function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClose: () 
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 py-4 border-b">
           <DialogTitle className="flex items-center gap-2">
-            <span className="text-amber-500">⚡</span> Audit & Auto-Pair ONT
+            <span className="text-amber-500"></span> Audit & Auto-Pair ONT
           </DialogTitle>
           <DialogDescription>
             Cari pasangan ONT dari GenieACS untuk customer yang punya PPPoE tapi belum match. Pakai fuzzy matching.
@@ -2584,7 +2584,7 @@ function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClose: () 
                   disabled={selectedCount === 0 || pairMut.isPending}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  {pairMut.isPending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Apply...</> : <>⚡ Apply {selectedCount} Pairing</>}
+                  {pairMut.isPending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Apply...</> : <> Apply {selectedCount} Pairing</>}
                 </Button>
               </div>
             </div>
@@ -2596,7 +2596,7 @@ function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClose: () 
 }
 
 /** Tab "Komunikasi" di detail pelanggan: cari kontak Chatwoot via phone, tampilkan
- *  daftar percakapan + thread (read-only). Komponen di-reuse dari /communications. */
+ * daftar percakapan + thread (read-only). Komponen di-reuse dari /communications. */
 function CustomerCommunication({ customerId }: { customerId: number }) {
   const { data, isLoading } = useCustomerConversations(customerId);
   const [active, setActive] = useState<number | null>(null);

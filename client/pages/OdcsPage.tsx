@@ -94,7 +94,7 @@ function OdcForm({
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Kecamatan dari koordinat</span>
         <Button type="button" variant="outline" size="sm" onClick={detectLocation}>
-          📍 Deteksi Lokasi
+           Deteksi Lokasi
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-4">

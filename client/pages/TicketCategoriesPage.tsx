@@ -8,10 +8,10 @@
  * Editor per kategori:
  * - Info dasar: nama, color, icon, SLA hours, sort order, active toggle
  * - Workflow stages editor:
- *   - List stages (reorder up/down)
- *   - Per stage: label, description, fields (multi-select), SLA minutes, isFinal
- *   - Tambah / hapus stage
- *   - Save full workflow JSON
+ * - List stages (reorder up/down)
+ * - Per stage: label, description, fields (multi-select), SLA minutes, isFinal
+ * - Tambah / hapus stage
+ * - Save full workflow JSON
  */
 
 import { useState, useEffect, useMemo } from "react";
@@ -55,9 +55,9 @@ interface WorkflowStage {
   icon?: string;
   color?: string;
   // v4.2.18 (H): Advanced features
-  requiredRole?: "lead" | "helper" | "any";   // siapa yang boleh execute stage ini
-  autoExitAfterMinutes?: number;              // auto-advance kalau no action setelah X menit
-  skipIf?: {                                  // conditional skip — skip stage kalau kondisi terpenuhi
+  requiredRole?: "lead" | "helper" | "any"; // siapa yang boleh execute stage ini
+  autoExitAfterMinutes?: number; // auto-advance kalau no action setelah X menit
+  skipIf?: { // conditional skip — skip stage kalau kondisi terpenuhi
     customField: string;
     operator: "eq" | "ne" | "exists" | "not_exists";
     value?: any;
@@ -77,16 +77,16 @@ interface Category {
 }
 
 const FIELD_OPTIONS: Array<{ key: FieldType; label: string; icon: any; description: string }> = [
-  { key: "photo",     label: "Foto Evidence",  icon: Camera,        description: "Wajib upload foto" },
-  { key: "numeric",   label: "Pengukuran",     icon: Activity,      description: "Input numeric (mis: redaman dBm)" },
-  { key: "barcode",   label: "Scan Barcode",   icon: ScanLine,      description: "Scan ONT serial / barcode" },
-  { key: "speedtest", label: "Speed Test",     icon: Wifi,          description: "Download/Upload/Latency" },
-  { key: "notes",     label: "Catatan",        icon: Edit3,         description: "Text catatan teknisi" },
-  { key: "checklist", label: "Checklist",      icon: CheckCircle2,  description: "Pakai checklist dari kategori" },
-  { key: "gps",       label: "GPS Location",   icon: MapPin,        description: "Capture lokasi GPS" },
-  { key: "signature", label: "TTD Pelanggan",  icon: Edit3,         description: "Tanda tangan pelanggan" },
-  { key: "rating",    label: "Rating",         icon: Star,          description: "Rating bintang 1-5" },
-  { key: "eta",       label: "ETA Update",     icon: Clock,         description: "Update estimasi waktu" },
+  { key: "photo", label: "Foto Evidence", icon: Camera, description: "Wajib upload foto" },
+  { key: "numeric", label: "Pengukuran", icon: Activity, description: "Input numeric (mis: redaman dBm)" },
+  { key: "barcode", label: "Scan Barcode", icon: ScanLine, description: "Scan ONT serial / barcode" },
+  { key: "speedtest", label: "Speed Test", icon: Wifi, description: "Download/Upload/Latency" },
+  { key: "notes", label: "Catatan", icon: Edit3, description: "Text catatan teknisi" },
+  { key: "checklist", label: "Checklist", icon: CheckCircle2, description: "Pakai checklist dari kategori" },
+  { key: "gps", label: "GPS Location", icon: MapPin, description: "Capture lokasi GPS" },
+  { key: "signature", label: "TTD Pelanggan", icon: Edit3, description: "Tanda tangan pelanggan" },
+  { key: "rating", label: "Rating", icon: Star, description: "Rating bintang 1-5" },
+  { key: "eta", label: "ETA Update", icon: Clock, description: "Update estimasi waktu" },
 ];
 
 const COLOR_PRESETS = [
@@ -739,7 +739,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
 
           {/* v4.2.18 (H): Advanced — Role + Auto-exit + Skip-if */}
           <div className="rounded-md border bg-white p-2.5 space-y-3">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600">⚙️ Advanced (v4.2.18)</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600"> Advanced (v4.2.18)</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">Wajib di-execute oleh</label>
@@ -874,12 +874,12 @@ function slugify(text: string): string {
 // ──────────────────────────────────────────────────────────────────────────
 
 const CUSTOM_TYPE_LABELS: Record<CustomFieldType, { label: string; hint: string }> = {
-  text:     { label: "Text",     hint: "Input 1 baris" },
-  number:   { label: "Number",   hint: "Angka dengan unit (mis: dBm, Mbps)" },
+  text: { label: "Text", hint: "Input 1 baris" },
+  number: { label: "Number", hint: "Angka dengan unit (mis: dBm, Mbps)" },
   textarea: { label: "Textarea", hint: "Input multi-baris" },
-  select:   { label: "Pilihan",  hint: "Dropdown dengan options" },
+  select: { label: "Pilihan", hint: "Dropdown dengan options" },
   checkbox: { label: "Checkbox", hint: "Toggle ya/tidak" },
-  date:     { label: "Tanggal",  hint: "Date picker" },
+  date: { label: "Tanggal", hint: "Date picker" },
 };
 
 function CustomFieldsEditor({ fields, isAdmin, onChange }: {

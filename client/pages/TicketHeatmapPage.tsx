@@ -171,7 +171,7 @@ export default function TicketHeatmapPage() {
       {/* Tips */}
       <Card className="bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
         <CardContent className="py-3 px-4 text-xs text-amber-900 dark:text-amber-200">
-          💡 <strong>Tips:</strong> ODP dengan banyak tiket berulang biasanya bermasalah di splitter, kabel feeder, atau ODP-nya sendiri (overheat, korosi konektor).
+           <strong>Tips:</strong> ODP dengan banyak tiket berulang biasanya bermasalah di splitter, kabel feeder, atau ODP-nya sendiri (overheat, korosi konektor).
           Dispatch senior teknisi untuk inspeksi fisik — jangan setiap kali assign teknisi berbeda yang akhirnya cuma reset modem.
         </CardContent>
       </Card>

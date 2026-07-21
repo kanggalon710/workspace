@@ -23,15 +23,15 @@ type Severity = "info" | "warning" | "critical";
 
 const CATEGORY_CFG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
   feature_update: { label: "Fitur Baru", icon: Rocket, color: "text-sky-700 dark:text-sky-300", bg: "bg-sky-100 dark:bg-sky-950/40" },
-  bug_fix:        { label: "Perbaikan Bug", icon: BugIcon, color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-100 dark:bg-emerald-950/40" },
-  announcement:   { label: "Pengumuman", icon: Megaphone, color: "text-indigo-700 dark:text-indigo-300", bg: "bg-indigo-100 dark:bg-indigo-950/40" },
-  maintenance:    { label: "Maintenance", icon: SettingsIcon, color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-100 dark:bg-amber-950/40" },
-  training:       { label: "Training", icon: GraduationCap, color: "text-violet-700 dark:text-violet-300", bg: "bg-violet-100 dark:bg-violet-950/40" },
+  bug_fix: { label: "Perbaikan Bug", icon: BugIcon, color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-100 dark:bg-emerald-950/40" },
+  announcement: { label: "Pengumuman", icon: Megaphone, color: "text-indigo-700 dark:text-indigo-300", bg: "bg-indigo-100 dark:bg-indigo-950/40" },
+  maintenance: { label: "Maintenance", icon: SettingsIcon, color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-100 dark:bg-amber-950/40" },
+  training: { label: "Training", icon: GraduationCap, color: "text-violet-700 dark:text-violet-300", bg: "bg-violet-100 dark:bg-violet-950/40" },
 };
 
 const SEVERITY_CFG: Record<string, { label: string; icon: any; color: string }> = {
-  info:     { label: "Info", icon: Info, color: "text-sky-500" },
-  warning:  { label: "Warning", icon: AlertTriangle, color: "text-amber-500" },
+  info: { label: "Info", icon: Info, color: "text-sky-500" },
+  warning: { label: "Warning", icon: AlertTriangle, color: "text-amber-500" },
   critical: { label: "Critical", icon: AlertCircle, color: "text-rose-500" },
 };
 
@@ -388,7 +388,7 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
             <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30">
               <input type="checkbox" checked={isConfidential} onChange={(e) => setIsConfidential(e.target.checked)} className="mt-0.5" />
               <div>
-                <div className="font-semibold text-sm">🔒 Rahasia</div>
+                <div className="font-semibold text-sm"> Rahasia</div>
                 <div className="text-[11px] text-muted-foreground">Hanya penerima terpilih yang bisa melihat — staff lain tidak melihat sama sekali.</div>
               </div>
             </label>

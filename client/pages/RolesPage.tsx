@@ -400,7 +400,7 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
                 <h3 className="font-bold text-sm truncate">{role.name}</h3>
                 {role.name === "System-Admin" && (
                   <span className="text-[9px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
-                    SYSTEM ⚠
+                    SYSTEM
                   </span>
                 )}
                 {role.isSystem && role.name !== "System-Admin" && (

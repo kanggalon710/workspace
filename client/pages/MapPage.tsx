@@ -503,7 +503,7 @@ export default function MapPage() {
     customers: viewportCustomers?.customers || [],
   } : undefined, [infra, viewportCustomers]);
 
-  const isLoading = infraLoading;  // show skeleton only for infra; customers loads progressively
+  const isLoading = infraLoading; // show skeleton only for infra; customers loads progressively
   const { data: odpUtilData } = useOdpUtilization();
   const { create: createPop, update: updatePop } = usePops();
   const { data: popsList, create: createOdc, update: updateOdc } = useOdcs();
@@ -1093,7 +1093,7 @@ export default function MapPage() {
                 <Marker position={snapPreview.point} icon={{ path: 0 as any, scale: 6, fillColor: "#FFFFFF", fillOpacity: 1, strokeColor: CABLE_COLORS[snapPreview.cableType] || "#F97316", strokeWeight: 2.5 }} zIndex={20} clickable={false} />
                 <OverlayView position={snapPreview.point} mapPaneName={OverlayView.FLOAT_PANE}>
                   <div style={{ position: "absolute", transform: "translate(-50%, -28px)", background: CABLE_COLORS[snapPreview.cableType] || "#F97316", color: "white", padding: "2px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", pointerEvents: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>
-                    📌 Snap: {snapPreview.cableName} (~{Math.round(snapPreview.distMeters)}m)
+                     Snap: {snapPreview.cableName} (~{Math.round(snapPreview.distMeters)}m)
                   </div>
                 </OverlayView>
               </>

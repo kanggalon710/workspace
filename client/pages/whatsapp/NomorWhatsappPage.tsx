@@ -38,7 +38,7 @@ interface WaDevice {
   lastErrorAt: string | null;
   lastError: string | null;
   // v4.2.21
-  connectionStatus?: string;       // unknown | connected | disconnect | qr_pending
+  connectionStatus?: string; // unknown | connected | disconnect | qr_pending
   lastQrAt?: string | null;
   lastQrData?: string | null;
   webhookToken?: string | null;
@@ -47,15 +47,15 @@ interface WaDevice {
 }
 
 const FIELD_LABELS: Record<string, { label: string; placeholder: string; isSecret?: boolean; helpText?: string }> = {
-  apiKey:    { label: "API Key",        placeholder: "Masukkan API key...", isSecret: true, helpText: "API key dari dashboard provider Anda" },
-  url:       { label: "URL Provider",   placeholder: "Contoh: https://wa.billingjagoan.com", helpText: "Base URL gateway (tanpa trailing slash)" },
-  token:     { label: "Token",          placeholder: "Masukkan token...", isSecret: true },
-  secret:    { label: "Secret",         placeholder: "Masukkan secret...", isSecret: true },
-  deviceId:  { label: "Device ID",      placeholder: "Device ID dari provider" },
-  numberKey: { label: "Number Key",     placeholder: "Number key dari Watzap" },
-  channelId: { label: "Channel ID",     placeholder: "Channel ID" },
-  pageId:    { label: "Page ID",        placeholder: "Pancake page ID" },
-  subdomain: { label: "Subdomain",      placeholder: "Kommo subdomain (mis: mycompany)" },
+  apiKey: { label: "API Key", placeholder: "Masukkan API key...", isSecret: true, helpText: "API key dari dashboard provider Anda" },
+  url: { label: "URL Provider", placeholder: "Contoh: https://wa.billingjagoan.com", helpText: "Base URL gateway (tanpa trailing slash)" },
+  token: { label: "Token", placeholder: "Masukkan token...", isSecret: true },
+  secret: { label: "Secret", placeholder: "Masukkan secret...", isSecret: true },
+  deviceId: { label: "Device ID", placeholder: "Device ID dari provider" },
+  numberKey: { label: "Number Key", placeholder: "Number key dari Watzap" },
+  channelId: { label: "Channel ID", placeholder: "Channel ID" },
+  pageId: { label: "Page ID", placeholder: "Pancake page ID" },
+  subdomain: { label: "Subdomain", placeholder: "Kommo subdomain (mis: mycompany)" },
 };
 
 const DELAY_OPTIONS = [1, 2, 3, 5, 8, 10, 15, 20, 25, 30];
@@ -238,10 +238,10 @@ export default function NomorWhatsappPage() {
 // PENTING: Connection ke WhatsApp di-manage di MPWA panel (mpwa.jabnet.id).
 // JABNET hanya pakai API key untuk consume MPWA API (kirim/terima pesan).
 // Modal ini cuma untuk:
-//   1. Cek status koneksi (live dari /info-devices)
-//   2. Setup webhook URL untuk terima pesan masuk
-//   3. Tools: check-number, test send
-//   4. Reconnect via QR (HANYA kalau device disconnect — opsional fallback)
+// 1. Cek status koneksi (live dari /info-devices)
+// 2. Setup webhook URL untuk terima pesan masuk
+// 3. Tools: check-number, test send
+// 4. Reconnect via QR (HANYA kalau device disconnect — opsional fallback)
 // ─────────────────────────────────────────────────────────────────
 function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: () => void }) {
   const qc = useQueryClient();
@@ -309,10 +309,10 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
   });
 
   const statusConfig: Record<string, { label: string; color: string; icon: any; desc: string }> = {
-    connected:  { label: "Connected",  color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2, desc: "Device aktif di MPWA, siap kirim/terima pesan." },
-    qr_pending: { label: "Need Scan",  color: "bg-amber-100 text-amber-700",     icon: QrCode,       desc: "Device perlu di-scan QR untuk reconnect." },
-    disconnect: { label: "Disconnect", color: "bg-rose-100 text-rose-700",       icon: XCircle,      desc: "Device tidak aktif di MPWA. Reconnect via QR atau dari MPWA panel." },
-    unknown:    { label: "Cek Status", color: "bg-zinc-100 text-zinc-700",       icon: AlertCircle,  desc: "Status belum di-cek. Klik 'Refresh' atau cek di MPWA panel." },
+    connected: { label: "Connected", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle2, desc: "Device aktif di MPWA, siap kirim/terima pesan." },
+    qr_pending: { label: "Need Scan", color: "bg-amber-100 text-amber-700", icon: QrCode, desc: "Device perlu di-scan QR untuk reconnect." },
+    disconnect: { label: "Disconnect", color: "bg-rose-100 text-rose-700", icon: XCircle, desc: "Device tidak aktif di MPWA. Reconnect via QR atau dari MPWA panel." },
+    unknown: { label: "Cek Status", color: "bg-zinc-100 text-zinc-700", icon: AlertCircle, desc: "Status belum di-cek. Klik 'Refresh' atau cek di MPWA panel." },
   };
   const status = statusConfig[device?.connectionStatus ?? "unknown"] ?? statusConfig.unknown;
   const StatusIcon = status.icon;
@@ -342,9 +342,9 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
         {/* Tabs — default Status */}
         <div className="flex gap-1 border-b">
           {([
-            { key: "status",    label: "Status",    icon: Info },
-            { key: "webhook",   label: "Webhook",   icon: Link2 },
-            { key: "tools",     label: "Tools",     icon: Phone },
+            { key: "status", label: "Status", icon: Info },
+            { key: "webhook", label: "Webhook", icon: Link2 },
+            { key: "tools", label: "Tools", icon: Phone },
             { key: "reconnect", label: "Reconnect", icon: QrCode },
           ] as const).map(t => {
             const Icon = t.icon;
@@ -374,7 +374,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
             <div className="space-y-3">
               {/* Info box: how MPWA works */}
               <div className="rounded-md bg-sky-50/40 border border-sky-200 px-3 py-2 text-[11px] text-sky-900 leading-snug">
-                <strong>ℹ️ Cara kerja:</strong> Device WhatsApp di-manage di <strong>mpwa.jabnet.id</strong>{" "}
+                <strong>ℹ Cara kerja:</strong> Device WhatsApp di-manage di <strong>mpwa.jabnet.id</strong>{" "}
                 (scan QR, link device, dst.). JABNET hanya pakai <code className="font-mono bg-sky-100 px-1 rounded">api_key</code>{" "}
                 + nomor device untuk consume API kirim/terima pesan. Tidak perlu scan ulang QR di sini.
               </div>
@@ -606,7 +606,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
               ) : (
                 <>
                   <div className="rounded-md bg-amber-50/40 border border-amber-200 px-3 py-2 text-xs text-amber-900 leading-snug">
-                    <strong>⚠️ Reconnect via QR — opsional</strong><br />
+                    <strong> Reconnect via QR — opsional</strong><br />
                     Idealnya reconnect dilakukan langsung di <strong>mpwa.jabnet.id</strong> (panel resmi).
                     Tool ini cuma alternatif kalau Anda mau request QR dari sini tanpa buka panel MPWA.
                   </div>

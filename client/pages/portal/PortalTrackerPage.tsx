@@ -386,7 +386,7 @@ function ChatOverlay({ technicianName, onClose }: { technicianName: string; onCl
       </header>
 
       <div className="flex-1 p-4 bg-[#f8fafc] overflow-auto flex flex-col gap-2.5">
-        <ChatBubble text={`Halo Pak/Bu, saya ${technicianName.split(" ")[0]} teknisi Jabnet. Saya akan menangani tiket Anda 🙏`} them />
+        <ChatBubble text={`Halo Pak/Bu, saya ${technicianName.split(" ")[0]} teknisi Jabnet. Saya akan menangani tiket Anda `} them />
         <ChatBubble text="Baik mas, saya tunggu" me />
         <ChatBubble text="Saya sudah sampai dan sedang memulai pengerjaan" them />
         <div className="text-[10px] text-slate-400 text-center my-2">— Mock conversation untuk demo —</div>

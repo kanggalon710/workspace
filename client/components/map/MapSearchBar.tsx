@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Radio, Box, CircleDot, User, Landmark, Waves, MapPin, type LucideIcon } from "lucide-react";
 import { ASSET_COLORS } from "@/lib/assetColors";
 import { useMapCustomerSearch } from "@/hooks/useOdpDetail";
 
@@ -30,13 +30,13 @@ interface MapSearchBarProps {
   } | null;
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  pop: "📡",
-  odc: "🔵",
-  odp: "🟢",
-  customer: "👤",
-  pole: "🏗️",
-  cable: "〰️",
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  pop: Radio,
+  odc: Box,
+  odp: CircleDot,
+  customer: User,
+  pole: Landmark,
+  cable: Waves,
 };
 
 export function MapSearchBar({ visible, onClose, onResultClick, onOpenOdp, data }: MapSearchBarProps) {
@@ -178,7 +178,7 @@ export function MapSearchBar({ visible, onClose, onResultClick, onOpenOdp, data 
                   onClick={() => { onResultClick(r); setQuery(""); }}
                   className={`map-search-item w-full text-left ${idx === selectedIdx ? "bg-accent" : ""}`}
                 >
-                  <span className="text-base">{TYPE_ICONS[r.type] || "📍"}</span>
+                  {(() => { const Icon = TYPE_ICONS[r.type] || MapPin; return <Icon className="size-4 text-muted-foreground" />; })()}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.name}</p>
                     <p className="text-[10px] text-muted-foreground">{r.code} · {ASSET_COLORS[r.type]?.label || r.type}</p>

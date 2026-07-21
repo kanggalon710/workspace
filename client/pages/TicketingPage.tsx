@@ -36,6 +36,7 @@ import {
   ClipboardList, Plus, Settings, Search, AlertCircle, Clock, CheckCircle2,
   Pause, ArrowRight, UserPlus, MessageSquare, Calendar, Eye, Loader2,
   Trash2, X, ChevronLeft, ChevronRight, RefreshCw, FileText, Check,
+  Camera, MapPin, StickyNote, PenLine, Flag,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -914,7 +915,7 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  💡 Lead = penanggung jawab (bisa close tiket). Helper bisa ditambahkan setelah tiket dibuat lewat tombol <strong>Tim Tugas</strong> di detail.
+                   Lead = penanggung jawab (bisa close tiket). Helper bisa ditambahkan setelah tiket dibuat lewat tombol <strong>Tim Tugas</strong> di detail.
                 </p>
               </div>
               <div className="space-y-1.5">
@@ -1390,45 +1391,45 @@ const FRONTEND_WORKFLOW_PRESETS: Record<string, { label: string; description: st
     label: "Gangguan",
     description: "Diagnose-first workflow untuk perbaikan jaringan",
     stages: [
-      { key: "prep",     label: "Persiapan Alat",  icon: "PackageCheck", color: "#0EA5E9", sortOrder: 1, slaMinutes: 15 },
-      { key: "travel",   label: "Perjalanan",       icon: "Navigation",   color: "#8B5CF6", sortOrder: 2, slaMinutes: 45, requiresGps: true },
-      { key: "diagnose", label: "Diagnosa",         icon: "Stethoscope",  color: "#F59E0B", sortOrder: 3, slaMinutes: 30, requiresPhoto: true, requiresNote: true },
-      { key: "repair",   label: "Perbaikan",        icon: "Wrench",       color: "#EF4444", sortOrder: 4, slaMinutes: 90, requiresPhoto: true },
-      { key: "verify",   label: "Test Sinyal",      icon: "Activity",     color: "#22C55E", sortOrder: 5, slaMinutes: 15, requiresPhoto: true },
-      { key: "done",     label: "Selesai",          icon: "Flag",         color: "#10B981", sortOrder: 6, isFinal: true, requiresNote: true },
+      { key: "prep", label: "Persiapan Alat", icon: "PackageCheck", color: "#0EA5E9", sortOrder: 1, slaMinutes: 15 },
+      { key: "travel", label: "Perjalanan", icon: "Navigation", color: "#8B5CF6", sortOrder: 2, slaMinutes: 45, requiresGps: true },
+      { key: "diagnose", label: "Diagnosa", icon: "Stethoscope", color: "#F59E0B", sortOrder: 3, slaMinutes: 30, requiresPhoto: true, requiresNote: true },
+      { key: "repair", label: "Perbaikan", icon: "Wrench", color: "#EF4444", sortOrder: 4, slaMinutes: 90, requiresPhoto: true },
+      { key: "verify", label: "Test Sinyal", icon: "Activity", color: "#22C55E", sortOrder: 5, slaMinutes: 15, requiresPhoto: true },
+      { key: "done", label: "Selesai", icon: "Flag", color: "#10B981", sortOrder: 6, isFinal: true, requiresNote: true },
     ],
   },
   install: {
     label: "Pemasangan Baru",
     description: "Survey → install → activate → handover dengan TTD pelanggan",
     stages: [
-      { key: "survey",     label: "Survey Lokasi",   icon: "MapPin",       color: "#06B6D4", sortOrder: 1, slaMinutes: 60, requiresPhoto: true, requiresGps: true },
-      { key: "prep",       label: "Siapkan ONT+Kabel", icon: "PackageCheck", color: "#0EA5E9", sortOrder: 2, slaMinutes: 30, requiresPhoto: true },
-      { key: "pull_cable", label: "Tarik Kabel",     icon: "Cable",        color: "#8B5CF6", sortOrder: 3, slaMinutes: 120, requiresPhoto: true },
-      { key: "install",    label: "Pasang ONT",      icon: "Router",       color: "#F59E0B", sortOrder: 4, slaMinutes: 60, requiresPhoto: true },
-      { key: "activate",   label: "Aktivasi",        icon: "Wifi",         color: "#22C55E", sortOrder: 5, slaMinutes: 30, requiresPhoto: true },
-      { key: "handover",   label: "Serah Terima",    icon: "FileCheck",    color: "#10B981", sortOrder: 6, isFinal: true, requiresSignature: true, requiresNote: true },
+      { key: "survey", label: "Survey Lokasi", icon: "MapPin", color: "#06B6D4", sortOrder: 1, slaMinutes: 60, requiresPhoto: true, requiresGps: true },
+      { key: "prep", label: "Siapkan ONT+Kabel", icon: "PackageCheck", color: "#0EA5E9", sortOrder: 2, slaMinutes: 30, requiresPhoto: true },
+      { key: "pull_cable", label: "Tarik Kabel", icon: "Cable", color: "#8B5CF6", sortOrder: 3, slaMinutes: 120, requiresPhoto: true },
+      { key: "install", label: "Pasang ONT", icon: "Router", color: "#F59E0B", sortOrder: 4, slaMinutes: 60, requiresPhoto: true },
+      { key: "activate", label: "Aktivasi", icon: "Wifi", color: "#22C55E", sortOrder: 5, slaMinutes: 30, requiresPhoto: true },
+      { key: "handover", label: "Serah Terima", icon: "FileCheck", color: "#10B981", sortOrder: 6, isFinal: true, requiresSignature: true, requiresNote: true },
     ],
   },
   migrasi: {
     label: "Migrasi/Relokasi",
     description: "Pindah ODP atau ganti paket dengan foto before/after",
     stages: [
-      { key: "prep",     label: "Persiapan",        icon: "PackageCheck", color: "#0EA5E9", sortOrder: 1, slaMinutes: 20 },
-      { key: "travel",   label: "Perjalanan",       icon: "Navigation",   color: "#8B5CF6", sortOrder: 2, slaMinutes: 45, requiresGps: true },
-      { key: "before",   label: "Foto Awal",        icon: "Camera",       color: "#F59E0B", sortOrder: 3, slaMinutes: 10, requiresPhoto: true },
-      { key: "execute",  label: "Eksekusi",         icon: "Wrench",       color: "#EF4444", sortOrder: 4, slaMinutes: 90, requiresPhoto: true },
-      { key: "verify",   label: "Test & Aktivasi",  icon: "Activity",     color: "#22C55E", sortOrder: 5, slaMinutes: 20, requiresPhoto: true },
-      { key: "done",     label: "Selesai",          icon: "Flag",         color: "#10B981", sortOrder: 6, isFinal: true, requiresNote: true },
+      { key: "prep", label: "Persiapan", icon: "PackageCheck", color: "#0EA5E9", sortOrder: 1, slaMinutes: 20 },
+      { key: "travel", label: "Perjalanan", icon: "Navigation", color: "#8B5CF6", sortOrder: 2, slaMinutes: 45, requiresGps: true },
+      { key: "before", label: "Foto Awal", icon: "Camera", color: "#F59E0B", sortOrder: 3, slaMinutes: 10, requiresPhoto: true },
+      { key: "execute", label: "Eksekusi", icon: "Wrench", color: "#EF4444", sortOrder: 4, slaMinutes: 90, requiresPhoto: true },
+      { key: "verify", label: "Test & Aktivasi", icon: "Activity", color: "#22C55E", sortOrder: 5, slaMinutes: 20, requiresPhoto: true },
+      { key: "done", label: "Selesai", icon: "Flag", color: "#10B981", sortOrder: 6, isFinal: true, requiresNote: true },
     ],
   },
   survey: {
     label: "Survey/Maintenance",
     description: "Workflow ringkas untuk survey atau preventive maintenance",
     stages: [
-      { key: "travel",   label: "Perjalanan",       icon: "Navigation",   color: "#8B5CF6", sortOrder: 1, slaMinutes: 60, requiresGps: true },
-      { key: "survey",   label: "Survey Onsite",    icon: "MapPin",       color: "#0EA5E9", sortOrder: 2, slaMinutes: 30, requiresPhoto: true, requiresGps: true },
-      { key: "report",   label: "Buat Laporan",     icon: "FileText",     color: "#22C55E", sortOrder: 3, isFinal: true, requiresNote: true },
+      { key: "travel", label: "Perjalanan", icon: "Navigation", color: "#8B5CF6", sortOrder: 1, slaMinutes: 60, requiresGps: true },
+      { key: "survey", label: "Survey Onsite", icon: "MapPin", color: "#0EA5E9", sortOrder: 2, slaMinutes: 30, requiresPhoto: true, requiresGps: true },
+      { key: "report", label: "Buat Laporan", icon: "FileText", color: "#22C55E", sortOrder: 3, isFinal: true, requiresNote: true },
     ],
   },
 };
@@ -1593,11 +1594,11 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
                                 <span className="font-medium text-gray-800 flex-1">{s.label}</span>
                                 {s.slaMinutes && <span className="font-mono text-[10px] text-muted-foreground">~{s.slaMinutes}m</span>}
                                 <div className="flex gap-0.5">
-                                  {s.requiresPhoto && <span title="Wajib foto" className="text-[10px]">📷</span>}
-                                  {s.requiresGps && <span title="Wajib GPS" className="text-[10px]">📍</span>}
-                                  {s.requiresNote && <span title="Wajib catatan" className="text-[10px]">✏</span>}
-                                  {s.requiresSignature && <span title="Wajib TTD" className="text-[10px]">✍</span>}
-                                  {s.isFinal && <span title="Stage final" className="text-[10px]">🏁</span>}
+                                  {s.requiresPhoto && <span title="Wajib foto"><Camera className="size-3 text-muted-foreground" /></span>}
+                                  {s.requiresGps && <span title="Wajib GPS"><MapPin className="size-3 text-muted-foreground" /></span>}
+                                  {s.requiresNote && <span title="Wajib catatan"><StickyNote className="size-3 text-muted-foreground" /></span>}
+                                  {s.requiresSignature && <span title="Wajib TTD"><PenLine className="size-3 text-muted-foreground" /></span>}
+                                  {s.isFinal && <span title="Stage final"><Flag className="size-3 text-muted-foreground" /></span>}
                                 </div>
                               </div>
                             ))}
@@ -1772,7 +1773,7 @@ function TeamPanel({
       </div>
 
       <p className="px-3 pb-2 text-[10px] text-purple-700/70">
-        💡 Lead = supervisor (boleh close tiket). Helper = teknisi pendamping. Semua anggota tim akan bisa update stage + upload foto.
+         Lead = supervisor (boleh close tiket). Helper = teknisi pendamping. Semua anggota tim akan bisa update stage + upload foto.
       </p>
     </div>
   );
@@ -2010,7 +2011,7 @@ function TechnicianWorkloadPanel() {
                       const tone = csat.avgRating >= 4.2 ? "text-emerald-700 bg-emerald-50 border-emerald-200" : csat.avgRating >= 3.5 ? "text-amber-700 bg-amber-50 border-amber-200" : "text-rose-700 bg-rose-50 border-rose-200";
                       return (
                         <span className={`inline-flex items-center gap-1 px-1.5 py-0 rounded border ${tone}`} title={`${csat.totalResponses} respons · ${csat.positiveCount} positif · ${csat.negativeCount} negatif`}>
-                          ⭐ {csat.avgRating.toFixed(1)} <span className="text-muted-foreground">({csat.totalResponses})</span>
+                           {csat.avgRating.toFixed(1)} <span className="text-muted-foreground">({csat.totalResponses})</span>
                         </span>
                       );
                     })()}

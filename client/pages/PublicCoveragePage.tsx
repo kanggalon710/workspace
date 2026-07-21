@@ -12,10 +12,10 @@ import { dotIcon } from "@/lib/assetColors";
 import { SaungJarkomLogo } from "@/components/SaungJarkomLogo";
 
 const T = {
-  bg: "#f0f9ff",      // sky-50
-  deep: "#0c4a6e",    // sky-900
+  bg: "#f0f9ff", // sky-50
+  deep: "#0c4a6e", // sky-900
   secondary: "#0369a1", // sky-700
-  accent: "#0EA5E9",  // sky-500 (same as app primary)
+  accent: "#0EA5E9", // sky-500 (same as app primary)
   surface: "#e0f2fe", // sky-100
   surfaceHi: "#bae6fd", // sky-200
   outline: "#38bdf8", // sky-400
@@ -44,10 +44,10 @@ interface LandingResult {
 }
 
 const STATUS_META: Record<LandingResult["coverageStatus"], { color: string; icon: any; label: string; subtext: string }> = {
-  available:    { color: "#22C55E", icon: CheckCircle2,   label: "Lokasi Anda Terjangkau!", subtext: "Layanan Saung Jarkom tersedia di lokasi Anda" },
-  out_of_range: { color: "#EF4444", icon: XCircle,        label: "Tidak Ada Coverage", subtext: "Lokasi Anda belum terjangkau jaringan Saung Jarkom" },
-  full:         { color: "#EF4444", icon: XCircle,        label: "Tidak Ada Coverage", subtext: "Lokasi Anda belum terjangkau jaringan Saung Jarkom" },
-  no_odp:       { color: "#EF4444", icon: XCircle,        label: "Tidak Ada Coverage", subtext: "Lokasi Anda belum terjangkau jaringan Saung Jarkom" },
+  available: { color: "#22C55E", icon: CheckCircle2, label: "Lokasi Anda Terjangkau!", subtext: "Layanan Saung Jarkom tersedia di lokasi Anda" },
+  out_of_range: { color: "#EF4444", icon: XCircle, label: "Tidak Ada Coverage", subtext: "Lokasi Anda belum terjangkau jaringan Saung Jarkom" },
+  full: { color: "#EF4444", icon: XCircle, label: "Tidak Ada Coverage", subtext: "Lokasi Anda belum terjangkau jaringan Saung Jarkom" },
+  no_odp: { color: "#EF4444", icon: XCircle, label: "Tidak Ada Coverage", subtext: "Lokasi Anda belum terjangkau jaringan Saung Jarkom" },
 };
 
 export default function PublicCoveragePage() {
@@ -192,7 +192,7 @@ export default function PublicCoveragePage() {
               {/* Hint bar */}
               <div className="px-3 py-2 text-[10px] flex items-center gap-2"
                 style={{ background: T.bg, borderTop: `1px solid ${T.outlineV}`, color: T.outline }}>
-                💡 Atau klik di mana saja di peta untuk pilih titik lokasi
+                 Atau klik di mana saja di peta untuk pilih titik lokasi
               </div>
 
               {/* Map */}

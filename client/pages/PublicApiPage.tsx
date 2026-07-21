@@ -17,14 +17,14 @@ import {
 } from "lucide-react";
 
 const ALL_SCOPES = [
-  { key: "marketing:read", label: "⭐ Marketing Bundle (Recommended)", desc: "Canvassing sessions + performance, prospects, lead funnel velocity, source attribution, per-staff scorecard, coverage by district, Sahabat funnel, GIS heatmap. Endpoint utama untuk AI daily analysis.", icon: "🚀", recommended: true },
-  { key: "reports:read", label: "Laporan Operasional Cross-domain", desc: "Ringkasan harian/mingguan lintas domain — canvassing, leads, collections, tickets, sahabat, payments", icon: "📊" },
-  { key: "leads:read", label: "Pipeline Leads (Basic)", desc: "List leads, stats per stage/wilayah. Untuk deep-dive funnel & attribution pakai marketing:read", icon: "🎯" },
-  { key: "collections:read", label: "Pipeline Collection", desc: "List cases penagihan, stats outstanding, detail + activities", icon: "💰" },
-  { key: "finance:read", label: "Revenue & Billing", desc: "MRR, ARPU, revenue-at-risk, billing status, collection recovery & aging. Agregat (tanpa PII). Untuk laporan keuangan harian→quarter.", icon: "💵" },
-  { key: "customers:read", label: "Subscriber Base", desc: "Jumlah pelanggan by status/paket/wilayah, aktivasi baru, net adds. Agregat (tanpa PII).", icon: "👥" },
-  { key: "sahabat:read", label: "Program JABNET Sahabat (Basic)", desc: "Stats program, leaderboard, referral list. Untuk deep-dive funnel pakai marketing:read", icon: "🏅" },
-  { key: "tickets:read", label: "Work Orders / Tickets", desc: "Tiket aktif, stats per status, SLA info", icon: "🎫" },
+  { key: "marketing:read", label: "Marketing Bundle (Recommended)", desc: "Canvassing sessions + performance, prospects, lead funnel velocity, source attribution, per-staff scorecard, coverage by district, Sahabat funnel, GIS heatmap. Endpoint utama untuk AI daily analysis.",  recommended: true },
+  { key: "reports:read", label: "Laporan Operasional Cross-domain", desc: "Ringkasan harian/mingguan lintas domain — canvassing, leads, collections, tickets, sahabat, payments"  },
+  { key: "leads:read", label: "Pipeline Leads (Basic)", desc: "List leads, stats per stage/wilayah. Untuk deep-dive funnel & attribution pakai marketing:read"  },
+  { key: "collections:read", label: "Pipeline Collection", desc: "List cases penagihan, stats outstanding, detail + activities"  },
+  { key: "finance:read", label: "Revenue & Billing", desc: "MRR, ARPU, revenue-at-risk, billing status, collection recovery & aging. Agregat (tanpa PII). Untuk laporan keuangan harian→quarter."  },
+  { key: "customers:read", label: "Subscriber Base", desc: "Jumlah pelanggan by status/paket/wilayah, aktivasi baru, net adds. Agregat (tanpa PII)."  },
+  { key: "sahabat:read", label: "Program JABNET Sahabat (Basic)", desc: "Stats program, leaderboard, referral list. Untuk deep-dive funnel pakai marketing:read"  },
+  { key: "tickets:read", label: "Work Orders / Tickets", desc: "Tiket aktif, stats per status, SLA info"  },
 ];
 
 export default function PublicApiPage() {
@@ -547,10 +547,10 @@ function DocsDialog({ open, onClose, baseUrl }: any) {
             <CodeBlock code={`${baseUrl}/api/public/v1`} />
           </Section>
 
-          <Section title="3. Endpoint Utama — Marketing Bundle ⭐">
+          <Section title="3. Endpoint Utama — Marketing Bundle ">
             <p className="text-muted-foreground mb-2 text-xs">Untuk analisis AI harian, fokus di <strong>marketing:read</strong> — endpoint-nya sudah dense dan pre-analyzed.</p>
             <div className="space-y-2 text-xs">
-              <EndpointRow method="GET" path="/marketing/overview" desc="⭐ Dense overview untuk AI: momentum, red flags, top performer, hot spots" scope="marketing:read" />
+              <EndpointRow method="GET" path="/marketing/overview" desc=" Dense overview untuk AI: momentum, red flags, top performer, hot spots" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/sessions" desc="Canvassing sessions: active, today, per-canvasser stats" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/performance" desc="Per-canvasser matrix: sessions, duration, reports, prospects" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/reports" desc="Field reports BI (area_sepi, kompetitor, akses_sulit, dsb)" scope="marketing:read" />
@@ -577,7 +577,7 @@ function DocsDialog({ open, onClose, baseUrl }: any) {
           </Section>
 
           <Section title="5. Contoh curl — Marketing">
-            <CodeBlock code={`# ⭐ Marketing overview (paling penting untuk AI daily)
+            <CodeBlock code={`# Marketing overview (paling penting untuk AI daily)
 curl -H "Authorization: Bearer jbk_live_xxx" \\
   ${baseUrl}/api/public/v1/marketing/overview
 
@@ -613,9 +613,9 @@ overview = requests.get(
 ).json()
 
 # 2. Pull detail funnel + coverage untuk deep analysis
-funnel   = requests.get("${baseUrl}/api/public/v1/marketing/leads/funnel", headers=headers).json()
+funnel = requests.get("${baseUrl}/api/public/v1/marketing/leads/funnel", headers=headers).json()
 coverage = requests.get("${baseUrl}/api/public/v1/marketing/coverage", headers=headers).json()
-canvas   = requests.get("${baseUrl}/api/public/v1/marketing/canvassing/performance", headers=headers).json()
+canvas = requests.get("${baseUrl}/api/public/v1/marketing/canvassing/performance", headers=headers).json()
 
 # 3. Kirim ke Claude — red flags & green lights sudah pre-computed
 client = anthropic.Anthropic(api_key="sk-ant-...")

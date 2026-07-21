@@ -70,8 +70,8 @@ client.on("message", async (msg) => {
   const { data } = await r.json();
   msg.reply(
     data.inCoverage
-      ? \`✅ Terjangkau!\\nODP: \${data.nearest.name}\\nJarak: \${data.nearest.distanceMeters}m\`
-      : \`❌ \${data.recommendation}\`
+      ? \` Terjangkau!\\nODP: \${data.nearest.name}\\nJarak: \${data.nearest.distanceMeters}m\`
+      : \` \${data.recommendation}\`
   );
 });`,
     sheets: `function CEK_COVERAGE(lat, lng) {
@@ -211,16 +211,15 @@ client.on("message", async (msg) => {
           {/* Code samples */}
           <div className="lg:col-span-2 space-y-3">
             {[
-              { key: "curl", label: "cURL", icon: "🔧" },
-              { key: "js", label: "JavaScript / Node.js", icon: "🟨" },
-              { key: "python", label: "Python", icon: "🐍" },
-              { key: "whatsapp", label: "Bot WhatsApp", icon: "💬" },
-              { key: "sheets", label: "Google Sheets", icon: "📊" },
+              { key: "curl", label: "cURL"  },
+              { key: "js", label: "JavaScript / Node.js"  },
+              { key: "python", label: "Python"  },
+              { key: "whatsapp", label: "Bot WhatsApp"  },
+              { key: "sheets", label: "Google Sheets"  },
             ].map((s) => (
               <div key={s.key} className="rounded-2xl overflow-hidden" style={{ background: "#1e293b", border: `1px solid ${T.outlineV}` }}>
                 <div className="px-4 py-2 flex items-center justify-between" style={{ background: "#0f172a" }}>
                   <div className="flex items-center gap-2">
-                    <span>{s.icon}</span>
                     <span className="text-xs font-bold text-white">{s.label}</span>
                   </div>
                   <button onClick={() => copyToClipboard(snippets[s.key as keyof typeof snippets], s.label)}

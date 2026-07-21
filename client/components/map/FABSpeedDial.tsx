@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Radio, Box, CircleDot, User, Landmark, Waves, type LucideIcon } from "lucide-react";
 import { ASSET_COLORS, ASSET_MARKER_CONFIG } from "@/lib/assetColors";
 import type { AssetType } from "@/lib/assetColors";
 
@@ -9,12 +9,12 @@ interface FABSpeedDialProps {
   onCancel: () => void;
 }
 
-const dialItems: { key: Exclude<AssetType, "cable">; emoji: string }[] = [
-  { key: "pop", emoji: "📡" },
-  { key: "odc", emoji: "🔵" },
-  { key: "odp", emoji: "🟢" },
-  { key: "customer", emoji: "👤" },
-  { key: "pole", emoji: "🏗️" },
+const dialItems: { key: Exclude<AssetType, "cable">; Icon: LucideIcon }[] = [
+  { key: "pop", Icon: Radio },
+  { key: "odc", Icon: Box },
+  { key: "odp", Icon: CircleDot },
+  { key: "customer", Icon: User },
+  { key: "pole", Icon: Landmark },
 ];
 
 export function FABSpeedDial({ onSelectMode, drawMode, onCancel }: FABSpeedDialProps) {
@@ -49,7 +49,7 @@ export function FABSpeedDial({ onSelectMode, drawMode, onCancel }: FABSpeedDialP
               className="w-8 h-8 rounded-full shadow-md flex items-center justify-center text-white transition-all active:scale-90"
               style={{ backgroundColor: ASSET_COLORS.cable.primary }}
             >
-              <span className="text-xs">〰️</span>
+              <Waves className="w-3.5 h-3.5" />
             </button>
           </div>
           {dialItems.map((item, idx) => (
@@ -63,7 +63,7 @@ export function FABSpeedDial({ onSelectMode, drawMode, onCancel }: FABSpeedDialP
                 style={{ backgroundColor: ASSET_COLORS[item.key].primary }}
                 title={ASSET_MARKER_CONFIG[item.key].label}
               >
-                <span className="text-xs">{item.emoji}</span>
+                <item.Icon className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}

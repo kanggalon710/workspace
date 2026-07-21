@@ -1,6 +1,6 @@
 /** Teamspace — Pengumuman per-tim (BUG-004 / FR-601..603): manager kirim pengumuman
- *  internal bertarget ke anggota timnya, dengan opsi Rahasia + selesai otomatis.
- *  Beda dari /announcements company-wide (changelog sistem). */
+ * internal bertarget ke anggota timnya, dengan opsi Rahasia + selesai otomatis.
+ * Beda dari /announcements company-wide (changelog sistem). */
 import { useMemo, useState } from "react";
 import { useTeamAnnouncements, useTeamAnnouncementMutations, type TeamAnnouncementRow } from "@/hooks/useTeamspace";
 import { useAssignableUsers } from "@/hooks/usePipelines";
@@ -137,7 +137,7 @@ export function AnnouncementsPanel({ teamId, canManage, active }: Props) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex items-center justify-between rounded-lg border px-3 py-2">
                   <div>
-                    <p className="text-xs font-medium">🔒 Rahasia</p>
+                    <p className="text-xs font-medium"> Rahasia</p>
                     <p className="text-[10px] text-muted-foreground">Hanya penerima yang bisa melihat</p>
                   </div>
                   <Switch checked={confidential} onCheckedChange={setConfidential} />

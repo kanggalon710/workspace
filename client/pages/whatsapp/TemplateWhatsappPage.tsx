@@ -2,13 +2,13 @@
  * v4.2.20 (PRD WA Feature v2): Template Whatsapp
  *
  * Fitur sesuai PRD:
- *   - Tabs Unofficial / Official
- *   - Tombol Tambah Baru dengan dropdown (Template Pelanggan / Template Reseller)
- *   - Filter: Seluruh Template / Pelanggan / Reseller
- *   - Form: Nama Template, Tampilkan Pelanggan (Seluruh / Belum Bayar)
- *   - Editor WYSIWYG B/I/U + preview real-time WhatsApp bubble
- *   - Modal "Petunjuk Pengisian Parameter Whatsapp" dengan 28 params
- *   - Toggle "Tampilkan Template Keseluruh Reseller"
+ * - Tabs Unofficial / Official
+ * - Tombol Tambah Baru dengan dropdown (Template Pelanggan / Template Reseller)
+ * - Filter: Seluruh Template / Pelanggan / Reseller
+ * - Form: Nama Template, Tampilkan Pelanggan (Seluruh / Belum Bayar)
+ * - Editor WYSIWYG B/I/U + preview real-time WhatsApp bubble
+ * - Modal "Petunjuk Pengisian Parameter Whatsapp" dengan 28 params
+ * - Toggle "Tampilkan Template Keseluruh Reseller"
  */
 
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -35,16 +35,16 @@ interface Template {
   content: string;
   category: string;
   isSystem: number;
-  templateType: string;          // pelanggan | reseller | system
-  templateChannel: string;       // unofficial | official
-  customerFilter: string;        // all | unpaid
+  templateType: string; // pelanggan | reseller | system
+  templateChannel: string; // unofficial | official
+  customerFilter: string; // all | unpaid
   shareToReseller: number;
   createdAt: string;
   // v4.2.22: button + media untuk MPWA send-button
   footer?: string | null;
-  buttons?: string | null;       // JSON array
+  buttons?: string | null; // JSON array
   mediaUrl?: string | null;
-  mediaType?: string | null;     // image | video | document
+  mediaType?: string | null; // image | video | document
 }
 
 interface ParamInfo {
@@ -72,8 +72,8 @@ function readUrlState(): {
 } {
   if (typeof window === "undefined") return { view: "list", editingId: null };
   const sp = new URLSearchParams(window.location.search);
-  const action = sp.get("action");        // "new" | "edit"
-  const type = sp.get("type");            // "pelanggan" | "reseller"
+  const action = sp.get("action"); // "new" | "edit"
+  const type = sp.get("type"); // "pelanggan" | "reseller"
   const id = sp.get("id");
   if (action === "new" && (type === "pelanggan" || type === "reseller")) {
     return { view: `form-${type}` as any, editingId: null };
@@ -713,7 +713,7 @@ function TemplateForm({ template, type, onBack }: {
                 {/* v4.2.23: warning kalau image localhost — MPWA gak bisa fetch */}
                 {/^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.|10\.)/i.test(imageUrl) && (
                   <div className="mt-2 rounded-md bg-rose-50 border border-rose-200 px-3 py-2 text-[11px] text-rose-900 leading-snug">
-                    <strong>⚠️ Image localhost terdeteksi:</strong> URL <code className="font-mono text-[10px]">{imageUrl}</code> hanya bisa diakses dari komputer Galon — <strong>MPWA server di internet tidak bisa fetch image ini</strong>.
+                    <strong> Image localhost terdeteksi:</strong> URL <code className="font-mono text-[10px]">{imageUrl}</code> hanya bisa diakses dari komputer Galon — <strong>MPWA server di internet tidak bisa fetch image ini</strong>.
                     Saat broadcast, sistem otomatis skip image (pesan tetap kirim tanpa image header).
                     <div className="mt-1 font-semibold">Solusi:</div>
                     <ul className="list-disc ml-4 mt-0.5">
@@ -817,7 +817,7 @@ function TemplateForm({ template, type, onBack }: {
                     Butuh image header dengan URL <strong>public</strong> (imgur/CDN).
                   </div>
                   <div className="text-[10px] text-violet-700 mt-1 font-semibold">
-                    💡 Tip: Pakai tipe URL/Call/Copy lebih reliable dari Reply. Image WAJIB public URL.
+                     Tip: Pakai tipe URL/Call/Copy lebih reliable dari Reply. Image WAJIB public URL.
                   </div>
                 </div>
               </div>
@@ -847,7 +847,7 @@ function TemplateForm({ template, type, onBack }: {
           </div>
           {compatMode === "native" && (
             <div className="mt-2 rounded-md bg-violet-50 border border-violet-200 px-3 py-2 text-[11px] text-violet-900 leading-snug">
-              <strong>💡 Tips supaya native button reliable:</strong>
+              <strong> Tips supaya native button reliable:</strong>
               <ul className="list-disc ml-4 mt-1 space-y-0.5">
                 <li>Image header WAJIB pakai <strong>URL public</strong> — host di imgur/CDN, bukan localhost/intranet</li>
                 <li><strong>Tipe URL/Call/Copy</strong> lebih sering diterima WA dibanding Reply</li>
@@ -870,7 +870,7 @@ function TemplateForm({ template, type, onBack }: {
 
           {!imageUrl && buttons.length > 0 && (
             <div className="mb-2 px-2.5 py-1.5 rounded bg-sky-50 border border-sky-200 text-[11px] text-sky-900 leading-snug">
-              ℹ️ <strong>Image kosong:</strong> Saat broadcast, sistem otomatis pakai{" "}
+              ℹ <strong>Image kosong:</strong> Saat broadcast, sistem otomatis pakai{" "}
               <strong>default banner JABNET</strong> sebagai image header, jadi tombol tetap muncul native di WhatsApp.
               Isi URL Gambar di atas kalau mau pakai image custom.
               <span className="block mt-1 opacity-70">(Admin bisa set default image global di /integrations)</span>
@@ -974,7 +974,7 @@ function TemplateForm({ template, type, onBack }: {
                 <div className="mt-2 pt-2 border-t flex flex-col gap-1">
                   {buttons.map((b, i) => {
                     const Icon =
-                      b.type === "url"  ? ExternalLink :
+                      b.type === "url" ? ExternalLink :
                       b.type === "call" ? Phone :
                       b.type === "copy" ? CopyIcon :
                       ReplyIcon;

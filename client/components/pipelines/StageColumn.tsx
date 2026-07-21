@@ -157,7 +157,7 @@ export function StageColumn({
             style={{ backgroundColor: headerTint }}
             title={`${stalledCount} kartu stagnan`}
           >
-            ⚠ {stalledCount}
+             {stalledCount}
           </span>
         )}
         <span

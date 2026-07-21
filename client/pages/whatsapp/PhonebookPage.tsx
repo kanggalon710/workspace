@@ -3,13 +3,13 @@
  * v4.2.27: + tags untuk kategorisasi + smart filter customers + cross-phonebook import
  *
  * Features:
- *   - List view: semua phonebook dengan counter + color/icon
- *   - Detail view: contacts table dengan CRUD + bulk actions + tags column
- *   - Add contact: manual (form), import dari customers (multi-select), CSV upload
- *   - Tags per kontak: badge chip, bulk-add tag, filter by tag
- *   - Smart filter customers saat import (paket / kecamatan / status)
- *   - Import dari phonebook lain (cross-phonebook copy)
- *   - URL state persistence (refresh tetap di view yang sama)
+ * - List view: semua phonebook dengan counter + color/icon
+ * - Detail view: contacts table dengan CRUD + bulk actions + tags column
+ * - Add contact: manual (form), import dari customers (multi-select), CSV upload
+ * - Tags per kontak: badge chip, bulk-add tag, filter by tag
+ * - Smart filter customers saat import (paket / kecamatan / status)
+ * - Import dari phonebook lain (cross-phonebook copy)
+ * - URL state persistence (refresh tetap di view yang sama)
  */
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -40,7 +40,7 @@ interface Contact {
   email: string | null; address: string | null; notes: string | null;
   customFields: string | null;
   customerId: number | null;
-  tags: string | null;  // JSON string array
+  tags: string | null; // JSON string array
   createdAt: string;
 }
 
@@ -67,14 +67,14 @@ function parseTags(raw: string | null | undefined): string[] {
 
 // Color palette untuk tag chip (deterministic by tag string)
 const TAG_COLORS = [
-  { bg: "bg-violet-50",  text: "text-violet-700",  border: "border-violet-200" },
-  { bg: "bg-sky-50",     text: "text-sky-700",     border: "border-sky-200" },
+  { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200" },
+  { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-200" },
   { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200" },
-  { bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-200" },
-  { bg: "bg-cyan-50",    text: "text-cyan-700",    border: "border-cyan-200" },
+  { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+  { bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-200" },
   { bg: "bg-fuchsia-50", text: "text-fuchsia-700", border: "border-fuchsia-200" },
-  { bg: "bg-orange-50",  text: "text-orange-700", border: "border-orange-200" },
+  { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200" },
 ];
 
 function tagColor(tag: string) {
@@ -746,8 +746,8 @@ function ContactFormDialog({ open, phonebookId, existing, onClose }: {
 
   // Autocomplete dari billing pelanggan: ketik Nama/Phone → cari di list pelanggan → klik isi otomatis.
   const [lookupField, setLookupField] = useState<null | "name" | "phone">(null);
-  const [lookupTerm, setLookupTerm] = useState("");      // term yang di-debounce untuk query
-  const [picked, setPicked] = useState(false);           // true setelah user pilih saran (sembunyikan dropdown)
+  const [lookupTerm, setLookupTerm] = useState(""); // term yang di-debounce untuk query
+  const [picked, setPicked] = useState(false); // true setelah user pilih saran (sembunyikan dropdown)
 
   const { data: phonebookTags = [] } = useQuery<TagWithCount[]>({
     queryKey: ["phonebook-tags", phonebookId],
@@ -1126,8 +1126,8 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
           {([
             { val: "customers" as const, label: "Dari Customers", icon: Users },
             { val: "phonebook" as const, label: "Phonebook Lain", icon: BookUser },
-            { val: "csv" as const,       label: "Upload CSV",     icon: FileSpreadsheet },
-            { val: "paste" as const,     label: "Paste Text",     icon: Edit3 },
+            { val: "csv" as const, label: "Upload CSV", icon: FileSpreadsheet },
+            { val: "paste" as const, label: "Paste Text", icon: Edit3 },
           ]).map(t => {
             const Icon = t.icon;
             return (
@@ -1243,7 +1243,7 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
                         {c.name}
                         {c.isIsolir && <span className="px-1 py-0 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">ISOLIR</span>}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">#{c.customerId} · {c.phone}{c.package && ` · 📦 ${c.package}`}{c.district && ` · 🗺️ ${c.district}`}</div>
+                      <div className="text-[10px] text-muted-foreground">#{c.customerId} · {c.phone}{c.package && ` · ${c.package}`}{c.district && ` · ${c.district}`}</div>
                     </div>
                   </button>
                 ))}
@@ -1327,7 +1327,7 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
                     })}
                   </div>
                   <div className="text-[10px] text-muted-foreground italic">
-                    💡 Tip: kalau ngga pilih spesifik, akan import SEMUA kontak dari phonebook sumber.
+                     Tip: kalau ngga pilih spesifik, akan import SEMUA kontak dari phonebook sumber.
                   </div>
                 </>
               )}
@@ -1426,7 +1426,7 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
               </div>
             )}
             <div className="text-[10px] text-emerald-700/70 mt-2">
-              ✨ Tag akan diaplikasi ke SEMUA kontak yang diimport. Cocok buat kategorisasi cepet.
+               Tag akan diaplikasi ke SEMUA kontak yang diimport. Cocok buat kategorisasi cepet.
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 /** Teamspace v5.0 — Semua Tugas (FR-412): agregasi tugas lintas tim, view List + Tabel.
- *  View Kalender menyusul Fase 2. */
+ * View Kalender menyusul Fase 2. */
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -32,8 +32,8 @@ function stageOf(data: AllTasksResponse | undefined, card: TaskRow) {
 }
 
 /** Status TENGGAT (FR-410) — beda makna dgn status LIST/Kanban (BUG-009): kolom ini soal
- *  KETEPATAN WAKTU, bukan tahap. Tanpa due date → tak ada badge (LIST sudah menunjukkan tahap).
- *  Selalu ikon+teks, bukan warna saja (NFR-008). */
+ * KETEPATAN WAKTU, bukan tahap. Tanpa due date → tak ada badge (LIST sudah menunjukkan tahap).
+ * Selalu ikon+teks, bukan warna saja (NFR-008). */
 function dueState(card: TaskRow, doneStage: boolean): { variant: "danger" | "warning" | "neutral" | "success"; label: string } | null {
   const done = (card as any).isCompleted === 1 || doneStage;
   if (!card.dueDate) return null;
@@ -59,7 +59,7 @@ function isSoon(iso: string | null): boolean {
 }
 
 /** View Kalender tugas (FR-411): 2 bulan berdampingan (BUG-010 — konsisten dengan
- *  Jadwal tim), kartu mini per tanggal tenggat. Menumpuk di layar sempit. */
+ * Jadwal tim), kartu mini per tanggal tenggat. Menumpuk di layar sempit. */
 function TasksCalendar({ cards, teams, onOpen }: {
   cards: TaskRow[];
   teams: AllTasksResponse["teams"];
@@ -87,7 +87,7 @@ function TasksCalendar({ cards, teams, onOpen }: {
   const renderMonth = (offset: number) => {
     const view = new Date(baseMonth.getFullYear(), baseMonth.getMonth() + offset, 1);
     const y = view.getFullYear(); const mo = view.getMonth();
-    const startPad = (new Date(y, mo, 1).getDay() + 6) % 7;   // Senin = 0
+    const startPad = (new Date(y, mo, 1).getDay() + 6) % 7; // Senin = 0
     const daysInMonth = new Date(y, mo + 1, 0).getDate();
     const cells: Array<Date | null> = [
       ...Array.from({ length: startPad }, () => null),
@@ -402,7 +402,7 @@ export default function AllTasksPage() {
                             <p className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                               <span>{st?.label ?? "-"}</span>
                               {c.assigneeId != null && <span>· {usersById.get(c.assigneeId) ?? `#${c.assigneeId}`}</span>}
-                              {cp && cp.total > 0 && <span className="tabular-nums">· ☑ {cp.done}/{cp.total}</span>}
+                              {cp && cp.total > 0 && <span className="tabular-nums">· {cp.done}/{cp.total}</span>}
                             </p>
                           </div>
                           {c.labels.slice(0, 3).map((l) => (

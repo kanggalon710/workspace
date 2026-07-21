@@ -52,12 +52,12 @@ const CAT_COLORS: Record<string, string> = {
 };
 const sourceLabel = (s: string | null | undefined) => LEAD_SOURCE_LABELS[canonicalLeadSource(s)];
 const ACTIVITY_CFG: Record<string, { label: string; icon: any; color: string }> = {
-  note:         { label: "Catatan",      icon: StickyNote,    color: "text-gray-500" },
-  call:         { label: "Telepon",      icon: PhoneCall,     color: "text-blue-500" },
-  whatsapp:     { label: "WhatsApp",     icon: MessageSquare, color: "text-green-500" },
-  visit:        { label: "Kunjungan",    icon: Navigation,    color: "text-purple-500" },
-  stage_change: { label: "Pindah Stage", icon: ArrowRight,    color: "text-amber-500" },
-  assigned:     { label: "Ditugaskan",   icon: User,          color: "text-indigo-500" },
+  note: { label: "Catatan", icon: StickyNote, color: "text-gray-500" },
+  call: { label: "Telepon", icon: PhoneCall, color: "text-blue-500" },
+  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "text-green-500" },
+  visit: { label: "Kunjungan", icon: Navigation, color: "text-purple-500" },
+  stage_change: { label: "Pindah Stage", icon: ArrowRight, color: "text-amber-500" },
+  assigned: { label: "Ditugaskan", icon: User, color: "text-indigo-500" },
 };
 
 function fmtDate(iso: string | null | undefined) {
@@ -496,7 +496,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                                 {linkedOdp!.name}
                                 {lead.distanceMeters != null && (
                                   <span className="ml-1.5 text-muted-foreground font-normal">
-                                    ({lead.distanceMeters}m{lead.distanceMeters > 500 ? " ⚠️ jauh" : ""})
+                                    ({lead.distanceMeters}m{lead.distanceMeters > 500 ? " jauh" : ""})
                                   </span>
                                 )}
                               </span>

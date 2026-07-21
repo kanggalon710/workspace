@@ -35,7 +35,7 @@ function fieldText(f: PipelineField, raw: string): string {
   }
   if (f.type === "coordinate") {
     const c = parseCoordinate(raw);
-    return c ? `📍 ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : String(raw);
+    return c ? ` ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : String(raw);
   }
   return String(raw);
 }

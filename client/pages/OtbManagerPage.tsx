@@ -294,7 +294,7 @@ function WorkflowGuide() {
             ))}
           </div>
           <p className="text-xs text-blue-700 dark:text-blue-400 mt-3">
-            💡 Gunakan tombol <strong>"Tambah Koneksi"</strong> di setiap kartu OTB untuk langsung membuat koneksi core dari OTB tersebut.
+             Gunakan tombol <strong>"Tambah Koneksi"</strong> di setiap kartu OTB untuk langsung membuat koneksi core dari OTB tersebut.
           </p>
         </CardContent>
       </div>

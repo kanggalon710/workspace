@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 
 /** Glyphs per field type (registry is React-free, so icons are defined here and reused by callers). */
 export const FIELD_TYPE_ICONS: Record<string, string> = {
-  text: "T", textarea: "¶", number: "#", currency: "Rp", date: "📅",
-  dropdown: "▾", multiselect: "☑", checkbox: "✓", user: "👤", phone: "☎", url: "🔗",
+  text: "T", textarea: "¶", number: "#", currency: "Rp", date: "◷",
+  dropdown: "▾", multiselect: "☑", checkbox: "✓", user: "◍", phone: "☎", url: "↗",
 };
 
 const GROUP_LABELS: Record<FieldTypeMeta["group"], string> = {

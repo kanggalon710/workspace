@@ -19,8 +19,8 @@ function UsageBar({ used, capacity }: { used: number; capacity: number }) {
   // hijau >=80%, kuning 50-79%, merah <50%, biru 100%
   const color =
     pct >= 100 ? "#3B82F6" :
-    pct >= 80  ? "#22C55E" :
-    pct >= 50  ? "#EAB308" : "#EF4444";
+    pct >= 80 ? "#22C55E" :
+    pct >= 50 ? "#EAB308" : "#EF4444";
   return (
     <div style={{ minWidth: 110 }}>
       <div className="flex justify-between text-xs mb-0.5">
@@ -124,7 +124,7 @@ function OdpForm({
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Deteksi otomatis kecamatan dari koordinat</span>
         <Button type="button" variant="outline" size="sm" onClick={detectLocation}>
-          📍 Deteksi Lokasi
+           Deteksi Lokasi
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-4">

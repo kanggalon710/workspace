@@ -552,7 +552,7 @@ export default function CanvassingHistoryPage() {
                         <div className="flex items-center gap-2 text-xs">
                           <Badge variant="outline" className="text-[10px]">Sesi {si + 1}</Badge>
                           <span className="text-[#827472]">{formatTime(sess.startedAt)}{sess.endedAt ? ` - ${formatTime(sess.endedAt)}` : ""} ({formatDurationShort(sess.durationMinutes)} lalu)</span>
-                          {sess.areas.length > 0 && <span className="text-[#504442]">📍 {sess.areas.join(", ")}</span>}
+                          {sess.areas.length > 0 && <span className="text-[#504442]"> {sess.areas.join(", ")}</span>}
                         </div>
 
                         {/* Leads in this session */}

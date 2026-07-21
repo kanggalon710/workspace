@@ -25,7 +25,7 @@ export function MapCameraControls({ mapRef, onFitBounds }: MapCameraControlsProp
     const handler = (e: CustomEvent<{lat: number; lng: number}>) => {
       if (!ticking && coordRef.current) {
         requestAnimationFrame(() => {
-          if (coordRef.current) coordRef.current.textContent = `📍 ${e.detail.lat.toFixed(6)}, ${e.detail.lng.toFixed(6)}`;
+          if (coordRef.current) coordRef.current.textContent = `${e.detail.lat.toFixed(6)}, ${e.detail.lng.toFixed(6)}`;
           ticking = false;
         });
         ticking = true;
@@ -82,7 +82,7 @@ export function MapCameraControls({ mapRef, onFitBounds }: MapCameraControlsProp
 
       {/* Cursor coordinates status bar */}
       <div className="absolute bottom-0 left-0 right-0 z-10 map-status-bar hidden md:flex items-center gap-4">
-        <span ref={coordRef}>📍 -,-</span>
+        <span ref={coordRef}>-,-</span>
         <span className="text-muted-foreground/50">|</span>
         <span>Saung Jarkom</span>
       </div>

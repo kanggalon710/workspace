@@ -94,9 +94,9 @@ export default function PortalCsatPage() {
             <div className="w-16 h-16 rounded-full bg-emerald-100 grid place-items-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-emerald-600" />
             </div>
-            <h2 className="text-lg font-bold">Terima kasih! 🙏</h2>
+            <h2 className="text-lg font-bold">Terima kasih! </h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Feedback Anda sudah kami terima. Rating: <strong>{finalRating}/5 ⭐</strong>
+              Feedback Anda sudah kami terima. Rating: <strong>{finalRating}/5 </strong>
             </p>
             <p className="text-xs text-muted-foreground mt-3">
               Masukan Anda akan kami pakai untuk meningkatkan kualitas layanan.
@@ -160,11 +160,11 @@ export default function PortalCsatPage() {
               </div>
               {rating > 0 && (
                 <div className="text-center text-xs font-semibold mt-2">
-                  {rating === 5 && <span className="text-emerald-700">😍 Sangat Puas</span>}
-                  {rating === 4 && <span className="text-emerald-600">😊 Puas</span>}
-                  {rating === 3 && <span className="text-amber-600">😐 Cukup</span>}
-                  {rating === 2 && <span className="text-orange-600">😞 Kurang Puas</span>}
-                  {rating === 1 && <span className="text-rose-600">😡 Sangat Tidak Puas</span>}
+                  {rating === 5 && <span className="text-emerald-700"> Sangat Puas</span>}
+                  {rating === 4 && <span className="text-emerald-600"> Puas</span>}
+                  {rating === 3 && <span className="text-amber-600"> Cukup</span>}
+                  {rating === 2 && <span className="text-orange-600"> Kurang Puas</span>}
+                  {rating === 1 && <span className="text-rose-600"> Sangat Tidak Puas</span>}
                 </div>
               )}
             </div>

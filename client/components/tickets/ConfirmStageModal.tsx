@@ -79,7 +79,7 @@ export function ConfirmStageModal({
                       {f.filled ? (
                         <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-emerald-100 text-emerald-700">✓ TERISI</span>
                       ) : (
-                        <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-rose-100 text-rose-700">⚠ KOSONG</span>
+                        <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-rose-100 text-rose-700"> KOSONG</span>
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{f.value || "—"}</div>
