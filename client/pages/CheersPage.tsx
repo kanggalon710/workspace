@@ -1,4 +1,4 @@
-/** Teamspace Fase 3 — Cheers / apresiasi antar-rekan (FR-1203):
+/** Teamspace Fase 3 - Cheers / apresiasi antar-rekan (FR-1203):
  * kirim kudos, riwayat diterima/dikirim, leaderboard 30 hari. */
 import { useMemo, useState } from "react";
 import { useCheers, useCheersLeaderboard, useCheerMutations } from "@/hooks/useTeamspace";
@@ -46,7 +46,7 @@ export default function CheersPage() {
       <PageHeader
         icon={PartyPopper}
         title="Cheers"
-        description="Apresiasi antar-rekan — rayakan kerja bagus, bukan hanya angka"
+        description="Apresiasi antar-rekan - rayakan kerja bagus, bukan hanya angka"
         accent="rose"
         onRefresh={() => refetch()}
         refreshing={isRefetching}
@@ -75,7 +75,7 @@ export default function CheersPage() {
               icon={PartyPopper}
               title={box === "received" ? "Belum ada cheers untukmu" : "Kamu belum mengirim cheers"}
               description={box === "received"
-                ? "Terus berkarya — apresiasi dari rekan akan muncul di sini."
+                ? "Terus berkarya - apresiasi dari rekan akan muncul di sini."
                 : "Lihat rekan yang kerjanya bagus minggu ini? Kirim cheers pertamamu!"}
               action={{ label: "Kirim Cheers", onClick: () => setShowSend(true) }}
             />
@@ -140,7 +140,7 @@ export default function CheersPage() {
               <div>
                 <label className="mb-1 block text-xs font-medium" htmlFor="cheer-msg">Pesan apresiasi</label>
                 <Textarea id="cheer-msg" rows={3} maxLength={500} value={message} onChange={(e) => setMessage(e.target.value)}
-                  placeholder='cth: "Respon tiket gangguan semalam cepat banget — pelanggan sampai bilang terima kasih!"' />
+                  placeholder='cth: "Respon tiket gangguan semalam cepat banget - pelanggan sampai bilang terima kasih!"' />
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowSend(false)}>Batal</Button>

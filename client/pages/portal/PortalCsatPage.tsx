@@ -1,8 +1,8 @@
 /**
- * v4.2.17: Public CSAT response page — customer kasih rating + feedback
+ * v4.2.17: Public CSAT response page - customer kasih rating + feedback
  *
  * Akses via link `/csat/:token` di SMS/WhatsApp setelah ticket close.
- * Public — tanpa login. Token unique per ticket.
+ * Public - tanpa login. Token unique per ticket.
  */
 
 import { useState } from "react";

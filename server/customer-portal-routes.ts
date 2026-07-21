@@ -1,6 +1,6 @@
 /**
  * Customer Portal Routes (v4.1.3)
- * ──────────────────────────────
+ * ------------------------------
  * Self-service API untuk pelanggan. Terpisah dari staff routes.
  * Login: customerId + OTP ke WhatsApp (via MPWA).
  *
@@ -54,7 +54,7 @@ async function getGenieConfig(): Promise<GenieAcsConfig | null> {
 
 /**
  * Cari device GenieACS by pppoe username atau serial number.
- * Targeted query — tidak fetch all devices (jauh lebih cepat + reliable).
+ * Targeted query - tidak fetch all devices (jauh lebih cepat + reliable).
  * Search di multiple TR-069 paths karena PPPoE bisa di WANConnectionDevice.1 atau .2.
  */
 async function findDeviceForCustomer(
@@ -145,10 +145,10 @@ function getClientIp(req: Request): string {
   return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
 }
 
-/** Customer auth middleware — validasi token dari header Authorization Bearer */
+/** Customer auth middleware - validasi token dari header Authorization Bearer */
 async function customerAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    // v4.2.17: Public endpoints — accessible tanpa session token (akses via WhatsApp link)
+    // v4.2.17: Public endpoints - accessible tanpa session token (akses via WhatsApp link)
     //   - /api/portal/csat/:token (rating + feedback pasca-resolusi)
     //   - /api/portal/track/:ticketId (live tracker tiket)
     // Saat router mounted di /api/portal, req.originalUrl masih full path tapi req.path relative
@@ -158,15 +158,15 @@ async function customerAuth(req: Request, res: Response, next: NextFunction) {
     }
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return sendErr(res, "Unauthorized — login dulu", 401);
+      return sendErr(res, "Unauthorized - login dulu", 401);
     }
     const token = authHeader.replace("Bearer ", "").trim();
     const session = await storage.getCustomerPortalSessionByToken(token);
-    if (!session) return sendErr(res, "Session invalid — silakan login ulang", 401);
+    if (!session) return sendErr(res, "Session invalid - silakan login ulang", 401);
     if (session.revokedAt) return sendErr(res, "Session sudah di-logout", 401);
     if (new Date(session.expiresAt).getTime() < Date.now()) {
       await storage.revokeCustomerPortalSession(token);
-      return sendErr(res, "Session expired — login ulang", 401);
+      return sendErr(res, "Session expired - login ulang", 401);
     }
 
     const customer = await storage.getCustomer(session.customerId);
@@ -351,7 +351,7 @@ customerPortalRouter.post("/api/portal/auth/verify-otp", async (req: Request, re
 });
 
 /**
- * POST /api/portal/auth/logout — revoke session
+ * POST /api/portal/auth/logout - revoke session
  */
 customerPortalRouter.post("/api/portal/auth/logout", async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
@@ -366,14 +366,14 @@ customerPortalRouter.post("/api/portal/auth/logout", async (req: Request, res: R
 
 customerPortalRouter.use("/api/portal", customerAuth);
 
-/** GET /api/portal/me — info pelanggan + status PPPoE + ONT */
+/** GET /api/portal/me - info pelanggan + status PPPoE + ONT */
 customerPortalRouter.get("/api/portal/me", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
     const customer = await storage.getCustomer(pc.id);
     if (!customer) return sendErr(res, "Customer tidak ditemukan", 404);
 
-    // Live status PPPoE — parallel router queries (was sequential)
+    // Live status PPPoE - parallel router queries (was sequential)
     let sessionInfo: any = null;
     try {
       if (customer.pppoeUsername) {
@@ -408,7 +408,7 @@ customerPortalRouter.get("/api/portal/me", async (req: Request, res: Response) =
     } catch { /* skip session info */ }
     if (!sessionInfo) sessionInfo = { online: false };
 
-    // Live status ONT — targeted query ke GenieACS (jauh lebih cepat dari fetch all)
+    // Live status ONT - targeted query ke GenieACS (jauh lebih cepat dari fetch all)
     let ontInfo: any = null;
     try {
       const geCfg = await getGenieConfig();
@@ -453,7 +453,7 @@ customerPortalRouter.get("/api/portal/me", async (req: Request, res: Response) =
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/traffic — live + grafik 24h
+/** GET /api/portal/traffic - live + grafik 24h
  * Live traffic diambil dari /interface MikroTik (rxByte/txByte) bukan dari PPP active session
  * (session hanya expose limit-bytes bukan actual counter).
  * Interface name di MikroTik: "<pppoe-in-NAME>" format.
@@ -470,7 +470,7 @@ customerPortalRouter.get("/api/portal/traffic", async (req: Request, res: Respon
       uptime: s.uptimeSeconds,
     }));
 
-    // Live session + traffic counter — parallel PPP query across routers, then targeted interface query on match
+    // Live session + traffic counter - parallel PPP query across routers, then targeted interface query on match
     let live: any = null;
     const customer = await storage.getCustomer(pc.id);
     if (customer?.pppoeUsername) {
@@ -507,7 +507,7 @@ customerPortalRouter.get("/api/portal/traffic", async (req: Request, res: Respon
             bytesIn = Number(iface.rxByte ?? iface["rx-byte"] ?? 0);
             bytesOut = Number(iface.txByte ?? iface["tx-byte"] ?? 0);
           }
-        } catch { /* interface query fail — skip traffic counter */ }
+        } catch { /* interface query fail - skip traffic counter */ }
 
         live = {
           online: true,
@@ -527,9 +527,9 @@ customerPortalRouter.get("/api/portal/traffic", async (req: Request, res: Respon
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/traffic/live — lightweight realtime byte counter
+/** GET /api/portal/traffic/live - lightweight realtime byte counter
  *  Frontend polls tiap 3 detik untuk hitung delta = Mbps/Gbps live speed.
- *  Cuma return { bytesIn, bytesOut, ts, online } — tidak query snapshots.
+ *  Cuma return { bytesIn, bytesOut, ts, online } - tidak query snapshots.
  */
 customerPortalRouter.get("/api/portal/traffic/live", async (req: Request, res: Response) => {
   try {
@@ -585,7 +585,7 @@ customerPortalRouter.get("/api/portal/traffic/live", async (req: Request, res: R
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/billing — status tagihan */
+/** GET /api/portal/billing - status tagihan */
 customerPortalRouter.get("/api/portal/billing", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -604,7 +604,7 @@ customerPortalRouter.get("/api/portal/billing", async (req: Request, res: Respon
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/wifi/info — return current SSID + password untuk form edit */
+/** GET /api/portal/wifi/info - return current SSID + password untuk form edit */
 customerPortalRouter.get("/api/portal/wifi/info", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -618,7 +618,7 @@ customerPortalRouter.get("/api/portal/wifi/info", async (req: Request, res: Resp
     const lightDevice = await findDeviceForCustomer(geCfg, customer.pppoeUsername, (customer as any).ontSerialNumber);
     if (!lightDevice) return sendErr(res, "Perangkat ONT tidak ditemukan. Hubungi CS.", 404);
 
-    // Fetch full detail — punya wifiInterfaces lengkap (SSID, password, enabled, securityMode)
+    // Fetch full detail - punya wifiInterfaces lengkap (SSID, password, enabled, securityMode)
     const fullDevice: any = await genieGetDevice(geCfg, lightDevice.deviceId);
     if (!fullDevice) return sendErr(res, "Detail ONT tidak tersedia", 404);
 
@@ -655,7 +655,7 @@ customerPortalRouter.get("/api/portal/wifi/info", async (req: Request, res: Resp
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/wifi/password — ganti password WiFi via GenieACS
+/** POST /api/portal/wifi/password - ganti password WiFi via GenieACS
  * Body: { newPassword, wlanIndex? (default: semua interface usable = 2.4 + 5 GHz) }
  */
 customerPortalRouter.post("/api/portal/wifi/password", async (req: Request, res: Response) => {
@@ -719,7 +719,7 @@ customerPortalRouter.post("/api/portal/wifi/password", async (req: Request, res:
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/wifi/ssid — ganti nama WiFi
+/** POST /api/portal/wifi/ssid - ganti nama WiFi
  * Body: { newSsid, wlanIndex? (default: semua usable = 2.4+5 GHz) }
  */
 customerPortalRouter.post("/api/portal/wifi/ssid", async (req: Request, res: Response) => {
@@ -780,7 +780,7 @@ customerPortalRouter.post("/api/portal/wifi/ssid", async (req: Request, res: Res
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/ont/restart — reboot ONT (rate-limit 1x/jam) */
+/** POST /api/portal/ont/restart - reboot ONT (rate-limit 1x/jam) */
 customerPortalRouter.post("/api/portal/ont/restart", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -812,7 +812,7 @@ customerPortalRouter.post("/api/portal/ont/restart", async (req: Request, res: R
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/tickets — list tiket by customerId */
+/** GET /api/portal/tickets - list tiket by customerId */
 customerPortalRouter.get("/api/portal/tickets", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -821,7 +821,7 @@ customerPortalRouter.get("/api/portal/tickets", async (req: Request, res: Respon
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/tickets/:id/track — full tracking data untuk Customer Tracker page */
+/** GET /api/portal/tickets/:id/track - full tracking data untuk Customer Tracker page */
 customerPortalRouter.get("/api/portal/tickets/:id/track", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -847,7 +847,7 @@ customerPortalRouter.get("/api/portal/tickets/:id/track", async (req: Request, r
           name: u.name,
           username: u.username,
           phone: (u as any).phone ?? null,
-          rating: 4.8, // placeholder — bisa di-track per teknisi nanti
+          rating: 4.8, // placeholder - bisa di-track per teknisi nanti
         };
       }
     }
@@ -880,7 +880,7 @@ customerPortalRouter.get("/api/portal/tickets/:id/track", async (req: Request, r
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/tickets — lapor kendala baru */
+/** POST /api/portal/tickets - lapor kendala baru */
 customerPortalRouter.post("/api/portal/tickets", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -930,7 +930,7 @@ customerPortalRouter.post("/api/portal/tickets", async (req: Request, res: Respo
 });
 
 // ====================================================================
-// JABNET SAHABAT (v4.1.9) — referral-based tier + 5 level reward program
+// JABNET SAHABAT (v4.1.9) - referral-based tier + 5 level reward program
 // ====================================================================
 
 /** GET /api/portal/loyalty
@@ -952,30 +952,30 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
     const tier = fresh.sahabatTier ?? "pelanggan";
     const sahabatCode = fresh.sahabatCode ?? fresh.referralCode;
 
-    // Level ladder — sesuai program Sahabat Panduan
+    // Level ladder - sesuai program Sahabat Panduan
     const LADDER = [
       {
-        level: "new", label: "Pelanggan Biasa", emoji: "👋", threshold: 0,
+        level: "new", label: "Pelanggan Biasa", emoji: "", threshold: 0,
         color: "#64748b", reward: "Voucher Rp 50K per referral sukses",
       },
       {
-        level: "perunggu", label: "Sahabat Perunggu", emoji: "🥉", threshold: 5,
+        level: "perunggu", label: "Sahabat Perunggu", emoji: "", threshold: 5,
         color: "#b45309", reward: "Voucher Rp 200K + Speed Boost 2x/minggu",
       },
       {
-        level: "perak", label: "Sahabat Perak", emoji: "🥈", threshold: 10,
+        level: "perak", label: "Sahabat Perak", emoji: "", threshold: 10,
         color: "#94a3b8", reward: "Internet GRATIS 12 bulan + Sertifikat Mitra",
       },
       {
-        level: "emas", label: "Sahabat Emas", emoji: "🥇", threshold: 20,
+        level: "emas", label: "Sahabat Emas", emoji: "", threshold: 20,
         color: "#f59e0b", reward: "Internet GRATIS 24 bulan + Upgrade speed permanen",
       },
       {
-        level: "platinum", label: "Sahabat Platinum", emoji: "💎", threshold: 30,
+        level: "platinum", label: "Sahabat Platinum", emoji: "", threshold: 30,
         color: "#3b82f6", reward: "Internet GRATIS 36 bulan + Cash Rp 2jt + Ambassador",
       },
       {
-        level: "berlian", label: "Sahabat Berlian", emoji: "👑", threshold: 50,
+        level: "berlian", label: "Sahabat Berlian", emoji: "", threshold: 50,
         color: "#a855f7", reward: "Internet GRATIS 60 bulan + Cash Rp 5jt + Trainer",
       },
     ];
@@ -995,10 +995,10 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
 
     // Tenure info (secondary display)
     const TENURE_CFG: Record<string, any> = {
-      tetangga: { label: "< 1 tahun", emoji: "🌱" },
-      keluarga: { label: "1-3 tahun", emoji: "🏠" },
-      sahabat:  { label: "3-5 tahun", emoji: "⭐" },
-      abadi:    { label: "5+ tahun", emoji: "👑" },
+      tetangga: { label: "< 1 tahun", emoji: "" },
+      keluarga: { label: "1-3 tahun", emoji: "" },
+      sahabat:  { label: "3-5 tahun", emoji: "" },
+      abadi:    { label: "5+ tahun", emoji: "" },
     };
 
     sendOk(res, {
@@ -1028,7 +1028,7 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
         months: fresh.tenureMonths ?? 0,
         ...(TENURE_CFG[fresh.tenureBadge ?? "tetangga"] ?? TENURE_CFG.tetangga),
       },
-      // Referral code legacy field — untuk backward compat frontend lama
+      // Referral code legacy field - untuk backward compat frontend lama
       referral: {
         code: sahabatCode,
         totalInvited: referrals.length,
@@ -1050,7 +1050,7 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/loyalty/referrals — list referrals user sudah invite */
+/** GET /api/portal/loyalty/referrals - list referrals user sudah invite */
 customerPortalRouter.get("/api/portal/loyalty/referrals", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -1059,9 +1059,9 @@ customerPortalRouter.get("/api/portal/loyalty/referrals", async (req: Request, r
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-// ════════════════════════════════════════════════════════════
+// ============================================================
 //  POINTS & SPEED-ON-DEMAND (v4.2.2)
-// ════════════════════════════════════════════════════════════
+// ============================================================
 
 /**
  * Helper: load redemption catalog dari settings (JSON), fallback ke default.
@@ -1075,14 +1075,14 @@ async function loadSpeedBoostCatalog(): Promise<Array<{ key: string; label: stri
     } catch { /* fall through to default */ }
   }
   return [
-    { key: "boost_2x_6h",  label: "Speed 2× — 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6,  emoji: "⚡" },
-    { key: "boost_2x_24h", label: "Speed 2× — 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24, emoji: "🚀" },
-    { key: "boost_3x_6h",  label: "Speed 3× — 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6,  emoji: "💎" },
-    { key: "boost_3x_24h", label: "Speed 3× — 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24, emoji: "👑" },
+    { key: "boost_2x_6h",  label: "Speed 2× - 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6,  emoji: "" },
+    { key: "boost_2x_24h", label: "Speed 2× - 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24, emoji: "" },
+    { key: "boost_3x_6h",  label: "Speed 3× - 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6,  emoji: "" },
+    { key: "boost_3x_24h", label: "Speed 3× - 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24, emoji: "" },
   ];
 }
 
-/** GET /api/portal/points — saldo, lifetime, history (50 last), catalog, active redemption */
+/** GET /api/portal/points - saldo, lifetime, history (50 last), catalog, active redemption */
 customerPortalRouter.get("/api/portal/points", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -1120,7 +1120,7 @@ customerPortalRouter.get("/api/portal/points", async (req: Request, res: Respons
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/points/redeem — { rewardKey } → create pending redemption */
+/** POST /api/portal/points/redeem - { rewardKey } → create pending redemption */
 customerPortalRouter.post("/api/portal/points/redeem", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -1144,7 +1144,7 @@ customerPortalRouter.post("/api/portal/points/redeem", async (req: Request, res:
         durationHours: reward.durationHours,
       });
 
-      // ── Auto-activate via MikroTik kalau toggle ON ──
+      // -- Auto-activate via MikroTik kalau toggle ON --
       const { isBoostAutoActivateEnabled, applyBoost } = await import("./mikrotik-boost.js");
       const autoOn = await isBoostAutoActivateEnabled();
       let autoResult: any = null;
@@ -1172,8 +1172,8 @@ customerPortalRouter.post("/api/portal/points/redeem", async (req: Request, res:
                   rewardLabel: reward.label,
                   speedMultiplier: String(reward.speedMultiplier),
                   durationHours: String(reward.durationHours),
-                  startAt: updated?.startAt ? fmtTime(updated.startAt) : "—",
-                  endAt: updated?.endAt ? fmtTime(updated.endAt) : "—",
+                  startAt: updated?.startAt ? fmtTime(updated.startAt) : "-",
+                  endAt: updated?.endAt ? fmtTime(updated.endAt) : "-",
                   balance: String((loyalty as any).pointsBalance ?? 0),
                 });
               } catch (e: any) { console.warn("[Boost] WA after auto-activate:", e.message); }
@@ -1199,7 +1199,7 @@ customerPortalRouter.post("/api/portal/points/redeem", async (req: Request, res:
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/loyalty/leaderboard — top 10 Sahabat anonymized untuk portal */
+/** GET /api/portal/loyalty/leaderboard - top 10 Sahabat anonymized untuk portal */
 customerPortalRouter.get("/api/portal/loyalty/leaderboard", async (_req: Request, res: Response) => {
   try {
     const top = await storage.getLoyaltyLeaderboard(10, "referrals");
@@ -1221,7 +1221,7 @@ customerPortalRouter.get("/api/portal/loyalty/leaderboard", async (_req: Request
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** GET /api/portal/loyalty/campaign — active seasonal campaign (for portal banner) */
+/** GET /api/portal/loyalty/campaign - active seasonal campaign (for portal banner) */
 customerPortalRouter.get("/api/portal/loyalty/campaign", async (_req: Request, res: Response) => {
   try {
     const raw = await storage.getSetting("sahabat_seasonal_campaign");
@@ -1235,7 +1235,7 @@ customerPortalRouter.get("/api/portal/loyalty/campaign", async (_req: Request, r
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/loyalty/referrals — invite tetangga baru */
+/** POST /api/portal/loyalty/referrals - invite tetangga baru */
 customerPortalRouter.post("/api/portal/loyalty/referrals", async (req: Request, res: Response) => {
   try {
     const pc = req.portalCustomer!;
@@ -1250,7 +1250,7 @@ customerPortalRouter.post("/api/portal/loyalty/referrals", async (req: Request, 
       return sendErr(res, "Format nomor HP tidak valid (contoh: 081234567890)");
     }
 
-    // Check duplicate — sama phone + referrer yang sama + masih invited
+    // Check duplicate - sama phone + referrer yang sama + masih invited
     const existing = await storage.getReferralsByCustomer(pc.id);
     if (refereePhone && existing.some(r => r.refereePhone === refereePhone && r.status === "invited")) {
       return sendErr(res, "Nomor ini sudah kamu invite sebelumnya");
@@ -1274,7 +1274,7 @@ customerPortalRouter.post("/api/portal/loyalty/referrals", async (req: Request, 
         await sendLoyaltyNotification("sahabat_invite_recorded", customer.phone, {
           nama: customer.name,
           refereeName: refereeName || "tetangga",
-          refereePhoneLine: refereePhone ? `\n📱 ${refereePhone}` : "",
+          refereePhoneLine: refereePhone ? `\n ${refereePhone}` : "",
           sahabatCode: (loyalty as any).sahabatCode ?? loyalty.referralCode ?? "-",
           totalInvited: String(allRefs.length),
         });
@@ -1285,11 +1285,11 @@ customerPortalRouter.post("/api/portal/loyalty/referrals", async (req: Request, 
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.17: PUBLIC CSAT — customer respond tanpa login (pakai token)
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.17: PUBLIC CSAT - customer respond tanpa login (pakai token)
+// ===========================================================
 
-/** GET /api/portal/csat/:token — preview survey (siapa teknisi, ticket info) */
+/** GET /api/portal/csat/:token - preview survey (siapa teknisi, ticket info) */
 customerPortalRouter.get("/api/portal/csat/:token", async (req: Request, res: Response) => {
   try {
     const token = String(req.params.token);
@@ -1315,22 +1315,22 @@ customerPortalRouter.get("/api/portal/csat/:token", async (req: Request, res: Re
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-/** POST /api/portal/csat/:token — submit rating + feedback */
+/** POST /api/portal/csat/:token - submit rating + feedback */
 customerPortalRouter.post("/api/portal/csat/:token", async (req: Request, res: Response) => {
   try {
     const { rating, feedback } = req.body || {};
     if (!rating || rating < 1 || rating > 5) return sendErr(res, "Rating harus 1-5");
     const csat = await storage.submitCsatResponse(String(req.params.token), Number(rating), feedback);
     if (!csat) return sendErr(res, "Survey tidak ditemukan", 404);
-    sendOk(res, { rating: csat.rating, message: "Terima kasih atas feedback Anda 🙏" });
+    sendOk(res, { rating: csat.rating, message: "Terima kasih atas feedback Anda " });
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.17: PUBLIC TICKET TRACKER — customer cek progress tiket
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.17: PUBLIC TICKET TRACKER - customer cek progress tiket
+// ===========================================================
 
-/** GET /api/portal/track/:ticketId — public progress info (filter sensitive data) */
+/** GET /api/portal/track/:ticketId - public progress info (filter sensitive data) */
 customerPortalRouter.get("/api/portal/track/:ticketId", async (req: Request, res: Response) => {
   try {
     const ticketId = Number(req.params.ticketId);
@@ -1338,7 +1338,7 @@ customerPortalRouter.get("/api/portal/track/:ticketId", async (req: Request, res
     const ticket = await storage.getTicket(ticketId);
     if (!ticket) return sendErr(res, "Tiket tidak ditemukan", 404);
 
-    // Get team (basic info — exclude phone/email)
+    // Get team (basic info - exclude phone/email)
     const team = await storage.getTicketTeam(ticketId);
     const teamPublic = team.map(m => ({
       userName: (m as any).userName ?? null,

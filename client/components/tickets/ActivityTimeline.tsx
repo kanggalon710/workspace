@@ -1,5 +1,5 @@
 /**
- * v4.2.18 (B.1): ActivityTimeline — vertical timeline of ticket events
+ * v4.2.18 (B.1): ActivityTimeline - vertical timeline of ticket events
  * Fetches paginated dari /api/tickets/:id/activities
  *
  * Filter chip: All / Stages / Comments / Edits / Photos / Status

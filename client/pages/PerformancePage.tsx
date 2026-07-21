@@ -1,4 +1,4 @@
-/** Teamspace Fase 3 — Laporan Kinerja terpadu (FR-10xx + FR-1006 + §14):
+/** Teamspace Fase 3 - Laporan Kinerja terpadu (FR-10xx + FR-1006 + §14):
  * distribusi status (donut), on-time & cycle time, skor deterministik per anggota
  * (bintang 1-5), output ops (tiket/lead/collection/canvassing), Kemungkinan
  * Penghambat (> threshold hari), dan saran AI (Claude) dari angka aktual. */
@@ -145,7 +145,7 @@ export default function PerformancePage() {
       <PageHeader
         icon={BarChart3}
         title="Laporan Kinerja"
-        description="Tugas internal + output operasional dalam satu penilaian terukur — skor deterministik, AI hanya merangkum"
+        description="Tugas internal + output operasional dalam satu penilaian terukur - skor deterministik, AI hanya merangkum"
         accent="violet"
         onRefresh={() => refetch()}
         refreshing={isRefetching}
@@ -263,7 +263,7 @@ export default function PerformancePage() {
           </div>
 
           {/* Tabel per anggota */}
-          <PageSection title="Kinerja per Anggota" description={`Skor deterministik — bobot: on-time ${data.weights.onTime} · penyelesaian ${data.weights.completion} · check-in ${data.weights.checkin} · ops ${data.weights.ops} (konfigurasi: app_settings.teamspace_score_weights)`}>
+          <PageSection title="Kinerja per Anggota" description={`Skor deterministik - bobot: on-time ${data.weights.onTime} · penyelesaian ${data.weights.completion} · check-in ${data.weights.checkin} · ops ${data.weights.ops} (konfigurasi: app_settings.teamspace_score_weights)`}>
             {data.users.length === 0 ? (
               <EmptyState icon={BarChart3} size="sm" title="Belum ada aktivitas anggota" description="Skor muncul setelah ada tugas/check-in/output ops pada periode ini." />
             ) : (
@@ -273,7 +273,7 @@ export default function PerformancePage() {
 
           {/* Kemungkinan Penghambat (FR-1003) */}
           {data.blockers.length > 0 && (
-            <PageSection title="Kemungkinan Penghambat" description={`Tugas belum selesai berumur > ${data.threshold} hari — kandidat untuk ditinjau ulang`}>
+            <PageSection title="Kemungkinan Penghambat" description={`Tugas belum selesai berumur > ${data.threshold} hari - kandidat untuk ditinjau ulang`}>
               <Card padding="none" className="divide-y overflow-hidden">
                 {data.blockers.map((b) => (
                   <button

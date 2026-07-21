@@ -22,7 +22,7 @@ import { RECURRENCE_MODES } from "@shared/ruleRecurrence";
 import { LEAD_SOURCE_OPTIONS, LEAD_SOURCE_LABELS, canonicalLeadSource } from "@shared/leadSources";
 import { LEAD_ATTRS } from "@shared/leadIntake";
 
-// ── lead trigger labels (module-scope — shared by trigger Combobox + summary fn) ─
+// -- lead trigger labels (module-scope - shared by trigger Combobox + summary fn) -
 const LEAD_TRIGGER_LABELS: Record<string, string> = {
   lead_created: "Saat lead baru dibuat",
   lead_updated: "Saat lead diperbarui",
@@ -124,10 +124,10 @@ export function PipelineRulesDialog({
     }
   };
 
-  // ── helpers ──────────────────────────────────────────────────────────────────
+  // -- helpers ------------------------------------------------------------------
 
   const stageName = (id: number | null) => {
-    if (id == null) return "—";
+    if (id == null) return "-";
     return selfStages.find((s) => s.id === id)?.label ?? `Stage #${id}`;
   };
 
@@ -281,7 +281,7 @@ export function PipelineRulesDialog({
   const ruleList = rules ?? [];
   const editingRule = editingId != null ? ruleList.find((r) => r.id === editingId) : null;
 
-  // ── read-side helpers ────────────────────────────────────────────────────────
+  // -- read-side helpers --------------------------------------------------------
 
   const actionSummary = (r: RuleWithMaps) => {
     const acts = r.actions ?? [];
@@ -346,7 +346,7 @@ export function PipelineRulesDialog({
                       className={`group rounded-lg border bg-card shadow-elev-sm transition-shadow hover:shadow-elev-md ${editingId === r.id ? "border-primary/50 ring-1 ring-primary/40" : "border-border/60"}`}
                     >
                       <div className="flex items-start gap-3 px-3 py-2.5">
-                        {/* Rule description — click to expand */}
+                        {/* Rule description - click to expand */}
                         <button
                           type="button"
                           onClick={() => setExpandedId(expanded ? null : r.id)}
@@ -370,7 +370,7 @@ export function PipelineRulesDialog({
                           </span>
                         </button>
 
-                        {/* Enable toggle + edit + delete — must not trigger expand */}
+                        {/* Enable toggle + edit + delete - must not trigger expand */}
                         <div
                           className="flex items-center gap-1.5 shrink-0 mt-0.5"
                           onClick={(e) => e.stopPropagation()}
@@ -412,7 +412,7 @@ export function PipelineRulesDialog({
 
                           {(r.conditions?.groups?.length ?? 0) > 0 && (
                             <div>
-                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-1">Syarat — cocok jika salah satu grup terpenuhi</div>
+                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-1">Syarat - cocok jika salah satu grup terpenuhi</div>
                               <div className="space-y-1.5">
                                 {r.conditions!.groups.map((group, gi) => (
                                   <div key={gi}>
@@ -620,12 +620,12 @@ export function PipelineRulesDialog({
                   <FormField label="Batasan stage (opsional)" htmlFor="rule-scope-stage" hint="Kosongkan untuk berlaku di semua stage.">
                     <Combobox
                       options={[
-                        { value: "", label: "— semua stage —" },
+                        { value: "", label: "- semua stage -" },
                         ...selfStages.map((s) => ({ value: String(s.id), label: s.label })),
                       ]}
                       value={scopeStageId}
                       onChange={(v) => setScopeStageId(v)}
-                      placeholder="— semua stage —"
+                      placeholder="- semua stage -"
                       searchPlaceholder="Cari stage…"
                     />
                   </FormField>
@@ -720,12 +720,12 @@ export function PipelineRulesDialog({
                   <FormField label="Stage saat selesai/resolve (opsional)" htmlFor="rule-billing-resolve-stage" hint="Stage yang dituju saat pelanggan sudah tidak cocok filter. Kosongkan untuk abaikan.">
                     <Combobox
                       options={[
-                        { value: "", label: "— Abaikan / none —" },
+                        { value: "", label: "- Abaikan / none -" },
                         ...selfStages.map((s) => ({ value: String(s.id), label: s.label })),
                       ]}
                       value={billingResolveStageId}
                       onChange={(v) => setBillingResolveStageId(v)}
-                      placeholder="— Abaikan / none —"
+                      placeholder="- Abaikan / none -"
                       searchPlaceholder="Cari stage…"
                     />
                   </FormField>
@@ -819,12 +819,12 @@ export function PipelineRulesDialog({
                 >
                   <Combobox
                     options={[
-                      { value: "", label: "— Semua field —" },
+                      { value: "", label: "- Semua field -" },
                       ...sourceFields.map((f) => ({ value: String(f.id), label: f.label })),
                     ]}
                     value={fieldUpdatedFieldId}
                     onChange={(v) => setFieldUpdatedFieldId(v)}
-                    placeholder="— Semua field —"
+                    placeholder="- Semua field -"
                     searchPlaceholder="Cari field…"
                   />
                 </FormField>
@@ -994,7 +994,7 @@ export function PipelineRulesDialog({
                 </>
               )}
 
-              {/* Actions list — hidden for billing_sync + lead triggers (backend handles card creation internally) */}
+              {/* Actions list - hidden for billing_sync + lead triggers (backend handles card creation internally) */}
               {triggerType !== "billing_sync" && !triggerType.startsWith("lead_") && (
                 <>
                   <fieldset className="space-y-3 border-0 p-0 m-0">

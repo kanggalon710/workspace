@@ -1,4 +1,4 @@
-/** Pure Teamspace RBAC resolution — no React, no DB. Shared by client + server + tests.
+/** Pure Teamspace RBAC resolution - no React, no DB. Shared by client + server + tests.
  *  Resolusi 3 lapis (PRD-JABNET-TEAMSPACE.md §9):
  *    1. Admin (System-Admin/Administrator) → full.
  *    2. Role per-tim (teamMembers.role): manager → kelola tim + full board; member → kerja standar.
@@ -22,7 +22,7 @@ export function parseTeamRole(raw: string | null | undefined): TeamRole {
 const MEMBER_WRITE_CAPS: PipelineCapability[] = ["view", "cards", ...ACTION_CAPABILITIES];
 
 /** Resolusi kapabilitas seorang user atas pipeline MILIK TIM (pipelines.teamId != null).
- *  Berbeda dengan pipeline ops: keanggotaan tim adalah gerbang utama — pemegang izin
+ *  Berbeda dengan pipeline ops: keanggotaan tim adalah gerbang utama - pemegang izin
  *  `pipelines` ops yang bukan anggota TIDAK mendapat akses (isolasi dua arah, NFR-012). */
 export function resolveTeamPipelineCapabilities(args: {
   isAdmin: boolean;
@@ -35,7 +35,7 @@ export function resolveTeamPipelineCapabilities(args: {
 }): Set<PipelineCapability> {
   const { isAdmin, isCreator, teamRole, keyLevel } = args;
   if (isAdmin || isCreator) return new Set(ALL_PIPELINE_CAPABILITIES);
-  if (teamRole === null) return new Set();               // bukan anggota — tidak lihat apa pun
+  if (teamRole === null) return new Set();               // bukan anggota - tidak lihat apa pun
   if (teamRole === "manager") return new Set(ALL_PIPELINE_CAPABILITIES);
   if (keyLevel === "write") return new Set(MEMBER_WRITE_CAPS);
   if (keyLevel === "read") return new Set<PipelineCapability>(["view"]);
@@ -55,7 +55,7 @@ export function canCreateTeam(args: { isAdmin: boolean; teamsKeyLevel: PermKeyLe
 }
 
 /** Visibilitas kartu "Rahasia" (isPrivate=1): creator, assignee (primer/sekunder), follower, admin.
- *  Manager tim TIDAK otomatis lihat — konsisten dengan semantik Cicle (penerima eksplisit). */
+ *  Manager tim TIDAK otomatis lihat - konsisten dengan semantik Cicle (penerima eksplisit). */
 export function canSeePrivateCard(args: {
   isAdmin: boolean;
   userId: number;
@@ -69,7 +69,7 @@ export function canSeePrivateCard(args: {
   return args.followerIds.includes(args.userId);
 }
 
-// ── Move permission per list (FR-403) ──────────────────────────────────────
+// -- Move permission per list (FR-403) --------------------------------------
 
 export interface StageMovePermission {
   userIds: number[];
@@ -105,7 +105,7 @@ export function canMoveWithStage(args: {
   return args.roleId != null && args.movePermission.roleIds.includes(args.roleId);
 }
 
-// ── Enabled views ──────────────────────────────────────────────────────────
+// -- Enabled views ----------------------------------------------------------
 
 export const TEAM_VIEW_KEYS = ["summary", "tasks", "chat", "docs", "announcements", "schedule", "checkins"] as const;
 export type TeamViewKey = typeof TEAM_VIEW_KEYS[number];

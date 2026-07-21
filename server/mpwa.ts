@@ -1,6 +1,6 @@
 /**
  * MPWA Jabnet Gateway Adapter (v4.1.3)
- * ────────────────────────────────────
+ * ------------------------------------
  * Adapter untuk MPWA Multi Device di https://mpwa.jabnet.id.
  *
  * Format payload JABNET MPWA (LINK: lihat /MPWA_API.md di root proyek):
@@ -41,7 +41,7 @@ Kode OTP login: *{otp}*
 Berlaku {ttlMin} menit.
 Jangan share kode ini ke siapapun.`;
 
-/** Load config — Phase F: per-tenant via mitra_integrations, falls back to app_settings.
+/** Load config - Phase F: per-tenant via mitra_integrations, falls back to app_settings.
  *  Caller must be inside tenant context (workers wrap with withMitra). */
 export async function loadMpwaConfig(): Promise<MpwaConfig | null> {
   // Dev/staging hard-disable: env flag overrides DB setting. Cegah real customer kena pesan.
@@ -163,7 +163,7 @@ export async function sendOtpWhatsApp(
 /**
  * Kirim notifikasi loyalty (streak milestone, tenure upgrade, referral reward) ke customer.
  * Render template dari mpwa_templates → substitusi placeholder → kirim.
- * Fire-and-forget — tidak throw kalau MPWA belum configured.
+ * Fire-and-forget - tidak throw kalau MPWA belum configured.
  */
 export async function sendLoyaltyNotification(
   templateKey: string,
@@ -198,11 +198,11 @@ export async function sendLoyaltyNotification(
   return result;
 }
 
-/** Test MPWA connection — kirim pesan test ke nomor admin */
+/** Test MPWA connection - kirim pesan test ke nomor admin */
 export async function testMpwaConnection(testPhone: string): Promise<{ sent: boolean; error?: string; response?: any }> {
   const config = await loadMpwaConfig();
   if (!config) {
-    return { sent: false, error: "MPWA belum dikonfigurasi — isi api_key + sender_number di app_settings" };
+    return { sent: false, error: "MPWA belum dikonfigurasi - isi api_key + sender_number di app_settings" };
   }
   const message = `*JABNET FTTH - Test Integration*\nKoneksi MPWA berhasil.\nWaktu: ${new Date().toLocaleString("id-ID")}\nSender: ${config.senderNumber}`;
   return sendMpwaMessage(config, testPhone, message, "Sent via FTTH Tools v4.1.3");
@@ -237,8 +237,8 @@ export async function checkWhatsAppNumber(phone: string): Promise<{ valid: boole
   }
 }
 
-// ════════════════════════════════════════════════════════════════════
-//  v4.2.19: MPWA Broadcast — button + media message support
+// ====================================================================
+//  v4.2.19: MPWA Broadcast - button + media message support
 //
 //  Spec MPWA Jabnet send-button (POST https://mpwa.jabnet.id/public/send-button):
 //    Required: api_key, sender, number, message, button (array max 5), image (URL)
@@ -258,12 +258,12 @@ export async function checkWhatsAppNumber(phone: string): Promise<{ valid: boole
 //    3. **Kalau ada image tanpa buttons** → /send-media (existing path).
 //    4. **Text-only** → /send-message biasa.
 //
-//  Default endpoint: /public/send-button — bisa di-override via setting
+//  Default endpoint: /public/send-button - bisa di-override via setting
 //  mpwa_button_endpoint kalau gateway pakai path lain.
-// ════════════════════════════════════════════════════════════════════
+// ====================================================================
 
 /**
- * v4.2.22: MpwaButton — sesuai spec MPWA /send-button.
+ * v4.2.22: MpwaButton - sesuai spec MPWA /send-button.
  * Field utama: type + displayText + (url|phoneNumber|copyText|id).
  * Legacy alias (label, payload) tetap disupport untuk backward compat.
  */
@@ -282,35 +282,35 @@ export interface MpwaButton {
 
 const DEFAULT_BUTTON_ENDPOINT = "/public/send-button";
 
-/** Format buttons sebagai text yang dirender di body pesan — fallback untuk no-image button send */
+/** Format buttons sebagai text yang dirender di body pesan - fallback untuk no-image button send */
 export function renderButtonsAsText(buttons: MpwaButton[]): string {
   if (!buttons || buttons.length === 0) return "";
-  const lines: string[] = ["", "━━━━━━━━━━━━━━━"];
+  const lines: string[] = ["", "---------------"];
   for (const b of buttons) {
     const label = b.displayText ?? b.label ?? "";
-    let icon = "▫️";
+    let icon = "▫";
     let actionLine = "";
     if (b.type === "url") {
-      icon = "🔗";
+      icon = "";
       const u = b.url ?? b.payload;
       actionLine = u ? `\n   ${u}` : "";
     } else if (b.type === "call") {
-      icon = "📞";
+      icon = "";
       const ph = b.phoneNumber ?? b.payload;
       const phone = ph ? normalizePhone(ph) : "";
       actionLine = phone ? `\n   https://wa.me/${phone}` : "";
     } else if (b.type === "copy") {
-      icon = "📋";
+      icon = "";
       const c = b.copyText ?? b.payload;
       actionLine = c ? `\n   Kode: *${c}* _(copy manual)_` : "";
     } else {
-      icon = "▶️";
+      icon = "▶";
       const id = b.id ?? b.payload;
       actionLine = id ? `\n   _Balas: ${id}_` : "";
     }
     lines.push(`${icon} *${label}*${actionLine}`);
   }
-  lines.push("━━━━━━━━━━━━━━━");
+  lines.push("---------------");
   return lines.join("\n");
 }
 
@@ -342,7 +342,7 @@ export async function sendMpwaRichMessage(
   const hasMedia = !!payload.mediaUrl && !!payload.mediaType;
   const isImage = hasMedia && payload.mediaType === "image";
 
-  // ── 1. NATIVE BUTTON (buttons + image) ──
+  // -- 1. NATIVE BUTTON (buttons + image) --
   // MPWA /public/send-button mewajibkan image. Kalau template kasih image, kirim native button.
   if (hasButtons && isImage) {
     const endpointSetting = (await storage.getSetting("mpwa_button_endpoint")) ?? "";
@@ -373,7 +373,7 @@ export async function sendMpwaRichMessage(
     // Fallthrough → text mode dengan text-buttons appended
   }
 
-  // ── 2. MEDIA mode (image/video/document tanpa button) ──
+  // -- 2. MEDIA mode (image/video/document tanpa button) --
   if (hasMedia && !hasButtons) {
     const body: any = {
       api_key: config.apiKey,
@@ -389,7 +389,7 @@ export async function sendMpwaRichMessage(
     console.warn(`[MPWA] media send failed, fallback to text: ${result.error}`);
   }
 
-  // ── 3. TEXT mode (default, juga fallback dari button kalau gagal) ──
+  // -- 3. TEXT mode (default, juga fallback dari button kalau gagal) --
   //   - Append text-button kalau ada button (universal fallback)
   //   - Kalau ada image tapi button gagal, image-nya hilang tapi pesan tetap sampai
   const buttonText = hasButtons ? renderButtonsAsText(buttons) : "";

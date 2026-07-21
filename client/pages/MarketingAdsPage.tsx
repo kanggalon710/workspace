@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 interface OdpCluster {
   clusterName: string;
@@ -88,7 +88,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   ended:  { label: "Ended",   color: "bg-gray-100 text-gray-700 border-gray-200" },
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 function formatRp(n: number): string {
   return "Rp " + n.toLocaleString("id-ID");
@@ -111,7 +111,7 @@ function downloadJson(data: unknown, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-// ── Priority helpers ──────────────────────────────────────────────────────
+// -- Priority helpers ------------------------------------------------------
 
 const PRIORITY_STYLES: Record<string, string> = {
   high: "bg-green-100 text-green-700",
@@ -139,7 +139,7 @@ function utilisasiBarColor(pct: number): string {
   return "bg-red-500";
 }
 
-// ── Component ─────────────────────────────────────────────────────────────
+// -- Component -------------------------------------------------------------
 
 export default function MarketingAdsPage() {
   const qc = useQueryClient();
@@ -221,7 +221,7 @@ export default function MarketingAdsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
 
-      {/* ── Header ───────────────────────────────────────────────────────── */}
+      {/* -- Header --------------------------------------------------------- */}
       <div>
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-lg bg-orange-100">
@@ -236,7 +236,7 @@ export default function MarketingAdsPage() {
         </div>
       </div>
 
-      {/* ── Section A: Performa & KPI ─────────────────────────────────── */}
+      {/* -- Section A: Performa & KPI ----------------------------------- */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Performa &amp; KPI</h2>
 
@@ -327,13 +327,13 @@ export default function MarketingAdsPage() {
         ) : null}
       </div>
 
-      {/* ── Section A2: Campaign Tracker ───────────────────────────────── */}
+      {/* -- Section A2: Campaign Tracker --------------------------------- */}
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <h2 className="text-lg font-semibold">Campaign Tracker</h2>
             <p className="text-xs text-muted-foreground">
-              Data campaign Meta / TikTok / Google Ads — bisa di-input manual atau push otomatis via Public API.
+              Data campaign Meta / TikTok / Google Ads - bisa di-input manual atau push otomatis via Public API.
             </p>
           </div>
           <div className="flex gap-2">
@@ -406,14 +406,14 @@ export default function MarketingAdsPage() {
                                   {freshSync && <span className="text-green-600">● fresh</span>}
                                 </div>
                               </td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.spendTotal ? formatRp(c.spendTotal) : "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.impressions ? c.impressions.toLocaleString("id-ID") : "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.clicks ? c.clicks.toLocaleString("id-ID") : "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.ctr != null ? `${c.ctr}%` : "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.leadsFromAd ?? "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.cpl ? formatRp(c.cpl) : "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.conversions ?? "—"}</td>
-                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.roas != null ? `${c.roas}x` : "—"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.spendTotal ? formatRp(c.spendTotal) : "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.impressions ? c.impressions.toLocaleString("id-ID") : "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.clicks ? c.clicks.toLocaleString("id-ID") : "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.ctr != null ? `${c.ctr}%` : "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.leadsFromAd ?? "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.cpl ? formatRp(c.cpl) : "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.conversions ?? "-"}</td>
+                              <td className="py-2 px-3 text-right font-mono tabular-nums">{c.roas != null ? `${c.roas}x` : "-"}</td>
                               <td className="py-2 px-3">
                                 <Badge variant="outline" className={`text-[10px] ${st.color}`}>{st.label}</Badge>
                               </td>
@@ -472,9 +472,9 @@ export default function MarketingAdsPage() {
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div><div className="text-[10px] text-muted-foreground uppercase">Spend</div><div className="font-mono tabular-nums">{c.spendTotal ? formatRp(c.spendTotal) : "—"}</div></div>
-                        <div><div className="text-[10px] text-muted-foreground uppercase">Leads</div><div className="font-mono tabular-nums">{c.leadsFromAd ?? "—"}</div></div>
-                        <div><div className="text-[10px] text-muted-foreground uppercase">CPL</div><div className="font-mono tabular-nums">{c.cpl ? formatRp(c.cpl) : "—"}</div></div>
+                        <div><div className="text-[10px] text-muted-foreground uppercase">Spend</div><div className="font-mono tabular-nums">{c.spendTotal ? formatRp(c.spendTotal) : "-"}</div></div>
+                        <div><div className="text-[10px] text-muted-foreground uppercase">Leads</div><div className="font-mono tabular-nums">{c.leadsFromAd ?? "-"}</div></div>
+                        <div><div className="text-[10px] text-muted-foreground uppercase">CPL</div><div className="font-mono tabular-nums">{c.cpl ? formatRp(c.cpl) : "-"}</div></div>
                       </div>
                     </CardContent>
                   </Card>
@@ -501,7 +501,7 @@ export default function MarketingAdsPage() {
         </Card>
       </div>
 
-      {/* ── Section B: Audience Export ─────────────────────────────────── */}
+      {/* -- Section B: Audience Export ----------------------------------- */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Audience Export</h2>
         <Card>
@@ -566,7 +566,7 @@ export default function MarketingAdsPage() {
         </Card>
       </div>
 
-      {/* ── Section C: ODP Cluster Targeting ──────────────────────────── */}
+      {/* -- Section C: ODP Cluster Targeting ---------------------------- */}
       <div>
         <h2 className="text-lg font-semibold mb-3">ODP Cluster Targeting</h2>
 
@@ -651,7 +651,7 @@ export default function MarketingAdsPage() {
         )}
       </div>
 
-      {/* ── Section D: Lead Capture Webhook ───────────────────────────── */}
+      {/* -- Section D: Lead Capture Webhook ----------------------------- */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Lead Capture Webhook</h2>
         <Card>
@@ -756,7 +756,7 @@ export default function MarketingAdsPage() {
         </Card>
       </div>
 
-      {/* ── Campaign Dialog (create/edit) ───────────────────────────── */}
+      {/* -- Campaign Dialog (create/edit) ----------------------------- */}
       <Dialog open={!!campaignDialog} onOpenChange={(o) => { if (!o) setCampaignDialog(null); }}>
         <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -944,7 +944,7 @@ export default function MarketingAdsPage() {
   );
 }
 
-// ── Cluster Row Sub-component ─────────────────────────────────────────────
+// -- Cluster Row Sub-component ---------------------------------------------
 
 function ClusterRow({
   cluster,

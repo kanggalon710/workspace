@@ -1,4 +1,4 @@
-/** MarkdownField — editor teks ringan dengan toolbar (bold/italic/list/heading/link)
+/** MarkdownField - editor teks ringan dengan toolbar (bold/italic/list/heading/link)
  *  + toggle Preview, tanpa dependency berat (Tiptap). Menyimpan via onSave saat blur
  *  atau saat berpindah ke Preview. Menjawab BUG-002: deskripsi kartu tugas butuh
  *  rich text terstruktur (heading, list, bold, link) untuk instruksi kerja. */
@@ -77,7 +77,7 @@ export function MarkdownField({ value, disabled, placeholder, rows = 4, onSave }
           ref={ref}
           value={draft}
           disabled={disabled}
-          placeholder={placeholder ?? "Deskripsi / catatan — dukung markdown: **tebal** *miring* `kode` # judul - daftar [teks](https://…)"}
+          placeholder={placeholder ?? "Deskripsi / catatan - dukung markdown: **tebal** *miring* `kode` # judul - daftar [teks](https://…)"}
           rows={rows}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={save}

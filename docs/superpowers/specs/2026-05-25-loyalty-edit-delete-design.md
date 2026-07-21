@@ -1,40 +1,40 @@
-# Design — /loyalty Edit & Delete
+# Design - /loyalty Edit & Delete
 
-> **Status**: Spec — pending implementation plan
+> **Status**: Spec - pending implementation plan
 > **Owner**: hidayatulloh710@gmail.com
 > **Created**: 2026-05-25
 > **Scope**: `LoyaltyAdminPage` (referrals, discounts, sahabat profile, point redemptions)
 
 ## Context
 
-Halaman `/loyalty` (LoyaltyAdminPage.tsx, 3015 baris) saat ini punya sebagian besar action lifecycle (apply/cancel discount, verify/reject/cancel redemption, upgrade tier sahabat, edit campaign/budget/expiry config) — tapi beberapa surface masih **read-only** atau action-nya tidak lengkap untuk koreksi/cleanup data:
+Halaman `/loyalty` (LoyaltyAdminPage.tsx, 3015 baris) saat ini punya sebagian besar action lifecycle (apply/cancel discount, verify/reject/cancel redemption, upgrade tier sahabat, edit campaign/budget/expiry config) - tapi beberapa surface masih **read-only** atau action-nya tidak lengkap untuk koreksi/cleanup data:
 
-- **Referrals (manual entry)** — bisa create + link, tidak ada edit (typo nama/HP) atau delete (duplicate/salah).
-- **Discount rows** — bisa apply/cancel (lifecycle), tidak bisa edit nominal/source/reason atau hapus row permanen.
-- **Sahabat profile** — view-only di drawer, tidak bisa adjust `pointsBalance`, override `sahabatLevel`, rename `sahabatCode`, atau freeze akun.
-- **Redemption records** — bisa verify/reject/cancel/force-expire, tidak bisa edit (sebelum verify) atau hapus row salah input.
+- **Referrals (manual entry)** - bisa create + link, tidak ada edit (typo nama/HP) atau delete (duplicate/salah).
+- **Discount rows** - bisa apply/cancel (lifecycle), tidak bisa edit nominal/source/reason atau hapus row permanen.
+- **Sahabat profile** - view-only di drawer, tidak bisa adjust `pointsBalance`, override `sahabatLevel`, rename `sahabatCode`, atau freeze akun.
+- **Redemption records** - bisa verify/reject/cancel/force-expire, tidak bisa edit (sebelum verify) atau hapus row salah input.
 
 Outcome: Admin yang punya permission `loyalty_admin` write bisa edit + soft-delete row di 4 surface ini, dengan state guard untuk mencegah hapus data finansial yang sudah jadi (applied discount, active redemption). Semua action tercatat di `audit_logs`.
 
 ## Konsistensi dengan Memory
 
-- [[feedback-credentials-in-db]] — tidak terdampak, ini bukan credential.
-- [[project-multitenant-mitra]] — semua tabel sudah punya `mitra_id`; tenant isolation existing tetap berlaku.
+- [[feedback-credentials-in-db]] - tidak terdampak, ini bukan credential.
+- [[project-multitenant-mitra]] - semua tabel sudah punya `mitra_id`; tenant isolation existing tetap berlaku.
 - Pattern konsisten dengan endpoint existing di `routes.ts:3787-4602`: read pakai `hasPermission`, write pakai `hasWritePermission`, semua write panggil `logAudit()`.
 
 ## Approach
 
 **Approach A (Recommended)**: Per-tabel `deleted_at TIMESTAMP NULL` + `is_frozen` flag di `customer_loyalty`. Semua list endpoint filter `WHERE deleted_at IS NULL`. Restore via SQL admin. Minimal churn.
 
-**Approach B (rejected)**: Generic `loyalty_deletions` audit table — restore lebih ribet, query lebih banyak.
+**Approach B (rejected)**: Generic `loyalty_deletions` audit table - restore lebih ribet, query lebih banyak.
 
-**Approach C (rejected)**: Pakai `status='deleted'` — tidak konsisten karena `customer_loyalty` tidak punya status, dan beberapa tabel status field-nya sudah dipakai untuk lifecycle.
+**Approach C (rejected)**: Pakai `status='deleted'` - tidak konsisten karena `customer_loyalty` tidak punya status, dan beberapa tabel status field-nya sudah dipakai untuk lifecycle.
 
 Implementasi dengan Approach A.
 
 ## Schema Changes
 
-`server/storage.ts` startup ALTER block (idempotent — cek `information_schema.columns` sebelum ALTER):
+`server/storage.ts` startup ALTER block (idempotent - cek `information_schema.columns` sebelum ALTER):
 
 ```sql
 ALTER TABLE customer_referrals    ADD COLUMN deleted_at TIMESTAMP NULL;
@@ -48,7 +48,7 @@ ALTER TABLE customer_loyalty      ADD COLUMN frozen_by INT NULL;
 
 Drizzle `shared/schema.ts` update: tambahkan kolom-kolom ini ke definisi `customerReferrals`, `customerDiscounts`, `pointRedemptions`, `customerLoyalty`. Generated types langsung tersedia di `Storage` methods.
 
-Index: tidak perlu — query soft-delete check pakai `WHERE deleted_at IS NULL` di list yang sudah ada index (primary key + foreign key existing cukup).
+Index: tidak perlu - query soft-delete check pakai `WHERE deleted_at IS NULL` di list yang sudah ada index (primary key + foreign key existing cukup).
 
 ## Backend Endpoints
 
@@ -74,7 +74,7 @@ Existing `getCustomerReferrals()` di-update: filter `WHERE deleted_at IS NULL` k
 | `PUT` | `/api/loyalty/admin/discounts/:id` | `{ discountType?, discountValue?, source?, reason? }` | Hanya `status === "pending"`; lain 409 | Audit `UPDATE` `loyalty_discount` |
 | `DELETE` | `/api/loyalty/admin/discounts/:id` | `{ reason? }` | `status === "applied"` → 409 ("uang sudah keluar"). Lain (pending/cancelled/expired) OK. | Soft delete; audit `DELETE` `loyalty_discount` dengan `statusAtDelete` |
 
-Existing `cancel` endpoint (`POST .../discounts/:id/cancel`) **tetap dipertahankan** — itu lifecycle transition (pending → cancelled, masih visible di history). `delete` baru menghapus dari UI list.
+Existing `cancel` endpoint (`POST .../discounts/:id/cancel`) **tetap dipertahankan** - itu lifecycle transition (pending → cancelled, masih visible di history). `delete` baru menghapus dari UI list.
 
 Storage methods:
 - `updateCustomerDiscount(id: number, patch)`
@@ -108,11 +108,11 @@ Storage methods:
 Existing `POST /api/loyalty/admin/sahabat/:customerId/tier` **tidak diubah**.
 
 **Frozen guard**: tambah cek `if (loyalty.isFrozen) return` di flow reward issuance:
-- `server/storage.ts` `processReferralReward()` (atau equivalent — confirm lokasi exact saat implementation)
+- `server/storage.ts` `processReferralReward()` (atau equivalent - confirm lokasi exact saat implementation)
 - Milestone reward issuance
 - Streak adjust auto-issue
 
-Saat frozen aktif, referral inbound tetap di-record (tabel `customer_referrals`), tapi tidak generate voucher/credit/MPWA notification. Saat unfreeze, **tidak ada auto-replay** — admin manual issue reward kalau perlu.
+Saat frozen aktif, referral inbound tetap di-record (tabel `customer_referrals`), tapi tidak generate voucher/credit/MPWA notification. Saat unfreeze, **tidak ada auto-replay** - admin manual issue reward kalau perlu.
 
 ### Backreference: sahabat code rename
 
@@ -144,10 +144,10 @@ Semua control hanya muncul kalau `canEdit = canWrite("loyalty_admin")` (variable
 
 Tambah section **"Admin Actions"** (collapsed by default, hanya render saat `canEdit`). Berisi 4 sub-form (accordion):
 
-1. **Adjust Points** — input number `delta` (boleh negatif), textarea `reason` (required), preview "Balance: X → Y". Warning kuning kalau `|delta| > 10000`.
-2. **Set Level** — select dropdown 7 option, current level tertera, textarea reason.
-3. **Edit Sahabat Code** — input dengan regex hint `SHB-XXX-NNN`, validation client-side, AlertDialog confirm.
-4. **Freeze/Unfreeze** — toggle switch + textarea reason (required saat freeze). Banner kuning kalau frozen: "Akun di-freeze {date} oleh {user}: {reason}".
+1. **Adjust Points** - input number `delta` (boleh negatif), textarea `reason` (required), preview "Balance: X → Y". Warning kuning kalau `|delta| > 10000`.
+2. **Set Level** - select dropdown 7 option, current level tertera, textarea reason.
+3. **Edit Sahabat Code** - input dengan regex hint `SHB-XXX-NNN`, validation client-side, AlertDialog confirm.
+4. **Freeze/Unfreeze** - toggle switch + textarea reason (required saat freeze). Banner kuning kalau frozen: "Akun di-freeze {date} oleh {user}: {reason}".
 
 ### Filter "Tampilkan terhapus"
 
@@ -168,7 +168,7 @@ Tambah toggle pill di tab **Diskon**, **Referral**, **Redemption**: "Tampilkan t
 | `client/components/sahabat/SahabatDetailDrawer.tsx` | Tambah "Admin Actions" accordion 4 form |
 
 **Yang tidak diubah:**
-- Existing apply/cancel/verify/reject/cancel-redemption/force-expire endpoint — backward compatible
+- Existing apply/cancel/verify/reject/cancel-redemption/force-expire endpoint - backward compatible
 - `tier` endpoint existing
 - Permission key `loyalty_admin` (tidak tambah key baru)
 
@@ -229,12 +229,12 @@ Tambah toggle pill di tab **Diskon**, **Referral**, **Redemption**: "Tampilkan t
 
 ## Risks
 
-1. **Edit discount value retroaktif** — abuse potential untuk inflate reward. Mitigasi: edit hanya `pending` status, audit log diff lengkap.
-2. **Points adjust unbounded** — admin bisa kasih juta poin. Mitigasi: warning UI kalau `\|delta\| > 10000`, audit log + reason required.
-3. **Sahabat code rename backreference** — kalau ada FK by string (bukan customer_id int) di tabel lain, rename perlu UPDATE turun. **Action item**: confirm di implementation phase scan `referrer_sahabat_code` / similar columns di `shared/schema.ts`.
-4. **Frozen guard coverage** — perlu semua reward issuance flow cek `isFrozen`. Scan: `processReferralReward`, milestone reward, streak adjust auto-issue. Missed branch = silent reward despite freeze.
-5. **Race condition points adjust** — concurrent adjust dari 2 admin. Mitigasi: atomic `UPDATE customer_loyalty SET pointsBalance = pointsBalance + ? WHERE id = ? AND pointsBalance + ? >= 0`. Kalau affectedRows=0 → 409.
-6. **Soft-delete DB growth** — table tumbuh terus karena tidak ada hard purge. Defer ke backlog kalau jadi masalah; estimate growth rate untuk decide perlu auto-purge job di masa depan.
+1. **Edit discount value retroaktif** - abuse potential untuk inflate reward. Mitigasi: edit hanya `pending` status, audit log diff lengkap.
+2. **Points adjust unbounded** - admin bisa kasih juta poin. Mitigasi: warning UI kalau `\|delta\| > 10000`, audit log + reason required.
+3. **Sahabat code rename backreference** - kalau ada FK by string (bukan customer_id int) di tabel lain, rename perlu UPDATE turun. **Action item**: confirm di implementation phase scan `referrer_sahabat_code` / similar columns di `shared/schema.ts`.
+4. **Frozen guard coverage** - perlu semua reward issuance flow cek `isFrozen`. Scan: `processReferralReward`, milestone reward, streak adjust auto-issue. Missed branch = silent reward despite freeze.
+5. **Race condition points adjust** - concurrent adjust dari 2 admin. Mitigasi: atomic `UPDATE customer_loyalty SET pointsBalance = pointsBalance + ? WHERE id = ? AND pointsBalance + ? >= 0`. Kalau affectedRows=0 → 409.
+6. **Soft-delete DB growth** - table tumbuh terus karena tidak ada hard purge. Defer ke backlog kalau jadi masalah; estimate growth rate untuk decide perlu auto-purge job di masa depan.
 
 ## Out of Scope
 
@@ -242,5 +242,5 @@ Tambah toggle pill di tab **Diskon**, **Referral**, **Redemption**: "Tampilkan t
 - Bulk delete / bulk freeze.
 - Email/WA notif ke customer saat di-freeze (audit log cukup untuk internal).
 - Auto-purge `deleted_at < NOW() - INTERVAL 365 DAY` (defer).
-- Permission split (loyalty_destructive separate key) — pakai existing loyalty_admin write.
+- Permission split (loyalty_destructive separate key) - pakai existing loyalty_admin write.
 - Edit `tier` via UI (sudah ada endpoint existing).

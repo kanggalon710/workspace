@@ -28,7 +28,7 @@ const spacingMap = {
 };
 
 /**
- * PageContainer — standard wrapper for page content.
+ * PageContainer - standard wrapper for page content.
  * Enforces consistent max-width, spacing, and centering across all pages.
  *
  * @example
@@ -69,7 +69,7 @@ interface PageSectionProps {
 }
 
 /**
- * PageSection — logical section within a page with optional heading.
+ * PageSection - logical section within a page with optional heading.
  * Use for grouping related cards/content.
  */
 export function PageSection({

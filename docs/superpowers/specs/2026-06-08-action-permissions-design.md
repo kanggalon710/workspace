@@ -1,4 +1,4 @@
-# Spec — Action-level Permissions (Phase 3b-ii)
+# Spec - Action-level Permissions (Phase 3b-ii)
 
 > Date: 2026-06-08 · Mitra-scoped · Second sub-feature of Phase 3b (Advanced Permissions).
 
@@ -11,11 +11,11 @@ Split fine-grained card actions out of the coarse `cards` capability so a role c
 ## Decisions (confirmed)
 
 1. **Action set:** `comment`, `assign`, `export`, `import`. (close/reopen have no generic-pipeline mapping;
-   "upload" = comment photo; followers stay under `cards` — all out of scope.)
+   "upload" = comment photo; followers stay under `cards` - all out of scope.)
 2. **Model:** the four are capabilities **implied by `cards`** (superset). They are meaningful for roles
    that do NOT have `cards` (e.g. view + comment). Legacy `edit`/`cards` grants keep every action.
 
-## 1. Capability model — `shared/pipelineCapabilities.ts`
+## 1. Capability model - `shared/pipelineCapabilities.ts`
 
 - Extend the union: `PipelineCapability = ... | "comment" | "assign" | "export" | "import"`.
 - Add the four to `ALL_PIPELINE_CAPABILITIES` and `PIPELINE_CAPABILITY_LABELS`
@@ -36,7 +36,7 @@ Split fine-grained card actions out of the coarse `cards` capability so a role c
 - Import `POST /api/pipelines/:id/cards/import` → `requirePipelineCapability(..., "import")`.
 - Comment `POST /api/pipelines/cards/:cardId/comments` and the comment delete route →
   `requirePipelineCapability(..., "comment")`.
-- **Assign** — `PATCH /api/pipelines/cards/:cardId`: compute the body's changed keys; if the body changes
+- **Assign** - `PATCH /api/pipelines/cards/:cardId`: compute the body's changed keys; if the body changes
   **only** `assigneeId` → require `"assign"`; otherwise require `"cards"` (current behavior). Because
   `cards` expands to include `assign`, a `cards` role passes either branch; an assign-only role can only
   do assignee-only updates.
@@ -45,13 +45,13 @@ Split fine-grained card actions out of the coarse `cards` capability so a role c
 
 ## 3. Frontend
 
-- **`PipelineAccessDialog`** — the role × capability grid iterates `ALL_PIPELINE_CAPABILITIES`, so the four
+- **`PipelineAccessDialog`** - the role × capability grid iterates `ALL_PIPELINE_CAPABILITIES`, so the four
   new actions appear automatically. Add a one-line hint that the action capabilities apply to roles
   without full "Kelola Kartu".
-- **`PipelineBoardPage`** — gate the Export button by `can("export")` and the Import button by
+- **`PipelineBoardPage`** - gate the Export button by `can("export")` and the Import button by
   `can("import")` (previously both used `can("cards")`; since `cards` expands to the actions, full-card
   roles are unaffected).
-- **`CardDetailModal`** — accept the resolved capability list (passed from the board, which already has
+- **`CardDetailModal`** - accept the resolved capability list (passed from the board, which already has
   `pipeline.capabilities`); hide/disable the comment composer unless `comment`; disable the assignee
   selector unless `assign`. (Server enforces regardless; this is UX.)
 

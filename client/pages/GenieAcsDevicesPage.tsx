@@ -229,7 +229,7 @@ export default function GenieAcsDevicesPage() {
   const [wifiEditSsid, setWifiEditSsid] = useState("");
   const [wifiEditPassword, setWifiEditPassword] = useState("");
 
-  // ── Settings check ──────────────────────────────────────────────────────
+  // -- Settings check ------------------------------------------------------
   const { data: settings, isLoading: settingsLoading } = useQuery<SettingItem[]>({
     queryKey: ["/api/settings", "genieacs"],
     queryFn: () => api.get<SettingItem[]>("/settings?category=genieacs"),
@@ -240,7 +240,7 @@ export default function GenieAcsDevicesPage() {
     return settings.some((s) => s.key === "genieacs_host" && s.value?.trim());
   }, [settings]);
 
-  // ── Stats ───────────────────────────────────────────────────────────────
+  // -- Stats ---------------------------------------------------------------
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<DeviceStats>({
     queryKey: ["/api/genieacs/stats"],
     queryFn: () => api.get<DeviceStats>("/genieacs/stats"),
@@ -249,7 +249,7 @@ export default function GenieAcsDevicesPage() {
     retry: false,
   });
 
-  // ── Device list ─────────────────────────────────────────────────────────
+  // -- Device list ---------------------------------------------------------
   // v4.2.9: Kalau ada search query → kirim ke backend dengan limit besar (filter di GenieACS),
   //         tanpa search → paginate seperti biasa (50/page).
   const isSearching = !!search.trim();
@@ -273,14 +273,14 @@ export default function GenieAcsDevicesPage() {
   });
 
   // Pesan error gabungan (device list diprioritaskan). Ditampilkan apa adanya supaya sebab
-  // sebenarnya (salah port/host, auth, timeout) kelihatan — bukan empty-state yang menyesatkan.
+  // sebenarnya (salah port/host, auth, timeout) kelihatan - bukan empty-state yang menyesatkan.
   const genieErrorMsg = devicesIsError
     ? ((devicesError as any)?.message as string | undefined)
     : statsError
       ? ((statsError as any)?.message as string | undefined)
       : undefined;
 
-  // ── Detail device ───────────────────────────────────────────────────────
+  // -- Detail device -------------------------------------------------------
   const {
     data: detailDevice,
     isLoading: detailLoading,
@@ -290,7 +290,7 @@ export default function GenieAcsDevicesPage() {
     enabled: !!detailId,
   });
 
-  // ── Customers for PPPoE matching ────────────────────────────────────────
+  // -- Customers for PPPoE matching ----------------------------------------
   const { data: customers } = useQuery<any[]>({
     queryKey: ["customers"],
     queryFn: () => api.get<any[]>("/customers"),
@@ -314,7 +314,7 @@ export default function GenieAcsDevicesPage() {
     return map;
   }, [customers]);
 
-  // ── Filtered devices (client-side) ──────────────────────────────────────
+  // -- Filtered devices (client-side) --------------------------------------
   const filteredDevices = useMemo(() => {
     if (!devices) return [];
     let list = devices;
@@ -346,7 +346,7 @@ export default function GenieAcsDevicesPage() {
     return list;
   }, [devices, search, statusFilter]);
 
-  // ── Mutations ───────────────────────────────────────────────────────────
+  // -- Mutations -----------------------------------------------------------
   const summonMut = useMutation({
     mutationFn: (id: string) =>
       api.post(`/genieacs/devices/${encodeURIComponent(id)}/summon`, {}),
@@ -450,14 +450,14 @@ export default function GenieAcsDevicesPage() {
     onError: (e: any) => toast.error(e.message || "Gagal mengupdate WAN"),
   });
 
-  // ── Refresh all queries ─────────────────────────────────────────────────
+  // -- Refresh all queries -------------------------------------------------
   function handleRefreshAll() {
     queryClient.invalidateQueries({ queryKey: ["/api/genieacs/stats"] });
     queryClient.invalidateQueries({ queryKey: ["/api/genieacs/devices"] });
     toast.success("Memuat ulang data...");
   }
 
-  // ── Loading gate ────────────────────────────────────────────────────────
+  // -- Loading gate --------------------------------------------------------
   if (settingsLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -466,7 +466,7 @@ export default function GenieAcsDevicesPage() {
     );
   }
 
-  // ── Not configured ──────────────────────────────────────────────────────
+  // -- Not configured ------------------------------------------------------
   if (!isConfigured) {
     return (
       <div className="space-y-6">
@@ -492,7 +492,7 @@ export default function GenieAcsDevicesPage() {
     );
   }
 
-  // ── Detail modal matched customer ───────────────────────────────────────
+  // -- Detail modal matched customer ---------------------------------------
   const detailCustomer = detailDevice?.pppoeUsername
     ? customerByPppoe.get(detailDevice.pppoeUsername)
     : undefined;
@@ -505,7 +505,7 @@ export default function GenieAcsDevicesPage() {
         refreshing={devicesFetching || statsLoading}
       />
 
-      {/* Banner error koneksi GenieACS — tampilkan sebab asli, bukan list kosong palsu */}
+      {/* Banner error koneksi GenieACS - tampilkan sebab asli, bukan list kosong palsu */}
       {genieErrorMsg && (
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 p-4">
           <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
@@ -515,7 +515,7 @@ export default function GenieAcsDevicesPage() {
             <p className="text-xs text-red-600/80 dark:text-red-400/80">
               Cek konfigurasi di{" "}
               <a href="/integrations" className="underline font-medium">Integrasi API</a>
-              {" "}— pastikan host/port mengarah ke NBI GenieACS (default port 7557, bukan port UI).
+              {" "}- pastikan host/port mengarah ke NBI GenieACS (default port 7557, bukan port UI).
             </p>
           </div>
         </div>
@@ -628,7 +628,7 @@ export default function GenieAcsDevicesPage() {
                             <span className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${d.status === "online" ? "bg-green-500" : "bg-red-500"}`} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <p className="font-mono font-semibold text-xs truncate">{d.serialNumber || "—"}</p>
+                                <p className="font-mono font-semibold text-xs truncate">{d.serialNumber || "-"}</p>
                                 {((d.registeredAt && (Date.now() - new Date(d.registeredAt).getTime()) < 7 * 86400000) ||
                                   (d.lastBootstrap && (Date.now() - new Date(d.lastBootstrap).getTime()) < 3 * 86400000)) && (
                                   <Badge className="bg-blue-500 text-white text-[8px] px-1 py-0 h-4 shrink-0">Baru</Badge>
@@ -649,7 +649,7 @@ export default function GenieAcsDevicesPage() {
                         {/* Manufacturer / Model */}
                         <td className="px-3 py-2.5 hidden md:table-cell">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs truncate max-w-[80px]">{d.manufacturer || "—"}</span>
+                            <span className="text-xs truncate max-w-[80px]">{d.manufacturer || "-"}</span>
                             {d.productClass && <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{d.productClass}</Badge>}
                           </div>
                         </td>
@@ -663,7 +663,7 @@ export default function GenieAcsDevicesPage() {
 
                         {/* IP */}
                         <td className="px-3 py-2.5 hidden lg:table-cell">
-                          <span className="font-mono text-xs">{d.ipAddress || "—"}</span>
+                          <span className="font-mono text-xs">{d.ipAddress || "-"}</span>
                         </td>
 
                         {/* PPPoE */}
@@ -672,13 +672,13 @@ export default function GenieAcsDevicesPage() {
                             <span className="text-xs text-green-700 dark:text-green-400 font-medium truncate block max-w-[120px]">{matched.name}</span>
                           ) : d.pppoeUsername ? (
                             <span className="text-xs text-muted-foreground font-mono truncate block max-w-[120px]">{d.pppoeUsername}</span>
-                          ) : <span className="text-xs text-muted-foreground">—</span>}
+                          ) : <span className="text-xs text-muted-foreground">-</span>}
                         </td>
 
                         {/* RX Power */}
                         <td className="px-3 py-2.5 hidden xl:table-cell">
                           <span className={`font-mono text-xs font-medium ${rxPowerColor(d.rxPower)}`}>
-                            {d.rxPower ? `${d.rxPower}` : "—"}
+                            {d.rxPower ? `${d.rxPower}` : "-"}
                           </span>
                         </td>
 
@@ -712,7 +712,7 @@ export default function GenieAcsDevicesPage() {
             </div>
           )}
 
-          {/* Pagination — hidden saat searching (semua hasil sudah ke-filter di backend) */}
+          {/* Pagination - hidden saat searching (semua hasil sudah ke-filter di backend) */}
           {!devicesLoading && !isSearching && devices && devices.length >= PAGE_SIZE && (
             <div className="flex items-center justify-center gap-2 border-t px-4 py-3">
               <Button
@@ -739,7 +739,7 @@ export default function GenieAcsDevicesPage() {
         </CardContent>
       </Card>
 
-      {/* ── Detail Dialog (JACS-style tabbed) ─────────────────────────────── */}
+      {/* -- Detail Dialog (JACS-style tabbed) ------------------------------- */}
       <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -758,7 +758,7 @@ export default function GenieAcsDevicesPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* ── Tab Navigation ── */}
+              {/* -- Tab Navigation -- */}
               <div className="flex gap-1 border-b overflow-x-auto">
                 {([
                   { key: "overview" as const, label: "Overview", icon: Monitor },
@@ -787,7 +787,7 @@ export default function GenieAcsDevicesPage() {
                 ))}
               </div>
 
-              {/* ── Tab: Overview ── */}
+              {/* -- Tab: Overview -- */}
               {detailTab === "overview" && (
                 <div className="space-y-6">
                   {/* Two-column grid */}
@@ -911,7 +911,7 @@ export default function GenieAcsDevicesPage() {
                 </div>
               )}
 
-              {/* ── Tab: WAN Connections ── */}
+              {/* -- Tab: WAN Connections -- */}
               {detailTab === "wan" && (
                 <div className="space-y-3">
                   {/* Add WAN button */}
@@ -987,16 +987,16 @@ export default function GenieAcsDevicesPage() {
                               <td className="px-3 py-2">
                                 <Badge variant="outline" className="text-[10px]">{wan.type || "IP"}</Badge>
                               </td>
-                              <td className="px-3 py-2 text-xs font-medium">{wan.name || "—"}</td>
+                              <td className="px-3 py-2 text-xs font-medium">{wan.name || "-"}</td>
                               <td className="px-3 py-2">
                                 <Badge variant={wan.status?.toLowerCase() === "connected" ? "default" : "destructive"}
                                   className={`text-[10px] ${wan.status?.toLowerCase() === "connected" ? "bg-green-600 hover:bg-green-700" : ""}`}>
                                   {wan.status || "Unknown"}
                                 </Badge>
                               </td>
-                              <td className="px-3 py-2 font-mono text-xs">{wan.externalIp || "—"}</td>
-                              <td className="px-3 py-2 text-xs">{wan.username || "—"}</td>
-                              <td className="px-3 py-2 text-xs">{wan.uptime || "—"}</td>
+                              <td className="px-3 py-2 font-mono text-xs">{wan.externalIp || "-"}</td>
+                              <td className="px-3 py-2 text-xs">{wan.username || "-"}</td>
+                              <td className="px-3 py-2 text-xs">{wan.uptime || "-"}</td>
                               <td className="px-3 py-2 text-right">
                                 <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2"
                                   onClick={() => setWanEditData({
@@ -1016,7 +1016,7 @@ export default function GenieAcsDevicesPage() {
                 </div>
               )}
 
-              {/* ── Tab: WiFi ── */}
+              {/* -- Tab: WiFi -- */}
               {detailTab === "wifi" && (
                 <div className="space-y-3">
                   {(!detailDevice.wifiInterfaces || detailDevice.wifiInterfaces.length === 0) ? (
@@ -1139,7 +1139,7 @@ export default function GenieAcsDevicesPage() {
                 </div>
               )}
 
-              {/* ── Tab: Connected Devices ── */}
+              {/* -- Tab: Connected Devices -- */}
               {detailTab === "hosts" && (
                 <div className="space-y-3">
                   {(!detailDevice.connectedHosts || detailDevice.connectedHosts.length === 0) ? (
@@ -1183,7 +1183,7 @@ export default function GenieAcsDevicesPage() {
                 </div>
               )}
 
-              {/* ── Tab: Actions ── */}
+              {/* -- Tab: Actions -- */}
               {detailTab === "actions" && (
                 <div className="space-y-6">
                   {/* Action Buttons */}
@@ -1301,7 +1301,7 @@ export default function GenieAcsDevicesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Reboot Confirmation ────────────────────────────────────────────── */}
+      {/* -- Reboot Confirmation ---------------------------------------------- */}
       <AlertDialog
         open={!!confirmReboot}
         onOpenChange={(o) => !o && setConfirmReboot(null)}
@@ -1331,7 +1331,7 @@ export default function GenieAcsDevicesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Delete Confirmation ────────────────────────────────────────────── */}
+      {/* -- Delete Confirmation ---------------------------------------------- */}
       <AlertDialog
         open={!!confirmDelete}
         onOpenChange={(o) => !o && setConfirmDelete(null)}

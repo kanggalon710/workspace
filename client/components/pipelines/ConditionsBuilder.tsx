@@ -61,14 +61,14 @@ export function ConditionsBuilder({
   return (
     <div className="space-y-2">
       <div className="text-xs font-semibold text-muted-foreground">
-        Syarat (opsional) — cocok jika SALAH SATU grup terpenuhi
+        Syarat (opsional) - cocok jika SALAH SATU grup terpenuhi
       </div>
       {value.map((group, gi) => (
         <div key={gi}>
           {gi > 0 && <div className="text-[10px] font-semibold text-muted-foreground/70 my-1 text-center">ATAU</div>}
           <fieldset className="rounded-lg border border-border/60 p-2 space-y-1.5 m-0">
             <legend className="text-[10px] uppercase tracking-wide text-muted-foreground/70 px-1">
-              Grup #{gi + 1} — semua harus terpenuhi (DAN)
+              Grup #{gi + 1} - semua harus terpenuhi (DAN)
             </legend>
             {group.map((row, ri) => {
               const isStageRow = !leadMode && hasStages && row.source === "stage";
@@ -94,7 +94,7 @@ export function ConditionsBuilder({
                     </div>
                   ) : (
                     <>
-                      {/* Source selector — Field / Billing always; Stage only when stages provided */}
+                      {/* Source selector - Field / Billing always; Stage only when stages provided */}
                       <div className="w-24 shrink-0">
                         <Combobox
                           options={[
@@ -112,7 +112,7 @@ export function ConditionsBuilder({
                           clearable={false}
                         />
                       </div>
-                      {/* Field dropdown — hidden for stage + billing rows */}
+                      {/* Field dropdown - hidden for stage + billing rows */}
                       {!isStageRow && !isBillingRow && (
                         <div className="flex-1 min-w-[6rem] sm:min-w-[8rem]">
                           <Combobox

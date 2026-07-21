@@ -64,7 +64,7 @@ function formatBytes(bytes: string | number): string {
 }
 
 function formatUptime(uptime: string): string {
-  if (!uptime) return "—";
+  if (!uptime) return "-";
   // RouterOS uptime: "2w3d12h30m15s" or "12h30m15s"
   return uptime.replace(/(\d+)w/g, "$1 minggu ").replace(/(\d+)d/g, "$1 hari ")
     .replace(/(\d+)h/g, "$1j ").replace(/(\d+)m/g, "$1m ").replace(/(\d+)s/g, "$1s").trim();
@@ -81,7 +81,7 @@ function relativeTime(iso: string | null): string {
     if (hrs < 24) return `${hrs}j lalu`;
     const days = Math.floor(hrs / 24);
     return `${days}h lalu`;
-  } catch { return "—"; }
+  } catch { return "-"; }
 }
 
 export default function MikrotikRoutersPage() {
@@ -330,7 +330,7 @@ export default function MikrotikRoutersPage() {
         </div>
       )}
 
-      {/* ═══ Create/Edit Dialog ═══ */}
+      {/* === Create/Edit Dialog === */}
       <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) { setDialogOpen(false); setEditRouter(null); } }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -383,7 +383,7 @@ export default function MikrotikRoutersPage() {
             <div className="flex items-center gap-2">
               <input type="checkbox" id="useSsl" checked={form.useSsl}
                 onChange={(e) => setField("useSsl", e.target.checked)} className="rounded" />
-              <Label htmlFor="useSsl" className="text-xs cursor-pointer">Gunakan HTTPS (SSL) — disarankan</Label>
+              <Label htmlFor="useSsl" className="text-xs cursor-pointer">Gunakan HTTPS (SSL) - disarankan</Label>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Catatan</Label>
@@ -427,7 +427,7 @@ export default function MikrotikRoutersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ═══ Resource Dialog ═══ */}
+      {/* === Resource Dialog === */}
       <Dialog open={!!resourceDialogId} onOpenChange={(o) => !o && setResourceDialogId(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -484,7 +484,7 @@ export default function MikrotikRoutersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ═══ Delete Confirm ═══ */}
+      {/* === Delete Confirm === */}
       <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -505,7 +505,7 @@ export default function MikrotikRoutersPage() {
   );
 }
 
-// ── Sub components ──
+// -- Sub components --
 function InfoCell({ icon: Icon, label, value }: { icon: any; label: string; value: string | null }) {
   return (
     <div className="flex items-center gap-2 min-w-0">
@@ -513,7 +513,7 @@ function InfoCell({ icon: Icon, label, value }: { icon: any; label: string; valu
       <div className="min-w-0">
         <span className="text-muted-foreground">{label}: </span>
         <span className={`font-medium ${value ? "text-foreground" : "text-muted-foreground/50 italic"}`}>
-          {value || "—"}
+          {value || "-"}
         </span>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// Small labeled value row — shared by LeadPipelinePage + CollectionPipelinePage detail panels.
+// Small labeled value row - shared by LeadPipelinePage + CollectionPipelinePage detail panels.
 export function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-muted/30 rounded-md px-2 py-1.5">

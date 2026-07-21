@@ -103,7 +103,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    // asChild mode: Slot butuh SINGLE React element child — jangan bungkus dengan
+    // asChild mode: Slot butuh SINGLE React element child - jangan bungkus dengan
     // leftIcon/rightIcon/spinner di sini. Pemakai wajib susun konten sendiri.
     if (asChild) {
       return (

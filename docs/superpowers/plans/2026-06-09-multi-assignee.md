@@ -44,7 +44,7 @@ test("matchesAssigneeFilter: null filter true; primary or secondary match", () =
 });
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run - expect FAIL**
 
 Run: `npx tsx --test shared/cardAssignees.test.ts` → FAIL (module missing).
 
@@ -73,7 +73,7 @@ export function matchesAssigneeFilter(
 }
 ```
 
-- [ ] **Step 4: Run — expect 2/2 PASS**
+- [ ] **Step 4: Run - expect 2/2 PASS**
 
 Run: `npx tsx --test shared/cardAssignees.test.ts`
 
@@ -265,7 +265,7 @@ In `GET /api/pipelines/:id/cards` (routes.ts:4664), after computing `visibleCard
 ```ts
     const secondaryByCard = await storage.getSecondaryAssigneesForCards(visibleCards.map((c) => c.id));
 ```
-Then in the `.map((c) => {...})`, include it in BOTH return branches — change `return { ...c, values: v };` to `return { ...c, values: v, secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [] };` and the hidden-fields branch's `return { ...c, values: fv };` to `return { ...c, values: fv, secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [] };`.
+Then in the `.map((c) => {...})`, include it in BOTH return branches - change `return { ...c, values: v };` to `return { ...c, values: v, secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [] };` and the hidden-fields branch's `return { ...c, values: fv };` to `return { ...c, values: fv, secondaryAssigneeIds: secondaryByCard.get(c.id) ?? [] };`.
 
 - [ ] **Step 4: Typecheck + build**
 
@@ -314,7 +314,7 @@ export function useRemoveCardAssignee(cardId: number) {
   });
 }
 ```
-(Confirm the delete helper name — `api.delete` per usePipelines; match the existing primary-assignee mutation's user-list source `useAssignableUsers`.)
+(Confirm the delete helper name - `api.delete` per usePipelines; match the existing primary-assignee mutation's user-list source `useAssignableUsers`.)
 
 - [ ] **Step 2: Add the secondary section to `CardDetailModal`**
 

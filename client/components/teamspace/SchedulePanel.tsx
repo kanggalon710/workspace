@@ -1,4 +1,4 @@
-/** Teamspace Fase 2 — Jadwal tim (FR-7xx): kalender 2 bulan berdampingan (gaya Cicle),
+/** Teamspace Fase 2 - Jadwal tim (FR-7xx): kalender 2 bulan berdampingan (gaya Cicle),
  *  form event dengan pengulangan + peserta + Rahasia, dan feed iCal (webcal). */
 import { useMemo, useState } from "react";
 import { useTeamEvents, useEventMutations, type TeamEventRow } from "@/hooks/useTeamspace";
@@ -57,7 +57,7 @@ export function SchedulePanel({ teamId, canManage, active }: Props) {
   const [baseMonth, setBaseMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState<Date>(today);
 
-  // Ekspansi occurrence untuk 2 bulan tampil (recurring dihitung client — helper shared yang sama dipakai .ics).
+  // Ekspansi occurrence untuk 2 bulan tampil (recurring dihitung client - helper shared yang sama dipakai .ics).
   const rangeStart = baseMonth;
   const rangeEnd = new Date(baseMonth.getFullYear(), baseMonth.getMonth() + 2, 0, 23, 59, 59);
   const occurrences = useMemo(() => {
@@ -73,7 +73,7 @@ export function SchedulePanel({ teamId, canManage, active }: Props) {
   const eventsOn = (d: Date) => occurrences.filter((o) => sameDate(o.start, d));
   const dayEvents = eventsOn(selectedDay);
 
-  // ── Form event ──
+  // -- Form event --
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -132,7 +132,7 @@ export function SchedulePanel({ teamId, canManage, active }: Props) {
     }
   };
 
-  // ── Feed iCal ──
+  // -- Feed iCal --
   const [feedUrl, setFeedUrl] = useState<string | null>(null);
   const getFeed = async () => {
     try {
@@ -214,7 +214,7 @@ export function SchedulePanel({ teamId, canManage, active }: Props) {
         <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
           <p className="min-w-0 flex-1 truncate font-mono-tight text-[10px] text-muted-foreground">{feedUrl}</p>
           <Button type="button" variant="outline" size="xs" leftIcon={<Copy className="size-3" />}
-            onClick={() => { navigator.clipboard.writeText(feedUrl).then(() => toast.success("URL feed disalin — tempel di Google Calendar → Add calendar → From URL")); }}>
+            onClick={() => { navigator.clipboard.writeText(feedUrl).then(() => toast.success("URL feed disalin - tempel di Google Calendar → Add calendar → From URL")); }}>
             Salin
           </Button>
         </div>
@@ -230,7 +230,7 @@ export function SchedulePanel({ teamId, canManage, active }: Props) {
       {/* Daftar acara pada hari terpilih */}
       <section>
         <h4 className="mb-2 text-xs font-semibold text-muted-foreground">
-          Acara — {selectedDay.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}
+          Acara - {selectedDay.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}
         </h4>
         {isLoading ? (
           <div className="h-16 animate-pulse rounded-lg bg-muted" />

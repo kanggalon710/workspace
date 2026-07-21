@@ -137,7 +137,7 @@ export default function PortalVerifyOtpPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-background relative overflow-hidden">
-      {/* Backdrop — subtle gradient mesh for premium feel */}
+      {/* Backdrop - subtle gradient mesh for premium feel */}
       <div className="absolute inset-0 bg-mesh opacity-50 lg:opacity-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/85 to-background" />
       <div className="absolute inset-0 bg-dot-pattern opacity-30" />

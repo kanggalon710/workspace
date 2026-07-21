@@ -1,17 +1,17 @@
-# Spec — Pipeline Templates (Phase 5)
+# Spec - Pipeline Templates (Phase 5)
 
 > Date: 2026-06-08 · Mitra-scoped · Pipelines-unification roadmap Phase 5.
 
 ## Goal
 
 Let tenants save a configured pipeline's structure as a reusable **template** and create new pipelines
-from templates (built-in or saved) — cloning stages, custom fields (incl. their visibility/required
+from templates (built-in or saved) - cloning stages, custom fields (incl. their visibility/required
 rules), and automation rules. Speeds up standing up new workflows (Sales / Collection / Project / CS)
 without rebuilding by hand.
 
 ## Decisions (confirmed)
 
-1. **Captures:** full structure — stages + fields (with `config` rules) + automation rules (+ actions +
+1. **Captures:** full structure - stages + fields (with `config` rules) + automation rules (+ actions +
    field-maps). NOT cards/values/comments/access grants.
 2. **Sources:** "Save as template" from an existing pipeline + a set of seeded **built-in** templates.
 3. **Apply:** create a **new** pipeline from a template only (no merge-into-existing).
@@ -27,7 +27,7 @@ A pipeline's stage/field DB ids are referenced inside: field `config.visibleWhen
 (`sourceFieldId`/`targetFieldId`). A template stores all of these by **stable internal key** (e.g.
 `stage_0`, `field_2`); instantiation remaps key → freshly-created DB id.
 
-## 1. Pure transform module — `shared/pipelineTemplate.ts` (no DB, unit-tested)
+## 1. Pure transform module - `shared/pipelineTemplate.ts` (no DB, unit-tested)
 
 ```ts
 interface TemplateDefinition {
@@ -43,20 +43,20 @@ interface TemplateRule {
 }
 ```
 
-- `pipelineToTemplate(input): TemplateDefinition` — input is the DB rows (pipeline, stages, fields, and
+- `pipelineToTemplate(input): TemplateDefinition` - input is the DB rows (pipeline, stages, fields, and
   rules each with their actions + fieldMaps). Builds `stageIdToKey` / `fieldIdToKey` (key = `stage_<i>` /
   `field_<i>` by position), then rewrites every reference (listed above) from id → key. **Drops** any
   action whose `targetPipelineId` is set (cross-pipeline; not portable) and notes the count.
 - `remapFieldConfig(config: string | null, fieldKeyToId: Map<string,number>, stageKeyToId: Map<string,number>): string | null`
-  — rewrite `visibleWhen`/`requiredWhen` keys → ids; leave other config keys (`multiple`) intact.
+  - rewrite `visibleWhen`/`requiredWhen` keys → ids; leave other config keys (`multiple`) intact.
 - `remapTemplateRule(rule: TemplateRule, fieldKeyToId, stageKeyToId): { ...insertable rule with ids... }`
-  — rewrite triggerStageKey, triggerConfig, conditions, actions, fieldMaps keys → ids.
-- `BUILTIN_TEMPLATES: TemplateDefinition[]` — starter definitions: **Sales**, **Collection**, **Project**,
+  - rewrite triggerStageKey, triggerConfig, conditions, actions, fieldMaps keys → ids.
+- `BUILTIN_TEMPLATES: TemplateDefinition[]` - starter definitions: **Sales**, **Collection**, **Project**,
   **Customer Service** (stages + a few base fields + at most one simple rule each).
 
 The transform is pure (operates on plain objects/JSON strings); the storage layer does the DB I/O.
 
-## 2. Schema + seed — `pipeline_templates`
+## 2. Schema + seed - `pipeline_templates`
 
 ```ts
 export const pipelineTemplates = mysqlTable("pipeline_templates", {
@@ -77,11 +77,11 @@ export const pipelineTemplates = mysqlTable("pipeline_templates", {
 
 ## 3. Storage
 
-- `createTemplateFromPipeline(pipelineId, { name, description }): Promise<PipelineTemplate>` — load
+- `createTemplateFromPipeline(pipelineId, { name, description }): Promise<PipelineTemplate>` - load
   pipeline + stages + fields + rules(+actions+fieldMaps) → `pipelineToTemplate` → insert definition.
 - `listTemplates(): Promise<PipelineTemplate[]>` (mitra-scoped, builtins first then by name).
 - `getTemplate(id)` / `deleteTemplate(id)` (reject when `is_builtin=1`).
-- `instantiateTemplate(templateId, { name, color?, icon? }, userId): Promise<Pipeline>` — **two-pass**:
+- `instantiateTemplate(templateId, { name, color?, icon? }, userId): Promise<Pipeline>` - **two-pass**:
   1. create the pipeline (name from input; color/icon from input or the template);
   2. create stages in order → build `stageKeyToId`;
   3. create fields in order, each `config` passed through `remapFieldConfig` → build `fieldKeyToId`;
@@ -97,7 +97,7 @@ export const pipelineTemplates = mysqlTable("pipeline_templates", {
 | POST | `/api/pipeline-templates/:id/apply` `{name, color?, icon?}` | returns the new pipeline |
 | DELETE | `/api/pipeline-templates/:id` | 409 if `is_builtin` |
 
-## 5. Frontend — `PipelinesPage` + a small dialog
+## 5. Frontend - `PipelinesPage` + a small dialog
 
 - **"Buat dari Template"** button → a dialog listing templates (name, icon, a brief stage/field count
   preview) → pick one → enter the new pipeline name → apply → navigate to the new board.
@@ -107,14 +107,14 @@ export const pipelineTemplates = mysqlTable("pipeline_templates", {
 
 ## 6. Testing
 
-`shared/pipelineTemplate.test.ts`: a **round-trip** — take a synthetic pipeline (stages/fields/rules with
+`shared/pipelineTemplate.test.ts`: a **round-trip** - take a synthetic pipeline (stages/fields/rules with
 DB ids cross-referencing each other, incl. a field `requiredWhen` referencing another field + stage, a
 rule with conditions + a set_field action + a field-map, and one cross-pipeline action), run
 `pipelineToTemplate` (assert ids replaced by keys, cross-pipeline action dropped), then `remapFieldConfig`
 + `remapTemplateRule` with fresh key→id maps (assert references resolve to the new ids consistently).
 
 ## Out of scope
-- Apply-to-existing (merge) — new pipeline only.
+- Apply-to-existing (merge) - new pipeline only.
 - Cloning cards/values/comments/followers and access grants.
 - Cross-pipeline automation actions in templates (dropped at snapshot).
 - Cross-tenant/global template sharing (templates are mitra-scoped; builtins seeded per mitra).

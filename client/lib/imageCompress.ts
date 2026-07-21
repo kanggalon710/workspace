@@ -1,6 +1,6 @@
 /**
  * Client-side image compressor dengan iterative refinement.
- * User upload foto apa saja (100MB atau 20 byte) — output pasti fit ke server.
+ * User upload foto apa saja (100MB atau 20 byte) - output pasti fit ke server.
  *
  * Strategy:
  * 1. Read file → decode image di browser
@@ -60,7 +60,7 @@ export async function compressImage(
     i.src = readerDataUrl;
   });
 
-  // Iterative compression — progressive degradation sampai fit
+  // Iterative compression - progressive degradation sampai fit
   // Step 1: baseline resize + q=0.75
   // Step 2+: kalau masih besar, reduce dim 20% + reduce quality 10-15%
   const attempts: Array<{ dim: number; quality: number }> = [
@@ -70,7 +70,7 @@ export async function compressImage(
     { dim: Math.round(initMaxDim * 0.6), quality: 0.55 },
     { dim: Math.round(initMaxDim * 0.5), quality: 0.48 },
     { dim: Math.round(initMaxDim * 0.4), quality: 0.42 },
-    { dim: 400, quality: 0.40 }, // minimum floor — masih readable untuk bukti
+    { dim: 400, quality: 0.40 }, // minimum floor - masih readable untuk bukti
   ];
 
   let best: CompressResult | null = null;
@@ -90,7 +90,7 @@ export async function compressImage(
       finalQuality: attempt.quality,
     };
 
-    // Fit — return immediately
+    // Fit - return immediately
     if (dataUrl.length <= targetMaxBytes) {
       return result;
     }
@@ -101,7 +101,7 @@ export async function compressImage(
     }
   }
 
-  // Semua attempt masih > maxBytes — return yang terkecil.
+  // Semua attempt masih > maxBytes - return yang terkecil.
   // Ini edge case sangat rare (foto extreme detail atau hardware aneh).
   return best!;
 }

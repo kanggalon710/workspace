@@ -1,4 +1,4 @@
-# LP1 — Lead Event Bus + Lead Intake — Implementation Plan
+# LP1 - Lead Event Bus + Lead Intake - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -20,8 +20,8 @@
 | `shared/leadIntake.test.ts` (create) | Test helper. |
 | `shared/schema.ts` (modify) | `RuleTriggerType` += 5 tipe lead; tabel `leadCardLinks` + tipe. |
 | `server/storage.ts` (modify) | Startup CREATE TABLE `lead_card_links`; `listLeadRules`, `getLeadCardLinks`, `createLeadCardLink`, `findCardIdsByFieldValue`. |
-| `server/lead-intake.ts` (create) | `runLeadIntake(eventType, lead, actorId)` — orchestrator. |
-| `server/lead-events.ts` (create) | `emitLeadEvent(eventType, lead, actorId)` — wrap `withMitra` + best-effort. |
+| `server/lead-intake.ts` (create) | `runLeadIntake(eventType, lead, actorId)` - orchestrator. |
+| `server/lead-events.ts` (create) | `emitLeadEvent(eventType, lead, actorId)` - wrap `withMitra` + best-effort. |
 | `server/routes.ts` (modify) | 8 titik emit; `validateTriggerConfig` cabang lead; persist `triggerConfig` + exception "tanpa action" utk lead. |
 | `client/components/pipelines/ruleFormState.ts` (modify) | Draft state + `ruleToDraft`/`draftToPayload` cabang lead. |
 | `client/components/pipelines/PipelineRulesDialog.tsx` (modify) | Sub-form trigger "Lead masuk/berubah". |
@@ -69,14 +69,14 @@ test("every canonical source has a label and appears in options", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/leadSources.test.ts`
-Expected: FAIL — `Cannot find module './leadSources.ts'`.
+Expected: FAIL - `Cannot find module './leadSources.ts'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```ts
 // shared/leadSources.ts
 /** Canonical lead-source registry. Single source of truth for normalisasi + label.
- *  Tidak mengubah nilai `source` yang tersimpan — hanya dipakai saat matching rule + label UI. */
+ *  Tidak mengubah nilai `source` yang tersimpan - hanya dipakai saat matching rule + label UI. */
 
 export type CanonicalLeadSource =
   | "canvassing" | "prospect_finder" | "coverage_check"
@@ -205,7 +205,7 @@ test("parseLeadTriggerConfig defaults + validation", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/leadIntake.test.ts`
-Expected: FAIL — module not found.
+Expected: FAIL - module not found.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -373,7 +373,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Schema — lead trigger types + `lead_card_links` table
+## Task 3: Schema - lead trigger types + `lead_card_links` table
 
 **Files:**
 - Modify: `shared/schema.ts` (`RuleTriggerType` ~line 776; tambah tabel `leadCardLinks` dekat `pipelineRuleFires` ~line 720)
@@ -414,7 +414,7 @@ export type InsertLeadCardLink = typeof leadCardLinks.$inferInsert;
 - [ ] **Step 3: Typecheck**
 
 Run: `npx tsc --noEmit`
-Expected: PASS (0 errors) — table def only, no consumers yet.
+Expected: PASS (0 errors) - table def only, no consumers yet.
 
 - [ ] **Step 4: Commit**
 
@@ -427,7 +427,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Storage — create table + intake queries
+## Task 4: Storage - create table + intake queries
 
 **Files:**
 - Modify: `server/storage.ts` (startup migration ~after line 700; schema imports ~line 127; methods near `listBillingSyncRules` ~line 2637)
@@ -482,7 +482,7 @@ Tambah blok berikut tepat setelah blok `chatwoot_agent_links` (setelah `console.
     });
   }
 
-  /** Card id (di pipeline tsb) yang punya value tertentu pada field tertentu — untuk dedup by phone. */
+  /** Card id (di pipeline tsb) yang punya value tertentu pada field tertentu - untuk dedup by phone. */
   async findCardIdsByFieldValue(pipelineId: number, fieldId: number, value: string): Promise<number[]> {
     const mitraId = getMitraId();
     const rows: any = (await this.db.execute(sql`
@@ -704,45 +704,45 @@ Di header import `server/routes.ts`, tambah:
 import { emitLeadEvent } from "./lead-events.js";
 ```
 
-- [ ] **Step 2: `POST /api/marketing/leads`** — setelah `await logAudit(req, "CREATE", "lead", lead.id, lead.name);` (~8905):
+- [ ] **Step 2: `POST /api/marketing/leads`** - setelah `await logAudit(req, "CREATE", "lead", lead.id, lead.name);` (~8905):
 ```ts
     await emitLeadEvent("created", lead as any, req.authUser!.id);
 ```
 
-- [ ] **Step 3: `POST /api/coverage-check/register`** — setelah `const lead = await storage.createLead({...})` selesai (sebelum `sendSuccess`). Actor = sistem (1):
+- [ ] **Step 3: `POST /api/coverage-check/register`** - setelah `const lead = await storage.createLead({...})` selesai (sebelum `sendSuccess`). Actor = sistem (1):
 ```ts
     await emitLeadEvent("created", lead as any, 1);
 ```
 
-- [ ] **Step 4: `POST /api/webhook/meta-leads`** — ubah `await storage.createLead({...})` menjadi menangkap row lalu emit:
+- [ ] **Step 4: `POST /api/webhook/meta-leads`** - ubah `await storage.createLead({...})` menjadi menangkap row lalu emit:
 ```ts
         const createdLead = await storage.createLead({ /* ...payload sama... */ } as any);
         await emitLeadEvent("created", createdLead as any, 1);
 ```
-(Praktis: ganti `await storage.createLead(` → `const createdLead = await storage.createLead(` dan tambah baris emit setelahnya. Hapus `created++` TIDAK — biarkan; tambahkan emit sebelum `created++`.)
+(Praktis: ganti `await storage.createLead(` → `const createdLead = await storage.createLead(` dan tambah baris emit setelahnya. Hapus `created++` TIDAK - biarkan; tambahkan emit sebelum `created++`.)
 
-- [ ] **Step 5: `POST /api/webhook/tiktok-leads`** — sama pola:
+- [ ] **Step 5: `POST /api/webhook/tiktok-leads`** - sama pola:
 ```ts
       const createdLead = await storage.createLead({ /* ...payload sama... */ } as any);
       await emitLeadEvent("created", createdLead as any, 1);
 ```
 
-- [ ] **Step 6: `PUT /api/marketing/leads/:id`** — setelah `await logAudit(req, "UPDATE", "lead", id, updated.name);`:
+- [ ] **Step 6: `PUT /api/marketing/leads/:id`** - setelah `await logAudit(req, "UPDATE", "lead", id, updated.name);`:
 ```ts
     await emitLeadEvent("updated", updated as any, req.authUser!.id);
 ```
 
-- [ ] **Step 7: `PATCH /:id/stage`** — setelah `await logAudit(req, "UPDATE", "lead", lead.id, lead.name, { stage });`:
+- [ ] **Step 7: `PATCH /:id/stage`** - setelah `await logAudit(req, "UPDATE", "lead", lead.id, lead.name, { stage });`:
 ```ts
     await emitLeadEvent("stage_changed", lead as any, req.authUser!.id);
 ```
 
-- [ ] **Step 8: `PATCH /:id/assign`** — setelah `const lead = await storage.assignLead(...)` (sebelum/independen dari respons):
+- [ ] **Step 8: `PATCH /:id/assign`** - setelah `const lead = await storage.assignLead(...)` (sebelum/independen dari respons):
 ```ts
     await emitLeadEvent("assigned", lead as any, req.authUser!.id);
 ```
 
-- [ ] **Step 9: `POST /:id/convert`** — setelah lead dipindah ke "won" + activity dicatat (~9132), gunakan row lead terkini:
+- [ ] **Step 9: `POST /:id/convert`** - setelah lead dipindah ke "won" + activity dicatat (~9132), gunakan row lead terkini:
 ```ts
     await emitLeadEvent("converted", { ...lead, stage: "won" } as any, req.authUser!.id);
 ```
@@ -768,7 +768,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Modify: `server/routes.ts` (`validateTriggerConfig` ~4852; POST `/rules` ~5897; PATCH `/rules/:ruleId` ~5937)
 
-- [ ] **Step 1: Add lead branch to `validateTriggerConfig`** — sebelum baris `if (triggerType !== "time") return "triggerType tidak dikenal";` (~4903):
+- [ ] **Step 1: Add lead branch to `validateTriggerConfig`** - sebelum baris `if (triggerType !== "time") return "triggerType tidak dikenal";` (~4903):
 ```ts
   if (["lead_created", "lead_updated", "lead_assigned", "lead_stage_changed", "lead_converted"].includes(triggerType)) {
     const c = parseLeadTriggerConfig(typeof triggerConfig === "string" ? triggerConfig : JSON.stringify(triggerConfig ?? null));
@@ -787,13 +787,13 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
   }
 ```
 
-- [ ] **Step 2: Import helpers** — di header `server/routes.ts` tambah:
+- [ ] **Step 2: Import helpers** - di header `server/routes.ts` tambah:
 ```ts
 import { parseLeadTriggerConfig, LEAD_ATTRS, attrCompatibleWithFieldType as leadAttrCompatible } from "../shared/leadIntake.js";
 ```
 (Alias `leadAttrCompatible` agar tak bentrok dgn `attrCompatibleWithFieldType` billing yang sudah di-import.)
 
-- [ ] **Step 3: POST `/rules` — izinkan lead tanpa action + persist triggerConfig**
+- [ ] **Step 3: POST `/rules` - izinkan lead tanpa action + persist triggerConfig**
 
 Cari (~5912):
 ```ts
@@ -814,9 +814,9 @@ Ganti jadi:
       triggerConfig: (b.triggerType === "time" || b.triggerType === "billing_sync" || b.triggerType === "field_updated" || String(b.triggerType ?? "").startsWith("lead_")) ? (b.triggerConfig ?? null) : null,
 ```
 
-> Cek juga `entryStageId` di POST handler: lead pakai `triggerConfig.entryStageId` (bukan `targetStageId`). `validateTriggerConfig` dipanggil dgn `entryStageId` arg untuk billing; untuk lead, entryStage ada di dalam `triggerConfig`, jadi cabang lead memvalidasinya sendiri (Step 1) — tak perlu argumen `entryStageId`.
+> Cek juga `entryStageId` di POST handler: lead pakai `triggerConfig.entryStageId` (bukan `targetStageId`). `validateTriggerConfig` dipanggil dgn `entryStageId` arg untuk billing; untuk lead, entryStage ada di dalam `triggerConfig`, jadi cabang lead memvalidasinya sendiri (Step 1) - tak perlu argumen `entryStageId`.
 
-- [ ] **Step 4: PATCH `/rules/:ruleId`** — pastikan cabang validasi (~5953) memanggil `validateTriggerConfig` dgn triggerType baru; karena Step 1 sudah menambah cabang lead, tak ada perubahan lain. Verifikasi handler PATCH menyimpan `triggerConfig` untuk lead (ikuti pola yang sama dgn billing_sync di handler PATCH; bila ada whitelist serupa Step 3, tambahkan `startsWith("lead_")`).
+- [ ] **Step 4: PATCH `/rules/:ruleId`** - pastikan cabang validasi (~5953) memanggil `validateTriggerConfig` dgn triggerType baru; karena Step 1 sudah menambah cabang lead, tak ada perubahan lain. Verifikasi handler PATCH menyimpan `triggerConfig` untuk lead (ikuti pola yang sama dgn billing_sync di handler PATCH; bila ada whitelist serupa Step 3, tambahkan `startsWith("lead_")`).
 
 - [ ] **Step 5: Typecheck**
 
@@ -834,7 +834,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 9: Client rule form state — lead sub-form
+## Task 9: Client rule form state - lead sub-form
 
 **Files:**
 - Modify: `client/components/pipelines/ruleFormState.ts`
@@ -864,7 +864,7 @@ Di `emptyDraft()` (cari objek default ~125) tambah default:
     leadOnDuplicate: "ignore", leadDedupBy: "lead_id", leadReopenStageId: "",
 ```
 
-- [ ] **Step 2: `ruleToDraft` — hydrate lead branch**
+- [ ] **Step 2: `ruleToDraft` - hydrate lead branch**
 
 Tambah cabang (setelah cabang `billing_sync`, ~line 186) sebelum fallback stage_enter/time:
 ```ts
@@ -883,7 +883,7 @@ Tambah cabang (setelah cabang `billing_sync`, ~line 186) sebelum fallback stage_
   }
 ```
 
-- [ ] **Step 3: `draftToPayload` — serialize lead branch**
+- [ ] **Step 3: `draftToPayload` - serialize lead branch**
 
 Tambah cabang (setelah cabang `billing_sync`, ~line 241):
 ```ts
@@ -919,7 +919,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 10: Client dialog — lead trigger sub-form UI
+## Task 10: Client dialog - lead trigger sub-form UI
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -948,7 +948,7 @@ Di selector trigger type (cari daftar `EVENT_TRIGGER_TYPES`/opsi billing_sync), 
 
 - [ ] **Step 3: Render sub-form ketika `triggerType.startsWith("lead_")`**
 
-Setelah blok render `billing_sync`, tambah blok kondisional (gunakan setter draft dari Task 9 via state dialog yang sudah ada). Contoh struktur (sesuaikan dengan state lokal dialog — dialog ini punya state per-field seperti `billingEntryStageId`; tambah padanan lead `leadEntryStageId` dst di `useState`, lalu sinkron ke draft):
+Setelah blok render `billing_sync`, tambah blok kondisional (gunakan setter draft dari Task 9 via state dialog yang sudah ada). Contoh struktur (sesuaikan dengan state lokal dialog - dialog ini punya state per-field seperti `billingEntryStageId`; tambah padanan lead `leadEntryStageId` dst di `useState`, lalu sinkron ke draft):
 ```tsx
 {draft.triggerType.startsWith("lead_") && (
   <fieldset className="space-y-3 border border-border/60 rounded-lg p-3">
@@ -976,7 +976,7 @@ Setelah blok render `billing_sync`, tambah blok kondisional (gunakan setter draf
       <label className="text-xs font-medium">Stage masuk *</label>
       <select className="w-full mt-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
         value={draft.leadEntryStageId} onChange={(e) => setDraft((d) => ({ ...d, leadEntryStageId: e.target.value }))}>
-        <option value="">— pilih stage —</option>
+        <option value="">- pilih stage -</option>
         {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
       </select>
     </div>
@@ -998,12 +998,12 @@ Setelah blok render `billing_sync`, tambah blok kondisional (gunakan setter draf
           <div key={i} className="flex gap-1.5 items-center">
             <select className="flex-1 rounded border border-input bg-background px-2 py-1 text-xs"
               value={m.attr} onChange={(e) => setDraft((d) => { const fm = [...d.leadFieldMap]; fm[i] = { ...fm[i], attr: e.target.value }; return { ...d, leadFieldMap: fm }; })}>
-              <option value="">— atribut lead —</option>
+              <option value="">- atribut lead -</option>
               {LEAD_ATTRS.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
             </select>
             <select className="flex-1 rounded border border-input bg-background px-2 py-1 text-xs"
               value={m.targetFieldId} onChange={(e) => setDraft((d) => { const fm = [...d.leadFieldMap]; fm[i] = { ...fm[i], targetFieldId: e.target.value }; return { ...d, leadFieldMap: fm }; })}>
-              <option value="">— field kartu —</option>
+              <option value="">- field kartu -</option>
               {fields.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
             <button type="button" aria-label="Hapus" onClick={() => setDraft((d) => ({ ...d, leadFieldMap: d.leadFieldMap.filter((_, j) => j !== i) }))} className="text-muted-foreground">×</button>
@@ -1040,7 +1040,7 @@ Setelah blok render `billing_sync`, tambah blok kondisional (gunakan setter draf
         <label className="text-xs font-medium">Stage "buka lagi" *</label>
         <select className="w-full mt-1 rounded border border-input bg-background px-2 py-1.5 text-sm"
           value={draft.leadReopenStageId} onChange={(e) => setDraft((d) => ({ ...d, leadReopenStageId: e.target.value }))}>
-          <option value="">— pilih stage —</option>
+          <option value="">- pilih stage -</option>
           {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </div>
@@ -1071,7 +1071,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 11: DRY — `LeadPipelinePage` source labels → registry
+## Task 11: DRY - `LeadPipelinePage` source labels → registry
 
 **Files:**
 - Modify: `client/pages/LeadPipelinePage.tsx:52` (`SOURCE_LABELS`)
@@ -1136,14 +1136,14 @@ Expected: sukses (Vite client + esbuild server).
 
 - [ ] **Step 5: Update memory**
 
-Update `memory/project-pipelines-engine.md` (atau buat `project-leads-pipeline-integration.md`) + `MEMORY.md`: LP1 DONE on dev (belum push), arsitektur event-bus, exclusions LP2–LP6, file kunci.
+Update `memory/project-pipelines-engine.md` (atau buat `project-leads-pipeline-integration.md`) + `MEMORY.md`: LP1 DONE on dev (belum push), arsitektur event-bus, exclusions LP2-LP6, file kunci.
 
 ---
 
-## Self-Review (penulis plan — sudah dijalankan)
+## Self-Review (penulis plan - sudah dijalankan)
 
 **Spec coverage:** §Arsitektur→T5/T6/T7; §Data model (lead_card_links/registry/trigger types)→T1/T3/T4; §Rule config→T8/T9/T10; §Field mapping→T2; §8 titik emit→T7; §UI→T10; §DRY source→T11; §Cross-cutting (tenant withMitra→T6; no-N+1 batched lookups→T5; audit→T5; loop-safe storage-direct→T5; testing→T1/T2/T12). Semua tercakup.
 
-**Placeholder scan:** tak ada TBD/TODO; semua step berisi kode aktual. Dua titik "verifikasi nama kolom/ signature" (T4 card-values table, T6 withMitra) adalah pengecekan defensif, bukan placeholder — kode default sudah ditulis sesuai pola existing.
+**Placeholder scan:** tak ada TBD/TODO; semua step berisi kode aktual. Dua titik "verifikasi nama kolom/ signature" (T4 card-values table, T6 withMitra) adalah pengecekan defensif, bukan placeholder - kode default sudah ditulis sesuai pola existing.
 
 **Type consistency:** `IntakeLead`, `LeadTriggerConfig`, `parseLeadTriggerConfig`, `resolveDuplicateAction`, `leadRuleMatchesSource`, `leadToFieldValues`, `leadTitle`, `attrCompatibleWithFieldType` (alias `leadAttrCompatible` di routes) konsisten antar T2/T5/T8. Storage `listLeadRules`/`getLeadCardLinks`/`createLeadCardLink`/`findCardIdsByFieldValue` dipakai persis di T5. `emitLeadEvent(eventType, lead, actorId)` konsisten T6/T7.

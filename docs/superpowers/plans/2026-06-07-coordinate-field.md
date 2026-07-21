@@ -4,7 +4,7 @@
 
 **Goal:** Add a singleton `coordinate` field type (lat/lng with a Google-Maps picker) whose filled value surfaces Wilayah (Kecamatan/Kabupaten/Provinsi) and the nearest ODP in the card detail.
 
-**Architecture:** A pure `parseCoordinate` helper + registry entry (`singleton:true`) drive a new `CoordinateInput` (manual + map picker + GPS) and a `CoordinateInfo` panel that reuses the existing `reverseGeocode` helper and `POST /api/coverage-check` endpoint via cached react-query hooks. Value stored as `{"lat":…,"lng":…}` JSON in the existing card-values table — no DB migration.
+**Architecture:** A pure `parseCoordinate` helper + registry entry (`singleton:true`) drive a new `CoordinateInput` (manual + map picker + GPS) and a `CoordinateInfo` panel that reuses the existing `reverseGeocode` helper and `POST /api/coverage-check` endpoint via cached react-query hooks. Value stored as `{"lat":…,"lng":…}` JSON in the existing card-values table - no DB migration.
 
 **Tech Stack:** TypeScript, React 18, `@react-google-maps/api` (existing dep), TanStack Query, `node:test` via `npx tsx --test`. Spec: `docs/superpowers/specs/2026-06-07-coordinate-field-design.md`. Builds on slice A registry/singleton.
 
@@ -45,7 +45,7 @@ test("parseCoordinate: valid object, out-of-range/garbage/empty → null", () =>
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `npx tsx --test shared/pipelineFieldTypes.test.ts`
-Expected: FAIL — `parseCoordinate` not exported; no `coordinate` registry entry.
+Expected: FAIL - `parseCoordinate` not exported; no `coordinate` registry entry.
 
 - [ ] **Step 3: Add the type to the schema union/array**
 
@@ -135,7 +135,7 @@ test("coordinate: valid {lat,lng} ok; out-of-range/garbage fail; empty ok", () =
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `npx tsx --test server/pipeline-field-helpers.test.ts`
-Expected: FAIL — coordinate falls through to the default (length) case, so the out-of-range/garbage assertions fail.
+Expected: FAIL - coordinate falls through to the default (length) case, so the out-of-range/garbage assertions fail.
 
 - [ ] **Step 3: Implement the validation branch**
 
@@ -386,7 +386,7 @@ export function useNearestOdp(lat: number, lng: number) {
 }
 ```
 
-(`reverseGeocode` returns `{ district, village, city, province, formatted }`. `POST /api/coverage-check` returns `{ nearestOdps, recommended, verdict, coverageRadiusMeters }`; `api.post` unwraps the success envelope to the data object — same as `CoverageCheckPage`.)
+(`reverseGeocode` returns `{ district, village, city, province, formatted }`. `POST /api/coverage-check` returns `{ nearestOdps, recommended, verdict, coverageRadiusMeters }`; `api.post` unwraps the success envelope to the data object - same as `CoverageCheckPage`.)
 
 - [ ] **Step 2: Create `CoordinateInfo`**
 
@@ -502,7 +502,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Modify: `client/components/pipelines/BoardCard.tsx`
 
-- [ ] **Step 1: Render a `📍 lat,lng` chip**
+- [ ] **Step 1: Render a ` lat,lng` chip**
 
 In `client/components/pipelines/BoardCard.tsx`, add the import:
 
@@ -515,7 +515,7 @@ In the `fieldText(f, raw)` function, add a `coordinate` branch before the final 
 ```tsx
   if (f.type === "coordinate") {
     const c = parseCoordinate(raw);
-    return c ? `📍 ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : String(raw);
+    return c ? ` ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}` : String(raw);
   }
 ```
 
@@ -561,10 +561,10 @@ Expected: success.
 - [ ] **Step 4: Manual checklist (record results)**
 
 On the dev "Leads (Marketing)" pipeline:
-- ManageFields → add field type **Koordinat**; then try to add a second Koordinat → it is disabled in the picker ("Sudah ada — hanya boleh 1 per pipeline") and the API rejects it (400). ✅ (#7 singleton, first real use)
-- Open a card → set the coordinate by clicking the map, by editing lat/lng, and via "Gunakan lokasi saya"; the marker + inputs stay in sync. ✅ (#5)
-- The info panel shows Wilayah (Kecamatan/Kabupaten/Provinsi) + nearest ODP (name, distance, status, ports); reopening the same card refetches nothing. ✅ (#6)
-- Board chip shows `📍 -7.xxxx, 107.xxxx` when the field is shown-on-card; empty coordinate → no chip, no panel. ✅
+- ManageFields → add field type **Koordinat**; then try to add a second Koordinat → it is disabled in the picker ("Sudah ada - hanya boleh 1 per pipeline") and the API rejects it (400).  (#7 singleton, first real use)
+- Open a card → set the coordinate by clicking the map, by editing lat/lng, and via "Gunakan lokasi saya"; the marker + inputs stay in sync.  (#5)
+- The info panel shows Wilayah (Kecamatan/Kabupaten/Provinsi) + nearest ODP (name, distance, status, ports); reopening the same card refetches nothing.  (#6)
+- Board chip shows ` -7.xxxx, 107.xxxx` when the field is shown-on-card; empty coordinate → no chip, no panel.
 
 - [ ] **Step 5: Final commit (only if the manual pass required a fixup; otherwise skip)**
 

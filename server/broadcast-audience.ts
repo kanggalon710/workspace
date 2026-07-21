@@ -65,14 +65,14 @@ const FIELD_MAP: Record<string, { col: string; type: "string" | "number" | "date
   isolirDate: { col: "isolir_date", type: "date" },
 };
 
-/** Hint untuk UI — apa saja field yang boleh dipakai + operator yang valid */
+/** Hint untuk UI - apa saja field yang boleh dipakai + operator yang valid */
 export const AUDIENCE_FIELD_OPTIONS = Object.keys(FIELD_MAP).map(k => ({
   field: k,
   column: FIELD_MAP[k].col,
   type: FIELD_MAP[k].type,
 }));
 
-// Lit-safe — return SQL fragment + params array (parameterized)
+// Lit-safe - return SQL fragment + params array (parameterized)
 export function buildAudienceWhere(filter: AudienceFilter): { sql: string; params: any[] } | null {
   if (!filter || !Array.isArray(filter.rules) || filter.rules.length === 0) {
     return null;
@@ -128,7 +128,7 @@ export function buildAudienceWhere(filter: AudienceFilter): { sql: string; param
         break;
       }
       case "gte_days_ago": {
-        // installDate >= N days ago (lebih baru dari N hari) — pelanggan baru
+        // installDate >= N days ago (lebih baru dari N hari) - pelanggan baru
         const days = Number(rule.value) || 0;
         parts.push(`(${col} IS NOT NULL AND date(${col}) >= date('now', '-${days} days'))`);
         break;
@@ -142,7 +142,7 @@ export function buildAudienceWhere(filter: AudienceFilter): { sql: string; param
   return { sql: parts.join(combine), params };
 }
 
-/** Validate filter dari frontend — minimal check shape */
+/** Validate filter dari frontend - minimal check shape */
 export function validateAudienceFilter(filter: any): filter is AudienceFilter {
   if (!filter || typeof filter !== "object") return false;
   if (filter.combine !== "all" && filter.combine !== "any") return false;
@@ -154,7 +154,7 @@ export function validateAudienceFilter(filter: any): filter is AudienceFilter {
   return true;
 }
 
-// System segments — pre-defined, langsung pakai
+// System segments - pre-defined, langsung pakai
 export const SYSTEM_SEGMENTS: Array<{ name: string; description: string; filter: AudienceFilter }> = [
   {
     name: "Semua Pelanggan Aktif",

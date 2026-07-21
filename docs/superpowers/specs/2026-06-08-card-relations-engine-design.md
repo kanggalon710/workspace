@@ -1,4 +1,4 @@
-# Spec — Card Relations Engine (Pipelines Phase 1)
+# Spec - Card Relations Engine (Pipelines Phase 1)
 
 > Date: 2026-06-08 · Mitra-scoped · First phase of the pipelines-unification roadmap (Data Relationship Engine).
 
@@ -11,7 +11,7 @@ into a reusable relations engine. Card → entity direction only in this phase.
 ## Decisions (confirmed)
 
 1. **Entity types (Phase 1):** `customer`, `lead`, `collection`, `odp`, `card`. (ticket/user/invoice
-   deferred — the engine is generic, adding a type later is a catalog entry.)
+   deferred - the engine is generic, adding a type later is a catalog entry.)
 2. **Creation:** manual add/remove in the card detail, PLUS read-time surfacing of `card.sourceCustomerId`
    as an implicit (non-deletable) customer relation.
 3. **Direction:** card → entity only. Reverse views (related cards on a customer/ticket page) are a later phase.
@@ -37,11 +37,11 @@ export const cardRelations = mysqlTable("card_relations", {
 ```
 `source_customer_id` on `pipeline_cards` is untouched (still used for billing-intake dedup).
 
-## Pure module — `shared/cardRelations.ts` (no DB, unit-tested)
+## Pure module - `shared/cardRelations.ts` (no DB, unit-tested)
 
 - `RELATION_ENTITY_TYPES`: ordered catalog, each `{ type, label }` for the 5 types.
 - `isValidEntityType(t): boolean`.
-- `relationHref(type, entityId, ctx?: { pipelineId?: number }): string` — builds the client route:
+- `relationHref(type, entityId, ctx?: { pipelineId?: number }): string` - builds the client route:
   - `customer` → `/customers`, `lead` → `/leads`, `collection` → `/collections`, `odp` → `/odps`
     (list pages; per-id deep-linking is a later enhancement).
   - `card` → `/pipelines/${ctx.pipelineId}?card=${entityId}` (needs the related card's pipelineId,
@@ -50,16 +50,16 @@ export const cardRelations = mysqlTable("card_relations", {
 
 ## Backend
 
-### Storage (anti-N+1, batched per type — follows the `inArray` + Map convention)
-- `listCardRelations(cardId): Promise<CardRelation[]>` — explicit rows for the card.
-- `resolveRelationLabels(relations): Promise<EnrichedRelation[]>` — group by `entityType`, one batched
+### Storage (anti-N+1, batched per type - follows the `inArray` + Map convention)
+- `listCardRelations(cardId): Promise<CardRelation[]>` - explicit rows for the card.
+- `resolveRelationLabels(relations): Promise<EnrichedRelation[]>` - group by `entityType`, one batched
   `inArray` query per type against customers/leads/collections/odps/pipelineCards, returning each
   relation enriched with `entityLabel` + `entitySubtitle` (+ `pipelineId` for `card` type). Unknown/
   deleted entities get a "(dihapus)" label.
-- `addCardRelation(cardId, { entityType, entityId, label })` — validate `entityType`, validate the
+- `addCardRelation(cardId, { entityType, entityId, label })` - validate `entityType`, validate the
   entity exists **in the same mitra** (per-type existence check), insert; ignore duplicates (unique index).
-- `deleteCardRelation(relationId)` — mitra-scoped delete.
-- `searchRelatableEntities(entityType, q): Promise<{ id, label, subtitle, pipelineId? }[]>` — mitra-scoped
+- `deleteCardRelation(relationId)` - mitra-scoped delete.
+- `searchRelatableEntities(entityType, q): Promise<{ id, label, subtitle, pipelineId? }[]>` - mitra-scoped
   search (by name/title/customerId) capped at ~20 rows, for the add-relation picker.
 
 ### Implicit source-customer relation (read-time)
@@ -78,7 +78,7 @@ flagged `implicit: true` (no `id`) so the UI renders it without a delete button.
 Each card-scoped route resolves the card → its `pipelineId` for the permission check (mirrors the
 existing `/api/pipelines/cards/:cardId/move` pattern).
 
-## Frontend — `CardDetailModal`
+## Frontend - `CardDetailModal`
 
 A new **"Relasi"** section:
 - Lists enriched relations grouped by type: each row = entity label + subtitle + a link (`relationHref`)
@@ -90,7 +90,7 @@ A new **"Relasi"** section:
 ## Multi-tenant & testing
 
 - Every query is `getMitraId()`-scoped; `addCardRelation` rejects an `entityId` not in the caller's mitra.
-- Tests: `shared/cardRelations.test.ts` — catalog/`isValidEntityType`/`relationHref`/dedupe (pure).
+- Tests: `shared/cardRelations.test.ts` - catalog/`isValidEntityType`/`relationHref`/dedupe (pure).
   Resolver + routes verified via typecheck + build (no DB in CI).
 
 ## Out of scope (Phase 1)

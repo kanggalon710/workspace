@@ -1,4 +1,4 @@
-# Sahabat Referral Status Filter — Implementation Plan
+# Sahabat Referral Status Filter - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -16,9 +16,9 @@
 
 | Path | Responsibility | Action |
 |---|---|---|
-| `server/storage.ts:2903-2949` | `listAllReferralsAdmin()` query + mapping — single source of truth untuk admin referral listing | **Modify**: tambah 3 SELECT field (is_isolir, status, computed CASE) + 3 mapping fields |
-| `client/pages/LoyaltyAdminPage.tsx:1433-1780` | `ReferralsTable` component — UI tab Referral | **Modify**: state baru `customerStatusFilter`, refactor filter bar layout, tambah kolom tabel, update filter combinator |
-| `docs/superpowers/specs/2026-05-26-sahabat-referral-status-filter-design.md` | Spec reference | (no change — sudah committed `2de46f0`) |
+| `server/storage.ts:2903-2949` | `listAllReferralsAdmin()` query + mapping - single source of truth untuk admin referral listing | **Modify**: tambah 3 SELECT field (is_isolir, status, computed CASE) + 3 mapping fields |
+| `client/pages/LoyaltyAdminPage.tsx:1433-1780` | `ReferralsTable` component - UI tab Referral | **Modify**: state baru `customerStatusFilter`, refactor filter bar layout, tambah kolom tabel, update filter combinator |
+| `docs/superpowers/specs/2026-05-26-sahabat-referral-status-filter-design.md` | Spec reference | (no change - sudah committed `2de46f0`) |
 
 **Tidak diubah**: `shared/schema.ts` (zero schema change), routes endpoint (signature sama), file lain.
 
@@ -26,7 +26,7 @@
 
 ## Pre-flight Check
 
-Sebelum mulai coding: validasi enum `customers.status` di prod cPanel — pastikan definisi "Aktif" (`= 'active'`) tepat sasaran. Kalau ada nilai lain seperti `installing`/`prospect` yang sebetulnya juga "valid customer", catat di PR description (definisi tetap strict, tapi ops perlu tahu).
+Sebelum mulai coding: validasi enum `customers.status` di prod cPanel - pastikan definisi "Aktif" (`= 'active'`) tepat sasaran. Kalau ada nilai lain seperti `installing`/`prospect` yang sebetulnya juga "valid customer", catat di PR description (definisi tetap strict, tapi ops perlu tahu).
 
 - [ ] **Step 0: Cek distribusi customers.status di prod cPanel**
 
@@ -46,7 +46,7 @@ Expected output (rough): mayoritas `active`, possibly minoritas `terminated` / `
 
 - [ ] **Step 1.1: Ubah SELECT clause + mapping di `listAllReferralsAdmin`**
 
-Buka `server/storage.ts` di sekitar line 2903. Edit method `listAllReferralsAdmin` — ganti seluruh body method dengan versi di bawah (perubahan: tambah 2 kolom di SELECT, 1 computed CASE, 3 mapping field):
+Buka `server/storage.ts` di sekitar line 2903. Edit method `listAllReferralsAdmin` - ganti seluruh body method dengan versi di bawah (perubahan: tambah 2 kolom di SELECT, 1 computed CASE, 3 mapping field):
 
 ```ts
   async listAllReferralsAdmin(filter?: { status?: string; limit?: number; includeDeleted?: boolean }): Promise<any[]> {
@@ -89,7 +89,7 @@ Buka `server/storage.ts` di sekitar line 2903. Edit method `listAllReferralsAdmi
     return (rows ?? []).map((r: any) => ({
       id: Number(r.id),
       referrerCustomerId: Number(r.referrerCustomerId),
-      referrerName: r.referrerName ?? "—",
+      referrerName: r.referrerName ?? "-",
       referrerBillingId: r.referrerBillingId ?? null,
       referralCode: String(r.referralCode),
       refereePhone: r.refereePhone ?? null,
@@ -223,16 +223,16 @@ menjadi:
 npx tsc --noEmit 2>&1 | tail -20
 ```
 
-Expected: 0 errors. (Tidak ada step commit di sini — gabung dengan Task 3 karena UI belum complete.)
+Expected: 0 errors. (Tidak ada step commit di sini - gabung dengan Task 3 karena UI belum complete.)
 
 ---
 
-## Task 3: Frontend Filter Bar Refactor — Primary Segmented Control + Secondary Dropdown
+## Task 3: Frontend Filter Bar Refactor - Primary Segmented Control + Secondary Dropdown
 
 **Files:**
 - Modify: `client/pages/LoyaltyAdminPage.tsx:1531-1571` (filter bar JSX)
 
-Locate filter bar JSX di sekitar line 1531 — block yang mulai dengan `{/* Filter bar + Manual create CTA */}`.
+Locate filter bar JSX di sekitar line 1531 - block yang mulai dengan `{/* Filter bar + Manual create CTA */}`.
 
 - [ ] **Step 3.1: Cek imports `Select` component**
 
@@ -297,7 +297,7 @@ Cari block ini di sekitar line 1533:
 **Ganti dengan** (2 rows: primary segmented control by customer status, secondary row dengan dropdown referral status + switch + button):
 
 ```tsx
-      {/* Primary filter — Status Pelanggan (segmented control) */}
+      {/* Primary filter - Status Pelanggan (segmented control) */}
       <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit overflow-x-auto no-scrollbar">
         {([
           { key: "all",          label: "Semua" },
@@ -325,7 +325,7 @@ Cari block ini di sekitar line 1533:
         })}
       </div>
 
-      {/* Secondary filter row — Status Referral dropdown + toggle + CTA */}
+      {/* Secondary filter row - Status Referral dropdown + toggle + CTA */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <label className="text-xs text-muted-foreground select-none">Status Referral:</label>
@@ -377,13 +377,13 @@ Expected: 0 errors.
 - [ ] **Step 3.4: Smoke test di browser (dev)**
 
 Login admin → buka `/loyalty` → tab Referral. Cek:
-- Primary segmented control muncul dengan 4 pill (Semua / Belum daftar / Aktif / Non-aktif) — count di tiap pill
-- Klik tiap pill → tabel ke-filter (mungkin masih tampak kolom Status Pelanggan belum ada, OK — itu Task 4)
+- Primary segmented control muncul dengan 4 pill (Semua / Belum daftar / Aktif / Non-aktif) - count di tiap pill
+- Klik tiap pill → tabel ke-filter (mungkin masih tampak kolom Status Pelanggan belum ada, OK - itu Task 4)
 - Dropdown "Status Referral" muncul di row bawah dengan 5 opsi (Semua + 4 status)
 - Combine: pilih "Aktif" di segmented + "Reward" di dropdown → tabel makin ter-filter
 - Toggle "Tampilkan terhapus" + button "Catat Referral" tetap berfungsi
 
-Tidak ada commit di step ini — gabung dengan Task 4.
+Tidak ada commit di step ini - gabung dengan Task 4.
 
 ---
 
@@ -392,7 +392,7 @@ Tidak ada commit di step ini — gabung dengan Task 4.
 **Files:**
 - Modify: `client/pages/LoyaltyAdminPage.tsx:1593-1602` (table headers) + `1605-1700` (table rows)
 
-- [ ] **Step 4.1: Cek imports — `UserPlus`, `Tooltip` (kalau dipakai)**
+- [ ] **Step 4.1: Cek imports - `UserPlus`, `Tooltip` (kalau dipakai)**
 
 ```bash
 grep -n "UserPlus\|Tooltip" client/pages/LoyaltyAdminPage.tsx | head -5
@@ -404,7 +404,7 @@ Pastikan `UserPlus` ter-import dari `lucide-react`. Kalau belum, tambah di impor
 import { ..., UserPlus } from "lucide-react";
 ```
 
-(Untuk minimum churn, **skip tooltip** di iterasi ini — pakai label inline saja.)
+(Untuk minimum churn, **skip tooltip** di iterasi ini - pakai label inline saja.)
 
 - [ ] **Step 4.2: Tambah header kolom baru**
 
@@ -455,7 +455,7 @@ Cari `<td>` untuk "Tetangga Diundang" yang biasanya berisi `r.refereeName`:
 
 ```tsx
                       <td className="py-3 px-4">
-                        <div className="text-sm font-medium">{r.refereeName ?? "—"}</div>
+                        <div className="text-sm font-medium">{r.refereeName ?? "-"}</div>
                         {r.refereePhone && <div className="text-[10px] text-muted-foreground font-mono">{r.refereePhone}</div>}
                       </td>
 ```
@@ -494,7 +494,7 @@ Tepat **setelah block tersebut** (sebelum cell Status lifecycle), tambah cell ba
                                 ? "Isolir"
                                 : r.refereeCustomerStatusRaw && r.refereeCustomerStatusRaw !== "active"
                                   ? r.refereeCustomerStatusRaw
-                                  : "—"}
+                                  : "-"}
                             </div>
                           </div>
                         )}
@@ -529,7 +529,7 @@ Verifikasi:
 - Filter primary "Non-aktif" → semua row punya badge rose
 - Filter primary "Belum daftar" → semua row punya badge slate (no customer name)
 
-Test edge case manual — pilih 1 customer di DB local, set `is_isolir=1`:
+Test edge case manual - pilih 1 customer di DB local, set `is_isolir=1`:
 ```bash
 mysql -u root jabnet_fiber -e "UPDATE customers SET is_isolir = 1 WHERE id = (SELECT referee_customer_id FROM customer_referrals WHERE referee_customer_id IS NOT NULL LIMIT 1);"
 ```
@@ -675,9 +675,9 @@ mysql -u root jabnet_fiber -e "UPDATE customer_referrals SET referee_customer_id
 Toggle "Tampilkan terhapus" → ON.
 - Soft-deleted rows muncul dengan opacity 50% + strikethrough (perilaku existing)
 - Tetap ter-filter oleh segmented primary
-- Count badge segmented control **tidak berubah** saat toggle on/off (intended — count dihitung dari `referrals` yang sudah include deleted ones via API param)
+- Count badge segmented control **tidak berubah** saat toggle on/off (intended - count dihitung dari `referrals` yang sudah include deleted ones via API param)
 
-Catatan: ini benar — `referrals` data dari API sudah include deleted saat toggle on, dan count badge dihitung dari `referrals.length`. Count akan **berubah** saat toggle on/off — itu intended behavior (total bertambah karena include deleted).
+Catatan: ini benar - `referrals` data dari API sudah include deleted saat toggle on, dan count badge dihitung dari `referrals.length`. Count akan **berubah** saat toggle on/off - itu intended behavior (total bertambah karena include deleted).
 
 - [ ] **Step 6.3: Mobile (375px viewport)**
 
@@ -686,13 +686,13 @@ DevTools → Toggle device toolbar → set width 375px (iPhone SE) → buka `/lo
 Verifikasi:
 - Segmented control scroll horizontal smooth (4 pill mungkin tidak muat semua → swipe horizontal works via `overflow-x-auto`)
 - Dropdown "Status Referral" wrap ke bawah segmented control kalau perlu
-- Tabel scroll horizontal — kolom "Status Pelanggan" tetap readable
+- Tabel scroll horizontal - kolom "Status Pelanggan" tetap readable
 
 - [ ] **Step 6.4: Performance sanity check**
 
 Di browser DevTools → Network tab → buka tab Referral → klik request `GET /api/loyalty/admin/referrals?limit=200`.
 
-Expected: response time <200ms local. Kalau >500ms, ada masalah JOIN — investigate.
+Expected: response time <200ms local. Kalau >500ms, ada masalah JOIN - investigate.
 
 - [ ] **Step 6.5: Final build + type-check**
 
@@ -749,8 +749,8 @@ Verifikasi singkat:
 
 ## Self-Review Notes
 
-- **Spec coverage**: ✓ Aturan kategori, backend SQL CASE, frontend filter primary+secondary, kolom badge, empty state, edge case orphan FK — semua tertutup.
-- **Placeholder scan**: tidak ada TBD / TODO / "implement later" / "appropriate error handling" — semua step punya kode konkret.
+- **Spec coverage**: ✓ Aturan kategori, backend SQL CASE, frontend filter primary+secondary, kolom badge, empty state, edge case orphan FK - semua tertutup.
+- **Placeholder scan**: tidak ada TBD / TODO / "implement later" / "appropriate error handling" - semua step punya kode konkret.
 - **Type consistency**: `refereeStatus` type union sama persis antara backend mapping (`Step 1.1`), frontend state (`Step 2.1`), filter check (`Step 2.2`), badge rendering (`Step 4.3`). `refereeIsIsolir` boolean → frontend conditional check. `refereeCustomerStatusRaw` string|null.
-- **Import check**: `Select` family (Task 3.1), `UserPlus` icon (Task 4.1) — explicit grep step untuk memastikan tersedia sebelum dipakai.
+- **Import check**: `Select` family (Task 3.1), `UserPlus` icon (Task 4.1) - explicit grep step untuk memastikan tersedia sebelum dipakai.
 - **Rollback**: tiap task 1 commit; revert per commit kalau diperlukan. Schema tidak berubah, jadi rollback aman.

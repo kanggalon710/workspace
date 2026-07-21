@@ -4,7 +4,7 @@
 
 **Goal:** Add a click-to-expand (accordion) detail panel to each rule in the Otomasi Pipeline dialog, showing trigger/target with real names, title behavior, assignee behavior, and the full field-value mappings (`source (type) → target (type)`).
 
-**Architecture:** Display-only. The `GET /api/pipelines/:id/rules` endpoint is extended to carry every human-readable string the panel needs (target pipeline name, target stage name, and per-map source/target labels+types) via batched server-side lookups — resolved through a pure, unit-tested helper. The dialog gains an `expandedId` accordion state and renders a detail panel below the clicked rule. No schema changes, no new endpoints, no runtime-behavior change.
+**Architecture:** Display-only. The `GET /api/pipelines/:id/rules` endpoint is extended to carry every human-readable string the panel needs (target pipeline name, target stage name, and per-map source/target labels+types) via batched server-side lookups - resolved through a pure, unit-tested helper. The dialog gains an `expandedId` accordion state and renders a detail panel below the clicked rule. No schema changes, no new endpoints, no runtime-behavior change.
 
 **Tech Stack:** Express 5 + Drizzle (MySQL) backend; React 18 + TanStack Query + shadcn/ui frontend; `node:test` via `npx tsx --test` for the pure helper.
 
@@ -12,11 +12,11 @@
 
 ## File Structure
 
-- `server/pipeline-automation-helpers.ts` — **modify**: add pure `shapeRuleFieldMaps()` (label/type resolution for a rule's maps). Home of existing tested pure helpers.
-- `server/pipeline-automation-helpers.test.ts` — **modify**: add `node:test` cases for `shapeRuleFieldMaps`.
-- `server/routes.ts` — **modify** (`GET /api/pipelines/:id/rules`, ~line 4594–4600): batched enrichment using the helper + target pipeline/stage name resolution.
-- `client/hooks/usePipelines.ts` — **modify** (line 8): extend `RuleWithMaps` + add `RuleFieldMap` type.
-- `client/components/pipelines/PipelineRulesDialog.tsx` — **modify**: `expandedId` accordion state, clickable summary, detail panel, stop-propagation on Switch/Delete.
+- `server/pipeline-automation-helpers.ts` - **modify**: add pure `shapeRuleFieldMaps()` (label/type resolution for a rule's maps). Home of existing tested pure helpers.
+- `server/pipeline-automation-helpers.test.ts` - **modify**: add `node:test` cases for `shapeRuleFieldMaps`.
+- `server/routes.ts` - **modify** (`GET /api/pipelines/:id/rules`, ~line 4594-4600): batched enrichment using the helper + target pipeline/stage name resolution.
+- `client/hooks/usePipelines.ts` - **modify** (line 8): extend `RuleWithMaps` + add `RuleFieldMap` type.
+- `client/components/pipelines/PipelineRulesDialog.tsx` - **modify**: `expandedId` accordion state, clickable summary, detail panel, stop-propagation on Switch/Delete.
 
 ---
 
@@ -61,7 +61,7 @@ test("shapeRuleFieldMaps: empty maps → []", () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: FAIL — `shapeRuleFieldMaps is not exported` / `not a function`.
+Expected: FAIL - `shapeRuleFieldMaps is not exported` / `not a function`.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -94,7 +94,7 @@ export function shapeRuleFieldMaps(
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: PASS — all tests (8 existing + 3 new = 11) green.
+Expected: PASS - all tests (8 existing + 3 new = 11) green.
 
 - [ ] **Step 5: Commit**
 
@@ -108,7 +108,7 @@ git commit -m "feat(pipelines): shapeRuleFieldMaps helper for rule detail labels
 ## Task 2: Enrich `GET /api/pipelines/:id/rules`
 
 **Files:**
-- Modify: `server/routes.ts` (the handler at ~line 4594–4600)
+- Modify: `server/routes.ts` (the handler at ~line 4594-4600)
 
 - [ ] **Step 1: Add the helper import**
 
@@ -253,7 +253,7 @@ Just above the `return (` (after `ruleList` is defined, ~line 122), add a small 
 
 - [ ] **Step 3: Make the summary clickable and add the detail panel**
 
-Replace the entire rule-row block (currently lines ~163–211, the `ruleList.map((r) => ( ... ))` body — the `<div key={r.id} ...>` element) with:
+Replace the entire rule-row block (currently lines ~163-211, the `ruleList.map((r) => ( ... ))` body - the `<div key={r.id} ...>` element) with:
 
 ```tsx
                   {ruleList.map((r) => {
@@ -264,7 +264,7 @@ Replace the entire rule-row block (currently lines ~163–211, the `ruleList.map
                       className="group rounded-lg border border-border/60 bg-card shadow-elev-sm transition-shadow hover:shadow-elev-md"
                     >
                       <div className="flex items-start gap-3 px-3 py-2.5">
-                        {/* Rule description — click to expand */}
+                        {/* Rule description - click to expand */}
                         <button
                           type="button"
                           onClick={() => setExpandedId(expanded ? null : r.id)}
@@ -301,7 +301,7 @@ Replace the entire rule-row block (currently lines ~163–211, the `ruleList.map
                           </span>
                         </button>
 
-                        {/* Enable toggle + delete — must not trigger expand */}
+                        {/* Enable toggle + delete - must not trigger expand */}
                         <div
                           className="flex items-center gap-1.5 shrink-0 mt-0.5"
                           onClick={(e) => e.stopPropagation()}
@@ -345,7 +345,7 @@ Replace the entire rule-row block (currently lines ~163–211, the `ruleList.map
                           <div>
                             <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">Salin assignee</div>
                             {r.copyAssignee === 1
-                              ? <div>Ya <span className="text-muted-foreground">— hanya jika penerima punya akses ke pipeline target</span></div>
+                              ? <div>Ya <span className="text-muted-foreground">- hanya jika penerima punya akses ke pipeline target</span></div>
                               : <div>Tidak</div>}
                           </div>
                           <div>
@@ -385,7 +385,7 @@ git commit -m "feat(pipelines): expandable rule detail panel in automation dialo
 
 ---
 
-## Manual Verification (dev — `jabnet_fiber_dev`, plain restart; no migration)
+## Manual Verification (dev - `jabnet_fiber_dev`, plain restart; no migration)
 
 After deploy to dev + restart Node app, in `/pipelines` → a pipeline with automation rules → open the Otomasi dialog:
 
@@ -403,4 +403,4 @@ After deploy to dev + restart Node app, in `/pipelines` → a pipeline with auto
 
 - **Spec coverage:** §Backend → Task 1+2; §Frontend hook type → Task 3; §Frontend dialog (5 detail items, accordion, stop-propagation) → Task 4; §Testing → Task 1 unit + Task 4 build + manual checklist. All covered.
 - **Type consistency:** `shapeRuleFieldMaps` output shape matches `RuleFieldMap` (Task 3) and the endpoint's `fieldMaps` (Task 2). `targetPipelineName`/`targetStageName` added in both Task 2 (server) and Task 3 (client type). Existing client helpers `stageName`, `pipeName`, `targetStageName` reused as fallbacks (`??`) so nothing breaks if a field is absent.
-- **No new DB objects** — deploy is pull + restart only.
+- **No new DB objects** - deploy is pull + restart only.

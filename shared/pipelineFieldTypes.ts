@@ -1,5 +1,5 @@
 /** Single source of truth for pipeline custom field-type metadata + pure decision helpers.
- *  No React, no DB — imported by client (picker, board) and server (validation, singleton guard). */
+ *  No React, no DB - imported by client (picker, board) and server (validation, singleton guard). */
 import type { PipelineFieldType, PipelineField } from "./schema.js";
 
 export interface FieldTypeMeta {
@@ -28,7 +28,7 @@ export const PIPELINE_FIELD_TYPE_REGISTRY: Record<PipelineFieldType, FieldTypeMe
   url:         { type: "url",         label: "URL",            description: "Tautan web",                 group: "special", hasOptions: false, singleton: false, searchable: true,  filterable: false, sortable: false },
   coordinate:  { type: "coordinate",  label: "Koordinat",      description: "Lokasi (lat/lng) + peta",    group: "special", hasOptions: false, singleton: true,  searchable: false, filterable: false, sortable: false },
 };
-// NOTE: date.filterable=false on purpose — the board's existing date-range control covers date filtering,
+// NOTE: date.filterable=false on purpose - the board's existing date-range control covers date filtering,
 // so date is not offered again in the generic field filter. Slice D's Coordinate will be the first singleton:true.
 
 export function getFieldTypeMeta(type: string): FieldTypeMeta | undefined {

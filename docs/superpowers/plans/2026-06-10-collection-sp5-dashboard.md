@@ -1,4 +1,4 @@
-# SP5 — Collection Dashboard Metrics Implementation Plan
+# SP5 - Collection Dashboard Metrics Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. Steps use `- [ ]`.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO worktrees, NO branch switches. Verify `git branch --show-current` is `dev`.**
@@ -15,7 +15,7 @@
 
 **Files:** Create `shared/collectionDashboard.ts`, `shared/collectionDashboard.test.ts`.
 
-- [ ] **Step 1: Test** — create `shared/collectionDashboard.test.ts`:
+- [ ] **Step 1: Test** - create `shared/collectionDashboard.test.ts`:
 ```ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -66,11 +66,11 @@ test("card with missing snapshot: counted in totals/byStage, excluded from aging
 });
 ```
 
-- [ ] **Step 2: Run → fail** — `npx tsx --test shared/collectionDashboard.test.ts`.
+- [ ] **Step 2: Run → fail** - `npx tsx --test shared/collectionDashboard.test.ts`.
 
 - [ ] **Step 3: Write `shared/collectionDashboard.ts`**
 ```ts
-/** Pure collection dashboard aggregation — no I/O. */
+/** Pure collection dashboard aggregation - no I/O. */
 
 export interface MetricsCard { stageId: number; sourceCustomerId: number | null; }
 export interface MetricsSnapshot { daysOverdue: number; outstandingAmount: number; billingStatus: string | null; }
@@ -131,7 +131,7 @@ export function computeCollectionMetrics(input: {
 }
 ```
 
-- [ ] **Step 4: Run → pass** — `npx tsx --test shared/collectionDashboard.test.ts` (3 tests). `npx tsc --noEmit` → 0.
+- [ ] **Step 4: Run → pass** - `npx tsx --test shared/collectionDashboard.test.ts` (3 tests). `npx tsc --noEmit` → 0.
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -147,7 +147,7 @@ git commit -m "feat(collection): pure dashboard metrics aggregation"
 
 - [ ] **Step 1: Write**
 ```ts
-/** Gather collection metrics for a pipeline (current tenant) — storage + the pure aggregator. */
+/** Gather collection metrics for a pipeline (current tenant) - storage + the pure aggregator. */
 import { storage } from "./storage.js";
 import { buildCollectionSnapshot } from "../shared/collectionMetrics.js";
 import { computeCollectionMetrics, type CollectionMetrics, type MetricsSnapshot } from "../shared/collectionDashboard.js";
@@ -171,7 +171,7 @@ export async function getCollectionMetrics(pipelineId: number): Promise<Collecti
 }
 ```
 
-- [ ] **Step 2: Verify** — `npx tsc --noEmit` → 0.
+- [ ] **Step 2: Verify** - `npx tsc --noEmit` → 0.
 
 - [ ] **Step 3: Commit**
 ```bash
@@ -185,11 +185,11 @@ git commit -m "feat(collection): getCollectionMetrics gatherer"
 
 **Files:** `server/routes.ts`.
 
-- [ ] **Step 1: Import** — with other `./*.js` imports, add:
+- [ ] **Step 1: Import** - with other `./*.js` imports, add:
 ```ts
 import { getCollectionMetrics } from "./collection-metrics.js";
 ```
-- [ ] **Step 2: Endpoint** — place near the `/api/pipelines/:id/collection-config` GET (search for it). Add:
+- [ ] **Step 2: Endpoint** - place near the `/api/pipelines/:id/collection-config` GET (search for it). Add:
 ```ts
   router.get("/api/pipelines/:id/collection-metrics", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
@@ -200,7 +200,7 @@ import { getCollectionMetrics } from "./collection-metrics.js";
   });
 ```
 (`requirePermission`, `requirePipelineView`, `sendSuccess` all exist + in scope.)
-- [ ] **Step 3: Verify** — `npx tsc --noEmit` → 0.
+- [ ] **Step 3: Verify** - `npx tsc --noEmit` → 0.
 - [ ] **Step 4: Commit**
 ```bash
 git add server/routes.ts
@@ -213,7 +213,7 @@ git commit -m "feat(collection): GET /api/pipelines/:id/collection-metrics"
 
 **Files:** `client/hooks/usePipelines.ts`, create `client/components/pipelines/CollectionMetricsDialog.tsx`, `client/pages/PipelineBoardPage.tsx`.
 
-- [ ] **Step 1: Hook** — append to `client/hooks/usePipelines.ts`:
+- [ ] **Step 1: Hook** - append to `client/hooks/usePipelines.ts`:
 ```ts
 export interface CollectionMetricsData {
   totalCards: number; activeCount: number; paidCount: number; writeoffCount: number;
@@ -230,7 +230,7 @@ export function useCollectionMetrics(pipelineId: number, enabled: boolean) {
 }
 ```
 
-- [ ] **Step 2: Dialog** — create `client/components/pipelines/CollectionMetricsDialog.tsx`:
+- [ ] **Step 2: Dialog** - create `client/components/pipelines/CollectionMetricsDialog.tsx`:
 ```tsx
 import { Database, Users, CheckCircle2, XCircle, Wallet, TrendingUp } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -261,7 +261,7 @@ export function CollectionMetricsDialog({ pipelineId, open, onClose }: { pipelin
                 <StatTile icon={CheckCircle2} label="Lunas" value={m.paidCount} accent="success" />
                 <StatTile icon={XCircle} label="Write-Off" value={m.writeoffCount} accent="danger" />
                 <StatTile icon={Wallet} label="Outstanding" value={rupiah(m.totalOutstanding)} accent="warning" />
-                <StatTile icon={TrendingUp} label="Success Rate" value={m.successRate == null ? "—" : `${Math.round(m.successRate * 100)}%`} accent="primary" />
+                <StatTile icon={TrendingUp} label="Success Rate" value={m.successRate == null ? "-" : `${Math.round(m.successRate * 100)}%`} accent="primary" />
               </div>
 
               <section>
@@ -298,7 +298,7 @@ export function CollectionMetricsDialog({ pipelineId, open, onClose }: { pipelin
   );
 }
 ```
-(Confirm `StatTile` is exported from `@/components/ui/stat-tile` and `EmptyState` from `@/components/ui/empty-state` — both exist; adapt the import names if the exports differ.)
+(Confirm `StatTile` is exported from `@/components/ui/stat-tile` and `EmptyState` from `@/components/ui/empty-state` - both exist; adapt the import names if the exports differ.)
 
 - [ ] **Step 3: Board wiring** (`client/pages/PipelineBoardPage.tsx`):
   - Import: `import { CollectionMetricsDialog } from "@/components/pipelines/CollectionMetricsDialog";`
@@ -314,7 +314,7 @@ export function CollectionMetricsDialog({ pipelineId, open, onClose }: { pipelin
     )}
     ```
 
-- [ ] **Step 4: Verify** — `npx tsc --noEmit && npm run build` → 0 type errors; build OK.
+- [ ] **Step 4: Verify** - `npx tsc --noEmit && npm run build` → 0 type errors; build OK.
 - [ ] **Step 5: Commit**
 ```bash
 git add client/hooks/usePipelines.ts client/components/pipelines/CollectionMetricsDialog.tsx client/pages/PipelineBoardPage.tsx
@@ -334,4 +334,4 @@ git commit -m "feat(collection): Collection metrics dialog + board button"
 
 ## Notes
 - Read-only, current-state. Tenant: all storage calls mitra-scoped; endpoint read+view gated.
-- `getCustomers()` full fetch per call — fine at ~808; cache later if needed.
+- `getCustomers()` full fetch per call - fine at ~808; cache later if needed.

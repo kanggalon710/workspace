@@ -1,6 +1,6 @@
 /**
- * Customer Portal Auth Context — separate dari staff AuthContext.
- * Pakai localStorage key "jabnet_portal_session" — token + customer info dari verify-otp.
+ * Customer Portal Auth Context - separate dari staff AuthContext.
+ * Pakai localStorage key "jabnet_portal_session" - token + customer info dari verify-otp.
  * apiFetch() helper otomatis include Authorization: Bearer <token>.
  */
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";

@@ -1,10 +1,10 @@
 /**
- * Marketing Ads — Audience Export & ODP Clustering Utilities
+ * Marketing Ads - Audience Export & ODP Clustering Utilities
  * Generates Meta/TikTok-compatible audience files + geo-target clusters
  */
 import crypto from "crypto";
 
-// ── SHA-256 Hashing (Meta/TikTok requirement) ──
+// -- SHA-256 Hashing (Meta/TikTok requirement) --
 
 export function hashSHA256(value: string): string {
   return crypto.createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
@@ -19,7 +19,7 @@ export function formatPhoneE164(phone: string): string {
   return clean;
 }
 
-// ── Audience CSV Generation ──
+// -- Audience CSV Generation --
 
 export interface AudienceRow {
   email: string;  // SHA-256
@@ -66,7 +66,7 @@ export function audienceToCSV(rows: AudienceRow[], includeValue = false): string
   return [headers, ...lines].join("\n");
 }
 
-// ── Haversine Distance (meters) ──
+// -- Haversine Distance (meters) --
 
 export function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000; // Earth radius in meters
@@ -78,7 +78,7 @@ export function haversineDistance(lat1: number, lng1: number, lat2: number, lng2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ── ODP Clustering ──
+// -- ODP Clustering --
 
 export interface OdpForCluster {
   id: number;

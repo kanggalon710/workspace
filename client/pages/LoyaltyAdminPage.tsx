@@ -35,23 +35,23 @@ import { SahabatDetailDrawer } from "@/components/sahabat/SahabatDetailDrawer";
 
 type Tab = "summary" | "discounts" | "leaderboard" | "referrals" | "points";
 
-// Sahabat level config — sesuai program JABNET Sahabat
+// Sahabat level config - sesuai program JABNET Sahabat
 const LEVEL_CFG: Record<string, { label: string; emoji: string; color: string; bg: string; threshold: number; hex: string }> = {
-  new:       { label: "Pelanggan",    emoji: "👋", color: "text-slate-700 dark:text-slate-300",  bg: "bg-slate-100 dark:bg-slate-900",     threshold: 0,   hex: "#64748b" },
-  perunggu:  { label: "Perunggu",     emoji: "🥉", color: "text-amber-800 dark:text-amber-200",  bg: "bg-amber-100 dark:bg-amber-950/40",  threshold: 5,   hex: "#b45309" },
-  perak:     { label: "Perak",        emoji: "🥈", color: "text-slate-700 dark:text-slate-200",  bg: "bg-slate-200 dark:bg-slate-800/40",  threshold: 10,  hex: "#94a3b8" },
-  emas:      { label: "Emas",         emoji: "🥇", color: "text-yellow-700 dark:text-yellow-200",bg: "bg-yellow-100 dark:bg-yellow-950/40",threshold: 20,  hex: "#f59e0b" },
-  platinum:  { label: "Platinum",     emoji: "💎", color: "text-blue-700 dark:text-blue-200",    bg: "bg-blue-100 dark:bg-blue-950/40",    threshold: 30,  hex: "#3b82f6" },
-  berlian:   { label: "Berlian",      emoji: "👑", color: "text-purple-700 dark:text-purple-200",bg: "bg-purple-100 dark:bg-purple-950/40",threshold: 50,  hex: "#a855f7" },
-  ambassador:{ label: "Ambassador",   emoji: "🌟", color: "text-pink-700 dark:text-pink-200",    bg: "bg-pink-100 dark:bg-pink-950/40",    threshold: 100, hex: "#ec4899" },
+  new:       { label: "Pelanggan",    emoji: "", color: "text-slate-700 dark:text-slate-300",  bg: "bg-slate-100 dark:bg-slate-900",     threshold: 0,   hex: "#64748b" },
+  perunggu:  { label: "Perunggu",     emoji: "", color: "text-amber-800 dark:text-amber-200",  bg: "bg-amber-100 dark:bg-amber-950/40",  threshold: 5,   hex: "#b45309" },
+  perak:     { label: "Perak",        emoji: "", color: "text-slate-700 dark:text-slate-200",  bg: "bg-slate-200 dark:bg-slate-800/40",  threshold: 10,  hex: "#94a3b8" },
+  emas:      { label: "Emas",         emoji: "", color: "text-yellow-700 dark:text-yellow-200",bg: "bg-yellow-100 dark:bg-yellow-950/40",threshold: 20,  hex: "#f59e0b" },
+  platinum:  { label: "Platinum",     emoji: "", color: "text-blue-700 dark:text-blue-200",    bg: "bg-blue-100 dark:bg-blue-950/40",    threshold: 30,  hex: "#3b82f6" },
+  berlian:   { label: "Berlian",      emoji: "", color: "text-purple-700 dark:text-purple-200",bg: "bg-purple-100 dark:bg-purple-950/40",threshold: 50,  hex: "#a855f7" },
+  ambassador:{ label: "Ambassador",   emoji: "", color: "text-pink-700 dark:text-pink-200",    bg: "bg-pink-100 dark:bg-pink-950/40",    threshold: 100, hex: "#ec4899" },
 };
 
-// Legacy tenure badge — display sekunder
+// Legacy tenure badge - display sekunder
 const BADGE_CFG: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
-  tetangga: { label: "<1 thn", emoji: "🌱", color: "text-slate-700 dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-900" },
-  keluarga: { label: "1-3 thn", emoji: "🏠", color: "text-sky-700 dark:text-sky-300", bg: "bg-sky-50 dark:bg-sky-950/40" },
-  sahabat:  { label: "3-5 thn", emoji: "⭐", color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-50 dark:bg-amber-950/40" },
-  abadi:    { label: "5+ thn",  emoji: "👑", color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-100 dark:bg-yellow-950/40" },
+  tetangga: { label: "<1 thn", emoji: "", color: "text-slate-700 dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-900" },
+  keluarga: { label: "1-3 thn", emoji: "", color: "text-sky-700 dark:text-sky-300", bg: "bg-sky-50 dark:bg-sky-950/40" },
+  sahabat:  { label: "3-5 thn", emoji: "", color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-50 dark:bg-amber-950/40" },
+  abadi:    { label: "5+ thn",  emoji: "", color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-100 dark:bg-yellow-950/40" },
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -59,16 +59,16 @@ const SOURCE_LABELS: Record<string, string> = {
   ref_bill_75k:              "Potongan Tagihan 75K (ref)",
   ref_speed_boost_5mbps:     "Upgrade +5 Mbps (3 ref)",
   referral_referee_welcome:  "Welcome 7 hari (referee baru)",
-  sahabat_perunggu:          "🥉 Milestone Perunggu (5 ref)",
-  sahabat_perak:             "🥈 Milestone Perak (10 ref)",
-  sahabat_emas:              "🥇 Milestone Emas (20 ref)",
-  sahabat_platinum:          "💎 Milestone Platinum (30 ref)",
-  sahabat_berlian:           "👑 Milestone Berlian (50 ref)",
+  sahabat_perunggu:          " Milestone Perunggu (5 ref)",
+  sahabat_perak:             " Milestone Perak (10 ref)",
+  sahabat_emas:              " Milestone Emas (20 ref)",
+  sahabat_platinum:          " Milestone Platinum (30 ref)",
+  sahabat_berlian:           " Milestone Berlian (50 ref)",
   // Legacy (tidak di-generate lagi)
   streak_3: "Streak 3 Bulan (legacy)",
   streak_6: "Streak 6 Bulan (legacy)",
-  streak_12: "🎉 Anniversary (legacy)",
-  streak_24: "🏆 Pelanggan Setia (legacy)",
+  streak_12: " Anniversary (legacy)",
+  streak_24: " Pelanggan Setia (legacy)",
   referral_referrer: "Referral Pengundang (legacy)",
   referral_referee: "Referral Referee (legacy)",
   seasonal: "Bonus Musiman",
@@ -96,14 +96,14 @@ const REFERRAL_STATUS_LABELS: Record<string, string> = {
 };
 
 function fmtRp(n: number | null | undefined) {
-  return n ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+  return n ? `Rp ${n.toLocaleString("id-ID")}` : "-";
 }
 function fmtDate(iso: string | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 function fmtRelative(iso: string | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
   if (mins < 1) return "baru saja";
@@ -257,7 +257,7 @@ export default function LoyaltyAdminPage() {
                   <ol className="space-y-1 text-muted-foreground list-decimal ml-4">
                     <li>Pelanggan dapat <strong>kode Sahabat</strong> otomatis (<code className="font-mono text-[10px]">SHB-KEC-NNN</code>) di portal pelanggan.</li>
                     <li>Share kode ke tetangga via WA / omongan.</li>
-                    <li>Tetangga daftar internet di <code className="font-mono text-[10px]">billing.jabnet.id</code> — tulis kode ref.</li>
+                    <li>Tetangga daftar internet di <code className="font-mono text-[10px]">billing.jabnet.id</code> - tulis kode ref.</li>
                     <li>Billing sync detect customer baru → auto-link ke referrer (match HP).</li>
                     <li>Saat bayar pertama → reward <strong>Voucher Rp 50K</strong> cair otomatis ke pengundang.</li>
                   </ol>
@@ -278,7 +278,7 @@ export default function LoyaltyAdminPage() {
               <div className="flex items-start gap-2 p-2 rounded border bg-amber-50 dark:bg-amber-950/20 text-[11px]">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-muted-foreground">
-                  <strong className="text-foreground">Satu entry, dua jalur:</strong> kedua jalur menyimpan ke tabel yang sama — jadi walau awalnya manual, sistem tetap tracking progress level & milestone bonus seperti referral otomatis.
+                  <strong className="text-foreground">Satu entry, dua jalur:</strong> kedua jalur menyimpan ke tabel yang sama - jadi walau awalnya manual, sistem tetap tracking progress level & milestone bonus seperti referral otomatis.
                 </div>
               </div>
             </CardContent>
@@ -455,8 +455,8 @@ export default function LoyaltyAdminPage() {
             <DialogTitle>Terapkan Diskon</DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-1 pt-1">
-                <div>{applyFor?.customerName} — {applyFor?.description}</div>
-                <div className="text-xs"><strong>{applyFor ? fmtRewardValue({ discountType: applyFor.discountType, discountValue: applyFor.discountValue }) : "—"}</strong> untuk periode {applyFor?.eligibleForPeriod ?? "—"}</div>
+                <div>{applyFor?.customerName} - {applyFor?.description}</div>
+                <div className="text-xs"><strong>{applyFor ? fmtRewardValue({ discountType: applyFor.discountType, discountValue: applyFor.discountValue }) : "-"}</strong> untuk periode {applyFor?.eligibleForPeriod ?? "-"}</div>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -488,7 +488,7 @@ export default function LoyaltyAdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Sahabat Kit dialog — marketing material generator */}
+      {/* Sahabat Kit dialog - marketing material generator */}
       <SahabatKitDialog
         open={!!kitFor}
         onOpenChange={(o) => !o && setKitFor(null)}
@@ -514,8 +514,8 @@ export default function LoyaltyAdminPage() {
             <AlertDialogTitle>Batalkan Diskon?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 pt-1">
-                <div>{cancelFor?.customerName} — {cancelFor?.description}</div>
-                <div className="text-xs"><strong>{cancelFor ? fmtRewardValue({ discountType: cancelFor.discountType, discountValue: cancelFor.discountValue }) : "—"}</strong> untuk periode {cancelFor?.eligibleForPeriod ?? "—"}</div>
+                <div>{cancelFor?.customerName} - {cancelFor?.description}</div>
+                <div className="text-xs"><strong>{cancelFor ? fmtRewardValue({ discountType: cancelFor.discountType, discountValue: cancelFor.discountValue }) : "-"}</strong> untuk periode {cancelFor?.eligibleForPeriod ?? "-"}</div>
                 <Input
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
@@ -612,7 +612,7 @@ export default function LoyaltyAdminPage() {
                 <div>
                   Diskon <strong>Rp {deleteDiscountFor?.discountValue?.toLocaleString("id-ID") ?? "-"}</strong> akan disembunyikan dari list.
                 </div>
-                <div className="text-xs">Soft delete — masih bisa di-restore via SQL admin kalau perlu.</div>
+                <div className="text-xs">Soft delete - masih bisa di-restore via SQL admin kalau perlu.</div>
                 <Textarea
                   placeholder="Alasan hapus (opsional)"
                   value={deleteDiscountReason}
@@ -637,7 +637,7 @@ export default function LoyaltyAdminPage() {
   );
 }
 
-// ─── Components ──────────────────────────────────────────────────────
+// --- Components ------------------------------------------------------
 
 function KpiCard({
   icon, iconBg, label, value, trend, alert,
@@ -720,11 +720,11 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
               <Flame className={`h-4 w-4 ${campaign?.isActive ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-muted-foreground"}`} />
               <div className="min-w-0">
                 <h3 className="font-semibold text-sm">
-                  {campaign?.isActive ? `🎉 Campaign Aktif: ${campaign.campaign?.name}` : "Seasonal Campaign"}
+                  {campaign?.isActive ? ` Campaign Aktif: ${campaign.campaign?.name}` : "Seasonal Campaign"}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {campaign?.isActive
-                    ? `${campaign.campaign?.multiplier}x multiplier · ${new Date(campaign.campaign.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })} – ${new Date(campaign.campaign.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
+                    ? `${campaign.campaign?.multiplier}x multiplier · ${new Date(campaign.campaign.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })} - ${new Date(campaign.campaign.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
                     : "Pasang multiplier reward untuk periode tertentu (Lebaran, Agustusan, dsb)"}
                 </p>
                 {campaign?.campaign?.description && (
@@ -814,7 +814,7 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
                   <div className="p-2 rounded-md border bg-sky-50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900">
                     <div className="text-[10px] uppercase tracking-wider text-sky-700 dark:text-sky-400 font-semibold">Limit</div>
                     <div className="text-lg font-bold tabular-nums mt-0.5 text-sky-700 dark:text-sky-300">
-                      {budget.limitMonthly > 0 ? fmtRp(budget.limitMonthly) : "—"}
+                      {budget.limitMonthly > 0 ? fmtRp(budget.limitMonthly) : "-"}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       {budget.limitMonthly > 0 ? `sisa ${fmtRp(Math.max(0, budget.limitMonthly - budget.issuedTotal))}` : "belum di-set"}
@@ -862,7 +862,7 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">{f.reason}</div>
                     <div className="text-muted-foreground mt-0.5">
-                      {f.referrerName} → {f.refereeName ?? "—"}
+                      {f.referrerName} → {f.refereeName ?? "-"}
                       {f.refereePhone && <> · <span className="font-mono">{f.refereePhone}</span></>}
                     </div>
                     {f.detail && <div className="text-[10px] text-muted-foreground italic mt-0.5">{f.detail}</div>}
@@ -944,7 +944,7 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
         </Card>
       )}
 
-      {/* Sahabat Level — bar chart style */}
+      {/* Sahabat Level - bar chart style */}
       {summary?.byLevel && (
         <Card>
           <CardContent className="p-5">
@@ -1000,7 +1000,7 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-sm">Struktur Tier Mitra</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">3 tingkat kemitraan — auto-upgrade saat Perunggu</p>
+                <p className="text-xs text-muted-foreground mt-0.5">3 tingkat kemitraan - auto-upgrade saat Perunggu</p>
               </div>
               <Star className="h-5 w-5 text-amber-500" />
             </div>
@@ -1209,7 +1209,7 @@ function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }: any) {
             <div className="flex items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground mt-2 flex-wrap">
               <span className="inline-flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                Periode {d.eligibleForPeriod ?? "—"}
+                Periode {d.eligibleForPeriod ?? "-"}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
@@ -1272,7 +1272,7 @@ function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }: any) {
         <div className="mt-3 pt-3 border-t text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
           <span className="flex-1">
-            Applied oleh <strong className="text-foreground">{d.appliedByName ?? "—"}</strong> · {fmtDate(d.appliedAt)}
+            Applied oleh <strong className="text-foreground">{d.appliedByName ?? "-"}</strong> · {fmtDate(d.appliedAt)}
             {d.invoiceRef && <span> · Ref: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">{d.invoiceRef}</code></span>}
           </span>
           {canEdit && (
@@ -1391,7 +1391,7 @@ function LeaderboardTable({ leaderboard, loading, onKit, onOpenDetail }: any) {
                       <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-semibold">
                         {l.sahabatCode}
                       </span>
-                    ) : <span className="text-muted-foreground">—</span>}
+                    ) : <span className="text-muted-foreground">-</span>}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <span className="text-base font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{l.totalSuccessfulReferrals}</span>
@@ -1537,7 +1537,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
 
   return (
     <div className="space-y-3">
-      {/* Primary filter — Status Pelanggan (segmented control) */}
+      {/* Primary filter - Status Pelanggan (segmented control) */}
       <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit overflow-x-auto no-scrollbar">
         {([
           { key: "all",          label: "Semua" },
@@ -1565,7 +1565,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
         })}
       </div>
 
-      {/* Secondary filter row — Status Referral dropdown + toggle + CTA */}
+      {/* Secondary filter row - Status Referral dropdown + toggle + CTA */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <label className="text-xs text-muted-foreground select-none">Status Referral:</label>
@@ -1662,7 +1662,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="text-sm font-medium">{r.refereeName ?? "—"}</div>
+                        <div className="text-sm font-medium">{r.refereeName ?? "-"}</div>
                         {r.refereePhone && <div className="text-[10px] text-muted-foreground font-mono">{r.refereePhone}</div>}
                       </td>
                       <td className="py-3 px-4">
@@ -1696,7 +1696,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
                                 ? "Isolir"
                                 : r.refereeCustomerStatusRaw && r.refereeCustomerStatusRaw !== "active"
                                   ? r.refereeCustomerStatusRaw
-                                  : "—"}
+                                  : "-"}
                             </div>
                           </div>
                         )}
@@ -1777,7 +1777,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
           <DialogHeader>
             <DialogTitle>Catat Referral Offline</DialogTitle>
             <DialogDescription>
-              Input referral dari obrolan telepon/WA/ketemu langsung. Baris akan masuk dengan status <em>Diundang</em> — nanti bisa di-<strong>Link</strong> ke customer saat tetangga daftar.
+              Input referral dari obrolan telepon/WA/ketemu langsung. Baris akan masuk dengan status <em>Diundang</em> - nanti bisa di-<strong>Link</strong> ke customer saat tetangga daftar.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1905,7 +1905,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
               <div className="space-y-1 pt-1 text-xs">
                 <div>Referral: <strong>{linkFor?.referralCode}</strong></div>
                 <div>Pengundang: {linkFor?.referrerName}</div>
-                <div>Tetangga diundang: {linkFor?.refereeName ?? "—"} ({linkFor?.refereePhone ?? "—"})</div>
+                <div>Tetangga diundang: {linkFor?.refereeName ?? "-"} ({linkFor?.refereePhone ?? "-"})</div>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -2029,9 +2029,9 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// POINT REDEMPTIONS TAB — Speed-on-Demand admin verification
-// ═══════════════════════════════════════════════════════════════
+// ===============================================================
+// POINT REDEMPTIONS TAB - Speed-on-Demand admin verification
+// ===============================================================
 function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange }: { canEdit: boolean; stats: any; showDeleted: boolean; onShowDeletedChange: (v: boolean) => void }) {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("pending");
@@ -2176,7 +2176,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
 
   return (
     <div className="space-y-3">
-      {/* Health alert — kalau ada redemption gagal revert MikroTik */}
+      {/* Health alert - kalau ada redemption gagal revert MikroTik */}
       {health && health.overdueCount > 0 && (
         <div className={`rounded-lg border p-4 ${
           health.criticalCount > 0
@@ -2194,8 +2194,8 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
                 health.criticalCount > 0 ? "text-rose-900 dark:text-rose-200" : "text-amber-900 dark:text-amber-200"
               }`}>
                 {health.criticalCount > 0
-                  ? `🚨 ${health.criticalCount} redemption CRITICAL — gagal revert MikroTik 5×+`
-                  : `⚠️ ${health.overdueCount} redemption gagal auto-revert MikroTik`}
+                  ? ` ${health.criticalCount} redemption CRITICAL - gagal revert MikroTik 5×+`
+                  : ` ${health.overdueCount} redemption gagal auto-revert MikroTik`}
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
                 Customer masih dapat boost speed sampai MikroTik bisa di-revert. Worker auto-retry tiap 1 menit.
@@ -2215,7 +2215,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
                     </span>
                     {it.revertError && (
                       <span className="text-muted-foreground italic truncate max-w-[280px]" title={it.revertError}>
-                        — {it.revertError}
+                        - {it.revertError}
                       </span>
                     )}
                   </div>
@@ -2229,7 +2229,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
         </div>
       )}
 
-      {/* KPI bar — telco mature, numbers carry the design */}
+      {/* KPI bar - telco mature, numbers carry the design */}
       <div className="rounded-lg border bg-card overflow-hidden">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-x divide-y sm:divide-y-0">
           <StatTile
@@ -2267,7 +2267,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
         </div>
       </div>
 
-      {/* Action bar — segmented filter + proper toolbar buttons */}
+      {/* Action bar - segmented filter + proper toolbar buttons */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1 p-1 bg-muted/60 rounded-lg w-fit overflow-x-auto">
           {(["pending", "active", "expired", "rejected", "cancelled", "all"] as const).map((s) => {
@@ -2511,21 +2511,21 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
                         size="icon-xs"
                         variant="ghost"
                         disabled={r.status === "active"}
-                        title={r.status === "active" ? "Boost masih jalan — cancel dulu" : "Hapus"}
+                        title={r.status === "active" ? "Boost masih jalan - cancel dulu" : "Hapus"}
                         onClick={() => { setDeleteFor(r); setDeleteReason(""); }}
                       >
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                       {r.status === "active" && (
                         <>
-                          {/* Force Expire — hanya muncul kalau revertAttempts > 0 (artinya overdue + gagal revert) */}
+                          {/* Force Expire - hanya muncul kalau revertAttempts > 0 (artinya overdue + gagal revert) */}
                           {(r.revertAttempts ?? 0) > 0 && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => { setForceExpireFor(r); setForceExpireReason(""); }}
                               className="h-8 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-300 dark:border-amber-900"
-                              title={`Auto-revert gagal ${r.revertAttempts}× — force expire setelah benerin profile manual`}
+                              title={`Auto-revert gagal ${r.revertAttempts}× - force expire setelah benerin profile manual`}
                             >
                               <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Force Expire
                             </Button>
@@ -2556,7 +2556,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
             <DialogTitle>Verify & Aktivasi Boost</DialogTitle>
             <DialogDescription asChild>
               <div className="text-xs pt-1 space-y-1">
-                <div>{verifyFor?.customerName} — <span className="font-mono">#{verifyFor?.customerBillingId}</span></div>
+                <div>{verifyFor?.customerName} - <span className="font-mono">#{verifyFor?.customerBillingId}</span></div>
                 <div className="font-semibold text-foreground">{verifyFor?.rewardLabel} · {verifyFor?.durationHours}h durasi</div>
                 <div>Setelah verify, boost akan aktif {verifyFor?.durationHours} jam dari sekarang.</div>
               </div>
@@ -2595,7 +2595,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
         </DialogContent>
       </Dialog>
 
-      {/* Force Expire dialog — admin override saat MikroTik tidak bisa di-revert otomatis */}
+      {/* Force Expire dialog - admin override saat MikroTik tidak bisa di-revert otomatis */}
       <Dialog open={!!forceExpireFor} onOpenChange={(o) => !o && setForceExpireFor(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -2604,11 +2604,11 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
             </DialogTitle>
             <DialogDescription asChild>
               <div className="text-xs pt-1 space-y-1">
-                <div>{forceExpireFor?.customerName} — <span className="font-mono">#{forceExpireFor?.customerBillingId}</span></div>
+                <div>{forceExpireFor?.customerName} - <span className="font-mono">#{forceExpireFor?.customerBillingId}</span></div>
                 <div className="font-semibold text-foreground">{forceExpireFor?.rewardLabel}</div>
                 {(forceExpireFor?.revertAttempts ?? 0) > 0 && (
                   <div className="text-rose-600 dark:text-rose-400">
-                    Auto-revert sudah gagal {forceExpireFor?.revertAttempts}× — error terakhir: <em>{forceExpireFor?.revertError}</em>
+                    Auto-revert sudah gagal {forceExpireFor?.revertAttempts}× - error terakhir: <em>{forceExpireFor?.revertError}</em>
                   </div>
                 )}
               </div>
@@ -2616,14 +2616,14 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
           </DialogHeader>
           <div className="space-y-3">
             <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 text-xs">
-              <p className="font-bold text-amber-900 dark:text-amber-200">⚠️ Force expire = bypass revert MikroTik</p>
+              <p className="font-bold text-amber-900 dark:text-amber-200"> Force expire = bypass revert MikroTik</p>
               <p className="text-amber-800/90 dark:text-amber-300/90 mt-1">
                 Hanya gunakan kalau kamu <strong>sudah set profile manual lewat WinBox</strong> ke <code className="font-mono bg-amber-200/60 dark:bg-amber-900/60 px-1 rounded">{forceExpireFor?.originalPppProfile ?? "profile asli"}</code>.
                 Tindakan ini akan di-log di audit trail dengan alasan kamu.
               </p>
             </div>
             <div>
-              <Label className="text-xs">Alasan (wajib — audit trail)</Label>
+              <Label className="text-xs">Alasan (wajib - audit trail)</Label>
               <Input
                 value={forceExpireReason}
                 onChange={(e) => setForceExpireReason(e.target.value)}
@@ -2660,8 +2660,8 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
               <Sparkles className="h-5 w-5 text-amber-500" /> Backfill Loyalty Points
             </DialogTitle>
             <DialogDescription>
-              Berikan point loyalty awal ke customer existing berdasarkan tenure (kapan bergabung — auto parse dari customer ID format <code className="font-mono text-[10px] bg-muted px-1 rounded">MMYYNNNNN</code>).
-              Idempotent — customer yang sudah pernah di-backfill akan di-skip.
+              Berikan point loyalty awal ke customer existing berdasarkan tenure (kapan bergabung - auto parse dari customer ID format <code className="font-mono text-[10px] bg-muted px-1 rounded">MMYYNNNNN</code>).
+              Idempotent - customer yang sudah pernah di-backfill akan di-skip.
             </DialogDescription>
           </DialogHeader>
           {backfillPreview ? (
@@ -2831,7 +2831,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
               <div className="space-y-2 pt-1">
                 <div>
                   {deleteFor?.status === "pending"
-                    ? "Status 'pending' — poin akan otomatis di-refund saat hapus."
+                    ? "Status 'pending' - poin akan otomatis di-refund saat hapus."
                     : "Row akan disembunyikan dari list (soft delete)."}
                 </div>
                 <Textarea
@@ -2862,7 +2862,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
             <DialogTitle>Tolak Redemption</DialogTitle>
             <DialogDescription asChild>
               <div className="text-xs pt-1">
-                {rejectFor?.customerName} — {rejectFor?.rewardLabel}.
+                {rejectFor?.customerName} - {rejectFor?.rewardLabel}.
                 Point ({rejectFor?.pointsCost}) akan dikembalikan ke saldo customer.
               </div>
             </DialogDescription>
@@ -2897,7 +2897,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
 }
 
 /**
- * StatTile — telco mature design: numbers carry the design.
+ * StatTile - telco mature design: numbers carry the design.
  * Flat surface, monochrome, status via small dot, single accent on hover/active.
  */
 function StatTile({
@@ -2939,9 +2939,9 @@ function StatTile({
   return <div className={cls}>{Inner}</div>;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// POINT CONFIG DIALOG — admin customize earn rules + catalog
-// ═══════════════════════════════════════════════════════════════
+// ===============================================================
+// POINT CONFIG DIALOG - admin customize earn rules + catalog
+// ===============================================================
 type RewardItem = {
   key: string;
   label: string;
@@ -2952,7 +2952,7 @@ type RewardItem = {
   emoji: string;
 };
 
-const EMOJI_PRESETS = ["⚡", "🚀", "💎", "👑", "🔥", "⭐", "🎯", "💰", "🎁", "🏆", "✨", "💫"];
+const EMOJI_PRESETS: string[] = [];
 
 function PointConfigDialog({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -2984,10 +2984,10 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
     } else {
       // Default catalog kalau belum ada di settings
       setCatalog([
-        { key: "boost_2x_6h",  label: "Speed 2× — 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6,  emoji: "⚡" },
-        { key: "boost_2x_24h", label: "Speed 2× — 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24, emoji: "🚀" },
-        { key: "boost_3x_6h",  label: "Speed 3× — 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6,  emoji: "💎" },
-        { key: "boost_3x_24h", label: "Speed 3× — 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24, emoji: "👑" },
+        { key: "boost_2x_6h",  label: "Speed 2× - 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6,  emoji: "" },
+        { key: "boost_2x_24h", label: "Speed 2× - 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24, emoji: "" },
+        { key: "boost_3x_6h",  label: "Speed 3× - 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6,  emoji: "" },
+        { key: "boost_3x_24h", label: "Speed 3× - 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24, emoji: "" },
       ]);
     }
     setHydrated(true);
@@ -3068,7 +3068,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
           <div className="p-12 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>
         ) : (
           <>
-            {/* Tab nav — clean underline style */}
+            {/* Tab nav - clean underline style */}
             <div className="px-6 border-b">
               <div className="flex gap-6">
                 {([
@@ -3102,7 +3102,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
             </div>
 
             <div className="p-5 space-y-4">
-              {/* ───────── EARN RULES — clean form ───────── */}
+              {/* --------- EARN RULES - clean form --------- */}
               {activeTab === "earn" && (
                 <div className="space-y-6">
                   {/* Section header */}
@@ -3113,7 +3113,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                     </p>
                   </div>
 
-                  {/* Form rows — flat, label-led */}
+                  {/* Form rows - flat, label-led */}
                   <div className="space-y-5">
                     <div className="flex items-start justify-between gap-6 pb-5 border-b">
                       <div className="min-w-0 flex-1">
@@ -3197,7 +3197,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              {/* ───────── CATALOG — table-style list ───────── */}
+              {/* --------- CATALOG - table-style list --------- */}
               {activeTab === "catalog" && (
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
@@ -3210,7 +3210,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                     <button
                       onClick={() => {
                         setEditingIdx(-1);
-                        setDraftReward({ key: "", label: "", description: "", pointsCost: 100, speedMultiplier: 2, durationHours: 6, emoji: "⚡" });
+                        setDraftReward({ key: "", label: "", description: "", pointsCost: 100, speedMultiplier: 2, durationHours: 6, emoji: "" });
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border bg-card hover:bg-muted/40 shrink-0"
                     >
@@ -3307,7 +3307,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                               <Input
                                 value={draftReward.emoji}
                                 onChange={(e) => setDraftReward({ ...draftReward, emoji: e.target.value })}
-                                placeholder="⚡"
+                                placeholder=""
                                 className="text-2xl text-center w-16 shrink-0"
                                 maxLength={4}
                               />
@@ -3332,7 +3332,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                           <Input
                             value={draftReward.label}
                             onChange={(e) => setDraftReward({ ...draftReward, label: e.target.value })}
-                            placeholder="Speed 5× — 1 jam Promo Spesial"
+                            placeholder="Speed 5× - 1 jam Promo Spesial"
                             className="mt-1"
                           />
                         </div>
@@ -3392,7 +3392,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                     </Card>
                   )}
 
-                  {/* Tips — quiet, monochrome */}
+                  {/* Tips - quiet, monochrome */}
                   <div className="text-[11px] text-muted-foreground leading-relaxed border-l-2 border-muted pl-3 ml-1">
                     <strong className="text-foreground/80">Tips:</strong>{" "}
                     Untuk event (Lebaran, 17an), turunin pointsCost atau tambah reward khusus.
@@ -3402,11 +3402,11 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              {/* ───────── MIKROTIK AUTO-BOOST ───────── */}
+              {/* --------- MIKROTIK AUTO-BOOST --------- */}
               {activeTab === "mikrotik" && <MikrotikBoostConfigPanel />}
             </div>
 
-            {/* Footer save — quiet, no gradient */}
+            {/* Footer save - quiet, no gradient */}
             <div className="px-6 py-4 border-t flex justify-between items-center">
               <div className="text-xs text-muted-foreground">
                 {draftReward ? (
@@ -3434,9 +3434,9 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MIKROTIK AUTO-BOOST CONFIG — toggle + profile pattern + test
-// ═══════════════════════════════════════════════════════════════
+// ===============================================================
+// MIKROTIK AUTO-BOOST CONFIG - toggle + profile pattern + test
+// ===============================================================
 function MikrotikBoostConfigPanel() {
   const qc = useQueryClient();
   const { data: config, isLoading } = useQuery<any>({
@@ -3518,7 +3518,7 @@ function MikrotikBoostConfigPanel() {
         <div className="min-w-0">
           <div className="text-sm font-medium">Auto-aktivasi via MikroTik</div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            ON: redeem langsung active (sistem update PPP profile + disconnect session). OFF: redeem masuk antrian pending — admin verify manual.
+            ON: redeem langsung active (sistem update PPP profile + disconnect session). OFF: redeem masuk antrian pending - admin verify manual.
           </p>
         </div>
         <button
@@ -3620,7 +3620,7 @@ function MikrotikBoostConfigPanel() {
           <li>Buka WinBox → PPP → Profiles → klik <strong>+</strong></li>
           <li>Buat profile boost untuk tiap paket (e.g. <code className="font-mono">MOON-30M-boost-2x</code> dengan rate-limit 60M/60M kalau paket asli 30M/30M)</li>
           <li>Save tiap profile, pastikan nama match dengan pattern di atas</li>
-          <li>Test dengan tombol Test di atas — kalau sukses, customer langsung bisa redeem otomatis</li>
+          <li>Test dengan tombol Test di atas - kalau sukses, customer langsung bisa redeem otomatis</li>
         </ol>
       </div>
     </div>

@@ -1,5 +1,5 @@
 /**
- * BulkActionBar — shown when selectMode is active and at least one card is selected.
+ * BulkActionBar - shown when selectMode is active and at least one card is selected.
  * Mobile-first: bar is fixed-bottom on mobile, the op forms open as a BottomSheet on mobile
  * and as a Dialog on desktop.
  */
@@ -30,7 +30,7 @@ interface BulkActionBarProps {
   onClear: () => void;
 }
 
-// ─── Op form sub-component ───────────────────────────────────────────────────
+// --- Op form sub-component ---------------------------------------------------
 
 interface BulkOpFormProps {
   sheet: Exclude<OpSheet, null>;
@@ -191,7 +191,7 @@ function BulkOpForm({ sheet, stages, fields, pending, onCancel, onRun }: BulkOpF
   return null;
 }
 
-// ─── Titles for op sheets ────────────────────────────────────────────────────
+// --- Titles for op sheets ----------------------------------------------------
 const OP_TITLE: Record<Exclude<OpSheet, null>, string> = {
   assign: "Assign Massal",
   move: "Pindah Stage",
@@ -200,7 +200,7 @@ const OP_TITLE: Record<Exclude<OpSheet, null>, string> = {
   delete: "Hapus Kartu",
 };
 
-// ─── Main bar ────────────────────────────────────────────────────────────────
+// --- Main bar ----------------------------------------------------------------
 
 export function BulkActionBar({
   pipelineId,
@@ -260,7 +260,7 @@ export function BulkActionBar({
           {ids.length} kartu dipilih
           {overCap && (
             <em className="ml-2 text-amber-200 not-italic text-xs">
-              — maks {BULK_MAX_CARDS}
+              - maks {BULK_MAX_CARDS}
             </em>
           )}
         </span>
@@ -357,7 +357,7 @@ export function BulkActionBar({
         </div>
       </div>
 
-      {/* Op form — BottomSheet on mobile (< md), Dialog on desktop */}
+      {/* Op form - BottomSheet on mobile (< md), Dialog on desktop */}
       {sheet && (
         <>
           {/* Mobile: BottomSheet */}

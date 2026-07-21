@@ -1,4 +1,4 @@
-/** Pure builders: Workspace customer → Chatwoot contact payload + labels. No I/O — testable. */
+/** Pure builders: Workspace customer → Chatwoot contact payload + labels. No I/O - testable. */
 import { toWhatsappNumber } from "./phone.js";
 
 type CustomerLike = {

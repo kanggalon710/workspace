@@ -1,4 +1,4 @@
-# Spec — Mitra Authorization Scoping + Create-Mitra Wizard
+# Spec - Mitra Authorization Scoping + Create-Mitra Wizard
 
 **Date**: 2026-05-27
 **Status**: Approved (B+C bundled)
@@ -28,7 +28,7 @@ Pilihan implementasi: **per-membership role** (Option D) + rename role agar sema
 ALTER TABLE user_mitras ADD COLUMN IF NOT EXISTS role_id INT NULL;
 ```
 
-**Tidak drop `users.role_id`** — tetap ada sebagai global default untuk seed/legacy paths + display di `/users` page sebagai "Role di mitra primary".
+**Tidak drop `users.role_id`** - tetap ada sebagai global default untuk seed/legacy paths + display di `/users` page sebagai "Role di mitra primary".
 
 ---
 
@@ -36,7 +36,7 @@ ALTER TABLE user_mitras ADD COLUMN IF NOT EXISTS role_id INT NULL;
 
 **Roles DB changes**:
 1. **Rename** existing role `Administrator` → `System-Admin` (cross-tenant bypass, `isSystem=1`, `canSeeAllData=1`)
-2. **Insert** built-in role `Admin` (`isSystem=1`, `canSeeAllData=0`, permissions = all `write` — clone dari System-Admin tapi tanpa supervisor flag)
+2. **Insert** built-in role `Admin` (`isSystem=1`, `canSeeAllData=0`, permissions = all `write` - clone dari System-Admin tapi tanpa supervisor flag)
 3. 4 role existing lain (View Only, Operator, Manager, Supervisor) **tetap tidak berubah**.
 
 **Known Platform Owners** (cross-tenant System-Admin, sesuai user input 2026-05-27):
@@ -200,11 +200,11 @@ req.authUser = {
 **Behavioral matrix:**
 | User | Role @ mitra=1 | Role @ ASAKA(3) | isSystemAdmin | Akses |
 |---|---|---|---|---|
-| yoga | System-Admin | — atau Admin | ✓ | Semua mitra |
-| admin (default seed) | System-Admin | — | ✓ | Semua mitra |
+| yoga | System-Admin | - atau Admin | ✓ | Semua mitra |
+| admin (default seed) | System-Admin | - | ✓ | Semua mitra |
 | asaka_admin | (bukan member) | Admin | ✗ | Hanya ASAKA |
 | user A baru di ASAKA, role Admin | (bukan member) | Admin | ✗ | Hanya ASAKA |
-| Operator yoga di JABNET | Operator | — | ✗ | Hanya JABNET, terbatas |
+| Operator yoga di JABNET | Operator | - | ✗ | Hanya JABNET, terbatas |
 
 ---
 
@@ -216,11 +216,11 @@ req.authUser = {
 
 **New row layout**:
 ```
-[Avatar] Nama (username)   [Role: <select> ▼]   [Primary ⭐ kalau true]   [Hapus]
+[Avatar] Nama (username)   [Role: <select> ▼]   [Primary  kalau true]   [Hapus]
 ```
 
 - Role selector di tiap row → `PATCH /api/mitras/:mitraId/members/:userId` body `{ roleId }`
-- Dropdown filter: kalau active mitra=1, semua role tersedia. Kalau active mitra≠1, role "System-Admin" disabled (greyed-out + tooltip "Cross-tenant — hanya untuk JABNET").
+- Dropdown filter: kalau active mitra=1, semua role tersedia. Kalau active mitra≠1, role "System-Admin" disabled (greyed-out + tooltip "Cross-tenant - hanya untuk JABNET").
 - Hanya `isSystemAdmin` yang bisa grant role "System-Admin" (mencegah Admin di mitra lain self-promote dengan abuse endpoint).
 
 **Add member flow**:
@@ -229,14 +229,14 @@ req.authUser = {
 ```
 
 **Backend endpoints**:
-- `PATCH /api/mitras/:mitraId/members/:userId` — update `user_mitras.role_id`.
+- `PATCH /api/mitras/:mitraId/members/:userId` - update `user_mitras.role_id`.
   - Guard: `requireSystemAdmin` OR (`hasPermission('mitra_admin', 'write')` di mitra yang sama).
   - Block: refuse demote terakhir System-Admin di mitra=1.
   - Body: `{ roleId: number }`
-- `POST /api/mitras/:mitraId/members` — extend existing endpoint body `{ userId, roleId?, isPrimary? }`. Default `roleId` = ID role "Admin" kalau tidak provided.
+- `POST /api/mitras/:mitraId/members` - extend existing endpoint body `{ userId, roleId?, isPrimary? }`. Default `roleId` = ID role "Admin" kalau tidak provided.
 
 **Info banner update** di MembersTab (sudah ada dari Part A) → revise text:
-> 💡 **Tips:** Setiap mitra wajib punya minimal 1 user dengan role **Admin** sebagai entry point. Khusus mitra **JABNET** (mitra=1), role yang dimaksud adalah **System-Admin** (akses cross-tenant).
+>  **Tips:** Setiap mitra wajib punya minimal 1 user dengan role **Admin** sebagai entry point. Khusus mitra **JABNET** (mitra=1), role yang dimaksud adalah **System-Admin** (akses cross-tenant).
 
 ---
 
@@ -247,9 +247,9 @@ req.authUser = {
 **Step 1: Detail Mitra** (existing fields, tidak diubah)
 - Nama, Slug (kebab-case), Display Name, Logo URL, Contact info, Features toggle
 
-**Step 2: Akun Administrator** (NEW — **WAJIB diisi**, no skip)
+**Step 2: Akun Administrator** (NEW - **WAJIB diisi**, no skip)
 ```
-ℹ️ Setiap mitra wajib punya 1 Admin sebagai entry point.
+ℹ Setiap mitra wajib punya 1 Admin sebagai entry point.
 
 Username:  [______________]  *  (auto-suggest dari slug, e.g. asaka → asaka_admin)
 Nama:      [______________]  *
@@ -267,7 +267,7 @@ Confirm:   [______________]  *
 - Password confirm match
 - Step 2 tidak bisa di-submit kalau ada validation error
 
-**Backend transactional flow** — extend `POST /api/mitras`:
+**Backend transactional flow** - extend `POST /api/mitras`:
 ```ts
 // Body extended:
 // {
@@ -289,14 +289,14 @@ try {
 } catch { rollback; throw; }
 ```
 
-**No skip** — backend reject 400 kalau `body.admin` tidak ada atau invalid. Mitra TIDAK boleh dibuat tanpa Admin user.
+**No skip** - backend reject 400 kalau `body.admin` tidak ada atau invalid. Mitra TIDAK boleh dibuat tanpa Admin user.
 
 **Frontend changes**:
 - Create dialog refactor jadi 2-step pakai `<Tabs>` atau wizard pattern dengan next/back button
 - State: `step` (1 atau 2), validation per step sebelum next
 - Submit di step 2: kirim 1 POST dengan combined body `{ ...mitraFields, admin: { ... } }`
 
-**Tidak include billing password reuse** — sesuai keputusan user, password admin disimpan hashed di `users.password` saja. Integration billing API credentials tetap input terpisah di `/integrations`.
+**Tidak include billing password reuse** - sesuai keputusan user, password admin disimpan hashed di `users.password` saja. Integration billing API credentials tetap input terpisah di `/integrations`.
 
 ---
 
@@ -338,8 +338,8 @@ try {
 
 ## Rollback
 
-- ALTER + INSERT migration idempotent — re-run safe
-- Schema change additive (`user_mitras.role_id` nullable) — code lama abaikan kolom
+- ALTER + INSERT migration idempotent - re-run safe
+- Schema change additive (`user_mitras.role_id` nullable) - code lama abaikan kolom
 - Full rollback SQL:
   ```sql
   UPDATE roles SET name='Administrator' WHERE name='System-Admin';
@@ -352,12 +352,12 @@ try {
 
 ## Out of Scope
 
-- **Billing password reuse** (`integrations` credential = admin password) — sesuai pilihan user, integrasi billing tetap input terpisah
-- **Drop `users.role_id` legacy column** — defer, masih useful untuk display dan fallback
-- **Per-mitra role catalog** (mitra punya role custom sendiri) — defer, semua role shared di global roles table
-- **`/roles` page filter by mitra ownership** — defer, semua user lihat semua role definitions (read-only)
-- **System-Admin demote protection cascading** (e.g. minimum 2 system-admin di sistem) — defer, hanya minimum 1
-- **Audit log untuk role grant/revoke** — defer (existing audit log infra cover ini secara general)
+- **Billing password reuse** (`integrations` credential = admin password) - sesuai pilihan user, integrasi billing tetap input terpisah
+- **Drop `users.role_id` legacy column** - defer, masih useful untuk display dan fallback
+- **Per-mitra role catalog** (mitra punya role custom sendiri) - defer, semua role shared di global roles table
+- **`/roles` page filter by mitra ownership** - defer, semua user lihat semua role definitions (read-only)
+- **System-Admin demote protection cascading** (e.g. minimum 2 system-admin di sistem) - defer, hanya minimum 1
+- **Audit log untuk role grant/revoke** - defer (existing audit log infra cover ini secara general)
 
 ---
 
@@ -374,12 +374,12 @@ try {
 | `client/pages/MitraPage.tsx` MembersTab | role selector per row, disabled state untuk System-Admin di non-mitra-1, banner update |
 | `client/pages/MitraPage.tsx` create dialog | 2-step wizard refactor |
 | `client/pages/RolesPage.tsx` | sweep "Administrator" string, badge styling untuk System-Admin |
-| `client/pages/UsersPage.tsx` | display "Role di mitra primary" — sweep "Administrator" |
+| `client/pages/UsersPage.tsx` | display "Role di mitra primary" - sweep "Administrator" |
 
 ---
 
 ## Related
 
-- [[project-cpanel-deployment]] — production deploy flow
-- [[feedback-credentials-in-db]] — credentials in DB plain-text OK (relevant kalau wizard simpan password)
+- [[project-cpanel-deployment]] - production deploy flow
+- [[feedback-credentials-in-db]] - credentials in DB plain-text OK (relevant kalau wizard simpan password)
 - Part A predecessor: `docs/superpowers/specs/2026-05-26-mitra-members-bug-fix.md`

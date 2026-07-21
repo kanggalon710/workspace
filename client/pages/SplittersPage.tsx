@@ -90,11 +90,11 @@ function SplitterForm({
   const locationOptions = (() => {
     switch (currentLocationType) {
       case "otb":
-        return pops?.map((p) => ({ value: p.id, label: `${p.code} — ${p.name}` })) ?? [];
+        return pops?.map((p) => ({ value: p.id, label: `${p.code} - ${p.name}` })) ?? [];
       case "odc":
-        return odcs?.map((o) => ({ value: o.id, label: `${o.code} — ${o.name}` })) ?? [];
+        return odcs?.map((o) => ({ value: o.id, label: `${o.code} - ${o.name}` })) ?? [];
       case "odp":
-        return odps?.map((o) => ({ value: o.id, label: `${o.code} — ${o.name}` })) ?? [];
+        return odps?.map((o) => ({ value: o.id, label: `${o.code} - ${o.name}` })) ?? [];
       default:
         return [];
     }
@@ -222,7 +222,7 @@ export default function SplittersPage() {
   return (
     <AssetTable<Splitter>
       title="Splitter"
-      description="Splitter optik — pembagi sinyal di jaringan FTTH"
+      description="Splitter optik - pembagi sinyal di jaringan FTTH"
       data={data}
       isLoading={isLoading}
       columns={columns}

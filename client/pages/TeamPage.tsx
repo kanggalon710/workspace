@@ -1,4 +1,4 @@
-/** Teamspace v5.0 — Halaman Tim: hub ber-tab (FR-305/307).
+/** Teamspace v5.0 - Halaman Tim: hub ber-tab (FR-305/307).
  *  Tab mengikuti enabledViews tim: Ringkasan · Tugas (board) · Chat · Jadwal ·
  *  Pertanyaan · Dokumen. Fase 2 melengkapi 4 panel terakhir. */
 import { useEffect, useState } from "react";
@@ -150,7 +150,7 @@ export default function TeamPage() {
 
   return (
     <PageContainer>
-      {/* v5.1 (feedback user): header gaya Cicle — breadcrumb + tab underline,
+      {/* v5.1 (feedback user): header gaya Cicle - breadcrumb + tab underline,
           tanpa blok judul besar duplikat. Komponen sama dengan board Tugas. */}
       <TeamModuleNav
         team={{ ...team, enabledViews: views }}
@@ -278,7 +278,7 @@ export default function TeamPage() {
       {showAddMember && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowAddMember(false); }}>
           <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
-            <DialogTitle>Tambah Anggota — {team.name}</DialogTitle>
+            <DialogTitle>Tambah Anggota - {team.name}</DialogTitle>
             <div className="space-y-4">
               <AssigneePicker
                 mode="multi"

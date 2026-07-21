@@ -122,7 +122,7 @@ export function PipelineSettingsDialog({
                 <FormField
                   label="Deskripsi"
                   htmlFor="pipeline-description"
-                  hint="Opsional — jelaskan tujuan pipeline ini"
+                  hint="Opsional - jelaskan tujuan pipeline ini"
                 >
                   <textarea
                     id="pipeline-description"

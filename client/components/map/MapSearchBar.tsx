@@ -45,7 +45,7 @@ export function MapSearchBar({ visible, onClose, onResultClick, onOpenOdp, data 
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Server-backed customer search (pelanggan di luar viewport) — debounce 300ms
+  // Server-backed customer search (pelanggan di luar viewport) - debounce 300ms
   const [debouncedQ, setDebouncedQ] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(query), 300);

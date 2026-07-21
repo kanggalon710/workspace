@@ -6,7 +6,7 @@ import { useAssignableUsers, type AssignableUser } from "@/hooks/usePipelines";
 const JABNET_MITRA_ID = 1;
 const LS_KEY = "pipeline_assignee_cross_tenant";
 
-// ── Shared cross-tenant source toggle (module-level so every picker on screen stays in sync) ──
+// -- Shared cross-tenant source toggle (module-level so every picker on screen stays in sync) --
 let crossSource = (() => { try { return localStorage.getItem(LS_KEY) === "1"; } catch { return false; } })();
 const listeners = new Set<() => void>();
 function setCrossSource(v: boolean) {
@@ -58,7 +58,7 @@ export function AssigneePicker(props: SingleProps | MultiProps) {
   if (props.mode === "single") {
     const excl = new Set(props.excludeIds ?? []);
     const options = [
-      ...(props.includeUnassign ? [{ value: "__unassign__", label: "— Kosongkan (unassign) —" }] : []),
+      ...(props.includeUnassign ? [{ value: "__unassign__", label: "- Kosongkan (unassign) -" }] : []),
       ...list.filter((u) => !excl.has(u.id)).map((u) => ({ value: String(u.id), label: labelFor(u, effectiveCross), description: u.role || undefined })),
     ];
     return (

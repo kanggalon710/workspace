@@ -1,4 +1,4 @@
-# Pipelines Board — Filters Polish & Stage Reorder Design
+# Pipelines Board - Filters Polish & Stage Reorder Design
 
 > Improves the board page (`/pipelines/:id`): a cleaner, more prominent card-search +
 > time-filter toolbar with a new assignee filter, and drag-and-drop stage reordering
@@ -21,14 +21,14 @@
 
 ---
 
-## Part A — BoardFilters redesign (`BoardFilters.tsx`)
+## Part A - BoardFilters redesign (`BoardFilters.tsx`)
 
 Keep all controls visible (the "inline toolbar, reorganized" choice) but restructure into a clean, responsive block:
 
-1. **Prominent search** — a single wider `<Input inputSize="sm" leftIcon={<Search/>} ... />` that takes the leading space (`flex-1` / full-width on mobile). When `search` is non-empty, show a clear button as `rightIcon` (an `X` button, `type="button"`, `aria-label="Hapus pencarian"`) that calls `onSearch("")`. Keep `aria-label="Cari kartu"`.
-2. **Controls row (wraps)** — date-field combobox (Dibuat / Update terakhir), range combobox (Semua / 7 hari / 30 hari / Custom), and a **new Assignee combobox** (clearable; empty = semua assignee). On desktop these flow after the search; on mobile they wrap to their own row.
-3. **Custom date inputs** — unchanged behavior: the two `type="date"` inputs appear (their own line) only when `range` is the custom object.
-4. **Active-filter affordance** — when any of {search non-empty, range ≠ "all", assignee set} is active, show a small muted line: `{visibleCount} kartu` + a **Reset** text button (`type="button"`) that clears search → "", range → "all", assignee → null. `visibleCount` is passed in from the page (it already computes `visible`).
+1. **Prominent search** - a single wider `<Input inputSize="sm" leftIcon={<Search/>} ... />` that takes the leading space (`flex-1` / full-width on mobile). When `search` is non-empty, show a clear button as `rightIcon` (an `X` button, `type="button"`, `aria-label="Hapus pencarian"`) that calls `onSearch("")`. Keep `aria-label="Cari kartu"`.
+2. **Controls row (wraps)** - date-field combobox (Dibuat / Update terakhir), range combobox (Semua / 7 hari / 30 hari / Custom), and a **new Assignee combobox** (clearable; empty = semua assignee). On desktop these flow after the search; on mobile they wrap to their own row.
+3. **Custom date inputs** - unchanged behavior: the two `type="date"` inputs appear (their own line) only when `range` is the custom object.
+4. **Active-filter affordance** - when any of {search non-empty, range ≠ "all", assignee set} is active, show a small muted line: `{visibleCount} kartu` + a **Reset** text button (`type="button"`) that clears search → "", range → "all", assignee → null. `visibleCount` is passed in from the page (it already computes `visible`).
 
 ### Assignee filter (client-side)
 - New props on `BoardFilters`: `assigneeId: number | null`, `onAssignee: (id: number | null) => void`, and `assigneeOptions: ComboboxOption[]` (built by the page from its users list: `{ value: String(u.id), label: u.name || u.username || ` + "`User #${u.id}`" + ` }`, sorted by label). Combobox `value={assigneeId == null ? "" : String(assigneeId)}`, `onChange={(v) => onAssignee(v ? Number(v) : null)}`, `clearable`.
@@ -42,7 +42,7 @@ Keep all controls visible (the "inline toolbar, reorganized" choice) but restruc
 
 ---
 
-## Part B — Stage reorder (`StageColumn.tsx` + `PipelineBoardPage.tsx` + `usePipelines.ts`)
+## Part B - Stage reorder (`StageColumn.tsx` + `PipelineBoardPage.tsx` + `usePipelines.ts`)
 
 ### Client mutation (`usePipelines.ts`)
 Add to `usePipelineMutations`:
@@ -63,13 +63,13 @@ export function moveByOffset(ids: number[], id: number, dir: -1 | 1): number[]
 ```
 Both return a NEW array and never mutate input. Unit-test: drag first→last, last→first, adjacent, same id (no-op), missing id (unchanged); offset at both boundaries (unchanged), middle moves.
 
-### StageColumn — handle + arrows + drag target
+### StageColumn - handle + arrows + drag target
 - **Desktop grip**: a `GripVertical` button/span in the header, `hidden md:flex`, `draggable`, `aria-label="Geser stage"`, `cursor-grab`. `onDragStart` → `onStageDragStart(stage.id)` (and set a benign `dataTransfer` payload so Firefox initiates the drag). Placed left of the color dot; it does NOT trigger the pencil edit.
 - **Mobile arrows**: two buttons `flex md:hidden`, `aria-label`s "Geser stage ke kiri/kanan", rendering ◀ and ▶. Disabled when the stage is first (◀) or last (▶). Click → `onMoveStage(stage.id, -1 | 1)`. The page supplies `isFirst`/`isLast` (or the column derives from an `index`/`total` prop).
 - **Drop target**: the column's existing `onDragOver`/`onDrop` now branch on a new `stageDragId` prop:
   - `onDrop`: `if (stageDragId != null) onStageDrop(stage.id); else onDropStage(stage.id);`
   - `onDragOver`: keep `preventDefault()` (needed for both card and stage drops).
-- **Visual cue**: when `stageDragId === stage.id`, dim the column (`opacity-50`); the standard drop-target ring can be added via a hovered state (optional, keep light — at minimum the dragged column dims).
+- **Visual cue**: when `stageDragId === stage.id`, dim the column (`opacity-50`); the standard drop-target ring can be added via a hovered state (optional, keep light - at minimum the dragged column dims).
 - New StageColumn props: `index: number`, `total: number` (for first/last + arrow disabling), `stageDragId: number | null`, `onStageDragStart: (id: number) => void`, `onStageDrop: (targetId: number) => void`, `onMoveStage: (id: number, dir: -1 | 1) => void`.
 
 ### Page wiring (`PipelineBoardPage.tsx`, Part B bits)
@@ -103,9 +103,9 @@ Both return a NEW array and never mutate input. Unit-test: drag first→last, la
 ## Edge cases
 
 - **Card vs stage drag**: a column's single `onDrop` branches on `stageDragId`; card drag (`dragId`) is unaffected when no stage drag is in progress. Always `setStageDragId(null)` after a stage drop / on dragend so a later card drop isn't mis-routed.
-- **Drop onto self / same position** → `reorderByDrag` returns an equal order; `applyReorder` may still POST — guard: skip the mutation if the new order equals the current order.
+- **Drop onto self / same position** → `reorderByDrag` returns an equal order; `applyReorder` may still POST - guard: skip the mutation if the new order equals the current order.
 - **Arrows at boundary** → `moveByOffset` is a no-op; buttons are also `disabled` at first/last.
-- **Mobile (touch)**: HTML5 DnD doesn't fire on touch — arrows are the reorder path there; grip is `md:` only.
+- **Mobile (touch)**: HTML5 DnD doesn't fire on touch - arrows are the reorder path there; grip is `md:` only.
 - **Optimistic rollback**: on mutation error, invalidate to restore server order + toast.
 - **Assignee filter**: cards with `assigneeId == null` are hidden only when a specific assignee is selected; "Semua" (null) shows all. (No explicit "Belum di-assign" option in v1.)
 - **Reset**: clears search/range/assignee in one click; only shown when a filter is active.
@@ -120,7 +120,7 @@ Both return a NEW array and never mutate input. Unit-test: drag first→last, la
 
 ## Consistency with memory
 
-- [[project-pipelines-engine]] — board polish continues before the P5 leads migration; update note on merge.
-- [[feedback-coding-standards]] — pure `reorderByDrag`/`moveByOffset` (SoC/TDD), semantic HTML + aria-labels on icon-only buttons (grip, arrows, clear, reset), `type="button"`, semantic tokens, DRY (reuse `Combobox`, existing `usersById`).
-- [[reference-api-response-envelope]] — reorder mutation goes through `api.post` (envelope-aware); no raw fetch.
-- [[reference-tenant-isolation-gotchas]] — reorder endpoint is already mitra-scoped server-side; no client change affects isolation.
+- [[project-pipelines-engine]] - board polish continues before the P5 leads migration; update note on merge.
+- [[feedback-coding-standards]] - pure `reorderByDrag`/`moveByOffset` (SoC/TDD), semantic HTML + aria-labels on icon-only buttons (grip, arrows, clear, reset), `type="button"`, semantic tokens, DRY (reuse `Combobox`, existing `usersById`).
+- [[reference-api-response-envelope]] - reorder mutation goes through `api.post` (envelope-aware); no raw fetch.
+- [[reference-tenant-isolation-gotchas]] - reorder endpoint is already mitra-scoped server-side; no client change affects isolation.

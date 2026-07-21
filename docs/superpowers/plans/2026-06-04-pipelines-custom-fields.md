@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add per-pipeline user-defined custom fields (11 types) with values on cards, editable in the card drawer, with opt-in chips on the board face — tenant-isolated, gated by the existing `pipelines` permission.
+**Goal:** Add per-pipeline user-defined custom fields (11 types) with values on cards, editable in the card drawer, with opt-in chips on the board face - tenant-isolated, gated by the existing `pipelines` permission.
 
 **Architecture:** Two new EAV tables (`pipeline_fields` defs + `pipeline_card_values`) created on startup via `CREATE TABLE IF NOT EXISTS`. Pure value-validation/encode/decode helpers (unit-tested). Storage methods + REST endpoints on the existing pipelines module, all responding via the `sendSuccess` envelope. React: a `FieldValueInput` switch component, a `ManageFieldsDialog`, drawer integration, and board chips.
 
@@ -10,11 +10,11 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-04-pipelines-custom-fields-design.md`
 
-**CRITICAL conventions (Phase-1 lessons — do not repeat the bugs):**
+**CRITICAL conventions (Phase-1 lessons - do not repeat the bugs):**
 - **Every endpoint responds via `sendSuccess(res, data)`** (`server/routes.ts:138`) → `{success:true,data}`. The client `apiFetch` throws "Request failed" on raw `res.json(...)`. NEVER use raw `res.json` for pipeline routes.
-- **New tables are created in the startup migration block** in `server/storage.ts` (next to the Phase-1 `CREATE TABLE IF NOT EXISTS pipelines...` block, ~line 6056) — NOT via `db:push`. Without this the feature 500s after deploy.
+- **New tables are created in the startup migration block** in `server/storage.ts` (next to the Phase-1 `CREATE TABLE IF NOT EXISTS pipelines...` block, ~line 6056) - NOT via `db:push`. Without this the feature 500s after deploy.
 - Every storage query filters `mitraId = getMitraId()`.
-- MySQL Drizzle: no `.returning()` — insert then reselect by `insertId` (filter mitraId on the reselect).
+- MySQL Drizzle: no `.returning()` - insert then reselect by `insertId` (filter mitraId on the reselect).
 - DB changes target `jabnet_fiber_dev` first.
 
 **Reference patterns:**
@@ -42,7 +42,7 @@
 
 ---
 
-## Task 1: Schema — field tables, types, startup migration
+## Task 1: Schema - field tables, types, startup migration
 
 **Files:**
 - Modify: `shared/schema.ts` (after the Phase-1 `pipelineCardFollowers` table + types)
@@ -94,7 +94,7 @@ export const PIPELINE_FIELD_TYPES: PipelineFieldType[] =
 - [ ] **Step 2: Add startup migration in `server/storage.ts`.** Find the Phase-1 block that ends with `CREATE TABLE IF NOT EXISTS pipeline_card_followers (...)` and its closing `catch`. Immediately after that try/catch, add:
 
 ```ts
-    // Pipelines Phase 2 — custom fields (EAV). Additive, idempotent.
+    // Pipelines Phase 2 - custom fields (EAV). Additive, idempotent.
     try {
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS pipeline_fields (
@@ -221,12 +221,12 @@ test("formatChipValue renders human strings", () => {
 - [ ] **Step 2: Run, verify it fails**
 
 Run: `npx tsx --test server/pipeline-field-helpers.test.ts`
-Expected: FAIL — module not found.
+Expected: FAIL - module not found.
 
 - [ ] **Step 3: Implement** (`server/pipeline-field-helpers.ts`):
 
 ```ts
-/** Pure helpers for pipeline custom fields — no DB, fully unit-testable. */
+/** Pure helpers for pipeline custom fields - no DB, fully unit-testable. */
 
 export type Validation = { ok: true } | { ok: false; error: string };
 
@@ -299,7 +299,7 @@ git commit -m "feat(pipelines): custom field value helpers with tests"
 
 ---
 
-## Task 3: Storage — field CRUD + reorder
+## Task 3: Storage - field CRUD + reorder
 
 **Files:**
 - Modify: `server/storage.ts` (schema imports + new methods at end of the pipelines section, after `removeFollower`)
@@ -365,7 +365,7 @@ git commit -m "feat(pipelines): custom field value helpers with tests"
   }
 ```
 
-> Note: `updateField` deliberately does NOT change `type` (type is fixed at creation — changing it would invalidate stored values).
+> Note: `updateField` deliberately does NOT change `type` (type is fixed at creation - changing it would invalidate stored values).
 
 - [ ] **Step 3: Typecheck** → `npm run typecheck` (0 errors).
 
@@ -378,7 +378,7 @@ git commit -m "feat(pipelines): storage field CRUD + reorder"
 
 ---
 
-## Task 4: Storage — card values get/set + show-on-card
+## Task 4: Storage - card values get/set + show-on-card
 
 **Files:**
 - Modify: `server/storage.ts` (append after `reorderFields`)
@@ -442,12 +442,12 @@ git commit -m "feat(pipelines): storage card values get/set + show-on-card"
 
 ---
 
-## Task 5: Routes — field endpoints, values endpoint, extend read endpoints
+## Task 5: Routes - field endpoints, values endpoint, extend read endpoints
 
 **Files:**
-- Modify: `server/routes.ts` (pipelines block, ~lines 4189–4397)
+- Modify: `server/routes.ts` (pipelines block, ~lines 4189-4397)
 
-- [ ] **Step 1: Add field + value endpoints.** Register the field routes among the other `/api/pipelines/:id/...` routes, and the card-values route among the `/api/pipelines/cards/...` routes — ALL before `GET /api/pipelines/:id` (the last route). Import the validator at the top of routes.ts if not present: `import { validateFieldValue } from "./pipeline-field-helpers.js";` (check existing imports first).
+- [ ] **Step 1: Add field + value endpoints.** Register the field routes among the other `/api/pipelines/:id/...` routes, and the card-values route among the `/api/pipelines/cards/...` routes - ALL before `GET /api/pipelines/:id` (the last route). Import the validator at the top of routes.ts if not present: `import { validateFieldValue } from "./pipeline-field-helpers.js";` (check existing imports first).
 
 ```ts
   router.get("/api/pipelines/:id/fields", async (req, res) => {
@@ -510,21 +510,21 @@ git commit -m "feat(pipelines): storage card values get/set + show-on-card"
 
 - [ ] **Step 2: Extend the 3 existing read endpoints** in the same block:
 
-In `GET /api/pipelines/:id` — add fields:
+In `GET /api/pipelines/:id` - add fields:
 ```ts
     const stages = await storage.listStages(pipeline.id);
     const fields = await storage.listFields(pipeline.id);
     sendSuccess(res, { ...pipeline, stages, fields });
 ```
 
-In `GET /api/pipelines/:id/cards` — attach show-on-card values:
+In `GET /api/pipelines/:id/cards` - attach show-on-card values:
 ```ts
     const cards = await storage.listCards(Number(req.params.id), { q, assigneeId });
     const valuesByCard = await storage.getShowOnCardValues(Number(req.params.id));
     sendSuccess(res, cards.map((c) => ({ ...c, values: valuesByCard[c.id] ?? {} })));
 ```
 
-In `GET /api/pipelines/cards/:cardId` — add fields + all values:
+In `GET /api/pipelines/cards/:cardId` - add fields + all values:
 ```ts
     const [comments, activity, followers, fields, values] = await Promise.all([
       storage.listComments(card.id), storage.listActivity(card.id), storage.listFollowers(card.id),
@@ -535,7 +535,7 @@ In `GET /api/pipelines/cards/:cardId` — add fields + all values:
 
 - [ ] **Step 3: Verify** → `npm run typecheck && npm run build` (0 errors, build OK).
 
-- [ ] **Step 4: Manual API smoke on dev** (`npm run db:push` is NOT used — restart dev app so the startup migration creates the tables, then):
+- [ ] **Step 4: Manual API smoke on dev** (`npm run db:push` is NOT used - restart dev app so the startup migration creates the tables, then):
 ```bash
 curl -s -X POST localhost:5000/api/pipelines/1/fields -H "Authorization: Bearer TOKEN" -H "Content-Type: application/json" -d '{"label":"Estimasi Biaya","type":"currency","showOnCard":true}'
 curl -s localhost:5000/api/pipelines/1/fields -H "Authorization: Bearer TOKEN"
@@ -551,7 +551,7 @@ git commit -m "feat(pipelines): field + value REST endpoints (sendSuccess), exte
 
 ---
 
-## Task 6: Frontend hooks — useFields + mutations + extend types
+## Task 6: Frontend hooks - useFields + mutations + extend types
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts`
@@ -602,7 +602,7 @@ git commit -m "feat(pipelines): client hooks for fields + card values"
 
 ---
 
-## Task 7: Frontend — FieldValueInput (one editor per type)
+## Task 7: Frontend - FieldValueInput (one editor per type)
 
 **Files:**
 - Create: `client/components/pipelines/FieldValueInput.tsx`
@@ -694,7 +694,7 @@ git commit -m "feat(pipelines): FieldValueInput editor for all 11 field types"
 
 ---
 
-## Task 8: Frontend — ManageFieldsDialog
+## Task 8: Frontend - ManageFieldsDialog
 
 **Files:**
 - Create: `client/components/pipelines/ManageFieldsDialog.tsx`
@@ -777,7 +777,7 @@ export function ManageFieldsDialog({ pipelineId, open, onClose }: { pipelineId: 
 }
 ```
 
-> Verify exact exports of `dialog.tsx` (`Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`) and `form-field.tsx` (`FormField` props `label`/`children`). Adapt names to the real exports. Drag-reorder of fields can be a follow-up — the `GripVertical` is decorative for now (reorder endpoint exists; wiring DnD here is optional polish, not required for this task).
+> Verify exact exports of `dialog.tsx` (`Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`) and `form-field.tsx` (`FormField` props `label`/`children`). Adapt names to the real exports. Drag-reorder of fields can be a follow-up - the `GripVertical` is decorative for now (reorder endpoint exists; wiring DnD here is optional polish, not required for this task).
 
 - [ ] **Step 2: Typecheck + build** → `npm run typecheck && npm run build` (0 errors).
 
@@ -790,13 +790,13 @@ git commit -m "feat(pipelines): ManageFieldsDialog (design-system field admin)"
 
 ---
 
-## Task 9: Frontend — drawer "Field Kustom" section + board chips + manage button
+## Task 9: Frontend - drawer "Field Kustom" section + board chips + manage button
 
 **Files:**
 - Modify: `client/components/pipelines/CardDetailDrawer.tsx`
 - Modify: `client/pages/PipelineBoardPage.tsx`
 
-- [ ] **Step 1: Drawer — add a "Field Kustom" section.** The `useCard` data now includes `fields` and `values`. Render `FieldValueInput` per field (sorted by `position`), holding local edits in state, with a "Simpan Field" button that calls `setCardValues`. Show "wajib diisi" when `required` and empty.
+- [ ] **Step 1: Drawer - add a "Field Kustom" section.** The `useCard` data now includes `fields` and `values`. Render `FieldValueInput` per field (sorted by `position`), holding local edits in state, with a "Simpan Field" button that calls `setCardValues`. Show "wajib diisi" when `required` and empty.
 
 Add imports:
 ```tsx
@@ -842,12 +842,12 @@ function FieldCustomSection({ card, pipelineId, writable }: { card: any; pipelin
   );
 }
 ```
-> Use `toast.error` on the `setCardValues` mutation error if a server 400 (type-mismatch) occurs — wire a `toast` import if not present. `useState` is already imported at the top of the drawer file; do not re-import.
+> Use `toast.error` on the `setCardValues` mutation error if a server 400 (type-mismatch) occurs - wire a `toast` import if not present. `useState` is already imported at the top of the drawer file; do not re-import.
 
-- [ ] **Step 2: Board — add a "Kelola Field" button + render chips.**
+- [ ] **Step 2: Board - add a "Kelola Field" button + render chips.**
 
 In `PipelineBoardPage.tsx`:
-- import `ManageFieldsDialog` + `formatChipValue` helper (client copy — re-implement a tiny `formatChip` locally OR import from a shared util; simplest: inline a small formatter). Add a button in the sticky header (write-gated) that opens `ManageFieldsDialog`.
+- import `ManageFieldsDialog` + `formatChipValue` helper (client copy - re-implement a tiny `formatChip` locally OR import from a shared util; simplest: inline a small formatter). Add a button in the sticky header (write-gated) that opens `ManageFieldsDialog`.
 - `usePipeline(pid)` now returns `fields`; the cards from `usePipelineCards` now have `values: {fieldId: value}`. For each card, render chips for `pipeline.fields.filter(f => f.showOnCard)` joined with `card.values`.
 
 Header button:
@@ -890,8 +890,8 @@ git commit -m "feat(pipelines): custom fields in card drawer + board chips + man
 
 - [ ] **Step 2: Full typecheck + build** → `npm run typecheck && npm run build` (0 errors, build OK).
 
-- [ ] **Step 3: Manual end-to-end on dev** (`jabnet_fiber_dev`; restart app so the startup migration creates `pipeline_fields` + `pipeline_card_values` — do NOT run db:push):
-  - Open a pipeline → "Kelola Field" → add one field of EACH type (dropdown/multiselect with options); toggle `show on card` on 1–2; mark one `required`.
+- [ ] **Step 3: Manual end-to-end on dev** (`jabnet_fiber_dev`; restart app so the startup migration creates `pipeline_fields` + `pipeline_card_values` - do NOT run db:push):
+  - Open a pipeline → "Kelola Field" → add one field of EACH type (dropdown/multiselect with options); toggle `show on card` on 1-2; mark one `required`.
   - Open a card → "Field Kustom" → set values for each type → Simpan → reopen card, values persisted.
   - Board: cards show chips for show-on-card fields; required-empty shows the indicator.
   - Type-mismatch: (via curl) PUT a non-numeric value to a number field → 400 with field label + reason; UI shows toast.
@@ -900,12 +900,12 @@ git commit -m "feat(pipelines): custom fields in card drawer + board chips + man
   - Isolation: a different mitra can't see these fields/values; guessing a fieldId/cardId returns 403/404/empty, never another mitra's data.
   - Feature gate: disable `pipelines` for a mitra → endpoints + nav denied.
 
-- [ ] **Step 4: Whole-implementation review** — dispatch a final reviewer (subagent-driven-development final step). The reviewer MUST explicitly check: (a) every new endpoint uses `sendSuccess` (not raw `res.json`); (b) the startup CREATE TABLE block exists for both tables; (c) tenant `mitraId` filter on every field/value query; (d) cross-layer hook↔endpoint↔storage signatures match; (e) value validation can't be bypassed. Then STOP — user merges to `dev`, pushes, restarts dev app (tables auto-create), tests; prod only on explicit OK.
+- [ ] **Step 4: Whole-implementation review** - dispatch a final reviewer (subagent-driven-development final step). The reviewer MUST explicitly check: (a) every new endpoint uses `sendSuccess` (not raw `res.json`); (b) the startup CREATE TABLE block exists for both tables; (c) tenant `mitraId` filter on every field/value query; (d) cross-layer hook↔endpoint↔storage signatures match; (e) value validation can't be bypassed. Then STOP - user merges to `dev`, pushes, restarts dev app (tables auto-create), tests; prod only on explicit OK.
 
 ---
 
 ## Self-Review Notes (author)
-- **Spec coverage:** tables+migration (T1), helpers (T2), field CRUD (T3), values + show-on-card (T4), endpoints + extended reads (T5), hooks (T6), all-11-types editor (T7), manage dialog (T8), drawer section + chips (T9), verification (T10). All 11 types handled in T7. Soft-required = UI warning only, never server-blocked (T5 validates type only; T9 shows warning) — matches spec.
+- **Spec coverage:** tables+migration (T1), helpers (T2), field CRUD (T3), values + show-on-card (T4), endpoints + extended reads (T5), hooks (T6), all-11-types editor (T7), manage dialog (T8), drawer section + chips (T9), verification (T10). All 11 types handled in T7. Soft-required = UI warning only, never server-blocked (T5 validates type only; T9 shows warning) - matches spec.
 - **Phase-1 lessons enforced:** every endpoint in T5 uses `sendSuccess`; T1 adds startup CREATE TABLE (no db:push); T5 review item (a)/(b) in T10.
 - **Type consistency:** storage `createField/updateField/deleteField/reorderFields/getCardValues/setCardValues/getShowOnCardValues` ↔ routes ↔ hooks (`createField/updateField/deleteField/reorderFields/setCardValues`, `useFields`). `PipelineFieldType`/`PIPELINE_FIELD_TYPES` defined T1, consumed T8. `validateFieldValue` defined T2, consumed T5.
-- **Flagged adaptation points:** exact `Dialog`/`FormField`/`Switch`/`Combobox`/`Input(leftIcon)` prop names (T7, T8, T9) — verify against the real components before finalizing. Field drag-reorder UI deferred (endpoint exists; not wired) — noted in T8, not a spec gap (spec lists reorder among methods; UI reorder is polish).
+- **Flagged adaptation points:** exact `Dialog`/`FormField`/`Switch`/`Combobox`/`Input(leftIcon)` prop names (T7, T8, T9) - verify against the real components before finalizing. Field drag-reorder UI deferred (endpoint exists; not wired) - noted in T8, not a spec gap (spec lists reorder among methods; UI reorder is polish).

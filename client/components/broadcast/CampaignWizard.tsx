@@ -1,5 +1,5 @@
 /**
- * v4.2.19: Campaign Wizard — 4 langkah
+ * v4.2.19: Campaign Wizard - 4 langkah
  *   1. Audience: pilih saved segment ATAU buat inline filter
  *   2. Template: pilih template + (optional override content/footer/buttons)
  *   3. Schedule: kirim sekarang vs jadwalkan + rate limit
@@ -376,14 +376,14 @@ export function CampaignWizard({ open, onClose }: { open: boolean; onClose: () =
 
               {[
                 { label: "Nama", value: name },
-                { label: "Deskripsi", value: description || "—" },
+                { label: "Deskripsi", value: description || "-" },
                 { label: "Audience", value: audienceMode === "segment" ? `Segment: ${selectedSegment?.name}` : `Custom filter (${inlineFilter.rules.length} rules)` },
                 { label: "Estimasi recipient", value: previewData ? `${(previewData as any).count} pelanggan` : "Loading..." },
-                { label: "Template", value: selectedTemplate?.name ?? "—" },
-                { label: "Override?", value: useOverride ? "Ya — pakai konten custom" : "Tidak — pakai template default" },
+                { label: "Template", value: selectedTemplate?.name ?? "-" },
+                { label: "Override?", value: useOverride ? "Ya - pakai konten custom" : "Tidak - pakai template default" },
                 { label: "Jadwal", value: scheduleMode === "now" ? "Kirim sekarang" : `Jadwalkan: ${scheduledAt}` },
                 { label: "Rate limit", value: `${rateLimitMs / 1000} detik antar pesan` },
-                { label: "Estimasi durasi", value: previewData ? `~${Math.ceil(((previewData as any).count * rateLimitMs) / 60000)} menit` : "—" },
+                { label: "Estimasi durasi", value: previewData ? `~${Math.ceil(((previewData as any).count * rateLimitMs) / 60000)} menit` : "-" },
               ].map((row, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 px-3 py-2 border-b last:border-b-0 text-xs">
                   <div className="col-span-4 font-bold uppercase tracking-wider text-muted-foreground">{row.label}</div>
@@ -394,7 +394,7 @@ export function CampaignWizard({ open, onClose }: { open: boolean; onClose: () =
               {!!previewData && (previewData as any).count > 500 && (
                 <div className="px-3 py-2 rounded bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
                   <AlertCircle className="h-3.5 w-3.5" />
-                  Audience &gt; 500 — pastikan MPWA punya quota & WhatsApp account siap broadcast skala besar.
+                  Audience &gt; 500 - pastikan MPWA punya quota & WhatsApp account siap broadcast skala besar.
                 </div>
               )}
             </div>

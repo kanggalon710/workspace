@@ -8,7 +8,7 @@ import { formatRelative, formatDuration } from "@/lib/dateFormat";
 
 const PAGE = 10;
 
-/** Daftar pelanggan terhubung ke ODP — card list mobile-first, info ACS lazy-merge. */
+/** Daftar pelanggan terhubung ke ODP - card list mobile-first, info ACS lazy-merge. */
 export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
   customers: OdpDetail["customers"];
   ont?: OdpOntStatus;
@@ -40,7 +40,7 @@ export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
                   {c.portNumber != null && <div><dt className="sr-only">Port ODP</dt><dd>Port {c.portNumber}</dd></div>}
                   {c.ontSerialNumber && <div><dt className="sr-only">ONT</dt><dd className="font-mono">{c.ontSerialNumber}</dd></div>}
                 </dl>
-                {/* Baris ACS — muncul setelah ont-status ter-load */}
+                {/* Baris ACS - muncul setelah ont-status ter-load */}
                 {acs && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     {acs.matched ? (

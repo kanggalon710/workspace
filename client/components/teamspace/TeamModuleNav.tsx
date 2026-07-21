@@ -1,4 +1,4 @@
-/** Navigasi modul tim gaya Cicle (v5.1 — feedback user):
+/** Navigasi modul tim gaya Cicle (v5.1 - feedback user):
  *  baris 1: breadcrumb "Tim Saya › <nama tim>" (tanpa blok judul besar duplikat),
  *  baris 2: tab bar underline tipis dengan ikon STATIS (hanya warna/garis bawah
  *  yang berubah saat aktif) + slot aksi di kanan. Dipakai di halaman tim DAN
@@ -24,7 +24,7 @@ interface Props {
   team: { id: number; name: string; color: string; type?: string; enabledViews: string[]; unreadChat?: number };
   /** view yang sedang aktif ("summary" | "tasks" | …) */
   active: string;
-  /** handler pilih tab — bila absen, default navigasi URL (dipakai board) */
+  /** handler pilih tab - bila absen, default navigasi URL (dipakai board) */
   onSelect?: (v: string) => void;
   /** aksi di ujung kanan tab bar (mis. Pilih + menu board, badge role) */
   trailing?: ReactNode;
@@ -40,7 +40,7 @@ export function TeamModuleNav({ team, active, onSelect, trailing }: Props) {
   };
   return (
     <div className="mb-3">
-      {/* Breadcrumb — pengganti judul besar (nama tim cukup tampil sekali di sini) */}
+      {/* Breadcrumb - pengganti judul besar (nama tim cukup tampil sekali di sini) */}
       <div className="flex items-center gap-1.5 pt-1 text-sm">
         <button type="button" onClick={() => navigate("/teamspace/teams")} className="text-muted-foreground transition-colors hover:text-foreground">
           Tim Saya
@@ -52,7 +52,7 @@ export function TeamModuleNav({ team, active, onSelect, trailing }: Props) {
         <span className="max-w-56 truncate font-semibold">{team.name}</span>
       </div>
 
-      {/* Tab bar underline — ikon statis, hanya warna + garis bawah yang berubah */}
+      {/* Tab bar underline - ikon statis, hanya warna + garis bawah yang berubah */}
       <div className="mt-1.5 flex items-center border-b">
         <nav aria-label="Modul tim" className="-mb-px flex flex-1 items-center overflow-x-auto no-scrollbar">
           {team.enabledViews.map((v) => {

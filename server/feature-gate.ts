@@ -4,7 +4,7 @@ type Level = "none" | "read" | "write";
 
 /**
  * Strip the permissions of any disabled feature for a mitra.
- * Pure — no I/O. JABNET (mitra 1) is the owner and is never gated.
+ * Pure - no I/O. JABNET (mitra 1) is the owner and is never gated.
  * A feature absent from `featuresJson` is treated as enabled; only explicit `false` disables.
  * Malformed/empty JSON leaves perms unchanged (fail-open to avoid lockout).
  */

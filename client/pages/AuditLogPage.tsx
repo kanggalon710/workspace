@@ -125,7 +125,7 @@ export default function AuditLogPage() {
   const [userFilter, setUserFilter] = useState<number | "ALL">("ALL");
   const qc = useQueryClient();
 
-  // Stats (top of page — productivity dashboard)
+  // Stats (top of page - productivity dashboard)
   const { data: stats, isLoading: statsLoading } = useQuery<ActivityStats>({
     queryKey: ["/api/activity/stats", sinceDays],
     queryFn: () => api.get<ActivityStats>(`/activity/stats?sinceDays=${sinceDays}`),
@@ -133,7 +133,7 @@ export default function AuditLogPage() {
     refetchIntervalInBackground: false,
   });
 
-  // Raw log (bottom — with filter)
+  // Raw log (bottom - with filter)
   const qParams = new URLSearchParams();
   qParams.set("limit", "500");
   qParams.set("sinceDays", String(sinceDays));
@@ -215,7 +215,7 @@ export default function AuditLogPage() {
                 <Zap className="h-3 w-3" /> Total Aktivitas
               </div>
               <div className="text-2xl font-bold mt-1 text-indigo-500">
-                {statsLoading ? "—" : (stats?.totalActions ?? 0).toLocaleString("id-ID")}
+                {statsLoading ? "-" : (stats?.totalActions ?? 0).toLocaleString("id-ID")}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">semua action</div>
             </CardContent>
@@ -226,7 +226,7 @@ export default function AuditLogPage() {
                 <UserCheck className="h-3 w-3" /> Login
               </div>
               <div className="text-2xl font-bold mt-1 text-emerald-500">
-                {statsLoading ? "—" : (stats?.totalLogins ?? 0).toLocaleString("id-ID")}
+                {statsLoading ? "-" : (stats?.totalLogins ?? 0).toLocaleString("id-ID")}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">kali login</div>
             </CardContent>
@@ -237,7 +237,7 @@ export default function AuditLogPage() {
                 <Users className="h-3 w-3" /> User Aktif
               </div>
               <div className="text-2xl font-bold mt-1 text-amber-500">
-                {statsLoading ? "—" : stats?.activeUsers ?? 0}
+                {statsLoading ? "-" : stats?.activeUsers ?? 0}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">user unik</div>
             </CardContent>
@@ -248,7 +248,7 @@ export default function AuditLogPage() {
                 <Trophy className="h-3 w-3" /> Paling Rajin
               </div>
               <div className="text-sm font-bold mt-1 text-orange-500 truncate">
-                {statsLoading ? "—" : stats?.topUsers?.[0]?.userName ?? "—"}
+                {statsLoading ? "-" : stats?.topUsers?.[0]?.userName ?? "-"}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 {stats?.topUsers?.[0] ? `${stats.topUsers[0].actionCount} aksi` : "belum ada data"}
@@ -501,7 +501,7 @@ export default function AuditLogPage() {
                             {l.entityName ?? (l.entityId ? `#${l.entityId}` : "-")}
                           </td>
                           <td className="py-2 text-muted-foreground text-[11px] max-w-md truncate" title={detailsStr}>
-                            {detailsStr || "—"}
+                            {detailsStr || "-"}
                           </td>
                         </tr>
                       );

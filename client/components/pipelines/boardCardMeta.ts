@@ -1,4 +1,4 @@
-// Pure board-card meta helpers — no React. Mirrors /leads recency thresholds.
+// Pure board-card meta helpers - no React. Mirrors /leads recency thresholds.
 export const STALLED_DAYS = 14;
 export type UpdateTone = "fresh" | "recent" | "warn" | "old";
 export type DateRange = "all" | "7d" | "30d" | { from: string; to: string };
@@ -11,9 +11,9 @@ function daysBetween(iso: string, now: Date): number | null {
 }
 
 export function cardAgeLabel(createdAt: string | null, now: Date): string {
-  if (!createdAt) return "—";
+  if (!createdAt) return "-";
   const d = daysBetween(createdAt, now);
-  if (d == null) return "—";
+  if (d == null) return "-";
   return d <= 0 ? "Hari ini" : `${d}h lalu`;
 }
 
@@ -44,10 +44,10 @@ function dateValue(iso: string | null | undefined): number {
 /**
  * Bandingkan dua kartu berdasarkan tanggal (Dibuat / Update terakhir) untuk sort per-stage.
  *
- * Arah SENGAJA dibalik dari makna leksikal: `"asc"` = TERBARU dulu (default board —
+ * Arah SENGAJA dibalik dari makna leksikal: `"asc"` = TERBARU dulu (default board -
  * aktivitas terbaru di atas), `"desc"` = terlama dulu. Ini supaya state default
  * `sortDir="asc"` menghasilkan "Baru → Lama" tanpa mengubah default sort field kustom
- * yang tetap A–Z. `updated` jatuh balik ke `createdAt` bila `updatedAt` kosong.
+ * yang tetap A-Z. `updated` jatuh balik ke `createdAt` bila `updatedAt` kosong.
  */
 export function compareByDate(
   a: { createdAt: string | null; updatedAt?: string | null },

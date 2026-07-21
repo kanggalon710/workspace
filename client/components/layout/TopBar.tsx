@@ -107,7 +107,7 @@ export function TopBar() {
     return () => document.removeEventListener("mousedown", handler);
   }, [mitraMenuOpen]);
 
-  // System health — poll every 60s
+  // System health - poll every 60s
   const { data: syncStatus } = useQuery<any>({
     queryKey: ["/api/billing/sync/status"],
     queryFn: () => api.get<any>("/billing/sync/status"),
@@ -126,7 +126,7 @@ export function TopBar() {
     setDarkMode(!darkMode);
   };
 
-  // Command palette state — Cmd+K handled globally inside CommandPalette
+  // Command palette state - Cmd+K handled globally inside CommandPalette
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   return (
@@ -175,7 +175,7 @@ export function TopBar() {
       {/* Spacer */}
       <div className="flex-1 hidden md:block" />
 
-      {/* Search launcher (desktop) — opens Command Palette */}
+      {/* Search launcher (desktop) - opens Command Palette */}
       <button
         onClick={() => setPaletteOpen(true)}
         className="hidden md:flex items-center gap-2 w-72 h-9 px-3 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/50 hover:border-border transition-all group"
@@ -237,7 +237,7 @@ export function TopBar() {
         </span>
       </button>
 
-      {/* Phase B: Tenant switcher — only show if user has 2+ memberships or is system admin */}
+      {/* Phase B: Tenant switcher - only show if user has 2+ memberships or is system admin */}
       {user && (user.mitraMemberships?.length ?? 0) > 1 && (
         <div className="relative" ref={mitraMenuRef}>
           <button

@@ -51,7 +51,7 @@ interface DataTableProps<TData> {
 }
 
 /**
- * DataTable — generic table with sorting, pagination, global search, loading & empty states.
+ * DataTable - generic table with sorting, pagination, global search, loading & empty states.
  * Built on @tanstack/react-table. Uses existing Input, Button, EmptyState components.
  *
  * @example
@@ -216,7 +216,7 @@ export function DataTable<TData>({
               Menampilkan{" "}
               <span className="font-semibold text-foreground tabular-nums">
                 {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-                –
+                -
                 {Math.min(
                   (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                   totalRows

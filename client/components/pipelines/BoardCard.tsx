@@ -96,7 +96,7 @@ export const BoardCard = memo(function BoardCard({
   onToggleCard?: (id: number) => void;
   /** Quick-move alternatif drag: daftar stage pipeline (referensi stabil dari query cache). */
   stages?: { id: number; label: string; color: string | null }[];
-  /** Stable callback (ref-backed di page) — memo BoardCard tetap berlaku. */
+  /** Stable callback (ref-backed di page) - memo BoardCard tetap berlaku. */
   onMoveCard?: (cardId: number, stageId: number) => void;
 }) {
   const stalled = isStalled(card.updatedAt ?? null, card.createdAt, now);

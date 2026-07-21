@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ── Types ───────────────────────────────────────────────────────────────────
+// -- Types -------------------------------------------------------------------
 interface LeadEntry {
   id: number;
   name: string;
@@ -84,7 +84,7 @@ interface HistoryResponse {
   leaderboard: LeaderboardEntry[];
 }
 
-// ── Date range presets ───────────────────────────────────────────────────────
+// -- Date range presets -------------------------------------------------------
 type RangePreset = "7d" | "30d" | "month" | "custom";
 
 function isoDate(d: Date): string {
@@ -108,7 +108,7 @@ const RANGE_LABELS: Record<RangePreset, string> = {
   custom: "Custom",
 };
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------------------
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} menit`;
   const h = Math.floor(minutes / 60);
@@ -203,7 +203,7 @@ const CAT_COLORS: Record<string, string> = {
   lainnya: "bg-gray-100 text-gray-700",
 };
 
-// ── Skeleton ────────────────────────────────────────────────────────────────
+// -- Skeleton ----------------------------------------------------------------
 function CardSkeleton() {
   return (
     <Card>
@@ -227,7 +227,7 @@ function KpiSkeleton() {
   );
 }
 
-// ── Component ───────────────────────────────────────────────────────────────
+// -- Component ---------------------------------------------------------------
 export default function CanvassingHistoryPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -296,7 +296,7 @@ export default function CanvassingHistoryPage() {
 
   return (
     <div className="min-h-screen bg-[#faf9f8] p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* -- Header -------------------------------------------------------- */}
       <div>
         <div className="flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-[#350800]" />
@@ -309,7 +309,7 @@ export default function CanvassingHistoryPage() {
         </p>
       </div>
 
-      {/* ── Range Filter ────────────────────────────────────────────────── */}
+      {/* -- Range Filter -------------------------------------------------- */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-1.5 text-xs font-medium text-[#755750]">
           <Calendar className="h-4 w-4" /> Periode
@@ -350,7 +350,7 @@ export default function CanvassingHistoryPage() {
         <p className="text-xs text-red-600">Tanggal mulai harus sebelum atau sama dengan tanggal akhir.</p>
       )}
 
-      {/* ── KPI Cards ───────────────────────────────────────────────────── */}
+      {/* -- KPI Cards ----------------------------------------------------- */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -418,7 +418,7 @@ export default function CanvassingHistoryPage() {
           <p className="text-xs text-[#755750]">
             Total: {kpi.totalLeads} lead, {kpi.totalClosing} closing,{" "}
             {formatDurationShort(kpi.totalDurationMinutes)} di lapangan
-            {data?.range ? ` (${formatDate(data.range.from)} – ${formatDate(data.range.to)})` : ""}
+            {data?.range ? ` (${formatDate(data.range.from)} - ${formatDate(data.range.to)})` : ""}
             {" "}• Radius canvass: {kpi.canvassRadiusM}m per ODP
           </p>
 
@@ -446,7 +446,7 @@ export default function CanvassingHistoryPage() {
         </>
       ) : null}
 
-      {/* ── Filter Bar ──────────────────────────────────────────────────── */}
+      {/* -- Filter Bar ---------------------------------------------------- */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#827472]" />
@@ -485,7 +485,7 @@ export default function CanvassingHistoryPage() {
       {/* Result count */}
       <p className="text-xs text-[#827472]">{totalFiltered} sesi ditemukan{totalPages > 1 ? ` • Halaman ${page + 1} dari ${totalPages}` : ""}</p>
 
-      {/* ── Session List ────────────────────────────────────────────────── */}
+      {/* -- Session List -------------------------------------------------- */}
       <div className="space-y-3">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
@@ -597,7 +597,7 @@ export default function CanvassingHistoryPage() {
         )}
       </div>
 
-      {/* ── Pagination ──────────────────────────────────────────────────── */}
+      {/* -- Pagination ---------------------------------------------------- */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Sebelumnya</Button>
@@ -606,7 +606,7 @@ export default function CanvassingHistoryPage() {
         </div>
       )}
 
-      {/* ── Leaderboard ─────────────────────────────────────────────────── */}
+      {/* -- Leaderboard --------------------------------------------------- */}
       {leaderboard.length > 0 && (
         <Card>
           <CardContent className="p-4 md:p-6">

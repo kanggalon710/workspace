@@ -1,4 +1,4 @@
-/** Teamspace v5.0 — ekstensi modal kartu: selesai, tenggat, label berwarna, checklist,
+/** Teamspace v5.0 - ekstensi modal kartu: selesai, tenggat, label berwarna, checklist,
  * dan aksi (Salin / Rahasiakan / Arsipkan). Generik untuk semua board (ops + tim). */
 import { useRef, useState } from "react";
 import {
@@ -16,7 +16,7 @@ import { toast } from "sonner";
 interface Props {
   cardId: number;
   pipelineId: number;
-  card: any; // CardDetail — kolom Teamspace (isCompleted/isPrivate/dueDate) dibaca dinamis
+  card: any; // CardDetail - kolom Teamspace (isCompleted/isPrivate/dueDate) dibaca dinamis
   writable: boolean;
   onClose: () => void;
   /** BUG-008 layout 2 kolom: "side" = cover/selesai/tenggat/ulangi/label/aksi (panel kanan),
@@ -136,7 +136,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
         </div>
       )}
 
-      {/* Selesai + Tenggat + Ulangi + Label — panel aksi (side) */}
+      {/* Selesai + Tenggat + Ulangi + Label - panel aksi (side) */}
       {showSide && (<>
       <Button
         type="button"
@@ -151,7 +151,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
         {isCompleted ? "Selesai" : "Tandai Selesai"}
       </Button>
 
-      {/* Tenggat — label jelas + input dirapikan + quick set (feedback: fungsi tanggal samar) */}
+      {/* Tenggat - label jelas + input dirapikan + quick set (feedback: fungsi tanggal samar) */}
       <div>
         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           <CalendarClock className="size-3" aria-hidden="true" /> Tenggat
@@ -197,7 +197,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
         )}
       </div>
 
-      {/* Ulangi (FR-408) — instance baru dibuat otomatis saat kartu selesai */}
+      {/* Ulangi (FR-408) - instance baru dibuat otomatis saat kartu selesai */}
       {writable && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -211,7 +211,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
                 key={f}
                 type="button"
                 onClick={() => actions.setRecurrence.mutate(f, {
-                  onSuccess: () => toast.success(f ? `Diulang ${label.toLowerCase()} — instance baru dibuat saat selesai` : "Pengulangan dimatikan"),
+                  onSuccess: () => toast.success(f ? `Diulang ${label.toLowerCase()} - instance baru dibuat saat selesai` : "Pengulangan dimatikan"),
                   onError: (e: any) => toast.error(e?.message || "Gagal mengubah pengulangan"),
                 })}
                 className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors ${isActive ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
@@ -247,7 +247,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
                       {selectedLabelIds.has(l.id) && <CheckCircle2 className="size-3.5 shrink-0 text-primary" />}
                     </button>
                   ))}
-                  {(labels ?? []).length === 0 && <p className="px-1.5 py-1 text-[11px] text-muted-foreground">Belum ada label — buat di bawah.</p>}
+                  {(labels ?? []).length === 0 && <p className="px-1.5 py-1 text-[11px] text-muted-foreground">Belum ada label - buat di bawah.</p>}
                 </div>
                 <div className="mt-2 space-y-2 border-t pt-2">
                   <Input inputSize="sm" placeholder="Nama label baru" value={newLabelName} onChange={(e) => setNewLabelName(e.target.value)} />
@@ -285,7 +285,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
       </div>
       </>)}
 
-      {/* Checklist (FR-406) — konten utama (main) */}
+      {/* Checklist (FR-406) - konten utama (main) */}
       {showMain && (
       <div>
         <div className="mb-1.5 flex items-center justify-between">
@@ -372,7 +372,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
       </div>
       )}
 
-      {/* Aksi (FR-409) — panel aksi (side) */}
+      {/* Aksi (FR-409) - panel aksi (side) */}
       {showSide && writable && (
         <div>
           <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Aksi</span>
@@ -392,7 +392,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
               leftIcon={isPrivate ? <Unlock className="size-3.5" /> : <Lock className="size-3.5" />}
               loading={actions.setPrivate.isPending}
               onClick={() => actions.setPrivate.mutate(!isPrivate, {
-                onSuccess: () => toast.success(!isPrivate ? "Kartu dirahasiakan — hanya anggota kartu yang bisa melihat" : "Kartu dibuka kembali"),
+                onSuccess: () => toast.success(!isPrivate ? "Kartu dirahasiakan - hanya anggota kartu yang bisa melihat" : "Kartu dibuka kembali"),
                 onError: (e: any) => toast.error(e?.message || "Gagal mengubah kerahasiaan"),
               })}
             >
@@ -417,7 +417,7 @@ export function CardTeamExtras({ cardId, pipelineId, card, writable, onClose, se
           </div>
           {isPrivate && (
             <p className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-warning">
-              <Lock className="size-3" /> Kartu ini rahasia — hanya pembuat, penanggung jawab, dan follower yang bisa melihat.
+              <Lock className="size-3" /> Kartu ini rahasia - hanya pembuat, penanggung jawab, dan follower yang bisa melihat.
             </p>
           )}
         </div>

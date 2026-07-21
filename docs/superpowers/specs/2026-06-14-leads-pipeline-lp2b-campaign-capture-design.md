@@ -1,4 +1,4 @@
-# LP2b — Campaign Capture — Design
+# LP2b - Campaign Capture - Design
 
 > Tanggal: 2026-06-14 · Status: spec disetujui (brainstorm), siap → writing-plans
 > Epik: **Leads ↔ Pipeline Automation** ([[project-leads-pipeline-integration]]). Pelengkap LP2 (campaign yang dulu ditunda).
@@ -29,7 +29,7 @@ Resolusi best-effort, **tak boleh menggagalkan** pembuatan lead (try/catch; gaga
 
 ## Data model
 
-Tabel `leads` + 3 kolom nullable (migrasi startup terjaga via info_schema check — pola `loyaltyColumnAdditions`; DB menolak `ADD COLUMN IF NOT EXISTS`, lihat [[reference-startup-add-column]]):
+Tabel `leads` + 3 kolom nullable (migrasi startup terjaga via info_schema check - pola `loyaltyColumnAdditions`; DB menolak `ADD COLUMN IF NOT EXISTS`, lihat [[reference-startup-add-column]]):
 ```ts
 campaign: text("campaign"),   // nama campaign (ramah) atau id; null kalau bukan dari iklan
 adSet: text("ad_set"),
@@ -50,14 +50,14 @@ export function extractAdRefs(payload: any): AdRefs;
   - adSet: `adset_id`/`adgroup_id`/`adSetId` → externalId; `adset_name`/`adgroup_name`/`adSetName` → name.
   - adName: `ad_id`/`adId` → externalId; `ad_name`/`adName` → name.
 - Hanya sertakan ref yang punya minimal satu nilai non-empty. String di-trim; kosong → diabaikan.
-- Pure — tak query registry (server yang resolve).
+- Pure - tak query registry (server yang resolve).
 
 Helper resolusi (server-side, kecil, di webhook handler atau `server/lead-campaign.ts`): `resolveCampaignName(platform, ref, lookup)` → `name ?? externalId ?? null` di mana `lookup(externalId)` = `getAdCampaignByExternalId(platform, externalId)?.campaignName`. Untuk adSet/adName tak ada lookup → `ref.name ?? ref.externalId ?? null`.
 
 ## Server
 
 - `IntakeLead` (`shared/leadIntake.ts`) += `campaign?`, `adSet?`, `adName?` (string|null).
-- `server/routes.ts` `POST /webhook/meta-leads`: `extractAdRefs(change.value)`; resolve campaign via `getAdCampaignByExternalId("meta_ads", ref.campaign.externalId)`; set `campaign/adSet/adName` di `createLead`. (Boleh hapus dump `form_id`/`ad_id` di notes karena kini terstruktur — opsional.)
+- `server/routes.ts` `POST /webhook/meta-leads`: `extractAdRefs(change.value)`; resolve campaign via `getAdCampaignByExternalId("meta_ads", ref.campaign.externalId)`; set `campaign/adSet/adName` di `createLead`. (Boleh hapus dump `form_id`/`ad_id` di notes karena kini terstruktur - opsional.)
 - `server/routes.ts` `POST /webhook/tiktok-leads`: `extractAdRefs(lead)`; resolve via `"tiktok_ads"`.
 - Resolusi dibungkus try/catch (best-effort).
 
@@ -69,7 +69,7 @@ Helper resolusi (server-side, kecil, di webhook handler atau `server/lead-campai
 ## Client
 
 - `LeadPipelinePage` detail lead: tampilkan `campaign` (+ adSet/adName bila ada) di info section, bila tidak null.
-- (ConditionsBuilder & field-map UI otomatis menampilkan attr baru dari katalog — tak perlu kode UI khusus.)
+- (ConditionsBuilder & field-map UI otomatis menampilkan attr baru dari katalog - tak perlu kode UI khusus.)
 
 ## Cross-cutting
 - **Tenant isolation:** `getAdCampaignByExternalId` sudah tenant-scoped; lead di mitra dari webhook (`mitraId` default 1 / lead row). Tak ada cross-tenant.
@@ -80,13 +80,13 @@ Helper resolusi (server-side, kecil, di webhook handler atau `server/lead-campai
 ## Acceptance Criteria (LP2b)
 1. Kolom `campaign`/`adSet`/`adName` ada di `leads` (migrasi startup terjaga).
 2. Webhook Meta/TikTok mengisi ketiganya best-effort dari payload; campaign ter-resolve ke nama ramah via `ad_campaigns` bila externalId cocok, else fallback nama payload → id → null.
-3. `campaign`/`adSet`/`adName` jadi atribut field-map (LP1) — bisa dipetakan ke field kartu.
-4. `campaign`/`adSet`/`adName` jadi atribut kondisi (LP2, eq/neq/contains) — rule `WHEN campaign ...` jalan.
+3. `campaign`/`adSet`/`adName` jadi atribut field-map (LP1) - bisa dipetakan ke field kartu.
+4. `campaign`/`adSet`/`adName` jadi atribut kondisi (LP2, eq/neq/contains) - rule `WHEN campaign ...` jalan.
 5. `/leads` detail menampilkan campaign bila ada.
 6. Resolusi best-effort, tenant-scoped, tak menggagalkan webhook.
 
 ## Out of scope LP2b
-- Meta Graph API name resolution (registry sudah cukup) — dibuang.
-- Auto-bikin row `ad_campaigns` dari lead (registry tetap di-push terpisah) — defer.
-- Time-series metrik campaign (sudah di `ad_campaigns`) — terpisah.
-- Campaign di jalur manual (canvassing/finder/coverage/create-from-card) — null (bukan dari iklan).
+- Meta Graph API name resolution (registry sudah cukup) - dibuang.
+- Auto-bikin row `ad_campaigns` dari lead (registry tetap di-push terpisah) - defer.
+- Time-series metrik campaign (sudah di `ad_campaigns`) - terpisah.
+- Campaign di jalur manual (canvassing/finder/coverage/create-from-card) - null (bukan dari iklan).

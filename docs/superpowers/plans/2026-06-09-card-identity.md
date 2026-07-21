@@ -10,10 +10,10 @@
 
 **Conventions:**
 - Tests: `npx tsx --test <file>` (NO `npm test`). Import extensions `.js`.
-- MySQL Drizzle: no `.returning()` — insert then re-select by `insertId`.
+- MySQL Drizzle: no `.returning()` - insert then re-select by `insertId`.
 - Tenant-scoped via `getMitraId()`. Envelope: `sendSuccess(res, data)` / `sendError(res, msg, status)`.
-- `ADD COLUMN`: append to the `loyaltyColumnAdditions` array (storage.ts ~690) — it guards each add with an `information_schema.columns` COUNT check + per-column try/catch. `ADD COLUMN IF NOT EXISTS` is NOT supported; this guarded pattern is.
-- New index: append to the `runIndexMigrations` `indexes` array (storage.ts ~589) — guarded via `information_schema.statistics`.
+- `ADD COLUMN`: append to the `loyaltyColumnAdditions` array (storage.ts ~690) - it guards each add with an `information_schema.columns` COUNT check + per-column try/catch. `ADD COLUMN IF NOT EXISTS` is NOT supported; this guarded pattern is.
+- New index: append to the `runIndexMigrations` `indexes` array (storage.ts ~589) - guarded via `information_schema.statistics`.
 - Route guards: `requirePermission(req,res,"pipelines")`, `requirePipelineView(req,res,pid)`, `requireCardAccess(req,res,card)`. `storage.getCard(id)` is mitra-scoped.
 
 ---
@@ -71,14 +71,14 @@ test("CARD_RELATION_TYPES exported with 4 entries", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/cardIdentity.test.ts`
-Expected: FAIL — `ERR_MODULE_NOT_FOUND`.
+Expected: FAIL - `ERR_MODULE_NOT_FOUND`.
 
 - [ ] **Step 3: Write minimal implementation**
 
 Create `shared/cardIdentity.ts`:
 
 ```ts
-/** Pure helpers for cross-pipeline card lineage — no I/O, unit-testable. */
+/** Pure helpers for cross-pipeline card lineage - no I/O, unit-testable. */
 
 export type CardRelationType = "mirror" | "duplicate" | "linked" | "child";
 
@@ -108,7 +108,7 @@ export function resolveMasterCardId(originMasterId: number | null | undefined, o
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/cardIdentity.test.ts`
-Expected: PASS — 4/4.
+Expected: PASS - 4/4.
 
 - [ ] **Step 5: Commit**
 
@@ -156,7 +156,7 @@ git commit -m "feat(card-identity): master/origin/relation columns on pipeline_c
 
 ---
 
-### Task 3: Migration — add columns, backfill, index
+### Task 3: Migration - add columns, backfill, index
 
 **Files:**
 - Modify: `server/storage.ts` (the `loyaltyColumnAdditions` array ~690; the `runIndexMigrations` `indexes` array ~589; add a backfill after the column-additions loop)
@@ -203,7 +203,7 @@ Expected: 0 errors; build OK.
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(card-identity): migration — columns + master backfill + index"
+git commit -m "feat(card-identity): migration - columns + master backfill + index"
 ```
 
 ---
@@ -260,7 +260,7 @@ git commit -m "feat(card-identity): createCard sets master (self for roots) + or
 ### Task 5: `getRelatedCards` storage read
 
 **Files:**
-- Modify: `server/storage.ts` (add method near `getCard` ~1937; ensure `pipelines`, `pipelineStages` are imported — they are used elsewhere in the file)
+- Modify: `server/storage.ts` (add method near `getCard` ~1937; ensure `pipelines`, `pipelineStages` are imported - they are used elsewhere in the file)
 
 - [ ] **Step 1: Add the method**
 
@@ -471,5 +471,5 @@ git add -A && git commit -m "chore(card-identity): final verification fixes" || 
 1. After restart, confirm the 3 columns exist and existing cards have `master_card_id = id`
    (`SELECT id, master_card_id FROM pipeline_cards LIMIT 5`).
 2. Create a new card via the UI → `master_card_id` equals its own `id`; `origin_card_id`/`relation_type` null.
-3. Open any card → "Kartu Terkait" panel is hidden (no siblings yet — expected until SP3 links cards).
+3. Open any card → "Kartu Terkait" panel is hidden (no siblings yet - expected until SP3 links cards).
 4. Manually `UPDATE pipeline_cards SET master_card_id = <root id>, origin_card_id = <root id>, relation_type='mirror' WHERE id = <other card in another pipeline>` → open either card → the other appears in "Kartu Terkait" with the Mirror badge + correct pipeline/stage, link navigates.

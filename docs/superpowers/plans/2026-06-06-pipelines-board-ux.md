@@ -34,7 +34,7 @@ const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOStrin
 test("cardAgeLabel: today vs N days", () => {
   assert.equal(cardAgeLabel(daysAgo(0), now), "Hari ini");
   assert.equal(cardAgeLabel(daysAgo(3), now), "3h lalu");
-  assert.equal(cardAgeLabel(null as any, now), "—");
+  assert.equal(cardAgeLabel(null as any, now), "-");
 });
 
 test("lastUpdateTone: 1/7/14 day boundaries (uses updatedAt else createdAt)", () => {
@@ -71,13 +71,13 @@ test("inDateRange: all / 7d / 30d / custom / null", () => {
 - [ ] **Step 2: Run tests, verify FAIL**
 
 Run: `npx tsx --test client/components/pipelines/boardCardMeta.test.ts`
-Expected: FAIL — module not found / exports missing.
+Expected: FAIL - module not found / exports missing.
 
 - [ ] **Step 3: Implement**
 
 Create `client/components/pipelines/boardCardMeta.ts`:
 ```ts
-// Pure board-card meta helpers — no React. Mirrors /leads recency thresholds.
+// Pure board-card meta helpers - no React. Mirrors /leads recency thresholds.
 export const STALLED_DAYS = 14;
 export type UpdateTone = "fresh" | "recent" | "warn" | "old";
 export type DateRange = "all" | "7d" | "30d" | { from: string; to: string };
@@ -90,9 +90,9 @@ function daysBetween(iso: string, now: Date): number | null {
 }
 
 export function cardAgeLabel(createdAt: string | null, now: Date): string {
-  if (!createdAt) return "—";
+  if (!createdAt) return "-";
   const d = daysBetween(createdAt, now);
-  if (d == null) return "—";
+  if (d == null) return "-";
   return d <= 0 ? "Hari ini" : `${d}h lalu`;
 }
 
@@ -120,7 +120,7 @@ export function inDateRange(dateStr: string | null, range: DateRange, now: Date)
   if (Number.isNaN(t)) return false;
   if (range === "7d") return t >= now.getTime() - 7 * DAY;
   if (range === "30d") return t >= now.getTime() - 30 * DAY;
-  // custom { from, to } — inclusive, date-only; blank bound = unbounded
+  // custom { from, to } - inclusive, date-only; blank bound = unbounded
   const fromOk = !range.from || t >= Date.parse(range.from + "T00:00:00");
   const toOk = !range.to || t <= Date.parse(range.to + "T23:59:59");
   return fromOk && toOk;
@@ -226,18 +226,18 @@ export function BoardCard({
   );
 }
 ```
-NOTE: confirm `PipelineCard` has `updatedAt: string | null`, `createdAt: string`, `priority: string`, `assigneeId: number | null` (it does — see schema `pipeline_cards`). Confirm semantic tokens `bg-success`/`bg-warning`/`bg-info`/`bg-destructive`/`bg-primary` exist in the design system (they do — used across the app).
+NOTE: confirm `PipelineCard` has `updatedAt: string | null`, `createdAt: string`, `priority: string`, `assigneeId: number | null` (it does - see schema `pipeline_cards`). Confirm semantic tokens `bg-success`/`bg-warning`/`bg-info`/`bg-destructive`/`bg-primary` exist in the design system (they do - used across the app).
 
 - [ ] **Step 2: Typecheck + build**
 
 Run: `npm run typecheck && npm run build`
-Expected: BoardCard compiles (unused until Task 3/5 — that's fine). Report.
+Expected: BoardCard compiles (unused until Task 3/5 - that's fine). Report.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add client/components/pipelines/BoardCard.tsx
-git commit -m "feat(pipelines): BoardCard — age/tone/stalled/priority/assignee (board-ux)"
+git commit -m "feat(pipelines): BoardCard - age/tone/stalled/priority/assignee (board-ux)"
 ```
 
 ---
@@ -316,7 +316,7 @@ export function StageColumn({
         <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
         <span className="font-semibold text-sm truncate flex-1">{stage.label}</span>
         <span className="text-xs text-muted-foreground">{cards.length}</span>
-        {stalledCount > 0 && <span className="text-[10px] text-destructive" title="Stalled">⚠ {stalledCount}</span>}
+        {stalledCount > 0 && <span className="text-[10px] text-destructive" title="Stalled"> {stalledCount}</span>}
         {writable && (
           <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit stage" className="opacity-60 hover:opacity-100" onClick={() => { setLabel(stage.label); setDraftColor(color); setEditing((v) => !v); }}>
             <Pencil className="h-3.5 w-3.5" />
@@ -416,7 +416,7 @@ export function BoardFilters({
         <div className="flex items-center gap-1">
           <Input inputSize="sm" type="date" value={custom.from} aria-label="Dari tanggal"
             onChange={(e) => onRange({ from: e.target.value, to: custom.to })} className="w-36" />
-          <span className="text-muted-foreground text-xs">–</span>
+          <span className="text-muted-foreground text-xs">-</span>
           <Input inputSize="sm" type="date" value={custom.to} aria-label="Sampai tanggal"
             onChange={(e) => onRange({ from: custom.from, to: e.target.value })} className="w-36" />
         </div>
@@ -429,7 +429,7 @@ export function BoardFilters({
 - [ ] **Step 2: Typecheck + build** → 0 errors, green. Commit:
 ```bash
 git add client/components/pipelines/BoardFilters.tsx
-git commit -m "feat(pipelines): BoardFilters — search + date-field toggle + range (board-ux)"
+git commit -m "feat(pipelines): BoardFilters - search + date-field toggle + range (board-ux)"
 ```
 
 ---
@@ -532,7 +532,7 @@ export default function PipelineBoardPage() {
   );
 }
 ```
-NOTE: confirm `usePipelineMutations` exposes `updateStage`/`deleteStage`/`createStage`/`createCard`/`moveCard` (it does — `usePipelines.ts:107-109` + createCard/moveCard). Confirm `api` import path `@/lib/api` + `usePipelineCards` returns cards with `createdAt`/`updatedAt`. The old inline `AddInline` function at the bottom of the file is REMOVED (now imported).
+NOTE: confirm `usePipelineMutations` exposes `updateStage`/`deleteStage`/`createStage`/`createCard`/`moveCard` (it does - `usePipelines.ts:107-109` + createCard/moveCard). Confirm `api` import path `@/lib/api` + `usePipelineCards` returns cards with `createdAt`/`updatedAt`. The old inline `AddInline` function at the bottom of the file is REMOVED (now imported).
 
 - [ ] **Step 2: Typecheck + build**
 
@@ -560,6 +560,6 @@ git commit -m "feat(pipelines): board page composes filters + stage columns + en
 
 - **Spec coverage:** §1 helpers → T1; §2 filters → T4 + page wiring T5; §3 stage column + editor → T3; §4 card → T2; §5 page composition → T5; §6 files all created; §7 edge cases (no-color grey fallback, blank custom bound, empty column still drop-target, unparseable → safe) covered in T1 helpers + T3/T5; §8 testing → T1 unit + T5 manual.
 - **Type consistency:** `DateRange`/`DateField`/`UpdateTone` defined in T1/T4 and consumed in T2/T3/T5; `boardCardMeta` signatures (`cardAgeLabel`/`lastUpdateTone`/`isStalled`/`inDateRange`) identical across tasks; `StageColumn`/`BoardCard`/`BoardFilters` prop contracts match the page's usage in T5.
-- **No backend:** verified — `updateStage`/`createStage` routes forward `color`; `/users` exists; only client files touched.
+- **No backend:** verified - `updateStage`/`createStage` routes forward `color`; `/users` exists; only client files touched.
 - **Standards:** pure `boardCardMeta` (SoC/TDD), 3 focused components + AddInline extraction (decomposition/DRY), semantic tokens (no hardcoded hex except the stage-swatch palette which mirrors stored colors), `<input type="color"/date">` + aria-labels + `type="button"` on all board buttons.
 - **No placeholders.**

@@ -1,4 +1,4 @@
-# Spec — JABNET-only Mitra Selector on /map
+# Spec - JABNET-only Mitra Selector on /map
 
 > **Date:** 2026-06-03
 > **Status:** Approved design, ready for implementation plan.
@@ -18,7 +18,7 @@ no dropdown and only their own data. This feature is **only** for JABNET.
   honored only for JABNET-root. A non-JABNET user passing `?mitra=` gets their own data.
 - Scope is the two endpoints the map renders markers from (`/api/map-data/infra` and
   `/api/map-data/customers`). `/api/map-data` is unused by MapPage. Asset-list hooks
-  (`usePops`/`useOdcs`/`useOdps`/`useCustomers`) stay own-mitra — irrelevant in read-only.
+  (`usePops`/`useOdcs`/`useOdps`/`useCustomers`) stay own-mitra - irrelevant in read-only.
 
 ## Architecture
 
@@ -31,7 +31,7 @@ resolveMapMitraId({ isJabnetRoot, queryMitra, activeMitraId }): number
   → else → activeMitraId
 ```
 
-Lives in a small testable module (`server/map-helpers.ts`). The override is gated here —
+Lives in a small testable module (`server/map-helpers.ts`). The override is gated here -
 non-JABNET callers always get `activeMitraId`.
 
 ### Backend (`server/routes.ts`)
@@ -54,7 +54,7 @@ non-JABNET callers always get `activeMitraId`.
 ### Frontend (`client/hooks/useAssets.ts`, `client/pages/MapPage.tsx`)
 - `useMapInfra(mitraId?: number)`: append `?mitra=<id>` when set; include `mitraId` in the
   query key so each mitra caches separately and switching refetches.
-- `useMapCustomers(bbox, enabled, mitraId?: number)`: same — add `&mitra=<id>` and include
+- `useMapCustomers(bbox, enabled, mitraId?: number)`: same - add `&mitra=<id>` and include
   `mitraId` in the query key (alongside bbox).
 - `MapPage`:
   - `const ownMitraId = user?.activeMitraId ?? 1;` and `const [viewMitraId, setViewMitraId] = useState(ownMitraId);`
@@ -69,7 +69,7 @@ non-JABNET callers always get `activeMitraId`.
     a read-only badge naming the mitra.
 
 ## Testing
-- Unit (`server/map-helpers.test.ts`): `resolveMapMitraId` — JABNET + valid param → param;
+- Unit (`server/map-helpers.test.ts`): `resolveMapMitraId` - JABNET + valid param → param;
   JABNET + missing/NaN/0/negative → activeMitraId; non-JABNET + param → activeMitraId.
 - Manual on dev: as JABNET, switch dropdown → markers change to selected mitra, controls
   hidden + badge shown; switch back → full controls. As a non-JABNET mitra admin → no
@@ -81,9 +81,9 @@ non-JABNET callers always get `activeMitraId`.
 - Editing other mitras' data (view-only by decision).
 - Per-mitra fix for the `dashboard` cache key (same latent pattern, but not part of this
   feature).
-- `/api/map-data` (`getMapData`) — unused by MapPage.
+- `/api/map-data` (`getMapData`) - unused by MapPage.
 
 ## Consistency with memory
-- `reference-tenant-isolation-gotchas` — cross-mitra read via `tenantContext.run` with
+- `reference-tenant-isolation-gotchas` - cross-mitra read via `tenantContext.run` with
   `isSuperAdmin:true`, gated to JABNET-root; mirrors `/api/billing/mitras` + `/api/public-config`.
 - `isJabnetRoot(req)` (= `req.authUser.isSystemAdmin`) is the JABNET-root gate (already in routes.ts).

@@ -52,7 +52,7 @@ async function runLeadNotify(notify: NotifyConfig, lead: IntakeLead, cardId: num
 }
 
 /** Jalankan semua rule lead-trigger yang cocok untuk event ini. Best-effort per rule.
- *  MUST dipanggil di dalam withMitra(lead.mitraId, ...) — semua query storage pakai getMitraId(). */
+ *  MUST dipanggil di dalam withMitra(lead.mitraId, ...) - semua query storage pakai getMitraId(). */
 export async function runLeadIntake(eventType: string, lead: IntakeLead, actorId: number): Promise<void> {
   const triggerType = EVENT_TO_TRIGGER[eventType];
   if (!triggerType) return;

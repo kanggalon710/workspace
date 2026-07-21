@@ -1,5 +1,5 @@
 /**
- * v4.2.19: Template Editor — konten + placeholder + footer + buttons + media
+ * v4.2.19: Template Editor - konten + placeholder + footer + buttons + media
  */
 
 import { useState, useEffect } from "react";
@@ -230,7 +230,7 @@ export function TemplateEditor({
             <Input
               value={data.footer ?? ""}
               onChange={(e) => setData(d => ({ ...d, footer: e.target.value }))}
-              placeholder="JABNET — Internet Cepat & Stabil"
+              placeholder="JABNET - Internet Cepat & Stabil"
               className="text-sm mt-1"
               maxLength={60}
             />
@@ -251,13 +251,13 @@ export function TemplateEditor({
 
             {/* Info: native button butuh image */}
             <div className="mb-2 px-2.5 py-1.5 rounded bg-sky-50 border border-sky-200 text-[10px] text-sky-900 leading-snug">
-              <strong>📌 Cara kerja MPWA send-button:</strong> Native button interaktif HANYA muncul kalau template
+              <strong> Cara kerja MPWA send-button:</strong> Native button interaktif HANYA muncul kalau template
               juga punya <strong>image attachment</strong> (image header wajib di MPWA spec). Kalau template
               gak punya image, button otomatis di-render sebagai <em>formatted text</em> di body pesan (selalu muncul).
             </div>
             {!data.mediaUrl && buttons.length > 0 && (
               <div className="mb-2 px-2.5 py-1.5 rounded bg-amber-50 border border-amber-200 text-[10px] text-amber-900 leading-snug">
-                <strong>⚠️ Mode Fallback Aktif:</strong> Template ini punya button tapi belum punya image —
+                <strong> Mode Fallback Aktif:</strong> Template ini punya button tapi belum punya image -
                 button akan dikirim sebagai <strong>text format</strong>. Untuk native button interaktif,
                 tambahkan Image URL di section Media Attachment di bawah.
               </div>
@@ -337,14 +337,14 @@ export function TemplateEditor({
             </p>
           </div>
 
-          {/* Preview — sesuai render aktual di HP */}
+          {/* Preview - sesuai render aktual di HP */}
           {(() => {
             const useNativeButton = buttons.length > 0 && data.mediaType === "image" && !!data.mediaUrl;
             return (
               <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/40 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                    💬 Preview pesan WhatsApp
+                     Preview pesan WhatsApp
                   </div>
                   {buttons.length > 0 && (
                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
@@ -368,11 +368,11 @@ export function TemplateEditor({
                     {/* Kalau native button (ada image) → render sebagai tombol React; kalau enggak → text */}
                     {buttons.length > 0 && !useNativeButton && (
                       <>
-                        {"\n\n━━━━━━━━━━━━━━━"}
+                        {"\n\n---------------"}
                         {buttons.map((b, i) => {
-                          const icon = b.type === "url" ? "🔗" :
-                                       b.type === "call" ? "📞" :
-                                       b.type === "copy" ? "📋" : "▶️";
+                          const icon = b.type === "url" ? "" :
+                                       b.type === "call" ? "" :
+                                       b.type === "copy" ? "" : "▶";
                           let actionLine = "";
                           if (b.type === "url" && b.payload) actionLine = `\n   ${b.payload}`;
                           else if (b.type === "call" && b.payload) actionLine = `\n   https://wa.me/${b.payload.replace(/\D/g, "")}`;
@@ -382,14 +382,14 @@ export function TemplateEditor({
                             <span key={i}>{`\n${icon} `}<strong>{b.label}</strong>{actionLine}</span>
                           );
                         })}
-                        {"\n━━━━━━━━━━━━━━━"}
+                        {"\n---------------"}
                       </>
                     )}
                   </div>
                   {data.footer && (
                     <div className="text-[11px] text-muted-foreground mt-2 italic">{data.footer}</div>
                   )}
-                  {/* Native button render — kotak tombol di bawah pesan */}
+                  {/* Native button render - kotak tombol di bawah pesan */}
                   {buttons.length > 0 && useNativeButton && (
                     <div className="mt-2 pt-2 border-t flex flex-col gap-1">
                       {buttons.map((b, i) => {

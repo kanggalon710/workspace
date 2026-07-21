@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 
-// ── Mock data for DataTable demo ──
+// -- Mock data for DataTable demo --
 const mockUsers = [
   { id: 1, name: "Ahmad Maulana", email: "ahmad@jabnet.id", role: "Admin", status: "active", lastLogin: "2 jam lalu" },
   { id: 2, name: "Sri Rahayu", email: "sri@jabnet.id", role: "Marketing", status: "active", lastLogin: "5 jam lalu" },
@@ -32,7 +32,7 @@ const mockUsers = [
   { id: 10, name: "Joko Widianto", email: "joko@jabnet.id", role: "Viewer", status: "active", lastLogin: "kemarin" },
 ];
 
-// ── Mock ODPs for Combobox demo ──
+// -- Mock ODPs for Combobox demo --
 const mockOdps: ComboboxOption[] = [
   { value: "odp-001", label: "ODP-CLW-001", description: "Cilawu · 8 port terpakai", icon: <CircleDot className="h-3.5 w-3.5 text-asset-odp" /> },
   { value: "odp-002", label: "ODP-CLW-002", description: "Cilawu · 12 port terpakai", icon: <CircleDot className="h-3.5 w-3.5 text-asset-odp" /> },
@@ -130,7 +130,7 @@ export default function ShowcasePage() {
     <PageContainer>
       <PageHeader
         icon={Sparkles}
-        title="Phase 2 — Component Showcase"
+        title="Phase 2 - Component Showcase"
         description="Preview komponen enterprise baru: Command Palette, DataTable, FormField + zod, Combobox"
         accent="violet"
         actions={
@@ -145,7 +145,7 @@ export default function ShowcasePage() {
         }
       />
 
-      {/* ─── Quick Demo Banner ─── */}
+      {/* --- Quick Demo Banner --- */}
       <Card variant="gradient" padding="md" className="mb-2">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
@@ -161,7 +161,7 @@ export default function ShowcasePage() {
         </div>
       </Card>
 
-      {/* ─── StatTile Demo ─── */}
+      {/* --- StatTile Demo --- */}
       <PageSection title="StatTile Variants" description="KPI card dengan semantic accent, trend indicator, dan loading state.">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatTile
@@ -199,7 +199,7 @@ export default function ShowcasePage() {
         </div>
       </PageSection>
 
-      {/* ─── DataTable Demo ─── */}
+      {/* --- DataTable Demo --- */}
       <PageSection
         title="DataTable"
         description="Sortable columns, global search, pagination. Built on @tanstack/react-table."
@@ -220,7 +220,7 @@ export default function ShowcasePage() {
         />
       </PageSection>
 
-      {/* ─── FormField + Combobox Demo ─── */}
+      {/* --- FormField + Combobox Demo --- */}
       <div className="grid md:grid-cols-2 gap-4 md:gap-6">
         <Card padding="lg">
           <CardHeader>
@@ -354,7 +354,7 @@ export default function ShowcasePage() {
         </Card>
       </div>
 
-      {/* ─── StatusBadge Matrix ─── */}
+      {/* --- StatusBadge Matrix --- */}
       <PageSection title="StatusBadge Variants" description="Semantic status indicators untuk row/table/card states.">
         <Card padding="lg">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -373,7 +373,7 @@ export default function ShowcasePage() {
         </Card>
       </PageSection>
 
-      {/* ─── EmptyState Demo ─── */}
+      {/* --- EmptyState Demo --- */}
       <PageSection title="EmptyState Variants">
         <div className="grid md:grid-cols-2 gap-4">
           <Card padding="none">

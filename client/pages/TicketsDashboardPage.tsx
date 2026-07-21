@@ -141,7 +141,7 @@ export default function TicketsDashboardPage() {
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         Lead {w.asLead} · Helper {w.asHelper} · Avg{" "}
-                        {w.avgWorkMinutes != null ? `${w.avgWorkMinutes}m` : "—"}
+                        {w.avgWorkMinutes != null ? `${w.avgWorkMinutes}m` : "-"}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 text-[10px] font-mono">
@@ -201,7 +201,7 @@ export default function TicketsDashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-rose-600" />
-            <h2 className="text-sm font-bold uppercase tracking-wider">Hot-spot ODP — Repeat Issues</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider">Hot-spot ODP - Repeat Issues</h2>
           </div>
           <Link href="/tickets/heatmap" className="text-xs text-primary hover:underline">
             Heatmap →
@@ -226,7 +226,7 @@ export default function TicketsDashboardPage() {
                 </div>
                 <div className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  {o.district ?? "—"}
+                  {o.district ?? "-"}
                 </div>
                 <div className="text-[10px] text-rose-700 mt-1 italic">
                   Last issue: {new Date(o.lastIssueAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}

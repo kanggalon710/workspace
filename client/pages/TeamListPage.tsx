@@ -1,4 +1,4 @@
-/** Teamspace v5.0 — Tim Saya: grid tim yang diikuti + buat tim (FR-303/304 subset Fase 1). */
+/** Teamspace v5.0 - Tim Saya: grid tim yang diikuti + buat tim (FR-303/304 subset Fase 1). */
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMyTeams, useTeamMutations, TEAM_COLOR_PALETTE, type TeamSummary } from "@/hooks/useTeamspace";
@@ -87,7 +87,7 @@ export default function TeamListPage() {
 
   const resetCreate = () => { setName(""); setDesc(""); setType("TEAM"); setColor(TEAM_COLOR_PALETTE[0]); setMemberIds([]); setManagerIds([]); setParentId(""); };
 
-  // FR-302: urutkan hierarki — root diikuti sub-timnya (depth-first); yatim (induk tak
+  // FR-302: urutkan hierarki - root diikuti sub-timnya (depth-first); yatim (induk tak
   // terlihat, mis. bukan anggota induknya) tampil sebagai root.
   const ordered = (() => {
     const list = teamsData ?? [];
@@ -136,7 +136,7 @@ export default function TeamListPage() {
       <PageHeader
         icon={UsersRound}
         title="Tim Saya"
-        description="Ruang kerja kolaborasi per tim/divisi — board tugas, anggota, dan progres"
+        description="Ruang kerja kolaborasi per tim/divisi - board tugas, anggota, dan progres"
         accent="violet"
         onRefresh={() => refetch()}
         refreshing={isRefetching}
@@ -179,7 +179,7 @@ export default function TeamListPage() {
           icon={UsersRound}
           title={showAll ? "Belum ada tim dibuat" : "Anda belum tergabung di tim mana pun"}
           description={canCreate
-            ? "Buat tim pertama untuk divisi Anda — board tugas 4 list (To Do List, Dikerjakan, Selesai, Batal) langsung siap dipakai."
+            ? "Buat tim pertama untuk divisi Anda - board tugas 4 list (To Do List, Dikerjakan, Selesai, Batal) langsung siap dipakai."
             : "Minta manager atau admin menambahkan Anda ke sebuah tim."}
           action={canCreate ? { label: "Buat Tim", onClick: () => setShowCreate(true) } : undefined}
         />

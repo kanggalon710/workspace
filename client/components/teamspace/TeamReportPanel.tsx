@@ -1,7 +1,7 @@
 /** Laporan tim di tab Ringkasan (gaya Cicle "Rekap Laporan Kinerja"):
  *  donut ringkasan status + saran, Kemungkinan Penghambat (tugas mandek),
  *  total tugas per list, dan rangkuman poin tugas grouped by status.
- *  Semua dihitung client-side dari useAllTasks() — tanpa endpoint baru. */
+ *  Semua dihitung client-side dari useAllTasks() - tanpa endpoint baru. */
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
@@ -34,9 +34,9 @@ function daysSince(iso: string | null | undefined): number | null {
 }
 
 function fmtShortDate(iso: string | null | undefined): string {
-  if (!iso) return "–";
+  if (!iso) return "-";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "–";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
 }
 
@@ -91,11 +91,11 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
 
     // Saran deterministik dari angka (AI mendalam ada di Laporan Kinerja).
     let saran: string;
-    if (active === 0) saran = "Belum ada tugas aktif — mulai isi board untuk melihat rekap di sini.";
-    else if (byStatus.terlambat.length > 0) saran = `Ada ${byStatus.terlambat.length} tugas melewati tenggat — prioritaskan penyelesaiannya atau sesuaikan tenggat bila tidak realistis.`;
-    else if (staleDoing.length > 0) saran = `${staleDoing.length} tugas mandek di Dikerjakan > ${STALE_DAYS} hari — cek hambatannya di stand-up berikutnya.`;
-    else if (staleTodo.length > 0) saran = `${staleTodo.length} tugas belum tersentuh > ${STALE_DAYS} hari — pertimbangkan re-prioritas atau delegasi.`;
-    else saran = "Kinerja tim cukup dan cenderung stabil — pertahankan ritme penyelesaian tugas.";
+    if (active === 0) saran = "Belum ada tugas aktif - mulai isi board untuk melihat rekap di sini.";
+    else if (byStatus.terlambat.length > 0) saran = `Ada ${byStatus.terlambat.length} tugas melewati tenggat - prioritaskan penyelesaiannya atau sesuaikan tenggat bila tidak realistis.`;
+    else if (staleDoing.length > 0) saran = `${staleDoing.length} tugas mandek di Dikerjakan > ${STALE_DAYS} hari - cek hambatannya di stand-up berikutnya.`;
+    else if (staleTodo.length > 0) saran = `${staleTodo.length} tugas belum tersentuh > ${STALE_DAYS} hari - pertimbangkan re-prioritas atau delegasi.`;
+    else saran = "Kinerja tim cukup dan cenderung stabil - pertahankan ritme penyelesaian tugas.";
 
     return { teamMeta, cards, byStatus, perStage, active, staleTodo, staleDoing, saran, statusOf };
   }, [data, teamId]);
@@ -119,7 +119,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
 
   return (
     <>
-      {/* ── Ringkasan Tugas + Saran (gaya Cicle: donut + saran berdampingan) ── */}
+      {/* -- Ringkasan Tugas + Saran (gaya Cicle: donut + saran berdampingan) -- */}
       <div className="grid gap-3 lg:grid-cols-2">
         <Card padding="md">
           <p className="text-sm font-semibold">Ringkasan Tugas</p>
@@ -156,7 +156,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
         </Card>
       </div>
 
-      {/* ── Kemungkinan Penghambat ── */}
+      {/* -- Kemungkinan Penghambat -- */}
       <PageSection title="Kemungkinan Penghambat" description={`Tugas yang menganggur atau mandek lebih dari ${STALE_DAYS} hari`}>
         <div className="grid gap-3 md:grid-cols-2">
           {[{ title: "belum dikerjakan", list: staleTodo, hint: "belum tersentuh sejak dibuat" },
@@ -168,7 +168,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
               <p className="mt-0.5 text-xs text-muted-foreground">{b.hint} &gt; {STALE_DAYS} hari</p>
               <p className="mt-3 text-xs font-medium text-muted-foreground">Terlama:</p>
               {b.list.length === 0 ? (
-                <p className="mt-1 text-xs text-muted-foreground/70">Tidak ada — aman.</p>
+                <p className="mt-1 text-xs text-muted-foreground/70">Tidak ada - aman.</p>
               ) : (
                 <button type="button" onClick={() => openCard(b.list[0])} className="mt-1 flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs hover:bg-muted">
                   <AlertTriangle className="size-3.5 shrink-0 text-warning" />
@@ -181,7 +181,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
         </div>
       </PageSection>
 
-      {/* ── Total Tugas per List ── */}
+      {/* -- Total Tugas per List -- */}
       <PageSection title="Total Tugas per List">
         <Card padding="none" className="divide-y overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/40">
@@ -198,7 +198,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
         </Card>
       </PageSection>
 
-      {/* ── Rangkuman poin-poin Tugas ── */}
+      {/* -- Rangkuman poin-poin Tugas -- */}
       <PageSection title="Rangkuman Poin Tugas" description="Klik tugas untuk membuka kartunya di board">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
           {(["semua", "terlambat", "dikerjakan", "belum", "selesai"] as const).map((k) => (
@@ -230,7 +230,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
                   <Card padding="none" className="divide-y overflow-hidden">
                     {rows.map((c) => {
                       const assignee = nameOf(c.assigneeId);
-                      const stageName = perStage.find((s) => s.id === c.stageId)?.name ?? "–";
+                      const stageName = perStage.find((s) => s.id === c.stageId)?.name ?? "-";
                       return (
                         <button key={c.id} type="button" onClick={() => openCard(c)} className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-muted/50 transition-colors">
                           <span className="min-w-0 flex-1 truncate text-sm">{c.title}</span>
@@ -242,7 +242,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
                             </span>
                           )}
                           <span className="hidden w-16 shrink-0 text-xs tabular-nums text-muted-foreground sm:block">{fmtShortDate(c.dueDate)}</span>
-                          <span className="hidden w-24 shrink-0 truncate text-xs text-muted-foreground md:block">{assignee ?? "–"}</span>
+                          <span className="hidden w-24 shrink-0 truncate text-xs text-muted-foreground md:block">{assignee ?? "-"}</span>
                           <span className="w-20 shrink-0 truncate text-right text-xs text-muted-foreground">{stageName}</span>
                         </button>
                       );

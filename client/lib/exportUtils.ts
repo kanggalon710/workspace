@@ -1,4 +1,4 @@
-// ── CSV Export Utilities ──────────────────────────────────────────────────
+// -- CSV Export Utilities --------------------------------------------------
 
 function escapeCsv(val: string): string {
   if (val.includes(",") || val.includes('"') || val.includes("\n")) {
@@ -32,7 +32,7 @@ export function downloadCSV(headers: string[], rows: (string | number | null | u
   downloadBlob(toCsvBlob(headers, rows), filename);
 }
 
-// ── Pre-formatted Export Helpers ─────────────────────────────────────────
+// -- Pre-formatted Export Helpers -----------------------------------------
 
 const STAGE_LABELS: Record<string, string> = {
   new: "Prospek Baru", contacted: "Dihubungi", interested: "Tertarik",

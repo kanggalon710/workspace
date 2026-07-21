@@ -18,14 +18,14 @@ import {
 
 const ALL_SCOPES = [
   { key: "marketing:read", label: "Marketing Bundle (Recommended)", desc: "Canvassing sessions + performance, prospects, lead funnel velocity, source attribution, per-staff scorecard, coverage by district, Sahabat funnel, GIS heatmap. Endpoint utama untuk AI daily analysis.",  recommended: true },
-  { key: "reports:read", label: "Laporan Operasional Cross-domain", desc: "Ringkasan harian/mingguan lintas domain — canvassing, leads, collections, tickets, sahabat, payments"  },
+  { key: "reports:read", label: "Laporan Operasional Cross-domain", desc: "Ringkasan harian/mingguan lintas domain - canvassing, leads, collections, tickets, sahabat, payments"  },
   { key: "leads:read", label: "Pipeline Leads (Basic)", desc: "List leads, stats per stage/wilayah. Untuk deep-dive funnel & attribution pakai marketing:read"  },
   { key: "collections:read", label: "Pipeline Collection", desc: "List cases penagihan, stats outstanding, detail + activities"  },
   { key: "finance:read", label: "Revenue & Billing", desc: "MRR, ARPU, revenue-at-risk, billing status, collection recovery & aging. Agregat (tanpa PII). Untuk laporan keuangan harian→quarter."  },
   { key: "customers:read", label: "Subscriber Base", desc: "Jumlah pelanggan by status/paket/wilayah, aktivasi baru, net adds. Agregat (tanpa PII)."  },
   { key: "sahabat:read", label: "Program JABNET Sahabat (Basic)", desc: "Stats program, leaderboard, referral list. Untuk deep-dive funnel pakai marketing:read"  },
   { key: "tickets:read", label: "Work Orders / Tickets", desc: "Tiket aktif, stats per status, SLA info"  },
-  { key: "divisions:read", label: "Analisa Divisi (Team Performance)", desc: "Output pekerjaan tim PER DIVISI (Marketing/Teknik/NOC/Layanan/Keuangan/HRD) — tiket/lead/collection/canvassing daily->weekly->monthly + snapshot KPI per divisi. GET /divisions & /divisions/:key. Untuk AI agent laporan mingguan tim.", recommended: true },
+  { key: "divisions:read", label: "Analisa Divisi (Team Performance)", desc: "Output pekerjaan tim PER DIVISI (Marketing/Teknik/NOC/Layanan/Keuangan/HRD) - tiket/lead/collection/canvassing daily->weekly->monthly + snapshot KPI per divisi. GET /divisions & /divisions/:key. Untuk AI agent laporan mingguan tim.", recommended: true },
   { key: "teamspace:read", label: "Teamspace (Tugas & Kinerja Tim)", desc: "Ringkasan tugas per tim + kinerja per anggota (selesai/terlambat + output ops). Agregat, tanpa isi chat/dokumen."  },
 ];
 
@@ -108,7 +108,7 @@ export default function PublicApiPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden bg-slate-50/40 dark:bg-slate-950/40 -m-4 md:-m-6 -mt-4 md:-mt-6 pb-20 md:pb-0">
-      {/* Header — sticky */}
+      {/* Header - sticky */}
       <div className="sticky top-0 z-10 px-4 md:px-6 pt-4 md:pt-6 pb-4 space-y-4 shrink-0 bg-background border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3 md:gap-4 min-w-0 flex-1">
@@ -233,7 +233,7 @@ export default function PublicApiPage() {
             <div className="flex items-start gap-2 mb-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                One-time display — pastikan key sudah tersimpan di password manager / env var integrasi
+                One-time display - pastikan key sudah tersimpan di password manager / env var integrasi
               </div>
             </div>
             <div className="font-mono text-xs break-all select-all bg-background p-3 rounded border mt-2">
@@ -291,7 +291,7 @@ export default function PublicApiPage() {
                       <td className="py-1.5 px-2 font-mono text-[11px] truncate max-w-xs">{u.endpoint}</td>
                       <td className={`py-1.5 px-2 text-right font-mono font-semibold ${u.statusCode >= 400 ? "text-rose-600" : "text-emerald-600"}`}>{u.statusCode}</td>
                       <td className="py-1.5 px-2 text-right font-mono">{u.responseMs}</td>
-                      <td className="py-1.5 px-2 font-mono text-[10px] text-muted-foreground">{u.ipAddress ?? "—"}</td>
+                      <td className="py-1.5 px-2 font-mono text-[10px] text-muted-foreground">{u.ipAddress ?? "-"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -307,7 +307,7 @@ export default function PublicApiPage() {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function KeyCard({ apiKey: k, canEdit, onView, onToggle, onRevoke, onDelete }: any) {
   const isExpired = k.expiresAt && new Date(k.expiresAt).getTime() < Date.now();
   const isRevoked = !!k.revokedAt;
@@ -398,7 +398,7 @@ function KeyCard({ apiKey: k, canEdit, onView, onToggle, onRevoke, onDelete }: a
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function CreateKeyDialog({ open, onClose, onCreate, isPending }: any) {
   const [name, setName] = useState("");
   const [scopes, setScopes] = useState<string[]>([]);
@@ -524,7 +524,7 @@ function CreateKeyDialog({ open, onClose, onCreate, isPending }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function DocsDialog({ open, onClose, baseUrl }: any) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -549,8 +549,8 @@ function DocsDialog({ open, onClose, baseUrl }: any) {
             <CodeBlock code={`${baseUrl}/api/public/v1`} />
           </Section>
 
-          <Section title="3. Endpoint Utama — Marketing Bundle ">
-            <p className="text-muted-foreground mb-2 text-xs">Untuk analisis AI harian, fokus di <strong>marketing:read</strong> — endpoint-nya sudah dense dan pre-analyzed.</p>
+          <Section title="3. Endpoint Utama - Marketing Bundle ">
+            <p className="text-muted-foreground mb-2 text-xs">Untuk analisis AI harian, fokus di <strong>marketing:read</strong> - endpoint-nya sudah dense dan pre-analyzed.</p>
             <div className="space-y-2 text-xs">
               <EndpointRow method="GET" path="/marketing/overview" desc=" Dense overview untuk AI: momentum, red flags, top performer, hot spots" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/sessions" desc="Canvassing sessions: active, today, per-canvasser stats" scope="marketing:read" />
@@ -578,7 +578,7 @@ function DocsDialog({ open, onClose, baseUrl }: any) {
             </div>
           </Section>
 
-          <Section title="5. Contoh curl — Marketing">
+          <Section title="5. Contoh curl - Marketing">
             <CodeBlock code={`# Marketing overview (paling penting untuk AI daily)
 curl -H "Authorization: Bearer jbk_live_xxx" \\
   ${baseUrl}/api/public/v1/marketing/overview
@@ -591,7 +591,7 @@ curl -H "Authorization: Bearer jbk_live_xxx" \\
 curl -H "Authorization: Bearer jbk_live_xxx" \\
   ${baseUrl}/api/public/v1/marketing/leads/funnel
 
-# Coverage per district — untuk strategi ekspansi
+# Coverage per district - untuk strategi ekspansi
 curl -H "Authorization: Bearer jbk_live_xxx" \\
   ${baseUrl}/api/public/v1/marketing/coverage
 
@@ -600,7 +600,7 @@ curl -H "Authorization: Bearer jbk_live_xxx" \\
   ${baseUrl}/api/public/v1/marketing/sahabat/funnel`} />
           </Section>
 
-          <Section title="6. Integrasi Claude API — Audit Harian Otomatis">
+          <Section title="6. Integrasi Claude API - Audit Harian Otomatis">
             <p className="text-muted-foreground mb-2 text-xs">
               Jadwalkan cron pagi → AI langsung kasih insight ke Telegram/WhatsApp admin:
             </p>
@@ -619,7 +619,7 @@ funnel = requests.get("${baseUrl}/api/public/v1/marketing/leads/funnel", headers
 coverage = requests.get("${baseUrl}/api/public/v1/marketing/coverage", headers=headers).json()
 canvas = requests.get("${baseUrl}/api/public/v1/marketing/canvassing/performance", headers=headers).json()
 
-# 3. Kirim ke Claude — red flags & green lights sudah pre-computed
+# 3. Kirim ke Claude - red flags & green lights sudah pre-computed
 client = anthropic.Anthropic(api_key="sk-ant-...")
 msg = client.messages.create(
     model="claude-opus-4-5",
@@ -658,19 +658,19 @@ print(analysis)
 
           <Section title="7. Rate Limit & Error Codes">
             <div className="space-y-1 text-xs text-muted-foreground">
-              <div><strong>200</strong> — success</div>
-              <div><strong>401</strong> — invalid/missing/expired/revoked key</div>
-              <div><strong>403</strong> — scope tidak mencukupi</div>
-              <div><strong>404</strong> — resource tidak ditemukan</div>
-              <div><strong>429</strong> — rate limit exceeded (header: Retry-After: 60)</div>
-              <div><strong>500</strong> — internal error</div>
+              <div><strong>200</strong> - success</div>
+              <div><strong>401</strong> - invalid/missing/expired/revoked key</div>
+              <div><strong>403</strong> - scope tidak mencukupi</div>
+              <div><strong>404</strong> - resource tidak ditemukan</div>
+              <div><strong>429</strong> - rate limit exceeded (header: Retry-After: 60)</div>
+              <div><strong>500</strong> - internal error</div>
             </div>
           </Section>
 
           <Section title="8. Best Practices">
             <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
               <li>Simpan key di environment variable, jangan commit ke git</li>
-              <li>1 key per integrasi — lebih mudah audit + revoke granular</li>
+              <li>1 key per integrasi - lebih mudah audit + revoke granular</li>
               <li>Batasi scope sesuai kebutuhan (least privilege)</li>
               <li>Set expires_at untuk key yang sementara</li>
               <li>Monitor log pemakaian di tab "Lihat Log" tiap key</li>

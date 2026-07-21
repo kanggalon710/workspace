@@ -60,7 +60,7 @@ export default function PublicCoveragePage() {
   const [radius] = useState(3000);
   const [threshold] = useState(500);
 
-  // Public landing endpoint — no auth needed
+  // Public landing endpoint - no auth needed
   const { data: result, isFetching, error } = useQuery<LandingResult>({
     queryKey: ["coverage_landing", point?.lat, point?.lng],
     queryFn: async () => {
@@ -154,7 +154,7 @@ export default function PublicCoveragePage() {
           {/* Map */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl overflow-hidden shadow-sm" style={{ border: `1px solid ${T.outlineV}` }}>
-              {/* Big GPS CTA — primary action untuk calon pelanggan */}
+              {/* Big GPS CTA - primary action untuk calon pelanggan */}
               <button onClick={handleUseMyLocation}
                 className="w-full p-4 flex items-center justify-center gap-3 text-white font-bold text-sm transition hover:brightness-110"
                 style={{ background: `linear-gradient(135deg, ${T.accent}, #0284c7)` }}>
@@ -168,7 +168,7 @@ export default function PublicCoveragePage() {
                 </div>
               </button>
 
-              {/* Input bar — manual coordinate fallback */}
+              {/* Input bar - manual coordinate fallback */}
               <div className="p-3 flex flex-wrap items-center gap-2" style={{ background: T.surface, borderTop: `1px solid ${T.outlineV}` }}>
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
                   <input type="number" step="any" placeholder="Latitude"
@@ -281,7 +281,7 @@ export default function PublicCoveragePage() {
                   </p>
                 </div>
 
-                {/* Nearest summary — HANYA ditampilkan kalau in-coverage (≤500m) */}
+                {/* Nearest summary - HANYA ditampilkan kalau in-coverage (≤500m) */}
                 {result.inCoverage && result.nearest && (
                   <div className="rounded-2xl overflow-hidden shadow-sm" style={{ background: "white", border: `1px solid ${T.outlineV}` }}>
                     <div className="px-4 py-3" style={{ background: T.surface }}>

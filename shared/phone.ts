@@ -9,7 +9,7 @@ export function toWhatsappNumber(raw: string): string {
   return /^\d+$/.test(p) ? p : "";
 }
 
-/** tel: href — keeps a leading + and digits, strips spacing/dashes/parens. "" if no dialable chars. */
+/** tel: href - keeps a leading + and digits, strips spacing/dashes/parens. "" if no dialable chars. */
 export function telHref(raw: string): string {
   const cleaned = String(raw ?? "").replace(/[\s\-()]/g, "");
   return /[+\d]/.test(cleaned) ? `tel:${cleaned}` : "";

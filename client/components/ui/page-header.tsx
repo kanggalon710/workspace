@@ -15,7 +15,7 @@ interface PageHeaderProps {
   breadcrumbs?: Breadcrumb[];
   /** Actions (buttons) rendered on the right side. */
   actions?: React.ReactNode;
-  /** Secondary content below header — filters, tabs, etc. */
+  /** Secondary content below header - filters, tabs, etc. */
   children?: React.ReactNode;
   /** Gradient accent color for icon background. Default: sky blue (primary). */
   accent?: "primary" | "success" | "warning" | "info" | "violet" | "rose";
@@ -53,7 +53,7 @@ function formatRelativeTime(date: Date | string): string {
 }
 
 /**
- * PageHeader — consistent page header with icon, title, description, and actions.
+ * PageHeader - consistent page header with icon, title, description, and actions.
  * Handles breadcrumbs, last-updated timestamp, and refresh button.
  *
  * @example

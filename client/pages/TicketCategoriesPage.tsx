@@ -1,9 +1,9 @@
 /**
- * v4.2.7: TicketCategoriesPage — dedicated page (bukan popup) untuk kelola kategori tiket + stages.
+ * v4.2.7: TicketCategoriesPage - dedicated page (bukan popup) untuk kelola kategori tiket + stages.
  *
  * Layout responsive:
  * - Mobile (< lg): top tabs untuk pilih kategori, detail editor di bawah
- * - Desktop (lg+): 2-col split — kategori list kiri (sidebar), detail editor kanan (main)
+ * - Desktop (lg+): 2-col split - kategori list kiri (sidebar), detail editor kanan (main)
  *
  * Editor per kategori:
  * - Info dasar: nama, color, icon, SLA hours, sort order, active toggle
@@ -27,7 +27,7 @@ import {
   Activity, FileText, X, Check, AlertTriangle, GripVertical, Settings,
 } from "lucide-react";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 type FieldType = "photo" | "checklist" | "notes" | "numeric" | "speedtest" | "barcode" | "signature" | "gps" | "eta" | "rating";
 type CustomFieldType = "text" | "number" | "textarea" | "select" | "checkbox" | "date";
@@ -57,7 +57,7 @@ interface WorkflowStage {
   // v4.2.18 (H): Advanced features
   requiredRole?: "lead" | "helper" | "any"; // siapa yang boleh execute stage ini
   autoExitAfterMinutes?: number; // auto-advance kalau no action setelah X menit
-  skipIf?: { // conditional skip — skip stage kalau kondisi terpenuhi
+  skipIf?: { // conditional skip - skip stage kalau kondisi terpenuhi
     customField: string;
     operator: "eq" | "ne" | "exists" | "not_exists";
     value?: any;
@@ -94,7 +94,7 @@ const COLOR_PRESETS = [
   "#8b5cf6", "#ec4899", "#64748b", "#0d9488", "#f97316",
 ];
 
-// ── Page ──────────────────────────────────────────────────────────────────
+// -- Page ------------------------------------------------------------------
 
 export default function TicketCategoriesPage() {
   const qc = useQueryClient();
@@ -237,7 +237,7 @@ export default function TicketCategoriesPage() {
         <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
       ) : (
         <div className="max-w-7xl mx-auto p-3.5 lg:p-6 lg:grid lg:grid-cols-[280px_1fr] lg:gap-6">
-          {/* Categories list — mobile: horizontal scroll tabs, desktop: vertical sidebar */}
+          {/* Categories list - mobile: horizontal scroll tabs, desktop: vertical sidebar */}
           <CategoriesList
             categories={categories}
             selectedId={selectedId}
@@ -267,9 +267,9 @@ export default function TicketCategoriesPage() {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 // Categories list (sidebar di desktop, horizontal scroll di mobile)
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 function CategoriesList({ categories, selectedId, onSelect }: {
   categories: Category[];
@@ -335,9 +335,9 @@ function CategoriesList({ categories, selectedId, onSelect }: {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Category editor — main detail (info + stages)
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// Category editor - main detail (info + stages)
+// --------------------------------------------------------------------------
 
 function CategoryEditor({ category, isAdmin, onDelete }: {
   category: Category;
@@ -591,9 +591,9 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 // Per-stage inline editor
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveUp, onMoveDown, onDelete }: {
   stage: WorkflowStage;
@@ -616,7 +616,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
 
   return (
     <div className="border border-[#e2e8f0] rounded-md overflow-hidden bg-white">
-      {/* Header — collapsed */}
+      {/* Header - collapsed */}
       <div className="flex items-center gap-2 p-2.5">
         {/* Index badge */}
         <div
@@ -700,7 +700,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
             </div>
           </div>
 
-          {/* Custom Fields editor — admin define field arbitrary */}
+          {/* Custom Fields editor - admin define field arbitrary */}
           <CustomFieldsEditor
             fields={stage.customFields ?? []}
             isAdmin={isAdmin}
@@ -737,7 +737,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
             </div>
           </div>
 
-          {/* v4.2.18 (H): Advanced — Role + Auto-exit + Skip-if */}
+          {/* v4.2.18 (H): Advanced - Role + Auto-exit + Skip-if */}
           <div className="rounded-md border bg-white p-2.5 space-y-3">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600"> Advanced (v4.2.18)</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -834,7 +834,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
   );
 }
 
-// ── Helper ─────────────────────────────────────────────────────────────────
+// -- Helper -----------------------------------------------------------------
 
 function parseStages(json: string | null): WorkflowStage[] {
   if (!json) return [];
@@ -869,9 +869,9 @@ function slugify(text: string): string {
     .slice(0, 30) || `field_${Date.now().toString(36)}`;
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Custom Fields editor — per-stage admin-defined fields
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// Custom Fields editor - per-stage admin-defined fields
+// --------------------------------------------------------------------------
 
 const CUSTOM_TYPE_LABELS: Record<CustomFieldType, { label: string; hint: string }> = {
   text: { label: "Text", hint: "Input 1 baris" },
@@ -913,7 +913,7 @@ function CustomFieldsEditor({ fields, isAdmin, onChange }: {
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Field Tambahan (Custom)</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Field di luar 10 built-in — bebas atur sesuai kebutuhan</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Field di luar 10 built-in - bebas atur sesuai kebutuhan</div>
         </div>
         {isAdmin && !adding && (
           <button
@@ -1013,7 +1013,7 @@ function CustomFieldRow({ field, index, total, isAdmin, onUpdate, onMoveUp, onMo
               className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
             >
               {Object.entries(CUSTOM_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v.label} — {v.hint}</option>
+                <option key={k} value={k}>{v.label} - {v.hint}</option>
               ))}
             </select>
           </div>

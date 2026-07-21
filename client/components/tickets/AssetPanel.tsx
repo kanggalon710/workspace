@@ -1,5 +1,5 @@
 /**
- * v4.2.18 (B.3): Asset Panel — ODP info di sidebar /work/:id
+ * v4.2.18 (B.3): Asset Panel - ODP info di sidebar /work/:id
  * - ODP info (ID, name, district)
  * - Total ports + utilization
  * - Tiket aktif di ODP yang sama (drill ke heatmap)
@@ -81,7 +81,7 @@ export function AssetPanel({ odpId, currentTicketId }: { odpId: number; currentT
         <div className="grid grid-cols-2 gap-2 mt-3 text-[11px]">
           <div className="rounded bg-muted/40 p-2 text-center">
             <div className="text-muted-foreground uppercase tracking-wider text-[9px] font-bold">Total Port</div>
-            <div className="font-bold tabular-nums text-base mt-0.5">{odp.totalPorts ?? "—"}</div>
+            <div className="font-bold tabular-nums text-base mt-0.5">{odp.totalPorts ?? "-"}</div>
           </div>
           <div className={cn(
             "rounded p-2 text-center",

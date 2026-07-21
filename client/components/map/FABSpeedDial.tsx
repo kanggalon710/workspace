@@ -70,7 +70,7 @@ export function FABSpeedDial({ onSelectMode, drawMode, onCancel }: FABSpeedDialP
         </div>
       )}
 
-      {/* Main FAB — smaller on mobile */}
+      {/* Main FAB - smaller on mobile */}
       <button
         onClick={handleMainClick}
         className="w-10 h-10 rounded-full bg-primary text-white shadow-lg flex items-center justify-center transition-all duration-200 active:scale-90"

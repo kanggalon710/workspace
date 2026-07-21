@@ -18,7 +18,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonKPIGrid, SkeletonCard, SkeletonList } from "@/components/ui/skeleton";
 
-// ── Log type definitions (icon + accent class from theme) ──────────────────
+// -- Log type definitions (icon + accent class from theme) ------------------
 const LOG_TYPES = [
   {
     key: "area_sepi", label: "Area Sepi", icon: EyeOff,
@@ -137,7 +137,7 @@ export default function BusinessDecisionPage() {
     return data.recentLogs.filter(l => l.type === typeFilter);
   }, [data, typeFilter]);
 
-  // ── Loading state ──
+  // -- Loading state --
   if (isLoading || !data) {
     return (
       <PageContainer>
@@ -181,7 +181,7 @@ export default function BusinessDecisionPage() {
         }
       />
 
-      {/* ═══ HERO: Field Report Overview ═══ */}
+      {/* === HERO: Field Report Overview === */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sidebar via-sidebar/95 to-violet-900 text-white shadow-elev-lg">
         <div className="absolute inset-0 bg-mesh opacity-40" />
         <div className="absolute inset-0 bg-grid-pattern opacity-20" />
@@ -260,7 +260,7 @@ export default function BusinessDecisionPage() {
         </div>
       </section>
 
-      {/* ═══ Empty state when no reports ═══ */}
+      {/* === Empty state when no reports === */}
       {data.totalReports === 0 && (
         <Card padding="none">
           <EmptyState
@@ -272,10 +272,10 @@ export default function BusinessDecisionPage() {
         </Card>
       )}
 
-      {/* ═══ Main content grid (only when data exists) ═══ */}
+      {/* === Main content grid (only when data exists) === */}
       {data.totalReports > 0 && (
         <>
-          {/* ── Issue Type Matrix ── */}
+          {/* -- Issue Type Matrix -- */}
           <PageSection title="Distribusi Masalah" description="Kategori kendala lapangan yang dilaporkan tim">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {LOG_TYPES.map(lt => {
@@ -321,7 +321,7 @@ export default function BusinessDecisionPage() {
             </div>
           </PageSection>
 
-          {/* ── Recommendations + Area Analysis grid ── */}
+          {/* -- Recommendations + Area Analysis grid -- */}
           <div className={cn("grid gap-4", data.recommendations.length > 0 ? "md:grid-cols-2" : "md:grid-cols-1")}>
             {data.recommendations.length > 0 && (
               <Card padding="lg">
@@ -447,10 +447,10 @@ export default function BusinessDecisionPage() {
             </Card>
           </div>
 
-          {/* ── Recent Reports Timeline ── */}
+          {/* -- Recent Reports Timeline -- */}
           <PageSection
             title="Laporan Terbaru"
-            description="Timeline laporan lapangan — klik kategori untuk filter"
+            description="Timeline laporan lapangan - klik kategori untuk filter"
           >
             <Card padding="lg">
               {/* Type filter chips */}

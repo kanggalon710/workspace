@@ -1,4 +1,4 @@
-/** Teamspace Fase 2 — Dokumen & File tim (FR-9xx): folder tree via breadcrumb,
+/** Teamspace Fase 2 - Dokumen & File tim (FR-9xx): folder tree via breadcrumb,
  *  upload file (drag & drop / picker), dokumen markdown dengan preview. */
 import { useMemo, useRef, useState } from "react";
 import { useTeamDocs, useDocsMutations } from "@/hooks/useTeamspace";
@@ -59,7 +59,7 @@ export function DocsPanel({ teamId, canManage, active }: Props) {
     }
   };
 
-  // ── Folder baru ──
+  // -- Folder baru --
   const [newFolderMode, setNewFolderMode] = useState(false);
   const [folderName, setFolderName] = useState("");
   const createFolder = async () => {
@@ -72,7 +72,7 @@ export function DocsPanel({ teamId, canManage, active }: Props) {
     }
   };
 
-  // ── Editor dokumen ──
+  // -- Editor dokumen --
   const [docOpen, setDocOpen] = useState<TeamDocument | "new" | null>(null);
   const [docTitle, setDocTitle] = useState("");
   const [docContent, setDocContent] = useState("");
@@ -249,7 +249,7 @@ export function DocsPanel({ teamId, canManage, active }: Props) {
               {preview ? (
                 <div
                   className="prose prose-sm max-w-none text-sm [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5"
-                  // Konten di-escape dulu di miniMarkdown sebelum transformasi — aman dari injeksi.
+                  // Konten di-escape dulu di miniMarkdown sebelum transformasi - aman dari injeksi.
                   dangerouslySetInnerHTML={{ __html: miniMarkdown(docContent || "*Dokumen kosong*") }}
                 />
               ) : (

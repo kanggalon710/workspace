@@ -1,12 +1,12 @@
-# Spec — Granular Pipeline RBAC: Role Capability Matrix (Slice H1)
+# Spec - Granular Pipeline RBAC: Role Capability Matrix (Slice H1)
 
 > Date: 2026-06-08 · Status: **Approved (pending user spec review)** · Target: dev branch + `jabnet_fiber_dev`
-> Part of the Pipelines Engine program — see [[project-pipelines-engine]]. **Slice H1** of the granular-RBAC
+> Part of the Pipelines Engine program - see [[project-pipelines-engine]]. **Slice H1** of the granular-RBAC
 > feature. H2 (per-user grants) is a separate follow-up spec that layers on this.
 
 ## Context
 
-Today a pipeline's `pipeline_access` grant has a single `level` (`view` | `edit`); `edit` is monolithic —
+Today a pipeline's `pipeline_access` grant has a single `level` (`view` | `edit`); `edit` is monolithic -
 it permits stages, fields, automation, cards, rename/archive, access config, AND delete. Resolution
 (`getPipelineLevel` → `resolvePipelineLevel`, `server/routes.ts:4228`, `server/pipeline-access-helpers.ts:4`):
 System-Admin/creator → `edit`; an **open** pipeline (`restricted=0`) derives the level from the global
@@ -27,8 +27,8 @@ Decision (brainstorm): a **capability matrix** (not tiers), **per role** in H1.
 4. Full **back-compat**: open pipelines + existing `view`/`edit` grants behave exactly as today.
 
 **Non-goals**
-- **Per-user grants** — slice H2 (new `pipeline_user_access` table + resolver merge + user UI).
-- Capability control over **creating** a pipeline (that stays global `pipelines:write` — not per-pipeline).
+- **Per-user grants** - slice H2 (new `pipeline_user_access` table + resolver merge + user UI).
+- Capability control over **creating** a pipeline (that stays global `pipelines:write` - not per-pipeline).
 - Stage/field-level (sub-pipeline) ACLs; changing the global `pipelines` permission semantics.
 
 ## Coding standards
@@ -70,7 +70,7 @@ readers / the board's coarse `writable`) live in the shared module.
 
 ### 2. Resolver + route re-gating (`server/routes.ts`)
 
-- `getPipelineCapabilities(req, pipelineId): Promise<Set<PipelineCapability>>` — loads the pipeline, computes
+- `getPipelineCapabilities(req, pipelineId): Promise<Set<PipelineCapability>>` - loads the pipeline, computes
   `isCreator`, `restricted`, `keyLevel` (`permLevels["pipelines"]`), the role's `grantCapabilities`
   (`storage.getGrantCapabilitiesForRole(pipelineId, effectiveRoleId)`), and returns
   `resolvePipelineCapabilities(...)`.
@@ -89,12 +89,12 @@ readers / the board's coarse `writable`) live in the shared module.
   | rules GET/POST/PATCH/DELETE | `automation` |
   | cards POST/PATCH/move/DELETE, comments POST/DELETE, followers, values PUT | `cards` |
   | all GET (pipeline detail, stages, cards, card detail, comments, followers, fields, photo) | `view` |
-  | POST `/api/pipelines` (create) | unchanged — global `pipelines:write` only |
+  | POST `/api/pipelines` (create) | unchanged - global `pipelines:write` only |
 
 - The list endpoint (`GET /api/pipelines`) keeps returning a `level: "view"|"edit"` per pipeline (derived via
   `deriveLevel`) so the board's existing coarse `writable` keeps working, **plus** a `capabilities: string[]`
   for finer UI gating. `getPipelineLevel`/`requirePipelineEdit` are removed once all call-sites move to
-  capabilities (or kept only if a residual "any edit" site remains — none expected).
+  capabilities (or kept only if a residual "any edit" site remains - none expected).
 
 ### 3. Access dialog + API/client
 
@@ -102,7 +102,7 @@ readers / the board's coarse `writable`) live in the shared module.
 - `PUT /api/pipelines/:id/access` body `{ restricted, grants: [{ roleId, capabilities }] }`;
   `storage.setPipelineAccess` writes `restricted` + replaces role rows storing `capabilities` JSON and a
   derived `level` (`deriveLevel(caps)`) for legacy reads. Gated by `manage`.
-- `PipelineAccessDialog`: keep the restricted toggle; when restricted, render a **role × capability grid** —
+- `PipelineAccessDialog`: keep the restricted toggle; when restricted, render a **role × capability grid** -
   one row per role, a checkbox/toggle-chip per capability (Lihat / Kelola Kartu / Kelola Stage / Kelola Field /
   Kelola Otomasi / Kelola Pipeline / Hapus). Checking any capability auto-checks + locks `Lihat`.
   `usePipelineAccess`/`setAccess` types move to the capabilities shape.
@@ -124,7 +124,7 @@ readers / the board's coarse `writable`) live in the shared module.
 | `client/pages/PipelineBoardPage.tsx` | capability-gated toolbar buttons (fallback to `writable`). |
 
 ## Testing
-- **Pure (`npx tsx --test`):** `resolvePipelineCapabilities` — admin/creator→all; open `write`→all / `read`→
+- **Pure (`npx tsx --test`):** `resolvePipelineCapabilities` - admin/creator→all; open `write`→all / `read`→
   `{view}` / `none`→∅; restricted with explicit caps → that set + `view`; restricted empty → ∅;
   `capabilitiesFromLevel("edit")`→all, `("view")`→`["view"]`. `deriveLevel` maps caps → coarse legacy level:
   any edit-class cap (cards/stages/fields/automation/manage/delete) → `"edit"`; else `view` present → `"view"`;
@@ -139,12 +139,12 @@ Grants stay mitra-scoped (`pipeline_access.mitra_id`); System-Admin + creator by
 `pipelines:write` remains the outer gate for all mutations; create-pipeline unchanged.
 
 ## Risks
-1. **Re-gating ~25 routes** — 1:1 capability mapping table above; the manual matrix check verifies each.
-2. **Back-compat** — legacy `level` rows derive caps; open pipelines + global perm unchanged (pure-tested);
+1. **Re-gating ~25 routes** - 1:1 capability mapping table above; the manual matrix check verifies each.
+2. **Back-compat** - legacy `level` rows derive caps; open pipelines + global perm unchanged (pure-tested);
    `deriveLevel` keeps the board's coarse `writable` working.
-3. **`requirePipelineEdit` removal** — every call-site moves to a specific capability; grep to confirm none
+3. **`requirePipelineEdit` removal** - every call-site moves to a specific capability; grep to confirm none
    left (or keep the helper unused-safe). 
-4. **Dialog data migration** — old grants render as their derived capability set; saving rewrites them with
+4. **Dialog data migration** - old grants render as their derived capability set; saving rewrites them with
    explicit `capabilities`.
 
 ## Acceptance criteria

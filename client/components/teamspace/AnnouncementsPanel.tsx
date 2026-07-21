@@ -1,4 +1,4 @@
-/** Teamspace — Pengumuman per-tim (BUG-004 / FR-601..603): manager kirim pengumuman
+/** Teamspace - Pengumuman per-tim (BUG-004 / FR-601..603): manager kirim pengumuman
  * internal bertarget ke anggota timnya, dengan opsi Rahasia + selesai otomatis.
  * Beda dari /announcements company-wide (changelog sistem). */
 import { useMemo, useState } from "react";
@@ -64,7 +64,7 @@ export function AnnouncementsPanel({ teamId, canManage, active }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">Pengumuman internal tim — bisa bertarget ke anggota tertentu & rahasia.</p>
+        <p className="text-xs text-muted-foreground">Pengumuman internal tim - bisa bertarget ke anggota tertentu & rahasia.</p>
         {canManage && (
           <Button type="button" size="sm" leftIcon={<Plus className="size-4" />} onClick={() => setShowForm(true)}>
             Buat Pengumuman
@@ -79,7 +79,7 @@ export function AnnouncementsPanel({ teamId, canManage, active }: Props) {
           icon={Megaphone}
           title="Belum ada pengumuman tim"
           description={canManage
-            ? 'Contoh: "Cuti bersama Jumat depan", "SOP baru penanganan gangguan" — kirim langsung ke anggota tim.'
+            ? 'Contoh: "Cuti bersama Jumat depan", "SOP baru penanganan gangguan" - kirim langsung ke anggota tim.'
             : "Manager tim belum membuat pengumuman."}
         />
       ) : (

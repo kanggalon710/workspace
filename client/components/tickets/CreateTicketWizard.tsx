@@ -1,5 +1,5 @@
 /**
- * v4.2.18 (E): Create Ticket Wizard — 5 langkah
+ * v4.2.18 (E): Create Ticket Wizard - 5 langkah
  *   1. Pelanggan: search & pilih customer (atau ticket tanpa customer)
  *   2. Issue: kategori + judul + deskripsi + priority
  *   3. Schedule: tanggal/jam + estimasi durasi + deadline
@@ -415,7 +415,7 @@ export function CreateTicketWizard({ open, onClose, customers, categories, users
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   {selectedCategory?.slaHours
                     ? `Default: ${selectedCategory.slaHours} jam dari sekarang (otomatis dari kategori)`
-                    : "Tidak ada SLA otomatis dari kategori — set manual kalau perlu"}
+                    : "Tidak ada SLA otomatis dari kategori - set manual kalau perlu"}
                 </p>
               </div>
 
@@ -499,17 +499,17 @@ export function CreateTicketWizard({ open, onClose, customers, categories, users
               </div>
 
               {[
-                { label: "Pelanggan", value: selectedCustomer ? `${selectedCustomer.name} (#${selectedCustomer.customerId})` : "—" },
-                { label: "Kategori", value: selectedCategory?.name ?? "—" },
+                { label: "Pelanggan", value: selectedCustomer ? `${selectedCustomer.name} (#${selectedCustomer.customerId})` : "-" },
+                { label: "Kategori", value: selectedCategory?.name ?? "-" },
                 { label: "Judul", value: form.title },
                 { label: "Priority", value: form.priority.toUpperCase() },
                 { label: "Tanggal & Jam", value: `${form.scheduledDate} · ${form.scheduledTime}` },
                 { label: "Estimasi", value: `${form.estimatedMinutes} menit` },
                 { label: "Deadline", value: form.deadline ? new Date(form.deadline).toLocaleString("id-ID") : "Auto dari SLA kategori" },
-                { label: "Alamat", value: form.address || selectedCustomer?.address || "—" },
+                { label: "Alamat", value: form.address || selectedCustomer?.address || "-" },
                 { label: "Lead", value: selectedLead?.name ?? "Belum dipilih" },
-                { label: "Helper", value: selectedHelpers.length ? selectedHelpers.map(h => h.name).join(", ") : "—" },
-                { label: "Deskripsi", value: form.description || "—" },
+                { label: "Helper", value: selectedHelpers.length ? selectedHelpers.map(h => h.name).join(", ") : "-" },
+                { label: "Deskripsi", value: form.description || "-" },
               ].map((row, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2 px-3 py-2 border-b last:border-b-0 text-xs">
                   <div className="col-span-4 font-bold uppercase tracking-wider text-muted-foreground">{row.label}</div>
@@ -519,12 +519,12 @@ export function CreateTicketWizard({ open, onClose, customers, categories, users
 
               {!form.title.trim() && (
                 <div className="px-3 py-2 rounded bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center gap-2">
-                  <AlertCircle className="h-3.5 w-3.5" /> Judul wajib diisi — kembali ke step 2
+                  <AlertCircle className="h-3.5 w-3.5" /> Judul wajib diisi - kembali ke step 2
                 </div>
               )}
               {!form.categoryId && (
                 <div className="px-3 py-2 rounded bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center gap-2">
-                  <AlertCircle className="h-3.5 w-3.5" /> Kategori wajib dipilih — kembali ke step 2
+                  <AlertCircle className="h-3.5 w-3.5" /> Kategori wajib dipilih - kembali ke step 2
                 </div>
               )}
             </div>

@@ -1,4 +1,4 @@
-# LP1 — Lead Event Bus + Lead Intake (Fondasi) — Design
+# LP1 - Lead Event Bus + Lead Intake (Fondasi) - Design
 
 > Tanggal: 2026-06-14 · Status: spec disetujui (brainstorm), siap → writing-plans
 > Epik: **Leads ↔ Pipeline Automation Engine** (lihat memory `project-pipelines-engine`, lanjutan P5)
@@ -7,12 +7,12 @@
 
 Workspace JABNET punya dua sistem terpisah:
 
-- **Modul Leads** (`/leads`, tabel `leads`) — canvassing, prospect finder, coverage check, Meta/TikTok Lead Ads, kualifikasi, assignment.
-- **Modul Pipelines** (`/pipelines`, `pipeline_*`) — engine Kanban + **automation engine yang sangat matang**: trigger (`stage_enter`, `time`, `billing_sync`, `card_updated`, `assignee_changed`, `field_updated`), aksi (`create_card`, `set_field`, `move_stage`, `assign`, `notify`, + aksi lintas-kartu lineage), kondisi grup OR-of-AND, field-map, dedup (`pipeline_rule_fires`), multi-action, custom field EAV, semua tenant-scoped + audit.
+- **Modul Leads** (`/leads`, tabel `leads`) - canvassing, prospect finder, coverage check, Meta/TikTok Lead Ads, kualifikasi, assignment.
+- **Modul Pipelines** (`/pipelines`, `pipeline_*`) - engine Kanban + **automation engine yang sangat matang**: trigger (`stage_enter`, `time`, `billing_sync`, `card_updated`, `assignee_changed`, `field_updated`), aksi (`create_card`, `set_field`, `move_stage`, `assign`, `notify`, + aksi lintas-kartu lineage), kondisi grup OR-of-AND, field-map, dedup (`pipeline_rule_fires`), multi-action, custom field EAV, semua tenant-scoped + audit.
 
-Permintaan user: jadikan Pipeline Engine sebagai **automation layer** — lead dari sumber mana pun otomatis membuat/memperbarui/memindahkan/menghubungkan card di `/pipelines`. **Bukan** mengganti `/leads`; `leads` tetap source of truth.
+Permintaan user: jadikan Pipeline Engine sebagai **automation layer** - lead dari sumber mana pun otomatis membuat/memperbarui/memindahkan/menghubungkan card di `/pipelines`. **Bukan** mengganti `/leads`; `leads` tetap source of truth.
 
-Request asli mencakup 18 bagian (terlalu besar untuk satu spec) → didekomposisi jadi program **LP1–LP6**:
+Request asli mencakup 18 bagian (terlalu besar untuk satu spec) → didekomposisi jadi program **LP1-LP6**:
 
 | Slice | Isi | Status |
 |---|---|---|
@@ -24,7 +24,7 @@ Request asli mencakup 18 bagian (terlalu besar untuk satu spec) → didekomposis
 | LP6 | Metric baca data lead | dilipat ke epik Metrics **MP4** |
 
 ### Keputusan yang sudah diambil (brainstorm)
-- Dekomposisi LP1–LP6, mulai LP1.
+- Dekomposisi LP1-LP6, mulai LP1.
 - **#7 sync mode:** LP1 dukung **Create-Only + One-Way (lead→card) + Reopen + Ignore**. Two-Way/Mirror dibuang.
 - **#16:** **dispatch sinkron best-effort di dalam request** (pola `dispatchCardEvent`), tanpa queue/poll.
 - **Campaign/Ad data:** ditunda ke LP2 (belum tersimpan di `leads`; Meta hanya menaruh `form_id/ad_id` di `notes`, TikTok tak menyimpan apa-apa).
@@ -36,16 +36,16 @@ Request asli mencakup 18 bagian (terlalu besar untuk satu spec) → didekomposis
 
 ## Prinsip arsitektur
 
-Engine tetap **card-centric**. Lead **bukan** card — ia masuk lewat *intake service* (paralel `runBillingIntakeRules`) yang **memicu** create/update/link card. Tidak ada tabel lead baru; `leads` tetap source of truth.
+Engine tetap **card-centric**. Lead **bukan** card - ia masuk lewat *intake service* (paralel `runBillingIntakeRules`) yang **memicu** create/update/link card. Tidak ada tabel lead baru; `leads` tetap source of truth.
 
 ```
-Lead mutation (8 titik)  ──►  emitLeadEvent(type, lead, actorId)     [server/lead-events.ts]
-                                      │  sinkron, best-effort, never throws
+Lead mutation (8 titik)  --►  emitLeadEvent(type, lead, actorId)     [server/lead-events.ts]
+                                      |  sinkron, best-effort, never throws
                                       ▼
                          runLeadIntake(type, lead, actorId)           [server/lead-intake.ts]
-                                      │  load rule lead-trigger (mitra=lead.mitraId, indexed)
-                                      │  filter source → cek dedup (lead_card_links / phone)
-                                      │  create | update | reopen | ignore
+                                      |  load rule lead-trigger (mitra=lead.mitraId, indexed)
+                                      |  filter source → cek dedup (lead_card_links / phone)
+                                      |  create | update | reopen | ignore
                                       ▼
                          storage.* (loop-safe, storage-direct)  +  lead_card_links  +  audit
 ```
@@ -69,7 +69,7 @@ export const leadCardLinks = mysqlTable("lead_card_links", {
 Dibuat via startup `CREATE TABLE IF NOT EXISTS` (pola existing di `storage.ts`). 1 lead → banyak card (LP3). Memenuhi #8 (tracing/audit/sync/reporting).
 
 ### Registry source kanonik: `shared/leadSources.ts` (pure, tested)
-Single source of truth — menyelesaikan inkonsistensi nilai `source` (kode menulis `landing_page`/`meta_ads`/`tiktok_ads`, beda dari ekspektasi spec):
+Single source of truth - menyelesaikan inkonsistensi nilai `source` (kode menulis `landing_page`/`meta_ads`/`tiktok_ads`, beda dari ekspektasi spec):
 ```ts
 export type CanonicalLeadSource =
   | "canvassing" | "prospect_finder" | "coverage_check"
@@ -86,11 +86,11 @@ export const LEAD_SOURCE_OPTIONS: { value: CanonicalLeadSource; label: string }[
 Dipakai **server** (match rule `sources`) dan **client** (label + `LEAD_SOURCE_OPTIONS` di sub-form; `SOURCE_LABELS` lama di `LeadPipelinePage` di-dedup ke registry ini → DRY). Tidak mengubah nilai `source` yang tersimpan; normalisasi hanya saat matching/label.
 
 ### Tipe trigger baru (TANPA kolom DB baru)
-`RuleTriggerType` (shared/schema.ts) += `"lead_created" | "lead_updated" | "lead_assigned" | "lead_stage_changed" | "lead_converted"`. `trigger_type` varchar(16) & `trigger_config` TEXT(JSON) sudah ada — cukup.
+`RuleTriggerType` (shared/schema.ts) += `"lead_created" | "lead_updated" | "lead_assigned" | "lead_stage_changed" | "lead_converted"`. `trigger_type` varchar(16) & `trigger_config` TEXT(JSON) sudah ada - cukup.
 
 ## Rule lead-trigger (reuse `pipeline_rules`)
 
-Rule menempel ke **pipeline target** (sama seperti `billing_sync`), dikonfigurasi di panel **"Otomasi"** board tersebut. Bentuk `triggerConfig` (JSON, opaque — tanpa migrasi):
+Rule menempel ke **pipeline target** (sama seperti `billing_sync`), dikonfigurasi di panel **"Otomasi"** board tersebut. Bentuk `triggerConfig` (JSON, opaque - tanpa migrasi):
 ```jsonc
 {
   "sources": ["meta_leads", "coverage_check"],  // filter (#3). Kosong/absen = semua source
@@ -122,8 +122,8 @@ Logika murni `resolveDuplicateAction(mode, existing)` → `"create" | "update" |
 
 ## Field mapping lead → card (#5)
 
-`shared/leadIntake.ts` (pure, tested) — paralel `customerToFieldValues`:
-- `leadTitle(lead, titleSource)` — default `name`.
+`shared/leadIntake.ts` (pure, tested) - paralel `customerToFieldValues`:
+- `leadTitle(lead, titleSource)` - default `name`.
 - `leadToFieldValues(lead, fieldMap, fieldTypeById)` → `{ fieldId, value }[]`.
 - Atribut yang dapat dipetakan (dari schema `leads`): `name, phone, address, category, notes, source(kanonik), lat, lng, distanceMeters, district, village, stage, priority, odpId→nama ODP`.
 - `lat/lng` → field **Koordinat** (`{lat,lng}` JSON) bila target bertipe coordinate, atau number tunggal; format ditentukan `fieldTypeById` (reuse normalisasi tanggal/angka pola billing).
@@ -142,7 +142,7 @@ Helper tunggal `emitLeadEvent(type, lead, actorId)` dipanggil setelah mutasi suk
 | `lead_stage_changed` | `PATCH /api/marketing/leads/:id/stage` |
 | `lead_converted` | `POST /api/marketing/leads/:id/convert` |
 
-Webhook Meta/TikTok membuat banyak lead dalam loop → `emitLeadEvent` dipanggil per lead (best-effort; tak boleh menggagalkan loop). `storage.createLead` mengembalikan row lead (dibutuhkan untuk event) — verifikasi method mengembalikan row; bila tidak, query ulang via `insertId` (pola MySQL refactor).
+Webhook Meta/TikTok membuat banyak lead dalam loop → `emitLeadEvent` dipanggil per lead (best-effort; tak boleh menggagalkan loop). `storage.createLead` mengembalikan row lead (dibutuhkan untuk event) - verifikasi method mengembalikan row; bila tidak, query ulang via `insertId` (pola MySQL refactor).
 
 ## UI
 
@@ -150,7 +150,7 @@ Webhook Meta/TikTok membuat banyak lead dalam loop → `emitLeadEvent` dipanggil
 - Pilih event (`lead_created`…`lead_converted`).
 - Multiselect **Source** dari `LEAD_SOURCE_OPTIONS` (kosong = semua).
 - **Entry stage** (pipeline target).
-- **Field-map lead→card** — reuse baris field-map billing, dropdown atribut dari daftar atribut lead.
+- **Field-map lead→card** - reuse baris field-map billing, dropdown atribut dari daftar atribut lead.
 - Dropdown **onDuplicate** (Buat baru / Perbarui / Abaikan / Buka lagi), **dedupBy** (lead_id/phone), **reopenStage** (muncul saat reopen).
 - Panel detail rule menampilkan ringkasan trigger lead (label source dari registry).
 
@@ -167,14 +167,14 @@ Semantic `<form>`/`<fieldset>`, mobile-first, reuse Combobox/RuleActionEditor/fi
 ## Testing
 
 - Unit (`node:test` via `npx tsx --test`): `shared/leadSources.ts` (normalisasi alias + label), `shared/leadIntake.ts` (`leadTitle`, `leadToFieldValues` per tipe field), `resolveDuplicateAction` (4 mode × ada/tak-ada existing).
-- Verifikasi mandiri di akhir: `npx tsc --noEmit` (0 errors), seluruh test pass, `npm run build` sukses (jangan percaya laporan subagent — verifikasi sendiri).
+- Verifikasi mandiri di akhir: `npx tsc --noEmit` (0 errors), seluruh test pass, `npm run build` sukses (jangan percaya laporan subagent - verifikasi sendiri).
 - Smoke manual (opsional, lokal): buat rule `lead_created` source=meta_leads → kirim webhook → card muncul di pipeline target dgn field ter-map + link tercatat; kirim ulang → sesuai mode dedup.
 
 ## Acceptance Criteria yang dipenuhi LP1
 
-AC **1** (lead_created trigger), **2** (semua source via registry kanonik), **3** (create card otomatis), **4** (field-map konfigurable), **5** (custom field menampung data lead via field-map), **6** (relasi lead↔card tertelusur via `lead_card_links`), **7** (dedup: create/update/ignore/reopen), **8** (lead_converted memicu — sebagian; bundle penuh di LP3), **11** (tenant isolation), **12** (mobile-first/semantic/DRY/reusable).
+AC **1** (lead_created trigger), **2** (semua source via registry kanonik), **3** (create card otomatis), **4** (field-map konfigurable), **5** (custom field menampung data lead via field-map), **6** (relasi lead↔card tertelusur via `lead_card_links`), **7** (dedup: create/update/ignore/reopen), **8** (lead_converted memicu - sebagian; bundle penuh di LP3), **11** (tenant isolation), **12** (mobile-first/semantic/DRY/reusable).
 
-> Catatan penomoran: AC di atas merujuk daftar Acceptance Criteria request asli (1–12). Item conversion-bundle penuh, campaign, metric, reverse-create, dan two-way berada di LP2/LP3/LP4/MP4 atau dibuang sesuai keputusan.
+> Catatan penomoran: AC di atas merujuk daftar Acceptance Criteria request asli (1-12). Item conversion-bundle penuh, campaign, metric, reverse-create, dan two-way berada di LP2/LP3/LP4/MP4 atau dibuang sesuai keputusan.
 
 ## Out of scope LP1 (sengaja)
 Campaign/Ad capture (LP2) · kondisi atribut lead kaya: jarak ODP, campaign (LP2) · conversion bundle template (LP3) · "Create Lead" dari pipeline + template pipeline lead (LP4) · Two-way/Mirror (dibuang) · metric baca lead (MP4) · backfill lead lama → card (snapshot P5-step-1 sudah pernah; LP1 hanya menangani lead baru/berubah sejak aktif).

@@ -1,8 +1,8 @@
-# Spec — Pipelines Dynamic Custom Fields (Phase 2)
+# Spec - Pipelines Dynamic Custom Fields (Phase 2)
 
 > **Date:** 2026-06-04
 > **Status:** Approved design, ready for implementation plan.
-> **Program:** "Customizable Multi-Tenant Pipeline / Kanban" — Phase 2 of 6.
+> **Program:** "Customizable Multi-Tenant Pipeline / Kanban" - Phase 2 of 6.
 > **Builds on:** Phase 1 generic pipelines engine (`docs/superpowers/specs/2026-06-04-generic-pipelines-engine-design.md`).
 
 ## Goal
@@ -14,23 +14,23 @@ existing `pipelines` permission. No change to Phase 1 tables.
 
 ## Key Decisions (from brainstorming)
 
-- **EAV storage** — `pipeline_fields` (definitions) + `pipeline_card_values` (one row per
+- **EAV storage** - `pipeline_fields` (definitions) + `pipeline_card_values` (one row per
   card×field). Rejected: JSON blob on `pipeline_cards` (no per-field query, painful field
   rename/delete, blocks P3 field-level RBAC); rejected: wide columns (not viable for dynamic).
 - **11 field types:** `text`, `textarea`, `number`, `currency`, `date`, `dropdown`,
   `multiselect`, `checkbox`, `user`, `phone`, `url`.
 - **Value display:** edited in the drawer; per-field `show_on_card` toggle renders an opt-in
-  chip on the board card face. (Not all fields on card — admin chooses.)
+  chip on the board card face. (Not all fields on card - admin chooses.)
 - **Soft-required:** a `required` flag shows a "wajib diisi" warning in the drawer + an
   indicator on the card, but NEVER blocks card create or drawer save. Not server-enforced.
 - **Value encoding:** every value stored as TEXT, interpreted by the field's `type`
   (multiselect = JSON array string, user = userId string, checkbox = "0"/"1", date = ISO,
   number/currency = numeric string).
 - **DB changes** land on `jabnet_fiber_dev` first via the startup `CREATE TABLE IF NOT EXISTS`
-  block (codebase convention — NOT `db:push`), verified on `workspace-dev.jabnet.id`, then
-  prod only on explicit user OK. Tables are additive — no ALTER on existing tables.
+  block (codebase convention - NOT `db:push`), verified on `workspace-dev.jabnet.id`, then
+  prod only on explicit user OK. Tables are additive - no ALTER on existing tables.
 - Build the field-management + value-editor UI **properly with the design system** (Dialog,
-  FormField, Combobox, switches) — explicitly avoid adding more barebone UI.
+  FormField, Combobox, switches) - explicitly avoid adding more barebone UI.
 
 ## Data Model (`shared/schema.ts`)
 
@@ -45,7 +45,7 @@ pipeline_fields
   label        varchar(255) notNull
   type         varchar(16) notNull              // text|textarea|number|currency|date|dropdown|multiselect|checkbox|user|phone|url
   options      text                             // JSON array of strings (dropdown/multiselect only), else null
-  required     int notNull default 0            // 0/1 (soft — UI warning only)
+  required     int notNull default 0            // 0/1 (soft - UI warning only)
   showOnCard   int notNull default 0            // "show_on_card" 0/1
   position     int notNull default 0
   createdAt    text notNull
@@ -71,12 +71,12 @@ in `server/storage.ts` (next to the Phase 1 pipeline tables). Additive; idempote
 
 ## Backend (`server/storage.ts`, `server/routes.ts`, new `server/pipeline-field-helpers.ts`)
 
-### Pure helpers (`server/pipeline-field-helpers.ts` + test) — TDD
+### Pure helpers (`server/pipeline-field-helpers.ts` + test) - TDD
 - `validateFieldValue(type, value, options?)` → `{ ok: true } | { ok: false, error }`. number/currency
   numeric; date ISO-parseable; dropdown value ∈ options; multiselect all ∈ options; checkbox in
   {"0","1"}; user numeric; phone/url/text/textarea non-strict (length cap). Empty value always ok
   (soft-required).
-- `encodeFieldValue(type, raw)` / `decodeFieldValue(type, stored)` — JSON for multiselect, identity
+- `encodeFieldValue(type, raw)` / `decodeFieldValue(type, stored)` - JSON for multiselect, identity
   for scalars; tolerate malformed stored JSON (return [] / null).
 - `formatChipValue(type, stored, options?)` → short display string for card chips.
 
@@ -94,7 +94,7 @@ in `server/storage.ts` (next to the Phase 1 pipeline tables). Additive; idempote
 - `PATCH /api/pipelines/:id/fields/:fieldId`
 - `DELETE /api/pipelines/:id/fields/:fieldId`
 - `POST /api/pipelines/:id/fields/reorder`        body `{orderedIds}`
-- `PUT  /api/pipelines/cards/:cardId/values`       body `{values:[{fieldId,value}]}` — validates each via
+- `PUT  /api/pipelines/cards/:cardId/values`       body `{values:[{fieldId,value}]}` - validates each via
   `validateFieldValue`, 400 with the first error on type-mismatch; upserts; appends one card-activity entry.
 - Extend `GET /api/pipelines/:id` → response gains `fields: PipelineField[]` (alongside `stages`).
 - Extend `GET /api/pipelines/:id/cards` → each card gains `values: {fieldId: value}` for **show_on_card
@@ -110,12 +110,12 @@ run inside the request tenant context. Register new field routes mindful of Phas
 - **`usePipelines.ts`** extended: `useFields(pipelineId)`; mutations `createField`, `updateField`,
   `deleteField`, `reorderFields`, `setCardValues`. `useCard`/`usePipeline` types extended with
   `fields`/`values`.
-- **`ManageFieldsDialog`** (`client/components/pipelines/ManageFieldsDialog.tsx`) — opened from the
+- **`ManageFieldsDialog`** (`client/components/pipelines/ManageFieldsDialog.tsx`) - opened from the
   board (write-gated). Proper design-system Dialog: list of fields (label, type badge, drag-reorder),
   add/edit form with `FormField` + `Combobox` (type) + an options editor (chip input) shown only for
   dropdown/multiselect + `required` and `show_on_card` switches + delete (confirm). No raw/barebone
   markup.
-- **`FieldValueInput`** (`client/components/pipelines/FieldValueInput.tsx`) — one component switching
+- **`FieldValueInput`** (`client/components/pipelines/FieldValueInput.tsx`) - one component switching
   on `type` to the correct editor: text/phone/url → Input; textarea → Textarea; number/currency →
   numeric Input (currency shows "Rp" affix); date → date Input; dropdown → Combobox; multiselect →
   multi Combobox/checkest; checkbox → Switch; user → user Combobox (reuse mitra user list). Shows a
@@ -140,8 +140,8 @@ formula/computed fields; file-upload field type (rides the filesystem-photo plan
 field reuse/templates.
 
 ## Consistency with Memory
-- [[project-pipelines-engine]] — P2 of the 6-phase program; EAV is the planned P1→P2 extension.
-- [[reference-api-response-envelope]] — ALL new endpoints respond via `sendSuccess({success,data})`,
+- [[project-pipelines-engine]] - P2 of the 6-phase program; EAV is the planned P1→P2 extension.
+- [[reference-api-response-envelope]] - ALL new endpoints respond via `sendSuccess({success,data})`,
   not raw `res.json` (the Phase-1 runtime bug). Reviews must check response shape.
-- [[reference-tenant-isolation-gotchas]] — every field/value query filters `mitra_id` via `getMitraId()`.
+- [[reference-tenant-isolation-gotchas]] - every field/value query filters `mitra_id` via `getMitraId()`.
 - New tables created via startup `CREATE TABLE IF NOT EXISTS` (codebase convention), not `db:push`.

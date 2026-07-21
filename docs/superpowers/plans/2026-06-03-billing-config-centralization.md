@@ -1,4 +1,4 @@
-# Billing Config Centralization + Per-Mitra Sync + Maps Fallback — Implementation Plan
+# Billing Config Centralization + Per-Mitra Sync + Maps Fallback - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -22,7 +22,7 @@
 | `server/routes.ts` | New `/api/billing/mitras*` endpoints, cooldown on `/api/billing/sync`, integration-write guard, `isJabnetRoot` | Modify |
 | `client/pages/IntegrationPage.tsx` | Remove non-JABNET reseller section; JABNET per-mitra panel; Maps helper text | Modify |
 | `client/pages/CustomersPage.tsx` | Manual sync button + cooldown countdown | Modify |
-| `.env.example` | (none — no new env) | — |
+| `.env.example` | (none - no new env) | - |
 
 **Note on client tests:** this repo has no client test runner (only `node:test` server tests). Client tasks are verified by `npm run typecheck` + manual dev check, not unit tests.
 
@@ -113,7 +113,7 @@ test("mapBillingSample: falls back to nama_panggilan", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test server/billing-admin-helpers.test.ts`
-Expected: FAIL — `Cannot find module './billing-admin-helpers.js'`.
+Expected: FAIL - `Cannot find module './billing-admin-helpers.js'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -122,7 +122,7 @@ Create `server/billing-admin-helpers.ts`:
 ```ts
 /**
  * Pure helpers for the JABNET-root billing admin panel + per-mitra manual sync.
- * No I/O — unit-tested in billing-admin-helpers.test.ts.
+ * No I/O - unit-tested in billing-admin-helpers.test.ts.
  */
 
 export interface CooldownResult {
@@ -184,7 +184,7 @@ export function mapBillingSample(rows: any[], limit = 10): Array<{
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test server/billing-admin-helpers.test.ts`
-Expected: PASS — all 10 tests.
+Expected: PASS - all 10 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -195,7 +195,7 @@ git commit -m "feat(billing): pure helpers for cooldown, integration auth, sampl
 
 ---
 
-## Task 2: Worker — explicit-reseller fetch + `testResellerData`
+## Task 2: Worker - explicit-reseller fetch + `testResellerData`
 
 **Files:**
 - Modify: `server/billing-sync-worker.ts:360-423` (the `fetchAllFromBilling` method)
@@ -279,7 +279,7 @@ Replace the entire existing `private async fetchAllFromBilling(...) { ... }` met
     const resellerId = await this.resolveResellerId(resellerIdOverride);
     const combined = await this.fetchResellerRows(resellerId);
     if (combined.length === 0) {
-      throw new Error(`Billing API returned empty (reseller_id=${resellerId}) — check connectivity/credentials`);
+      throw new Error(`Billing API returned empty (reseller_id=${resellerId}) - check connectivity/credentials`);
     }
     return combined;
   }
@@ -326,10 +326,10 @@ function isJabnetRoot(req: Request): boolean {
 After the `POST /api/billing/sync` handler (ends line ~3724), insert:
 
 ```ts
-// ── JABNET-root billing admin: manage each mitra's reseller_id centrally ──
+// -- JABNET-root billing admin: manage each mitra's reseller_id centrally --
 const billingSampleToClient = (s: any[]) => s; // sample already mapped by worker
 
-/** GET /api/billing/mitras — list all mitras + billing_id + last sync status + customer count. JABNET-root only. */
+/** GET /api/billing/mitras - list all mitras + billing_id + last sync status + customer count. JABNET-root only. */
 router.get("/api/billing/mitras", async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   try {
@@ -362,12 +362,12 @@ router.get("/api/billing/mitras", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/billing/mitras/:id — save billing_reseller_id for a mitra. JABNET-root only. */
+/** PUT /api/billing/mitras/:id - save billing_reseller_id for a mitra. JABNET-root only. */
 router.put("/api/billing/mitras/:id", integrationsLimiter, async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   const mitraId = Number(req.params.id);
   const billingId = String(req.body?.billingId ?? "").trim();
-  if (mitraId === 1) return sendError(res, "JABNET adalah billing root (reseller_id=12, via .env) — tidak bisa diubah di sini", 400);
+  if (mitraId === 1) return sendError(res, "JABNET adalah billing root (reseller_id=12, via .env) - tidak bisa diubah di sini", 400);
   const m = await storage.getMitra(mitraId);
   if (!m) return sendError(res, "Mitra tidak ditemukan", 404);
   if (billingId && !/^\d+$/.test(billingId)) return sendError(res, "Billing ID harus angka", 400);
@@ -386,7 +386,7 @@ router.put("/api/billing/mitras/:id", integrationsLimiter, async (req: Request, 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/billing/mitras/:id/test — does this reseller_id pull customers? JABNET-root only. */
+/** POST /api/billing/mitras/:id/test - does this reseller_id pull customers? JABNET-root only. */
 router.post("/api/billing/mitras/:id/test", billingSyncLimiter, async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   recordRateAttempt(BILLING_SYNC_LIMIT.bucket, rateLimitKey(req), BILLING_SYNC_LIMIT);
@@ -410,7 +410,7 @@ router.post("/api/billing/mitras/:id/test", billingSyncLimiter, async (req: Requ
   } catch (e: any) { sendError(res, `Test gagal: ${e.message}`, 502); }
 });
 
-/** POST /api/billing/mitras/:id/sync — full sync of a specific mitra. JABNET-root only. Exempt from manual cooldown. */
+/** POST /api/billing/mitras/:id/sync - full sync of a specific mitra. JABNET-root only. Exempt from manual cooldown. */
 router.post("/api/billing/mitras/:id/sync", billingSyncLimiter, async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   recordRateAttempt(BILLING_SYNC_LIMIT.bucket, rateLimitKey(req), BILLING_SYNC_LIMIT);
@@ -505,7 +505,7 @@ router.post("/api/billing/sync", billingSyncLimiter, async (req: Request, res: R
 Immediately after the handler above, insert:
 
 ```ts
-/** GET /api/billing/sync/cooldown — manual-sync availability for the active mitra. */
+/** GET /api/billing/sync/cooldown - manual-sync availability for the active mitra. */
 router.get("/api/billing/sync/cooldown", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   const lastAt = await storage.getMitraSetting("billing_manual_sync_last_at", { fallbackToGlobal: false });
@@ -600,7 +600,7 @@ git commit -m "fix(security): restrict cross-mitra + billing_reseller_* integrat
 
 ---
 
-## Task 6: Client — IntegrationPage billing panel (JABNET-only)
+## Task 6: Client - IntegrationPage billing panel (JABNET-only)
 
 **Files:**
 - Modify: `client/pages/IntegrationPage.tsx` (remove non-JABNET reseller section ~1430-1709; gate billing on `isSystemAdmin`; add JABNET per-mitra panel)
@@ -670,7 +670,7 @@ Replace the old `handleSaveResellerProfile` / `handleVerifyReseller` (and the `m
     try {
       const result: any = await api.post(`/billing/mitras/${selBillingMitra}/test`, { billingId: selBillingId.trim() });
       setBillMitraTestResult(result);
-      if (result?.ok) toast.success(`Berhasil — ${result.totalFound} pelanggan ditemukan`);
+      if (result?.ok) toast.success(`Berhasil - ${result.totalFound} pelanggan ditemukan`);
       else toast.warning("Reseller ID ini tidak mengembalikan pelanggan");
     } catch (err: any) { toast.error(err.message ?? "Test gagal"); }
     finally { setBillMitraTesting(false); }
@@ -681,7 +681,7 @@ Replace the old `handleSaveResellerProfile` / `handleVerifyReseller` (and the `m
     setBillMitraSyncing(true);
     try {
       const result: any = await api.post(`/billing/mitras/${selBillingMitra}/sync`, {});
-      toast.success(`Sync selesai — ${result?.updated ?? 0} updated, ${result?.created ?? 0} created`, {
+      toast.success(`Sync selesai - ${result?.updated ?? 0} updated, ${result?.created ?? 0} created`, {
         description: `Total ${result?.total ?? 0} · error ${result?.errors ?? 0}`,
       });
       refetchBillingMitras();
@@ -695,7 +695,7 @@ Replace the old `handleSaveResellerProfile` / `handleVerifyReseller` (and the `m
 Delete the entire `{activeMitraId === 1 ? (...) : (...)}` reseller block (lines ~1430 through its closing `)}` after the actions footer ~1709) and replace with:
 
 ```tsx
-          {/* ── Billing config: JABNET-root manages every mitra's billing_id ── */}
+          {/* -- Billing config: JABNET-root manages every mitra's billing_id -- */}
           {!isSystemAdmin ? null : (
           <section id="billing-mitra-admin" className="rounded-lg border bg-gradient-to-br from-sky-50/60 to-blue-50/40 dark:from-sky-950/20 dark:to-blue-950/10 border-sky-200/60 dark:border-sky-900/40 p-4 space-y-3">
             <header className="flex items-center gap-2.5">
@@ -703,7 +703,7 @@ Delete the entire `{activeMitraId === 1 ? (...) : (...)}` reseller block (lines 
                 <Building2 className="h-4 w-4 text-sky-600 dark:text-sky-400" />
               </span>
               <div>
-                <h3 className="text-sm font-semibold">Billing Sync — Kelola per Mitra</h3>
+                <h3 className="text-sm font-semibold">Billing Sync - Kelola per Mitra</h3>
                 <p className="text-[11px] text-muted-foreground leading-snug">
                   Pilih mitra lalu atur Billing ID (reseller_id) billing.jabnet.id. Hanya JABNET yang bisa mengatur ini.
                 </p>
@@ -716,7 +716,7 @@ Delete the entire `{activeMitraId === 1 ? (...) : (...)}` reseller block (lines 
                 options={billingMitraList.map((m) => ({
                   value: String(m.mitraId),
                   label: `${m.name}${m.isJabnet ? " (root)" : ""}`,
-                  description: m.isJabnet ? "Billing root · reseller_id 12" : `Billing ID: ${m.billingId || "—"} · ${m.customerCount} pelanggan`,
+                  description: m.isJabnet ? "Billing root · reseller_id 12" : `Billing ID: ${m.billingId || "-"} · ${m.customerCount} pelanggan`,
                 }))}
                 value={selBillingMitra}
                 onChange={setSelBillingMitra}
@@ -726,7 +726,7 @@ Delete the entire `{activeMitraId === 1 ? (...) : (...)}` reseller block (lines 
 
             {selBillingMitra && billingMitraList.find((x) => String(x.mitraId) === selBillingMitra)?.isJabnet ? (
               <div className="rounded-lg border border-info/30 bg-info/5 p-3 text-[11px] text-muted-foreground">
-                JABNET adalah billing provider root — memakai <strong>reseller_id = 12</strong> dengan token dari server <code className="font-mono">.env</code>. Tidak ada yang perlu diatur di sini.
+                JABNET adalah billing provider root - memakai <strong>reseller_id = 12</strong> dengan token dari server <code className="font-mono">.env</code>. Tidak ada yang perlu diatur di sini.
               </div>
             ) : selBillingMitra ? (
               <>
@@ -774,12 +774,12 @@ Delete the entire `{activeMitraId === 1 ? (...) : (...)}` reseller block (lines 
 
 - [ ] **Step 4: Gate the global Billing Sync card on `isSystemAdmin`**
 
-Find the global Billing Sync card (line ~1337, comment `{/* Card — Billing Sync (billing.jabnet.id) */}`). Wrap its render with `{isSystemAdmin && ( ... )}` so non-JABNET mitras see no billing card at all. (If it is a sibling element, wrap the JSX element; ensure the closing `)}` is added correctly, then run typecheck.)
+Find the global Billing Sync card (line ~1337, comment `{/* Card - Billing Sync (billing.jabnet.id) */}`). Wrap its render with `{isSystemAdmin && ( ... )}` so non-JABNET mitras see no billing card at all. (If it is a sibling element, wrap the JSX element; ensure the closing `)}` is added correctly, then run typecheck.)
 
 - [ ] **Step 5: Verify it compiles**
 
 Run: `npm run typecheck`
-Expected: 0 errors. Remove any now-unused imports/vars flagged (e.g. `PasswordInput`, old `reseller*` state) — delete what the compiler reports as unused.
+Expected: 0 errors. Remove any now-unused imports/vars flagged (e.g. `PasswordInput`, old `reseller*` state) - delete what the compiler reports as unused.
 
 - [ ] **Step 6: Commit**
 
@@ -790,10 +790,10 @@ git commit -m "feat(integrations): JABNET-root per-mitra billing panel; hide bil
 
 ---
 
-## Task 7: Client — Google Maps helper text + source badge
+## Task 7: Client - Google Maps helper text + source badge
 
 **Files:**
-- Modify: `client/pages/IntegrationPage.tsx` (Google Maps section — find by label "Google Maps API Key" / `google_maps_api_key`)
+- Modify: `client/pages/IntegrationPage.tsx` (Google Maps section - find by label "Google Maps API Key" / `google_maps_api_key`)
 
 - [ ] **Step 1: Locate the Maps input**
 
@@ -827,7 +827,7 @@ git commit -m "feat(integrations): explain Google Maps key fallback to JABNET + 
 
 ---
 
-## Task 8: Client — `/customers` sync button + cooldown
+## Task 8: Client - `/customers` sync button + cooldown
 
 **Files:**
 - Modify: `client/pages/CustomersPage.tsx` (header button group at line ~1253)
@@ -869,7 +869,7 @@ Inside the component (near other hooks, after `const { canWrite } = useAuth();` 
     setSyncing(true);
     try {
       const r: any = await api.post("/billing/sync", {});
-      toast.success(`Sync selesai — ${r?.updated ?? 0} diperbarui, ${r?.created ?? 0} dibuat`, {
+      toast.success(`Sync selesai - ${r?.updated ?? 0} diperbarui, ${r?.created ?? 0} dibuat`, {
         description: `Total ${r?.total ?? 0} pelanggan · error ${r?.errors ?? 0}`,
       });
       refetchCooldown();
@@ -949,9 +949,9 @@ git add -A && git commit -m "chore(billing): finalize centralization + per-mitra
 
 ## Self-Review Notes (coverage vs spec)
 
-- **A — centralization:** Tasks 3 (endpoints), 5 (security guard), 6 (client panel + hide). ✓
-- **A — simplified Test (billing_id only):** Task 2 (`testResellerData`) + Task 3 (`/test` endpoint) + Task 6 (panel). ✓
-- **B — per-mitra sync button + 10-min cooldown:** Task 1 (cooldown helper), Task 4 (endpoint + enforcement), Task 8 (button). ✓
-- **C — Maps fallback text + source badge:** Task 7 (client only; backend already supports). ✓
+- **A - centralization:** Tasks 3 (endpoints), 5 (security guard), 6 (client panel + hide). ✓
+- **A - simplified Test (billing_id only):** Task 2 (`testResellerData`) + Task 3 (`/test` endpoint) + Task 6 (panel). ✓
+- **B - per-mitra sync button + 10-min cooldown:** Task 1 (cooldown helper), Task 4 (endpoint + enforcement), Task 8 (button). ✓
+- **C - Maps fallback text + source badge:** Task 7 (client only; backend already supports). ✓
 - **Tests:** Task 1 (helpers) + manual curl checks (Tasks 5, 8) + Task 9 (suite/typecheck/build). Endpoint guards rely on the tested `canWriteMitraIntegration`/`computeManualSyncCooldown` helpers + manual curl; no HTTP integration harness exists in this repo. ✓
 - **Deploy:** standard `git push` → GHA → cPanel pull → restart (per CLAUDE.md). No new env var. JABNET's shared Maps key must already be in **global app_settings** `google_maps_api_key` (operational; unchanged).

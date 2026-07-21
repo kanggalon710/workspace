@@ -1,4 +1,4 @@
-/** Pure helpers for per-rule recurrence — no I/O, unit-testable. */
+/** Pure helpers for per-rule recurrence - no I/O, unit-testable. */
 export type RuleRecurrence = "once" | "on_reenter" | "always";
 
 export const RECURRENCE_MODES: { mode: RuleRecurrence; label: string; hint: string }[] = [

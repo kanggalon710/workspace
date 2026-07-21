@@ -1,5 +1,5 @@
 /**
- * PUBLIC API — Open API untuk integrasi eksternal (OpenClaude, BI tool, dll)
+ * PUBLIC API - Open API untuk integrasi eksternal (OpenClaude, BI tool, dll)
  * Base URL: /api/public/v1/*
  * Auth: Authorization: Bearer jbk_live_<32chars>
  * Read-only. Scoped access.
@@ -96,7 +96,7 @@ function requireScope(scope: string) {
             return res.status(429).json({ error: "rate_limited", message: `Rate limit ${matched!.rateLimit}/min exceeded`, retryAfterSec: 60 });
           }
 
-          // Touch usage (fire-and-forget) — context already set
+          // Touch usage (fire-and-forget) - context already set
           const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || null;
           const ua = (req.headers["user-agent"] as string) ?? null;
           storage.touchApiKey(matched!.id, ip, ua).catch(() => {});
@@ -166,7 +166,7 @@ function parsePeriod(req: any): { period: "daily"|"weekly"|"monthly"|"quarterly"
   return { period: period as any, from: iso(req.query.from), to: iso(req.query.to) };
 }
 
-/** Batch lookup user info — return map { userId: { id, name, username, role } }.
+/** Batch lookup user info - return map { userId: { id, name, username, role } }.
  *  Dipakai untuk enrich response API dengan assignee names tanpa N+1 query. */
 async function _lookupUsers(userIds: number[]): Promise<Record<number, { id: number; name: string; username: string; role: string }>> {
   if (userIds.length === 0) return {};
@@ -182,7 +182,7 @@ async function _lookupUsers(userIds: number[]): Promise<Record<number, { id: num
 
 // ==================== META ENDPOINTS (no auth) ====================
 
-/** GET /api/public/v1/health — ping endpoint, no auth */
+/** GET /api/public/v1/health - ping endpoint, no auth */
 publicApiRouter.get("/api/public/v1/health", (_req, res) => {
   res.json({
     status: "ok",
@@ -192,7 +192,7 @@ publicApiRouter.get("/api/public/v1/health", (_req, res) => {
   });
 });
 
-/** GET /api/public/v1/schema — self-documenting endpoint list + JSON shape */
+/** GET /api/public/v1/schema - self-documenting endpoint list + JSON shape */
 publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
   res.json({
     service: "JABNET Open API",
@@ -223,10 +223,10 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { method: "GET", path: "/health",  scope: null, desc: "Health check (no auth)" },
       { method: "GET", path: "/schema",  scope: null, desc: "This schema (no auth)" },
 
-      // ══════ MARKETING BUNDLE (priority untuk AI daily analysis) ══════
-      { method: "GET", path: "/marketing/daily-report",      scope: "marketing:read", desc: "⭐ Daily report tim marketing: KPI hari ini, per-canvasser & per-sales, hourly heatmap, pipeline snapshot, source breakdown. Default: hari ini. Query: ?date=YYYY-MM-DD" },
-      { method: "GET", path: "/marketing/overview",          scope: "marketing:read", desc: "⭐ ONE-SHOT dense JSON untuk AI: today vs yesterday vs week, momentum, top performer, hot spots, red flags, actionable insights. Query: ?from=&to=" },
-      { method: "GET", path: "/marketing/canvassing/sessions", scope: "marketing:read", desc: "Canvassing sessions — active, today, week. Per-canvasser stats: duration, checkIns, prospects, reports" },
+      // ====== MARKETING BUNDLE (priority untuk AI daily analysis) ======
+      { method: "GET", path: "/marketing/daily-report",      scope: "marketing:read", desc: " Daily report tim marketing: KPI hari ini, per-canvasser & per-sales, hourly heatmap, pipeline snapshot, source breakdown. Default: hari ini. Query: ?date=YYYY-MM-DD" },
+      { method: "GET", path: "/marketing/overview",          scope: "marketing:read", desc: " ONE-SHOT dense JSON untuk AI: today vs yesterday vs week, momentum, top performer, hot spots, red flags, actionable insights. Query: ?from=&to=" },
+      { method: "GET", path: "/marketing/canvassing/sessions", scope: "marketing:read", desc: "Canvassing sessions - active, today, week. Per-canvasser stats: duration, checkIns, prospects, reports" },
       { method: "GET", path: "/marketing/canvassing/reports",  scope: "marketing:read", desc: "Field reports (BI). Query: ?type=&severity=&userId=&from=&to=&limit=" },
       { method: "GET", path: "/marketing/canvassing/performance", scope: "marketing:read", desc: "Per-canvasser performance matrix: sessions, duration, leads, conversion. Query: ?from=&to=" },
       { method: "GET", path: "/marketing/prospects",           scope: "marketing:read", desc: "Prospect database. Query: ?category=&hasOdp=true&district=&limit=&offset=" },
@@ -248,7 +248,7 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { method: "GET", path: "/reports/daily",     scope: "reports:read", desc: "Summary hari ini (default). Query: ?from=ISO&to=ISO" },
       { method: "GET", path: "/reports/weekly",    scope: "reports:read", desc: "Summary 7 hari terakhir" },
       { method: "GET", path: "/reports/range",     scope: "reports:read", desc: "Summary per range custom. Query: ?from=ISO&to=ISO (max 180 hari)" },
-      { method: "GET", path: "/reports/executive", scope: "reports:read", desc: "⭐ ONE-SHOT untuk AI: revenue + subscriber + collections + ops-ringkas, semua + deltaPct + redFlags/greenLights + trend. Query: ?period=&from=&to=" },
+      { method: "GET", path: "/reports/executive", scope: "reports:read", desc: " ONE-SHOT untuk AI: revenue + subscriber + collections + ops-ringkas, semua + deltaPct + redFlags/greenLights + trend. Query: ?period=&from=&to=" },
       // Finance
       { method: "GET", path: "/finance/overview",     scope: "finance:read",   desc: "Point-in-time: MRR (+delta), ARPU, revenue-at-risk, billingStatus dist, breakdown by package/type/district" },
       { method: "GET", path: "/finance/timeseries",   scope: "finance:read",   desc: "Trend dari snapshot. Query: ?metric=mrr|active|isolir|revenue_at_risk&period=daily|weekly|monthly|quarterly&from=&to=" },
@@ -256,7 +256,7 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       // Customers
       { method: "GET", path: "/customers/overview",   scope: "customers:read", desc: "Subscriber counts by status/package/type/district/village + new activations" },
       { method: "GET", path: "/customers/timeseries", scope: "customers:read", desc: "Query: ?metric=new_activations|active|net_adds&period=&from=&to=" },
-      // Leads (basic — untuk marketing deep-dive pakai /marketing/leads/*)
+      // Leads (basic - untuk marketing deep-dive pakai /marketing/leads/*)
       { method: "GET", path: "/leads",        scope: "leads:read", desc: "List leads. Query: ?stage=&assignedTo=&from=&to=&limit=&offset=" },
       { method: "GET", path: "/leads/stats",  scope: "leads:read", desc: "Pipeline stats: by stage, by wilayah, conversion rate" },
       { method: "GET", path: "/leads/:id",    scope: "leads:read", desc: "Lead detail + activities timeline" },
@@ -272,11 +272,11 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { method: "GET", path: "/tickets",       scope: "tickets:read", desc: "Active tickets. Query: ?status=&limit=&offset=" },
       { method: "GET", path: "/tickets/stats", scope: "tickets:read", desc: "Ticket stats: open count, SLA compliance" },
 
-      // ══════ TEAMSPACE (v5.0 — kolaborasi tim internal) ══════
+      // ====== TEAMSPACE (v5.0 - kolaborasi tim internal) ======
       { method: "GET", path: "/teamspace/tasks", scope: "teamspace:read", desc: "Ringkasan tugas per tim (total/selesai/terlambat) + daftar kartu ringkas. Query: ?detail=1 untuk daftar kartu" },
       { method: "GET", path: "/teamspace/performance", scope: "teamspace:read", desc: "Kinerja per anggota: tugas selesai/dikerjakan/terlambat + output ops (tiket/lead/collection/canvassing). Query: ?from=&to= (default 30 hari)" },
 
-      // ══════ DIVISIONS — analisa pekerjaan tim per divisi (daily->weekly) ══════
+      // ====== DIVISIONS - analisa pekerjaan tim per divisi (daily->weekly) ======
       { method: "GET", path: "/divisions", scope: "divisions:read", desc: "ONE-SHOT semua divisi: output tim (tiket/lead/collection/canvassing) + snapshot KPI domain per divisi. Query: ?period=daily|weekly|monthly|quarterly ATAU ?from=&to=" },
       { method: "GET", path: "/divisions/:key", scope: "divisions:read", desc: "Detail 1 divisi (marketing|teknik|noc|cs|keuangan|hrd): per-anggota output diurut kontribusi + totals + snapshot KPI. Query: ?period= atau ?from=&to=" },
     ],
@@ -287,12 +287,12 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
   });
 });
 
-// ══════════════════════════════════════════════════════════════════
-// MARKETING BUNDLE — deep-dive endpoints (scope: marketing:read)
-// ══════════════════════════════════════════════════════════════════
+// ==================================================================
+// MARKETING BUNDLE - deep-dive endpoints (scope: marketing:read)
+// ==================================================================
 
 /**
- * ⭐ GET /marketing/daily-report — laporan harian tim marketing terstruktur
+ *  GET /marketing/daily-report - laporan harian tim marketing terstruktur
  * Default: hari ini (00:00 - now). Pakai ?date=YYYY-MM-DD untuk hari spesifik.
  *
  * Return: summary KPI + perCanvasser + perSales + hourly heatmap + pipeline + source + coverage
@@ -304,7 +304,7 @@ publicApiRouter.get("/api/public/v1/marketing/daily-report", requireScope("marke
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
       // Specific day: 00:00 - 23:59:59 of that date
       const d = new Date(dateParam + "T00:00:00.000Z");
-      // Adjust ke local Indonesia (server timezone) — pakai full day range
+      // Adjust ke local Indonesia (server timezone) - pakai full day range
       from = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0).toISOString();
       to = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
     } else {
@@ -317,7 +317,7 @@ publicApiRouter.get("/api/public/v1/marketing/daily-report", requireScope("marke
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** ⭐ GET /marketing/overview — ONE-SHOT dense JSON untuk AI daily analysis */
+/**  GET /marketing/overview - ONE-SHOT dense JSON untuk AI daily analysis */
 publicApiRouter.get("/api/public/v1/marketing/overview", requireScope("marketing:read"), async (req, res) => {
   try {
     const { from, to } = parseRange(req, 1);
@@ -325,7 +325,7 @@ publicApiRouter.get("/api/public/v1/marketing/overview", requireScope("marketing
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/canvassing/sessions — active sessions + range history + per-canvasser */
+/** GET /marketing/canvassing/sessions - active sessions + range history + per-canvasser */
 publicApiRouter.get("/api/public/v1/marketing/canvassing/sessions", requireScope("marketing:read"), async (req, res) => {
   try {
     const { from, to } = parseRange(req, 7);
@@ -333,7 +333,7 @@ publicApiRouter.get("/api/public/v1/marketing/canvassing/sessions", requireScope
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/canvassing/reports — field reports */
+/** GET /marketing/canvassing/reports - field reports */
 publicApiRouter.get("/api/public/v1/marketing/canvassing/reports", requireScope("marketing:read"), async (req, res) => {
   try {
     const { limit, offset } = parsePagination(req);
@@ -370,7 +370,7 @@ publicApiRouter.get("/api/public/v1/marketing/canvassing/reports", requireScope(
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/canvassing/performance — per-canvasser matrix */
+/** GET /marketing/canvassing/performance - per-canvasser matrix */
 publicApiRouter.get("/api/public/v1/marketing/canvassing/performance", requireScope("marketing:read"), async (req, res) => {
   try {
     const { from, to } = parseRange(req, 30);
@@ -389,7 +389,7 @@ publicApiRouter.get("/api/public/v1/marketing/canvassing/performance", requireSc
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/prospects — prospect database */
+/** GET /marketing/prospects - prospect database */
 publicApiRouter.get("/api/public/v1/marketing/prospects", requireScope("marketing:read"), async (req, res) => {
   try {
     const { limit, offset } = parsePagination(req, 50, 500);
@@ -425,7 +425,7 @@ publicApiRouter.get("/api/public/v1/marketing/leads/attribution", requireScope("
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/leads/performance — per-staff scorecard */
+/** GET /marketing/leads/performance - per-staff scorecard */
 publicApiRouter.get("/api/public/v1/marketing/leads/performance", requireScope("marketing:read"), async (req, res) => {
   try {
     const { from, to } = parseRange(req, 30);
@@ -433,7 +433,7 @@ publicApiRouter.get("/api/public/v1/marketing/leads/performance", requireScope("
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/coverage — per-district penetration */
+/** GET /marketing/coverage - per-district penetration */
 publicApiRouter.get("/api/public/v1/marketing/coverage", requireScope("marketing:read"), async (req, res) => {
   try {
     const { from, to } = parseRange(req, 30);
@@ -441,7 +441,7 @@ publicApiRouter.get("/api/public/v1/marketing/coverage", requireScope("marketing
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/heatmap — GIS points */
+/** GET /marketing/heatmap - GIS points */
 publicApiRouter.get("/api/public/v1/marketing/heatmap", requireScope("marketing:read"), async (req, res) => {
   try {
     const typesParam = (req.query.types as string) ?? "prospects,leads,canvassing";
@@ -450,7 +450,7 @@ publicApiRouter.get("/api/public/v1/marketing/heatmap", requireScope("marketing:
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/sahabat/funnel — referral conversion funnel */
+/** GET /marketing/sahabat/funnel - referral conversion funnel */
 publicApiRouter.get("/api/public/v1/marketing/sahabat/funnel", requireScope("marketing:read"), async (req, res) => {
   try {
     const { from, to } = parseRange(req, 30);
@@ -458,7 +458,7 @@ publicApiRouter.get("/api/public/v1/marketing/sahabat/funnel", requireScope("mar
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/campaigns — list campaigns + leads aggregation per source */
+/** GET /marketing/campaigns - list campaigns + leads aggregation per source */
 publicApiRouter.get("/api/public/v1/marketing/campaigns", requireScope("marketing:read"), async (req, res) => {
   try {
     const platform = req.query.platform as string | undefined;
@@ -493,7 +493,7 @@ publicApiRouter.get("/api/public/v1/marketing/campaigns", requireScope("marketin
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/campaigns/summary — aggregated per platform */
+/** GET /marketing/campaigns/summary - aggregated per platform */
 publicApiRouter.get("/api/public/v1/marketing/campaigns/summary", requireScope("marketing:read"), async (_req, res) => {
   try {
     const all = await storage.getAdCampaigns();
@@ -529,7 +529,7 @@ publicApiRouter.get("/api/public/v1/marketing/campaigns/summary", requireScope("
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** GET /marketing/campaigns/:id — detail */
+/** GET /marketing/campaigns/:id - detail */
 publicApiRouter.get("/api/public/v1/marketing/campaigns/:id", requireScope("marketing:read"), async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -540,7 +540,7 @@ publicApiRouter.get("/api/public/v1/marketing/campaigns/:id", requireScope("mark
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-// ── WRITE (marketing:write scope) ──
+// -- WRITE (marketing:write scope) --
 const VALID_PLATFORMS = new Set(["meta_ads", "tiktok_ads", "google_ads", "landing_page", "other"]);
 const VALID_STATUS = new Set(["active", "paused", "ended"]);
 
@@ -581,7 +581,7 @@ function sanitizeCampaignInput(body: any): { clean: Partial<InsertAdCampaign>; e
 }
 
 /**
- * POST /marketing/campaigns — create OR upsert (kalau externalId disediakan).
+ * POST /marketing/campaigns - create OR upsert (kalau externalId disediakan).
  * Upsert semantic: kalau (platform, externalId) sudah ada → update row itu.
  * Dipakai bot openclaw untuk sync harian dari Ads Manager.
  */
@@ -613,7 +613,7 @@ publicApiRouter.post("/api/public/v1/marketing/campaigns", requireScope("marketi
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-/** PATCH /marketing/campaigns/:id — partial update (push metric harian) */
+/** PATCH /marketing/campaigns/:id - partial update (push metric harian) */
 publicApiRouter.patch("/api/public/v1/marketing/campaigns/:id", requireScope("marketing:write"), async (req: AuthedRequest, res) => {
   try {
     const id = Number(req.params.id);
@@ -643,7 +643,7 @@ publicApiRouter.delete("/api/public/v1/marketing/campaigns/:id", requireScope("m
 
 // ==================== REPORTS ====================
 
-/** GET /api/public/v1/reports/daily — summary hari ini */
+/** GET /api/public/v1/reports/daily - summary hari ini */
 publicApiRouter.get("/api/public/v1/reports/daily", requireScope("reports:read"), async (req, res) => {
   try {
     const now = new Date();
@@ -657,7 +657,7 @@ publicApiRouter.get("/api/public/v1/reports/daily", requireScope("reports:read")
   }
 });
 
-/** GET /api/public/v1/reports/weekly — rolling 7 hari */
+/** GET /api/public/v1/reports/weekly - rolling 7 hari */
 publicApiRouter.get("/api/public/v1/reports/weekly", requireScope("reports:read"), async (_req, res) => {
   try {
     const to = new Date();
@@ -703,7 +703,7 @@ publicApiRouter.get("/api/public/v1/leads", requireScope("leads:read"), async (r
     const total = filtered.length;
     const page = filtered.slice(offset, offset + limit);
 
-    // Resolve assignee names (batch lookup — 1 query untuk semua user yang relevan)
+    // Resolve assignee names (batch lookup - 1 query untuk semua user yang relevan)
     const userIds = Array.from(new Set(page.map((l: any) => l.assignedTo).filter(Boolean) as number[]));
     const userMap = await _lookupUsers(userIds);
 
@@ -1035,8 +1035,8 @@ publicApiRouter.get("/api/public/v1/reports/executive", requireScope("reports:re
   catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-// ==================== TEAMSPACE (v5.0 Fase 3 — FR-16xx) ====================
-// Aggregate untuk n8n / BI / AI agent — tanpa isi chat/dokumen (privacy by design).
+// ==================== TEAMSPACE (v5.0 Fase 3 - FR-16xx) ====================
+// Aggregate untuk n8n / BI / AI agent - tanpa isi chat/dokumen (privacy by design).
 
 publicApiRouter.get("/api/public/v1/teamspace/tasks", requireScope("teamspace:read"), async (req, res) => {
   try {
@@ -1074,7 +1074,7 @@ publicApiRouter.get("/api/public/v1/teamspace/tasks", requireScope("teamspace:re
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 
-// ==================== DIVISIONS (v5.4) — analisa pekerjaan tim per divisi ====================
+// ==================== DIVISIONS (v5.4) - analisa pekerjaan tim per divisi ====================
 // ONE-SHOT untuk AI agent: output tim (tiket/lead/collection/canvassing) per DIVISI,
 // windowed daily→weekly→monthly + snapshot KPI domain. Anggota dipetakan dari role.
 

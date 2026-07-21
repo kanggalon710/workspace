@@ -10,7 +10,7 @@
 
 **Conventions (read before starting):**
 - Tests: `npx tsx --test <file>` (NO `npm test`). Import extensions are `.js`.
-- MySQL Drizzle: no `.returning()` — insert then re-select by `insertId` (see `addComment`).
+- MySQL Drizzle: no `.returning()` - insert then re-select by `insertId` (see `addComment`).
 - All storage methods are tenant-scoped via `getMitraId()` (AsyncLocalStorage).
 - Response envelope: `sendSuccess(res, data)` / `sendError(res, msg, status)`.
 - New tables: `CREATE TABLE IF NOT EXISTS` in the startup migration block in `server/storage.ts` (alongside the other `pipeline_card_*` tables ~line 6878). `ADD COLUMN IF NOT EXISTS` is NOT supported, but `CREATE TABLE IF NOT EXISTS` is.
@@ -72,14 +72,14 @@ test("mimeForExt: known + octet-stream fallback", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/attachmentRules.test.ts`
-Expected: FAIL — `ERR_MODULE_NOT_FOUND` (attachmentRules.js missing).
+Expected: FAIL - `ERR_MODULE_NOT_FOUND` (attachmentRules.js missing).
 
 - [ ] **Step 3: Write minimal implementation**
 
 Create `shared/attachmentRules.ts`:
 
 ```ts
-/** Pure rules for pipeline card attachments — no I/O, fully unit-testable. */
+/** Pure rules for pipeline card attachments - no I/O, fully unit-testable. */
 
 export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024; // 25 MB/file
 
@@ -128,7 +128,7 @@ export function mimeForExt(ext: string): string {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/attachmentRules.test.ts`
-Expected: PASS — 4/4.
+Expected: PASS - 4/4.
 
 - [ ] **Step 5: Commit**
 
@@ -145,7 +145,7 @@ git commit -m "feat(attachments): pure validation rules (types, size cap, ext/mi
 - Modify: `server/uploads.ts` (add `buildAttachmentPath`, `saveUploadedFile`, `streamFile`; reuse existing `sanitizeSlug`, `sanitizeFeature`, `resolveSafe`, `crypto`, `path`)
 - Test: `server/uploads.test.ts`
 
-Read first: `server/uploads.ts:63-72` (`buildRelativePath` — hardcodes `.jpg`), `:93-136` (`saveBase64Photo` — has the `UPLOADS_READ_ONLY` guard + `resolveSafe`), `:162-185` (`streamPhoto`). The new helpers mirror these but preserve the real extension.
+Read first: `server/uploads.ts:63-72` (`buildRelativePath` - hardcodes `.jpg`), `:93-136` (`saveBase64Photo` - has the `UPLOADS_READ_ONLY` guard + `resolveSafe`), `:162-185` (`streamPhoto`). The new helpers mirror these but preserve the real extension.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -171,11 +171,11 @@ test("buildAttachmentPath: sanitizes id + ext, no path escape", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test server/uploads.test.ts`
-Expected: FAIL — `buildAttachmentPath` is not exported.
+Expected: FAIL - `buildAttachmentPath` is not exported.
 
 - [ ] **Step 3: Write minimal implementation**
 
-In `server/uploads.ts`, add an import near the top (the file already imports `path`, `crypto`, `existsSync`, `Response`, and has `sanitizeSlug`/`sanitizeFeature`/`resolveSafe` + the `UPLOADS_READ_ONLY` pattern). Add `import { writeFile } from "fs/promises";` if not already present (check the top of the file; `saveBase64Photo` already writes files, so a write import exists — reuse it). Then append:
+In `server/uploads.ts`, add an import near the top (the file already imports `path`, `crypto`, `existsSync`, `Response`, and has `sanitizeSlug`/`sanitizeFeature`/`resolveSafe` + the `UPLOADS_READ_ONLY` pattern). Add `import { writeFile } from "fs/promises";` if not already present (check the top of the file; `saveBase64Photo` already writes files, so a write import exists - reuse it). Then append:
 
 ```ts
 import { mimeForExt } from "../shared/attachmentRules.js";
@@ -229,12 +229,12 @@ export async function streamFile(
 }
 ```
 
-Note: `mkdir` and `writeFile` — confirm the existing imports. `saveBase64Photo` already does `mkdir(..., {recursive:true})` + a write, so both come from `fs/promises` at the top of the file. If `mkdir`/`writeFile` aren't both imported, add them to the existing `fs/promises` import line. Do NOT add a second import statement for the same module.
+Note: `mkdir` and `writeFile` - confirm the existing imports. `saveBase64Photo` already does `mkdir(..., {recursive:true})` + a write, so both come from `fs/promises` at the top of the file. If `mkdir`/`writeFile` aren't both imported, add them to the existing `fs/promises` import line. Do NOT add a second import statement for the same module.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test server/uploads.test.ts`
-Expected: PASS — 2/2.
+Expected: PASS - 2/2.
 
 - [ ] **Step 5: Commit**
 
@@ -372,7 +372,7 @@ async deleteCardAttachment(id: number, actorId: number): Promise<number> {
 }
 ```
 
-Note: `desc` must be in the drizzle-orm import at the top of storage.ts (it's used elsewhere — confirm; if missing, add it to the `import { eq, and, ... } from "drizzle-orm"` line).
+Note: `desc` must be in the drizzle-orm import at the top of storage.ts (it's used elsewhere - confirm; if missing, add it to the `import { eq, and, ... } from "drizzle-orm"` line).
 
 - [ ] **Step 3: Verify typecheck**
 
@@ -473,14 +473,14 @@ import { parseMultipart } from "./multipart.js";
 import { validateAttachment, ATTACHMENT_MAX_BYTES } from "../shared/attachmentRules.js";
 import { deletePhoto } from "./uploads.js"; // if not already imported
 ```
-(`deletePhoto` already exists in uploads.ts — fold it into the existing uploads import rather than a second statement.)
+(`deletePhoto` already exists in uploads.ts - fold it into the existing uploads import rather than a second statement.)
 
 - [ ] **Step 2: Add the routes**
 
 Add near the other card sub-resource routes (after the comment-photo route ~line 4997):
 
 ```ts
-// ── Card attachments ──────────────────────────────────────────────────────
+// -- Card attachments ------------------------------------------------------
 router.post("/api/pipelines/cards/:cardId/attachments", async (req, res) => {
   if (!requireWritePermission(req, res, "pipelines")) return;
   const card = await storage.getCard(Number(req.params.cardId));
@@ -571,7 +571,7 @@ Read first: an existing query+mutation pair in `usePipelines.ts` (e.g. `useColle
 
 - [ ] **Step 1: Add the hooks**
 
-Add to `client/hooks/usePipelines.ts` (ensure imports: `import { getAuthHeaders } from "@/lib/api";` and `import { compressImage } from "@/lib/imageCompress";` — add if absent):
+Add to `client/hooks/usePipelines.ts` (ensure imports: `import { getAuthHeaders } from "@/lib/api";` and `import { compressImage } from "@/lib/imageCompress";` - add if absent):
 
 ```ts
 export interface CardAttachment {
@@ -611,7 +611,7 @@ export function useUploadAttachments(cardId: number) {
       }
       const res = await fetch(`/api/pipelines/cards/${cardId}/attachments`, {
         method: "POST",
-        headers: { ...getAuthHeaders() }, // NO Content-Type — browser sets multipart boundary
+        headers: { ...getAuthHeaders() }, // NO Content-Type - browser sets multipart boundary
         body: form,
       });
       const json = await res.json();
@@ -819,7 +819,7 @@ Expected: table referenced in schema + storage + migration; endpoints + hooks + 
 
 - [ ] **Step 4: Add deploy caveats to the spec's runbook section**
 
-Confirm the spec (`docs/superpowers/specs/2026-06-09-card-attachments-design.md`, section 9) still lists: (1) `busboy` needs `npm install` on cPanel; (2) flip dev `UPLOADS_READ_ONLY=false` to test. No code change — just verify it's there for the deploy step.
+Confirm the spec (`docs/superpowers/specs/2026-06-09-card-attachments-design.md`, section 9) still lists: (1) `busboy` needs `npm install` on cPanel; (2) flip dev `UPLOADS_READ_ONLY=false` to test. No code change - just verify it's there for the deploy step.
 
 - [ ] **Step 5: Final commit (if any verification fixes were needed)**
 

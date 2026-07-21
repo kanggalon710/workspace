@@ -172,7 +172,7 @@ export function useOdpUtilization() {
   return useQuery<OdpUtilResponse>({
     queryKey: ["odps", "utilization"],
     queryFn: () => api.get<OdpUtilResponse>("/odps/utilization"),
-    staleTime: 0,            // selalu anggap stale — paksa fetch jika di-invalidate
+    staleTime: 0,            // selalu anggap stale - paksa fetch jika di-invalidate
     refetchOnMount: true,    // fetch ulang setiap komponen mount
     refetchInterval: 15000,  // auto-refresh tiap 15 detik (real-time feel)
   });

@@ -1,23 +1,23 @@
-# Spec — Chatwoot Assign & Resolve from Workspace — Batch 2e (optional)
+# Spec - Chatwoot Assign & Resolve from Workspace - Batch 2e (optional)
 
 > **Date**: 2026-06-13 · **Status**: Approved design, pre-plan
 > **Parent**: Optional follow-up to 2a (Communications read) + 2c (agent list) + 2d (reply). Lets staff change a conversation's status and assignee from inside Workspace.
 
 ## Goal
 
-From the conversation thread (in `/communications` and the customer "Komunikasi" section): change conversation **status** (Open / Pending / Resolved) and **assign/unassign** an agent — without leaving Workspace. Tenant-isolated.
+From the conversation thread (in `/communications` and the customer "Komunikasi" section): change conversation **status** (Open / Pending / Resolved) and **assign/unassign** an agent - without leaving Workspace. Tenant-isolated.
 
 ## Decisions (locked)
 
-1. Statuses: **open / pending / resolved** (skip "snoozed" — needs a time picker; deferred).
+1. Statuses: **open / pending / resolved** (skip "snoozed" - needs a time picker; deferred).
 2. Assign uses the account's agents (reuse 2c `listAgents` + `AgentSelector`); unassign supported.
 3. **Permission**: `chatwoot` **write**. Read-only users keep the read view; controls hidden without write.
 4. Reflect current assignee in the selector → add `assigneeId` to the conversation summary DTO.
 5. Refresh by invalidating the conversation list queries after a change.
 
 ## Consistency with Memory
-- [[project-chatwoot-integration]] — extends 2a/2c/2d; reuse `chatwootRequest` (account-scoped → isolation), `mapConversation`, `AgentSelector`, `useChatwootAgents`. GREP first.
-- [[reference-api-response-envelope]] — `sendSuccess`/`sendError`.
+- [[project-chatwoot-integration]] - extends 2a/2c/2d; reuse `chatwootRequest` (account-scoped → isolation), `mapConversation`, `AgentSelector`, `useChatwootAgents`. GREP first.
+- [[reference-api-response-envelope]] - `sendSuccess`/`sendError`.
 - `req.params` values are `string|string[]` → wrap `String(...)`.
 
 ## 1. Pure mapper change (`shared/chatwootMappers.ts` + test)
@@ -38,7 +38,7 @@ Both: `requireAuth` → `hasWritePermission(req,"chatwoot")`; Chatwoot disabled 
 
 ## 4. Frontend
 - `client/lib/chatwoot.ts`: `setConversationStatus(id, status)`, `assignConversation(id, assigneeId|null)`.
-- `client/hooks/useChatwoot.ts`: `useSetConversationStatus()` / `useAssignConversation()` — mutations; `onSuccess` invalidate `["chatwoot-conversations"]` + `["chatwoot-customer-conversations"]` (both lists carry the summary).
+- `client/hooks/useChatwoot.ts`: `useSetConversationStatus()` / `useAssignConversation()` - mutations; `onSuccess` invalidate `["chatwoot-conversations"]` + `["chatwoot-customer-conversations"]` (both lists carry the summary).
 - `client/components/chatwoot/ConversationThread.tsx`: accept optional `conversation?: ConversationSummary`. When present **and** `chatwoot` write + Chatwoot configured, render header controls:
   - **Status**: three small buttons (Open/Pending/Resolved), current highlighted via `conversation.status`; click → `setStatus`.
   - **Assign**: `AgentSelector` (agents from `useChatwootAgents`), value = `String(conversation.assigneeId)`; change → `assign(id, agentId|null)`.
@@ -66,6 +66,6 @@ Account-scoped token; `chatwoot` write gate (server + UI-hidden); audited; no to
 - Snoozed status (needs time), labels on conversation, priority, bulk status/assign, optimistic updates.
 
 ## 8. Open risks
-- **Chatwoot `toggle_status` body** — some versions toggle (ignore `status`), others honor `{status}`. Verify; if toggle-only, may need the status-specific param or `custom` endpoint — isolate in `setConversationStatus`.
-- **`assignments` body** — `{assignee_id}` (0/null to unassign) is standard; verify unassign behavior.
-- **assigneeId presence** in `meta.assignee` — may be absent for unassigned; mapper returns null (selector shows empty).
+- **Chatwoot `toggle_status` body** - some versions toggle (ignore `status`), others honor `{status}`. Verify; if toggle-only, may need the status-specific param or `custom` endpoint - isolate in `setConversationStatus`.
+- **`assignments` body** - `{assignee_id}` (0/null to unassign) is standard; verify unassign behavior.
+- **assigneeId presence** in `meta.assignee` - may be absent for unassigned; mapper returns null (selector shows empty).

@@ -2,24 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** When a card enters a trigger stage, auto-create a card in a target pipeline/stage — once per source card — configured by no-code rules per pipeline.
+**Goal:** When a card enters a trigger stage, auto-create a card in a target pipeline/stage - once per source card - configured by no-code rules per pipeline.
 
-**Architecture:** Two new tables (`pipeline_rules`, `pipeline_rule_fires`) created on startup. A pure rule-matcher + a `runStageEnterAutomations` service invoked from the card create/move routes after the mutation (Approach A — loop-safe: engine-created cards don't re-trigger). Rule CRUD endpoints gated by P3 edit-access (+ target-pipeline access check). React rule-builder dialog.
+**Architecture:** Two new tables (`pipeline_rules`, `pipeline_rule_fires`) created on startup. A pure rule-matcher + a `runStageEnterAutomations` service invoked from the card create/move routes after the mutation (Approach A - loop-safe: engine-created cards don't re-trigger). Rule CRUD endpoints gated by P3 edit-access (+ target-pipeline access check). React rule-builder dialog.
 
 **Tech Stack:** Node 20 · Express 5 · Drizzle ORM (MySQL) · React 18 · TS · TanStack Query 5 · Tailwind/shadcn. Tests: `node:test` (`npx tsx --test`).
 
 **Spec:** `docs/superpowers/specs/2026-06-04-pipelines-automation-design.md`
 
 **CRITICAL conventions (prior-phase lessons):**
-- Every endpoint responds via `sendSuccess(res, data)` — never raw `res.json`.
-- New TABLES via startup `CREATE TABLE IF NOT EXISTS` in `server/storage.ts` (NOT db:push). (No new columns here, so the `ADD COLUMN IF NOT EXISTS` gotcha doesn't apply — but never use that syntax.)
+- Every endpoint responds via `sendSuccess(res, data)` - never raw `res.json`.
+- New TABLES via startup `CREATE TABLE IF NOT EXISTS` in `server/storage.ts` (NOT db:push). (No new columns here, so the `ADD COLUMN IF NOT EXISTS` gotcha doesn't apply - but never use that syntax.)
 - Every storage query filters `mitraId = getMitraId()`.
-- Automation must NEVER break the user's card action — wrap the service in try/catch, log, swallow.
+- Automation must NEVER break the user's card action - wrap the service in try/catch, log, swallow.
 - Loop-safety: the service is called ONLY from the user-facing create/move routes, never from the engine's own `createCard` → engine-created cards don't cascade.
 
 **Verified anchor points:**
-- Create card route: `server/routes.ts` `router.post("/api/pipelines/:id/cards", ...)` — returns `card`, after `storage.createCard(...)` + `notifyPipelineCardWatchers(...)`, before `sendSuccess(res, card)`.
-- Move card route: `router.post("/api/pipelines/cards/:cardId/move", ...)` — has `cardForGuard` (pre-move) and `card` (post-move) inside a try; stage changed iff `cardForGuard.stageId !== Number(toStageId)`.
+- Create card route: `server/routes.ts` `router.post("/api/pipelines/:id/cards", ...)` - returns `card`, after `storage.createCard(...)` + `notifyPipelineCardWatchers(...)`, before `sendSuccess(res, card)`.
+- Move card route: `router.post("/api/pipelines/cards/:cardId/move", ...)` - has `cardForGuard` (pre-move) and `card` (post-move) inside a try; stage changed iff `cardForGuard.stageId !== Number(toStageId)`.
 - `storage.createCard(pipelineId, { stageId, title, description?, assigneeId?, priority?, dueDate?, tags? }, userId)` returns the new card.
 - P3 resolver `getPipelineLevel(req, pipelineId)` + guard `requirePipelineEdit(req, res, pipelineId)` exist (module scope in routes.ts).
 
@@ -40,11 +40,11 @@
 
 ---
 
-## Task 1: Schema — rule tables + types + startup migration
+## Task 1: Schema - rule tables + types + startup migration
 
 **Files:** Modify `shared/schema.ts`, `server/storage.ts`.
 
-- [ ] **Step 1: schema.ts** — after the Phase-3 `pipelineAccess` block, add:
+- [ ] **Step 1: schema.ts** - after the Phase-3 `pipelineAccess` block, add:
 ```ts
 export const pipelineRules = mysqlTable("pipeline_rules", {
   id: int("id").autoincrement().primaryKey(),
@@ -81,9 +81,9 @@ export type PipelineRuleFire = typeof pipelineRuleFires.$inferSelect;
 export type PipelineRuleActionType = "create_card";
 ```
 
-- [ ] **Step 2: storage.ts startup migration** — after the Phase-3 `pipeline_access` CREATE TABLE try/catch (search `pipelines RBAC setup failed` — note the Phase-3 hotfix split it into TWO try/catch blocks; add after the `pipeline_access` one), add:
+- [ ] **Step 2: storage.ts startup migration** - after the Phase-3 `pipeline_access` CREATE TABLE try/catch (search `pipelines RBAC setup failed` - note the Phase-3 hotfix split it into TWO try/catch blocks; add after the `pipeline_access` one), add:
 ```ts
-    // Pipelines Phase 4a — automation rules. Additive, idempotent.
+    // Pipelines Phase 4a - automation rules. Additive, idempotent.
     try {
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS pipeline_rules (
@@ -174,7 +174,7 @@ test("buildTargetTitle caps at 255 chars", () => {
 
 - [ ] **Step 3: implement** (`server/pipeline-automation-helpers.ts`):
 ```ts
-/** Pure helpers for pipeline automation — no DB. */
+/** Pure helpers for pipeline automation - no DB. */
 import type { PipelineRule } from "../shared/schema.js";
 
 export function matchStageEnterRules(rules: PipelineRule[], stageId: number): PipelineRule[] {
@@ -196,7 +196,7 @@ git commit -m "feat(pipelines): automation pure helpers with tests"
 
 ---
 
-## Task 3: Storage — rule CRUD + dedup
+## Task 3: Storage - rule CRUD + dedup
 
 **Files:** Modify `server/storage.ts` (extend schema import with `pipelineRules, pipelineRuleFires, type PipelineRule, type PipelineRuleFire`; append methods to the pipelines section).
 
@@ -256,7 +256,7 @@ git commit -m "feat(pipelines): automation pure helpers with tests"
     const mitraId = getMitraId();
     try {
       await this.db.insert(pipelineRuleFires).values({ mitraId, ruleId, sourceCardId, firedAt: new Date().toISOString() } as any);
-    } catch { /* unique constraint race — already recorded, ignore */ }
+    } catch { /* unique constraint race - already recorded, ignore */ }
   }
 ```
 
@@ -418,7 +418,7 @@ git commit -m "feat(pipelines): client hooks for automation rules"
 
 ---
 
-## Task 7: Frontend — PipelineRulesDialog + board button
+## Task 7: Frontend - PipelineRulesDialog + board button
 
 **Files:** Create `client/components/pipelines/PipelineRulesDialog.tsx`; modify `client/pages/PipelineBoardPage.tsx`.
 
@@ -510,7 +510,7 @@ export function PipelineRulesDialog({ pipelineId, open, onClose }: { pipelineId:
   );
 }
 ```
-> Verify `Combobox.onChange` arity (Phase 2/3 used `(v) => ...`), `Switch`, `Button.leftIcon/loading`, `Dialog` exports — adapt to the real props if needed.
+> Verify `Combobox.onChange` arity (Phase 2/3 used `(v) => ...`), `Switch`, `Button.leftIcon/loading`, `Dialog` exports - adapt to the real props if needed.
 
 - [ ] **Step 2: board button.** In `client/pages/PipelineBoardPage.tsx`:
   - import: `import { PipelineRulesDialog } from "@/components/pipelines/PipelineRulesDialog";`
@@ -543,7 +543,7 @@ git commit -m "feat(pipelines): automation rule-builder dialog + board button"
   - Try to add a rule targeting a pipeline you can't access (as a restricted non-admin) → 403.
   - Force an automation failure (e.g. rule whose target stage was deleted) → the card move STILL succeeds (automation swallowed, logged).
   - Cross-mitra: another mitra never sees/fires these rules.
-- [ ] **Step 4: whole-implementation review** (final reviewer). MUST verify: (a) automation service is called ONLY from create/move routes, never from storage (no cascade); (b) try/catch makes automation never break the card action; (c) once-per-card dedup works (unique index + hasRuleFired); (d) sendSuccess on all rule endpoints; (e) startup CREATE TABLE present for both tables; (f) tenant isolation on all rule/fire queries; (g) target-pipeline access validated at rule create/update; (h) move only fires on actual stage change. Then STOP — user merges to dev, pushes, restarts dev app, tests; prod only on explicit OK.
+- [ ] **Step 4: whole-implementation review** (final reviewer). MUST verify: (a) automation service is called ONLY from create/move routes, never from storage (no cascade); (b) try/catch makes automation never break the card action; (c) once-per-card dedup works (unique index + hasRuleFired); (d) sendSuccess on all rule endpoints; (e) startup CREATE TABLE present for both tables; (f) tenant isolation on all rule/fire queries; (g) target-pipeline access validated at rule create/update; (h) move only fires on actual stage change. Then STOP - user merges to dev, pushes, restarts dev app, tests; prod only on explicit OK.
 
 ---
 

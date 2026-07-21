@@ -1,4 +1,4 @@
-# JABNET Workspace — Design System
+# JABNET Workspace - Design System
 
 > **Versi:** v4.1.11 · **Tema:** Fiber Operations Premium · **Updated:** 2026-04-23
 
@@ -9,10 +9,10 @@
 **Target perception:** "setara Biznet Home, Indihome Smart, Vodafone Business, Telkomsel MyAds Pro"
 
 Prinsip design:
-- **Clarity first** — data telco padat tapi scannable
-- **Operational confidence** — status visual selalu visible (traffic lights)
-- **Professional restraint** — gradient dipakai untuk accent, bukan dekorasi
-- **Mobile parity** — field tech harus bisa pakai full dengan satu tangan
+- **Clarity first** - data telco padat tapi scannable
+- **Operational confidence** - status visual selalu visible (traffic lights)
+- **Professional restraint** - gradient dipakai untuk accent, bukan dekorasi
+- **Mobile parity** - field tech harus bisa pakai full dengan satu tangan
 
 ---
 
@@ -22,37 +22,37 @@ Prinsip design:
 Semua warna dari CSS custom properties di [client/index.css](../client/index.css), auto-adaptif light/dark.
 
 **Brand & Neutral**
-- `primary` — Sky 500 (brand anchor) · `sidebar` — Navy 900 (deep)
+- `primary` - Sky 500 (brand anchor) · `sidebar` - Navy 900 (deep)
 - `background`, `foreground`, `card`, `muted`, `border`, `input`
 
 **Semantic Status**
-- `success` — Emerald (operational, active, paid)
-- `warning` — Amber (degraded, pending, attention)
-- `destructive` — Red (outage, isolir, critical)
-- `info` — Sky (informational)
+- `success` - Emerald (operational, active, paid)
+- `warning` - Amber (degraded, pending, attention)
+- `destructive` - Red (outage, isolir, critical)
+- `info` - Sky (informational)
 
-**Chart Palette** (`--chart-1` … `--chart-8`): sky, emerald, amber, violet, red, teal, orange, purple — perceptually distinct.
+**Chart Palette** (`--chart-1` … `--chart-8`): sky, emerald, amber, violet, red, teal, orange, purple - perceptually distinct.
 
 **Asset Topology** (`bg-asset-pop`, `asset-odc`, `asset-odp`, `asset-pole`, `asset-cable`): konsisten di peta, sidebar, list, bottom sheet.
 
 ### 2.2 Typography
 - **Sans:** Inter 400-900 + font-feature cv11, ss01, ss03
 - **Mono:** JetBrains Mono untuk IDs, kode, timestamp
-- **Tracking:** -0.025em (h1), -0.02em (h2), -0.015em (h3) — display tracking untuk presentasi enterprise
+- **Tracking:** -0.025em (h1), -0.02em (h2), -0.015em (h3) - display tracking untuk presentasi enterprise
 - **Tabular nums:** otomatis pada text-bold/black untuk KPI
 
 ### 2.3 Elevation
-- `shadow-elev-sm` — list cards
-- `shadow-elev-md` — interactive hover, dialogs, user menu
-- `shadow-elev-lg` — modals, FAB
+- `shadow-elev-sm` - list cards
+- `shadow-elev-md` - interactive hover, dialogs, user menu
+- `shadow-elev-lg` - modals, FAB
 
 ### 2.4 Utility Classes
-- `.text-gradient-brand` — sky → blue → violet gradient
-- `.bg-grid-pattern` / `.bg-dot-pattern` / `.bg-mesh` — hero sections
-- `.shine-effect` — CTA button shimmer
-- `.pulse-ring-success/warning/danger` — live indicators
-- `.font-mono-tight` — tight mono for IDs
-- `.surface-elevated` / `.surface-elevated-hover` — premium cards
+- `.text-gradient-brand` - sky → blue → violet gradient
+- `.bg-grid-pattern` / `.bg-dot-pattern` / `.bg-mesh` - hero sections
+- `.shine-effect` - CTA button shimmer
+- `.pulse-ring-success/warning/danger` - live indicators
+- `.font-mono-tight` - tight mono for IDs
+- `.surface-elevated` / `.surface-elevated-hover` - premium cards
 
 ---
 
@@ -100,29 +100,29 @@ Dibuat khusus untuk tema telco.
 
 ### 4.1 Desktop
 ```
-┌────────────┬─────────────────────────────────────┐
-│            │ TopBar: breadcrumb · search · 🟢🟢🟢 · 🔔 · 🌙 · 👤 │
-│  Sidebar   ├─────────────────────────────────────┤
-│  (navy     │                                     │
-│   gradient │  Content area (dot pattern bg)      │
-│   header,  │                                     │
-│   groups,  │                                     │
-│   profile, │                                     │
-│   version) │                                     │
-└────────────┴─────────────────────────────────────┘
++------------+-------------------------------------+
+|            | TopBar: breadcrumb · search ·  ·  ·  ·  |
+|  Sidebar   +-------------------------------------+
+|  (navy     |                                     |
+|   gradient |  Content area (dot pattern bg)      |
+|   header,  |                                     |
+|   groups,  |                                     |
+|   profile, |                                     |
+|   version) |                                     |
++------------+-------------------------------------+
 ```
 
 ### 4.2 Mobile
 ```
-┌─────────────────────────────┐
-│ TopBar: ≡ · Dashboard · 🔔 🌙 👤 │
-├─────────────────────────────┤
-│                             │
-│  Content area               │
-│                             │
-├─────────────────────────────┤
-│ Home · Peta · Aset · 👥 · 🔧 │ ← BottomNav
-└─────────────────────────────┘
++-----------------------------+
+| TopBar: ≡ · Dashboard ·    |
++-----------------------------+
+|                             |
+|  Content area               |
+|                             |
++-----------------------------+
+| Home · Peta · Aset ·  ·  | ← BottomNav
++-----------------------------+
 ```
 Hamburger buka sidebar full-height overlay. Aset/Tools buka BottomSheet.
 
@@ -184,7 +184,7 @@ Sidebar + BottomNav toggle di `md`. Hero split-pane di `lg`. Traffic lights di T
 <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-sm">
   <p className="text-[11px] text-slate-500 uppercase">Port Tersedia</p>
   <h3 className="text-2xl font-black">1,234</h3>
-  <span className="text-emerald-600">🟢 Longgar</span>
+  <span className="text-emerald-600"> Longgar</span>
 </div>
 ```
 
@@ -205,23 +205,23 @@ Dark mode adaptif, konsisten di seluruh app, trend indicator built-in, loading s
 
 ## 9. Roadmap Phase 3 (Future)
 
-- **Command Palette** (Cmd+K) — fuzzy search routes + entities
-- **DataTable** — sortable, paginated, virtualized (react-table + react-virtual)
-- **FormField** — wrapper react-hook-form + zod schema + error UI
-- **Combobox** — searchable select (untuk ODP/router selection)
-- **RadioGroup / CheckboxGroup** — semantic form inputs
-- **Tabs** — shadcn radix tabs (untuk split forms)
-- **Timeline** — vertical timeline for audit logs / activity
+- **Command Palette** (Cmd+K) - fuzzy search routes + entities
+- **DataTable** - sortable, paginated, virtualized (react-table + react-virtual)
+- **FormField** - wrapper react-hook-form + zod schema + error UI
+- **Combobox** - searchable select (untuk ODP/router selection)
+- **RadioGroup / CheckboxGroup** - semantic form inputs
+- **Tabs** - shadcn radix tabs (untuk split forms)
+- **Timeline** - vertical timeline for audit logs / activity
 
 ---
 
 ## 10. File Index
 
 **Design tokens**
-- [client/index.css](../client/index.css) — CSS variables, utilities, patterns, animations
-- [tailwind.config.ts](../tailwind.config.ts) — color mapping, fonts, spacing
-- [client/lib/chartColors.ts](../client/lib/chartColors.ts) — Recharts color utility
-- [client/lib/assetColors.ts](../client/lib/assetColors.ts) — Map marker colors
+- [client/index.css](../client/index.css) - CSS variables, utilities, patterns, animations
+- [tailwind.config.ts](../tailwind.config.ts) - color mapping, fonts, spacing
+- [client/lib/chartColors.ts](../client/lib/chartColors.ts) - Recharts color utility
+- [client/lib/assetColors.ts](../client/lib/assetColors.ts) - Map marker colors
 
 **Components**
 - [client/components/ui/button.tsx](../client/components/ui/button.tsx)
@@ -244,9 +244,9 @@ Dark mode adaptif, konsisten di seluruh app, trend indicator built-in, loading s
 - [client/components/shared/BottomSheet.tsx](../client/components/shared/BottomSheet.tsx)
 
 **Pages (fully adopted)**
-- [client/pages/LoginPage.tsx](../client/pages/LoginPage.tsx) — premium hero, gradient CTA
-- [client/pages/Dashboard.tsx](../client/pages/Dashboard.tsx) — PageHeader + StatTile + theme-aware charts
+- [client/pages/LoginPage.tsx](../client/pages/LoginPage.tsx) - premium hero, gradient CTA
+- [client/pages/Dashboard.tsx](../client/pages/Dashboard.tsx) - PageHeader + StatTile + theme-aware charts
 
 ---
 
-_Design System versi v4.1.11 — fondasi siap untuk scale ke 50+ halaman._
+_Design System versi v4.1.11 - fondasi siap untuk scale ke 50+ halaman._

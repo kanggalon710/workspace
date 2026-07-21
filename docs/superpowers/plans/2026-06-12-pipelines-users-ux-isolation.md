@@ -1,4 +1,4 @@
-# Pipelines & Users — UX + Isolation Fixes Implementation Plan
+# Pipelines & Users - UX + Isolation Fixes Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -17,23 +17,23 @@
 
 ---
 
-## Background facts (verified in code — do not re-derive)
+## Background facts (verified in code - do not re-derive)
 
-- `isSystemAdmin(req)` — `server/routes.ts:399`: true for System-Admin role at mitra 1 (+ legacy JABNET admin). Top-level function, hoisted, usable anywhere in routes.ts.
-- `isPipelineAdmin(req)` — `server/routes.ts:4424`: already grants full pipeline control to roleName `"Admin" | "Administrator" | "System-Admin"`; `resolvePipelineCapabilities` (`shared/pipelineCapabilities.ts:56`) returns ALL capabilities when `isAdmin` — so restricted grants **already cannot reduce** an admin server-side. Requirement #4 only needs: (a) UI lock in PipelineAccessDialog, (b) server strips stored grants for those roles, (c) `canUserAccessPipeline` alignment.
-- `canUserAccessPipeline` — `server/storage.ts:2510`: special-cases only `"System-Admin"` / `"admin (legacy)"`, NOT `"Admin"` → mitra Admin can't be assign-target on restricted pipelines (inconsistent).
+- `isSystemAdmin(req)` - `server/routes.ts:399`: true for System-Admin role at mitra 1 (+ legacy JABNET admin). Top-level function, hoisted, usable anywhere in routes.ts.
+- `isPipelineAdmin(req)` - `server/routes.ts:4424`: already grants full pipeline control to roleName `"Admin" | "Administrator" | "System-Admin"`; `resolvePipelineCapabilities` (`shared/pipelineCapabilities.ts:56`) returns ALL capabilities when `isAdmin` - so restricted grants **already cannot reduce** an admin server-side. Requirement #4 only needs: (a) UI lock in PipelineAccessDialog, (b) server strips stored grants for those roles, (c) `canUserAccessPipeline` alignment.
+- `canUserAccessPipeline` - `server/storage.ts:2510`: special-cases only `"System-Admin"` / `"admin (legacy)"`, NOT `"Admin"` → mitra Admin can't be assign-target on restricted pipelines (inconsistent).
 - Per-mitra Admin role: `seedAdminRoleForMitra` (`server/storage.ts:7983`) creates `name: "Admin"`, `isSystem: 1`.
 - Board denial: `GET /api/pipelines/:id` → `requirePipelineView` sends 403 `"Akses ditolak untuk pipeline ini"`; cross-tenant id → `getPipeline` mitra-scoped → 404 `"Pipeline tidak ditemukan"`. `apiFetch` (`client/lib/api.ts:38`) throws → query goes to `error` after 1 retry (`client/lib/queryClient.ts:11`). `PipelineBoardPage` ignores `error` → title stuck `"Memuat…"` (line 166) while `BoardFilters` (line 222) renders unconditionally → the reported partial UI.
 - `GET /api/users` (`server/routes.ts:1623`): sysadmin sees ALL users unconditionally today; non-sysadmin filtered via `getUserIdsInMitra`. Response already includes `mitraNames[]` per user; `UserRow` already renders mitra chips (UsersPage.tsx:422).
 - Isolation gaps (verified, only `requireAdmin`-guarded, no target-user mitra check): `PUT /api/users/:id` (1766), `DELETE /api/users/:id` (1861), `GET /api/users/:id/activity` (1875), `GET /api/users/:id/stats` (1890), `POST /api/users/bulk-action` (1900), `GET /api/roles/:id/users` (1978). Also `PUT /api/users/:id` accepts any `roleId` with NO mitra check (POST create has one), and bulk `set_role` likewise.
 - Role label bug: `TopBar.tsx:338,347` render `{user.role}` (legacy `users.role` text, default `"operator"`); `ProfilePage.tsx:389` keys `ROLE_CONFIG` by `me?.role || user?.role || "operator"`. Both `/api/auth/login` and `/api/auth/me` already return `roleName` (routes.ts:753); `AuthContext` already has `roleName?: string`. `ProfilePage`'s `MeResponse` interface (line 20) lacks `roleName`.
-- CardDetailModal ALREADY has click-based "Pindah Stage" chips (CardDetailModal.tsx:~153-174) — requirement 1's "pindah dari detail kartu" is done; remaining: per-card quick action + auto-scroll.
-- `BoardCard` is `React.memo` with stable id-based callbacks — new props must keep stable identities (use a ref for the mutations object; `pipeline.stages` is reference-stable from the query cache once loaded).
+- CardDetailModal ALREADY has click-based "Pindah Stage" chips (CardDetailModal.tsx:~153-174) - requirement 1's "pindah dari detail kartu" is done; remaining: per-card quick action + auto-scroll.
+- `BoardCard` is `React.memo` with stable id-based callbacks - new props must keep stable identities (use a ref for the mutations object; `pipeline.stages` is reference-stable from the query cache once loaded).
 - shadcn primitives available: `dropdown-menu.tsx` (DropdownMenu/Trigger/Content/Item/Label), `switch.tsx`, `empty-state.tsx` (`action?: { label: string; onClick: () => void }`).
 
 ---
 
-### Task 1: Role label fix — navbar + profile (#5)
+### Task 1: Role label fix - navbar + profile (#5)
 
 **Files:**
 - Create: `client/lib/roleLabel.ts`
@@ -79,7 +79,7 @@ Expected: FAIL (Cannot find module './roleLabel.js')
 // client/lib/roleLabel.ts
 /** Display label for a user's role: prefer the dynamic role name (roles.name via
  *  roleName from /auth/me|login), fall back to the legacy users.role text.
- *  Never invents a default — callers decide their own fallback. */
+ *  Never invents a default - callers decide their own fallback. */
 export function roleLabel(
   u: { roleName?: string | null; role?: string | null } | null | undefined,
 ): string {
@@ -149,7 +149,7 @@ with:
   const roleInfo = ROLE_CONFIG[roleKey as keyof typeof ROLE_CONFIG]
     ?? { label: roleKey, color: "text-blue-600 dark:text-blue-400", icon: Shield, desc: "" };
 ```
-(`Shield` is already imported in this file — verify; if not, add to the lucide import.)
+(`Shield` is already imported in this file - verify; if not, add to the lucide import.)
 
 (d) Line ~527, guard the desc paragraph so an empty desc doesn't render an empty italic line. Replace:
 ```tsx
@@ -166,7 +166,7 @@ with:
               )}
 ```
 
-Note: lines 486, 504, 687 already render `{roleInfo.label}` — they're now correct via the new `roleInfo`. Do NOT touch `BottomNav.tsx:59` — that's navigation-grouping logic on the legacy field, not a display label (changing it changes which tabs show).
+Note: lines 486, 504, 687 already render `{roleInfo.label}` - they're now correct via the new `roleInfo`. Do NOT touch `BottomNav.tsx:59` - that's navigation-grouping logic on the legacy field, not a display label (changing it changes which tabs show).
 
 - [ ] **Step 7: Verify + commit**
 
@@ -181,7 +181,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 2: Stage name display — no aggressive truncation (#2)
+### Task 2: Stage name display - no aggressive truncation (#2)
 
 **Files:**
 - Modify: `client/components/pipelines/StageColumn.tsx:136`
@@ -202,7 +202,7 @@ with:
         </span>
 ```
 
-Rationale: `line-clamp-2` keeps long names readable ("FOLLOW UP TELEPON KE-2" fits 2 lines) instead of `FOLLOW UP TELEP…`; `title` gives the full name on hover (desktop). Mobile sees the same 2-line clamp — consistent. `min-w-0` keeps the flex row from overflowing; header icons all have `shrink-0` already.
+Rationale: `line-clamp-2` keeps long names readable ("FOLLOW UP TELEPON KE-2" fits 2 lines) instead of `FOLLOW UP TELEP…`; `title` gives the full name on hover (desktop). Mobile sees the same 2-line clamp - consistent. `min-w-0` keeps the flex row from overflowing; header icons all have `shrink-0` already.
 
 - [ ] **Step 2: Verify + commit**
 
@@ -242,9 +242,9 @@ import { ShieldAlert } from "lucide-react";
 ```
 (Add `ShieldAlert` to the existing lucide-react import on line 21.)
 
-Immediately BEFORE the main `return (` (line 156) — after all hooks, so hook order is safe — insert:
+Immediately BEFORE the main `return (` (line 156) - after all hooks, so hook order is safe - insert:
 ```tsx
-  // Akses ditolak / pipeline tidak ditemukan (403/404 dari server) — jangan render
+  // Akses ditolak / pipeline tidak ditemukan (403/404 dari server) - jangan render
   // board parsial atau menggantung di "Memuat…". Data inti tetap tersembunyi.
   if (pipelineError) {
     return (
@@ -314,7 +314,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 4: DnD UX — per-card quick move + edge auto-scroll (#1)
+### Task 4: DnD UX - per-card quick move + edge auto-scroll (#1)
 
 **Files:**
 - Create: `client/components/pipelines/dragScroll.ts`
@@ -389,7 +389,7 @@ export function edgeScrollDelta(
 Run: `npx tsx --test client/components/pipelines/dragScroll.test.ts`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: BoardCard — quick "Pindah ke stage" dropdown + keyboard guard**
+- [ ] **Step 5: BoardCard - quick "Pindah ke stage" dropdown + keyboard guard**
 
 In `client/components/pipelines/BoardCard.tsx`:
 
@@ -401,7 +401,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 ```
 
-(b) Extend the props (both the destructure and the type) — after `onToggleCard`:
+(b) Extend the props (both the destructure and the type) - after `onToggleCard`:
 ```ts
   onToggleCard,
   stages,
@@ -411,12 +411,12 @@ import {
   onToggleCard?: (id: number) => void;
   /** Quick-move alternatif drag: daftar stage pipeline (referensi stabil dari query cache). */
   stages?: { id: number; label: string; color: string | null }[];
-  /** Stable callback (ref-backed di page) — memo BoardCard tetap berlaku. */
+  /** Stable callback (ref-backed di page) - memo BoardCard tetap berlaku. */
   onMoveCard?: (cardId: number, stageId: number) => void;
 }
 ```
 
-(c) Keyboard guard — inner dropdown trigger must not also open the card. Replace the Card's `onKeyDown`:
+(c) Keyboard guard - inner dropdown trigger must not also open the card. Replace the Card's `onKeyDown`:
 ```tsx
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -490,7 +490,7 @@ with:
 
 Memo note: `stages` (query-cache object, stable post-load) and `onMoveCard` (ref-backed useCallback, Step 7) keep `React.memo(BoardCard)` effective.
 
-- [ ] **Step 6: StageColumn — pass-through + vertical auto-scroll**
+- [ ] **Step 6: StageColumn - pass-through + vertical auto-scroll**
 
 In `client/components/pipelines/StageColumn.tsx`:
 
@@ -504,7 +504,7 @@ In `client/components/pipelines/StageColumn.tsx`:
 }: {
   ...
   onToggleStage?: (ids: number[], on: boolean) => void;
-  /** Untuk quick-move BoardCard — daftar stage + callback stabil (diteruskan apa adanya). */
+  /** Untuk quick-move BoardCard - daftar stage + callback stabil (diteruskan apa adanya). */
   stages?: { id: number; label: string; color: string | null }[];
   onMoveCard?: (cardId: number, stageId: number) => void;
 }
@@ -515,7 +515,7 @@ In `client/components/pipelines/StageColumn.tsx`:
   const listRef = useRef<HTMLDivElement>(null);
 ```
 
-(d) The cards scroller (line ~266) — add ref + vertical auto-scroll while a CARD is dragged over a tall column. Replace:
+(d) The cards scroller (line ~266) - add ref + vertical auto-scroll while a CARD is dragged over a tall column. Replace:
 ```tsx
       <div className="flex-1 overflow-y-auto column-scrollbar space-y-2 pr-1 min-h-0">
 ```
@@ -539,7 +539,7 @@ with:
               onMoveCard={onMoveCard}
 ```
 
-- [ ] **Step 7: PipelineBoardPage — stable moveCardTo + horizontal auto-scroll**
+- [ ] **Step 7: PipelineBoardPage - stable moveCardTo + horizontal auto-scroll**
 
 In `client/pages/PipelineBoardPage.tsx`:
 
@@ -590,7 +590,7 @@ and declare the ref with the other state (near line 50):
               stages={stages}
               onMoveCard={moveCardTo}
 ```
-(`stages` here is `pipeline?.stages ?? []` — already reference-stable from the query cache once loaded; the `?? []` only churns pre-load when there are no cards anyway.)
+(`stages` here is `pipeline?.stages ?? []` - already reference-stable from the query cache once loaded; the `?? []` only churns pre-load when there are no cards anyway.)
 
 - [ ] **Step 8: Verify + commit**
 
@@ -606,18 +606,18 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 5: Admin & System-Admin — fixed full pipeline access (#4)
+### Task 5: Admin & System-Admin - fixed full pipeline access (#4)
 
 **Files:**
 - Modify: `shared/pipelineCapabilities.ts` (new `isAdminLockedRole`)
 - Modify: `shared/pipelineCapabilities.test.ts` (test for it)
-- Modify: `server/storage.ts:2510` (`canUserAccessPipeline` — include "Admin")
-- Modify: `server/routes.ts:5596` (PUT access — strip locked-role grants)
+- Modify: `server/storage.ts:2510` (`canUserAccessPipeline` - include "Admin")
+- Modify: `server/routes.ts:5596` (PUT access - strip locked-role grants)
 - Modify: `client/components/pipelines/PipelineAccessDialog.tsx` (locked rows UI)
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `shared/pipelineCapabilities.test.ts` (it already imports from `./pipelineCapabilities.js` — add `isAdminLockedRole` to that import):
+Append to `shared/pipelineCapabilities.test.ts` (it already imports from `./pipelineCapabilities.js` - add `isAdminLockedRole` to that import):
 
 ```ts
 test("isAdminLockedRole: system Admin/System-Admin locked, others not", () => {
@@ -642,7 +642,7 @@ Append to `shared/pipelineCapabilities.ts`:
 ```ts
 /** Roles whose pipeline access is FIXED at full and cannot be granted/reduced per-pipeline:
  *  the seeded per-mitra "Admin" and JABNET "System-Admin" (both isSystem). Mirrors the
- *  server-side isPipelineAdmin(req) short-circuit — grants for these roles are meaningless. */
+ *  server-side isPipelineAdmin(req) short-circuit - grants for these roles are meaningless. */
 export function isAdminLockedRole(role: { name?: string | null; isSystem?: number | null }): boolean {
   return (role.isSystem ?? 0) === 1 && (role.name === "Admin" || role.name === "System-Admin");
 }
@@ -661,28 +661,28 @@ In `server/storage.ts` (~line 2516), replace:
 ```
 with:
 ```ts
-    // "Admin" (per-mitra, isSystem) ikut full-access — mirror isPipelineAdmin di routes.
+    // "Admin" (per-mitra, isSystem) ikut full-access - mirror isPipelineAdmin di routes.
     if ((eff.roleName === "System-Admin" || eff.roleName === "Admin" || eff.roleName === "admin (legacy)") && eff.isSystem) return true;
 ```
 
-- [ ] **Step 6: Server — strip grants for locked roles on save**
+- [ ] **Step 6: Server - strip grants for locked roles on save**
 
-In `server/routes.ts`, the `PUT /api/pipelines/:id/access` handler (line 5596). After the `restricted/grants` validation and before `setPipelineAccess`, add the filter — replace:
+In `server/routes.ts`, the `PUT /api/pipelines/:id/access` handler (line 5596). After the `restricted/grants` validation and before `setPipelineAccess`, add the filter - replace:
 ```ts
     await storage.setPipelineAccess(Number(req.params.id), restricted, grants.map((g: any) => ({
 ```
 with:
 ```ts
-    // Admin/System-Admin akses-nya fixed full (isPipelineAdmin) — grant untuk mereka
+    // Admin/System-Admin akses-nya fixed full (isPipelineAdmin) - grant untuk mereka
     // tidak pernah dibaca dan hanya menyesatkan UI. Buang sebelum simpan.
     const mitraRoles = await storage.getRoles(req.authUser!.activeMitraId ?? 1);
     const lockedRoleIds = new Set(mitraRoles.filter((r: any) => isAdminLockedRole(r)).map((r: any) => r.id));
     const cleanGrants = grants.filter((g: any) => !lockedRoleIds.has(Number(g.roleId)));
     await storage.setPipelineAccess(Number(req.params.id), restricted, cleanGrants.map((g: any) => ({
 ```
-Add to the imports at the top of `server/routes.ts` (find the existing import from `../shared/pipelineCapabilities.js` — it already imports `PIPELINE_CAPABILITY_LABELS` etc. — and add `isAdminLockedRole`).
+Add to the imports at the top of `server/routes.ts` (find the existing import from `../shared/pipelineCapabilities.js` - it already imports `PIPELINE_CAPABILITY_LABELS` etc. - and add `isAdminLockedRole`).
 
-- [ ] **Step 7: Client — locked rows in PipelineAccessDialog**
+- [ ] **Step 7: Client - locked rows in PipelineAccessDialog**
 
 In `client/components/pipelines/PipelineAccessDialog.tsx`:
 
@@ -710,7 +710,7 @@ with:
                               </span>
                             </div>
                             <p className="text-[10px] text-muted-foreground mt-1">
-                              Role bawaan — selalu punya semua izin pipeline dan tidak bisa dikurangi.
+                              Role bawaan - selalu punya semua izin pipeline dan tidak bisa dikurangi.
                             </p>
                           </div>
                         );
@@ -731,7 +731,7 @@ with:
       .filter(([roleId, c]) => c.length > 0 && !lockedIds.has(Number(roleId)))
 ```
 
-(d) The `grantedCount` badge (line 83) should not count locked roles (they were never in `caps` from the server after Step 6, and stale rows get dropped) — leave as is.
+(d) The `grantedCount` badge (line 83) should not count locked roles (they were never in `caps` from the server after Step 6, and stale rows get dropped) - leave as is.
 
 - [ ] **Step 8: Verify + commit**
 
@@ -740,20 +740,20 @@ Manual: board → Akses → Admin & System-Admin rows show "Akses penuh (terkunc
 
 ```bash
 git add shared/pipelineCapabilities.ts shared/pipelineCapabilities.test.ts server/storage.ts server/routes.ts client/components/pipelines/PipelineAccessDialog.tsx
-git commit -m "feat(pipelines): Admin & System-Admin akses pipeline fixed full — terkunci di UI + server
+git commit -m "feat(pipelines): Admin & System-Admin akses pipeline fixed full - terkunci di UI + server
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-### Task 6: /users — JABNET cross-mitra toggle (#6)
+### Task 6: /users - JABNET cross-mitra toggle (#6)
 
 **Files:**
-- Modify: `server/routes.ts:1623` (`GET /api/users` — `?scope=cross` gate)
+- Modify: `server/routes.ts:1623` (`GET /api/users` - `?scope=cross` gate)
 - Modify: `client/pages/UsersPage.tsx` (toggle + scoped query)
 
-- [ ] **Step 1: Server — default mitra-scoped, opt-in cross for sysadmin**
+- [ ] **Step 1: Server - default mitra-scoped, opt-in cross for sysadmin**
 
 Replace the scoping block in `GET /api/users` (routes.ts:1626-1631):
 ```ts
@@ -769,7 +769,7 @@ with:
     let allUsers = await storage.getAllUsers();
     // Tenant isolation: DEFAULT semua admin (termasuk JABNET System-Admin) hanya lihat
     // user member mitra aktif. JABNET System-Admin boleh opt-in lintas mitra via
-    // ?scope=cross — di-honor server-side hanya untuk isSystemAdmin (mirror assignable-users).
+    // ?scope=cross - di-honor server-side hanya untuk isSystemAdmin (mirror assignable-users).
     const wantCross = req.query.scope === "cross" && isSystemAdmin(req);
     if (!wantCross && req.authUser!.activeMitraId) {
       const memberIds = await storage.getUserIdsInMitra(req.authUser!.activeMitraId);
@@ -777,7 +777,7 @@ with:
     }
 ```
 
-- [ ] **Step 2: Client — toggle (JABNET sysadmin only) + scoped queryKey**
+- [ ] **Step 2: Client - toggle (JABNET sysadmin only) + scoped queryKey**
 
 In `client/pages/UsersPage.tsx`:
 
@@ -785,12 +785,12 @@ In `client/pages/UsersPage.tsx`:
 
 (b) Near the other state (line ~95) add:
 ```ts
-  // Toggle lintas mitra — hanya JABNET System-Admin di mitra aktif 1. Default: JABNET saja.
+  // Toggle lintas mitra - hanya JABNET System-Admin di mitra aktif 1. Default: JABNET saja.
   const canCrossScope = !!currentUser?.isSystemAdmin && currentUser?.activeMitraId === 1;
   const [crossScope, setCrossScope] = useState(() => localStorage.getItem("users:crossScope") === "1");
   const scope = canCrossScope && crossScope ? "cross" : "own";
 ```
-(`currentUser` already exists via `useAuth()` in this component — it is referenced at line 175. If its declaration sits below line 95, move this block to just after that declaration.)
+(`currentUser` already exists via `useAuth()` in this component - it is referenced at line 175. If its declaration sits below line 95, move this block to just after that declaration.)
 
 (c) Replace the users query (lines 106-109):
 ```ts
@@ -806,7 +806,7 @@ with:
     queryFn: () => api.get<SafeUser[]>(`/users${scope === "cross" ? "?scope=cross" : ""}`),
   });
 ```
-(All existing `invalidateQueries({ queryKey: ["/api/users"] })` calls prefix-match both scopes — no change needed.)
+(All existing `invalidateQueries({ queryKey: ["/api/users"] })` calls prefix-match both scopes - no change needed.)
 
 (d) Add the toggle into the filter bar. In the `flex gap-2 overflow-x-auto...` Select group (line ~238), insert BEFORE the role `<Select>`:
 ```tsx
@@ -824,7 +824,7 @@ with:
               </label>
             )}
 ```
-(`UserRow` already renders per-user `mitraNames` chips — cross mode is self-explanatory. Mitra lain never sees the toggle: `canCrossScope` is false AND the server ignores `scope=cross` from non-sysadmins.)
+(`UserRow` already renders per-user `mitraNames` chips - cross mode is self-explanatory. Mitra lain never sees the toggle: `canCrossScope` is false AND the server ignores `scope=cross` from non-sysadmins.)
 
 - [ ] **Step 3: Verify + commit**
 
@@ -843,7 +843,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 7: User-endpoint tenant-isolation hardening (#7)
 
 **Files:**
-- Modify: `server/routes.ts` — new `requireUserInScope` helper (after `requireAdmin`, ~line 1605), applied to: `PUT /api/users/:id` (1766), `DELETE /api/users/:id` (1861), `GET /api/users/:id/activity` (1875), `GET /api/users/:id/stats` (1890), `POST /api/users/bulk-action` (1900), plus role-tenant checks in PUT + bulk `set_role`, plus `GET /api/roles/:id/users` (1978).
+- Modify: `server/routes.ts` - new `requireUserInScope` helper (after `requireAdmin`, ~line 1605), applied to: `PUT /api/users/:id` (1766), `DELETE /api/users/:id` (1861), `GET /api/users/:id/activity` (1875), `GET /api/users/:id/stats` (1890), `POST /api/users/bulk-action` (1900), plus role-tenant checks in PUT + bulk `set_role`, plus `GET /api/roles/:id/users` (1978).
 
 - [ ] **Step 1: Add the scope helper**
 
@@ -887,7 +887,7 @@ In each handler, right after `const id = parseInt(req.params.id as string);` (or
     if (!(await requireUserInScope(req, res, userId))) return;
 ```
 
-- [ ] **Step 3: PUT /api/users/:id — role tenant check (parity with POST create)**
+- [ ] **Step 3: PUT /api/users/:id - role tenant check (parity with POST create)**
 
 In the `roleId` block (line ~1810), replace:
 ```ts
@@ -899,14 +899,14 @@ with:
 ```ts
         const r = await storage.getRoleById(Number(roleId));
         if (!r) return sendError(res, "Role tidak ditemukan");
-        // Tenant isolation: hanya role milik mitra aktif (System-Admin boleh lintas) — parity dengan POST create.
+        // Tenant isolation: hanya role milik mitra aktif (System-Admin boleh lintas) - parity dengan POST create.
         if (r.mitraId !== (req.authUser!.activeMitraId ?? 1) && !req.authUser!.isSystemAdmin) {
           return sendError(res, "Role bukan milik mitra Anda", 403);
         }
         updateData.roleId = r.id;
 ```
 
-- [ ] **Step 4: bulk-action — scope the id list + set_role tenant check**
+- [ ] **Step 4: bulk-action - scope the id list + set_role tenant check**
 
 In `POST /api/users/bulk-action` (line ~1900), after the self-exclusion filter:
 ```ts
@@ -936,9 +936,9 @@ then change the loop + audit to use `scopedIds` instead of `filteredIds`:
     for (const id of scopedIds) {
 ```
 and in the audit call: `{ userIds: scopedIds, errors }`.
-(The per-item `if (!payload?.roleId) { errors.push(...) }` inside the loop can stay — the pre-check above already 400s before the loop when roleId is absent, keep both for safety.)
+(The per-item `if (!payload?.roleId) { errors.push(...) }` inside the loop can stay - the pre-check above already 400s before the loop when roleId is absent, keep both for safety.)
 
-- [ ] **Step 5: GET /api/roles/:id/users — role must belong to the active mitra**
+- [ ] **Step 5: GET /api/roles/:id/users - role must belong to the active mitra**
 
 In the handler (line ~1978), after `const roleId = parseInt(req.params.id as string);` add:
 ```ts
@@ -957,7 +957,7 @@ Manual (staging, after deploy): login as a non-JABNET mitra admin → `PUT/DELET
 
 ```bash
 git add server/routes.ts
-git commit -m "fix(users): tenant isolation — guard semua endpoint user-by-id, bulk-action, role assignment, roles/:id/users
+git commit -m "fix(users): tenant isolation - guard semua endpoint user-by-id, bulk-action, role assignment, roles/:id/users
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -974,15 +974,15 @@ Run: `npm run build` → success.
 
 - [ ] **Step 2: Acceptance criteria sweep** (map to user's list)
 
-1. ✅ Quick-move dropdown + edge auto-scroll (Task 4); drop indicator already existed (ring + "Drop di sini").
-2. ✅ Alternatif pindah stage: dropdown per kartu (Task 4) + chips di detail modal (sudah ada) + bulk move (sudah ada).
-3. ✅ Stage name clamp-2 + tooltip (Task 2).
-4. ✅ Board access-denied state, no stuck "Memuat…", no partial filters (Task 3).
-5. ✅ 403/404 server-side sudah ada (audit B); FE kini tidak merender data apa pun saat ditolak (Task 3).
-6. ✅ Admin/System-Admin fixed full access — server strip + UI lock + canUserAccessPipeline aligned (Task 5).
-7. ✅ Role asli tampil di navbar + profile (Task 1).
-8. ✅ Toggle JABNET-only ↔ semua mitra, default JABNET (Task 6).
-9. ✅ Mitra lain: tanpa toggle, server ignores `scope=cross` (Task 6).
-10. ✅ User-by-id/bulk/roles endpoints kini tenant-guarded (Task 7).
+1.  Quick-move dropdown + edge auto-scroll (Task 4); drop indicator already existed (ring + "Drop di sini").
+2.  Alternatif pindah stage: dropdown per kartu (Task 4) + chips di detail modal (sudah ada) + bulk move (sudah ada).
+3.  Stage name clamp-2 + tooltip (Task 2).
+4.  Board access-denied state, no stuck "Memuat…", no partial filters (Task 3).
+5.  403/404 server-side sudah ada (audit B); FE kini tidak merender data apa pun saat ditolak (Task 3).
+6.  Admin/System-Admin fixed full access - server strip + UI lock + canUserAccessPipeline aligned (Task 5).
+7.  Role asli tampil di navbar + profile (Task 1).
+8.  Toggle JABNET-only ↔ semua mitra, default JABNET (Task 6).
+9.  Mitra lain: tanpa toggle, server ignores `scope=cross` (Task 6).
+10.  User-by-id/bulk/roles endpoints kini tenant-guarded (Task 7).
 
-No DB schema changes in this plan — deploy is plain build + restart.
+No DB schema changes in this plan - deploy is plain build + restart.

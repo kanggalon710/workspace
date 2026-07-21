@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /** Glyphs per field type (registry is React-free, so icons are defined here and reused by callers). */
 export const FIELD_TYPE_ICONS: Record<string, string> = {
   text: "T", textarea: "¶", number: "#", currency: "Rp", date: "◷",
-  dropdown: "▾", multiselect: "☑", checkbox: "✓", user: "◍", phone: "☎", url: "↗",
+  dropdown: "▾", multiselect: "", checkbox: "✓", user: "◍", phone: "", url: "↗",
 };
 
 const GROUP_LABELS: Record<FieldTypeMeta["group"], string> = {
@@ -62,7 +62,7 @@ export function FieldTypePicker({
                   <span className="min-w-0">
                     <span className="block text-xs font-medium leading-tight truncate">{meta.label}</span>
                     <span className="block text-[10px] text-muted-foreground leading-tight">
-                      {allowed ? meta.description : "Sudah ada — hanya boleh 1 per pipeline"}
+                      {allowed ? meta.description : "Sudah ada - hanya boleh 1 per pipeline"}
                     </span>
                   </span>
                 </button>

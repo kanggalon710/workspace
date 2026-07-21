@@ -1,4 +1,4 @@
-# LP4b — Built-in "Lead" Pipeline Template — Implementation Plan
+# LP4b - Built-in "Lead" Pipeline Template - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -29,7 +29,7 @@ In `shared/pipelineTemplate.test.ts`, find the `built-in templates are well-form
   assert.ok(lead!.fields.some((f) => f.type === "coordinate"));
 ```
 
-- [ ] **Step 2: Run test — expect fail**
+- [ ] **Step 2: Run test - expect fail**
 
 Run: `npx tsx --test shared/pipelineTemplate.test.ts`
 Expected: FAIL (`Pipeline Lead` not found; length 4 < 5).
@@ -48,7 +48,7 @@ In `shared/pipelineTemplate.ts`, add this entry to the `BUILTIN_TEMPLATES` array
     ], rules: [] },
 ```
 
-- [ ] **Step 4: Run test — expect pass**
+- [ ] **Step 4: Run test - expect pass**
 
 Run: `npx tsx --test shared/pipelineTemplate.test.ts`
 Expected: PASS (existing + new assertions). Then `npx tsc --noEmit` → 0 errors.
@@ -83,14 +83,14 @@ Restart server → `seedBuiltinTemplates` inserts "Pipeline Lead" per mitra → 
 
 - [ ] **Step 4: Update memory**
 
-Update `memory/project-leads-pipeline-integration.md`: LP4b DONE on dev (belum push) — 1 built-in "Pipeline Lead" template in BUILTIN_TEMPLATES (reuses existing template engine); mark LP4b done in slice list.
+Update `memory/project-leads-pipeline-integration.md`: LP4b DONE on dev (belum push) - 1 built-in "Pipeline Lead" template in BUILTIN_TEMPLATES (reuses existing template engine); mark LP4b done in slice list.
 
 ---
 
-## Self-Review (penulis plan — sudah dijalankan)
+## Self-Review (penulis plan - sudah dijalankan)
 
-**Spec coverage:** §entri BUILTIN_TEMPLATES (stages+fields+rules:[])→T1 Step 3; §test count+shape→T1 Step 1; §auto-seed (no code — existing seedBuiltinTemplates)→by construction; §verify→T2. AC1-4 covered.
+**Spec coverage:** §entri BUILTIN_TEMPLATES (stages+fields+rules:[])→T1 Step 3; §test count+shape→T1 Step 1; §auto-seed (no code - existing seedBuiltinTemplates)→by construction; §verify→T2. AC1-4 covered.
 
 **Placeholder scan:** no TBD/TODO; full literal code for both the entry and the test.
 
-**Type consistency:** entry matches `TemplateDefinition` (pipeline/stages/fields/rules); `nowKeyStages([{label,color}])` → stages with key/position/description (existing helper). Field shape `{key,label,type,options,required,showOnCard,position,config}` matches existing entries. Test references `t.pipeline.name`/`stages`/`fields` — all present.
+**Type consistency:** entry matches `TemplateDefinition` (pipeline/stages/fields/rules); `nowKeyStages([{label,color}])` → stages with key/position/description (existing helper). Field shape `{key,label,type,options,required,showOnCard,position,config}` matches existing entries. Test references `t.pipeline.name`/`stages`/`fields` - all present.

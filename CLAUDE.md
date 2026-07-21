@@ -1,32 +1,32 @@
-# JABNET Workspace — Claude Handoff Memory
+# JABNET Workspace - Claude Handoff Memory
 
 > **One-liner**: Platform operasional terpadu untuk ISP fiber-to-the-home (PT Arkanova Cipta Inovasi / JABNET Garut).
-> Versi: **v4.3.0** (cPanel MySQL port — LIVE di workspace.jabnet.id) · 51+ React pages · 39 permission keys · 6 system roles.
+> Versi: **v4.3.0** (cPanel MySQL port - LIVE di workspace.jabnet.id) · 51+ React pages · 39 permission keys · 6 system roles.
 > Project di working directory ini adalah **copy untuk deploy ke cPanel** di `workspace.jabnet.id` dengan DB MySQL `jabnet_fiber`.
 > **Setup cPanel:** lihat [CPANEL-SETUP.md](CPANEL-SETUP.md). Pola umum: [CPANEL-CONVENTIONS.md](CPANEL-CONVENTIONS.md).
 
-## ✅ Status Migrasi cPanel + MySQL (v4.3.0 — COMPLETE)
+##  Status Migrasi cPanel + MySQL (v4.3.0 - COMPLETE)
 
 | Komponen | Status |
 |---|---|
-| `drizzle.config.ts` → MySQL dialect dengan env loading | ✅ Phase 1A |
-| `shared/schema.ts` → 65 tabel ported ke `mysqlTable` | ✅ Phase 1A |
-| `package.json` → swap `better-sqlite3` → `mysql2`, add `dotenv` | ✅ Phase 1A |
-| `server/index.ts` → dotenv from `JABNET_PRIVATE_ROOT` + worker gates | ✅ Phase 1A |
-| `server/broadcast-worker.ts` → MySQL | ✅ Phase 1A |
-| `tools/migrate-sqlite-to-mysql.mjs` → data migration script | ✅ Phase 1A |
-| `.github/workflows/build.yml` → GHA build + deploy branch | ✅ Phase 1A |
-| `.env.example`, `.gitignore` → MySQL vars + secret protection | ✅ Phase 1A |
-| `CPANEL-SETUP.md` → step-by-step cPanel setup | ✅ Phase 1A |
-| `server/storage.ts` refactor — hapus `.returning()` + raw sqlite | ✅ **Phase 1B done** (commit `31ab0e3`) |
-| `server/storage.ts` cleanup — replace 88 broken `.all()`/`.run()` calls dengan `.execute()` | ✅ done (commit `1ffb4fc`) |
-| Performance optimization Phase A-D (indexes, dashboard, map viewport, perm cache) | ✅ done (commits `d5c6209`…`006521e`) |
-| Performance Phase E — N+1 query batching (dashboard, loyalty, reconcile, portal Mikrotik) | ✅ done (commits `b64215a`, `8a62acc`, `b658359`) |
-| Performance Phase F — bundle split, pause-on-blur polling, server response cache | ✅ done (commits `2e63e27`, `0738f89`, `7857f97`) |
-| Google Maps API key runtime via `/api/public-config` (no rebuild needed) | ✅ done |
+| `drizzle.config.ts` → MySQL dialect dengan env loading |  Phase 1A |
+| `shared/schema.ts` → 65 tabel ported ke `mysqlTable` |  Phase 1A |
+| `package.json` → swap `better-sqlite3` → `mysql2`, add `dotenv` |  Phase 1A |
+| `server/index.ts` → dotenv from `JABNET_PRIVATE_ROOT` + worker gates |  Phase 1A |
+| `server/broadcast-worker.ts` → MySQL |  Phase 1A |
+| `tools/migrate-sqlite-to-mysql.mjs` → data migration script |  Phase 1A |
+| `.github/workflows/build.yml` → GHA build + deploy branch |  Phase 1A |
+| `.env.example`, `.gitignore` → MySQL vars + secret protection |  Phase 1A |
+| `CPANEL-SETUP.md` → step-by-step cPanel setup |  Phase 1A |
+| `server/storage.ts` refactor - hapus `.returning()` + raw sqlite |  **Phase 1B done** (commit `31ab0e3`) |
+| `server/storage.ts` cleanup - replace 88 broken `.all()`/`.run()` calls dengan `.execute()` |  done (commit `1ffb4fc`) |
+| Performance optimization Phase A-D (indexes, dashboard, map viewport, perm cache) |  done (commits `d5c6209`…`006521e`) |
+| Performance Phase E - N+1 query batching (dashboard, loyalty, reconcile, portal Mikrotik) |  done (commits `b64215a`, `8a62acc`, `b658359`) |
+| Performance Phase F - bundle split, pause-on-blur polling, server response cache |  done (commits `2e63e27`, `0738f89`, `7857f97`) |
+| Google Maps API key runtime via `/api/public-config` (no rebuild needed) |  done |
 
 **Build status:** `npm run build` ✓ sukses (esbuild bundle 1MB). `npm run typecheck`: **0 errors** (genuine, was previously stale at 88).
-**Production status:** LIVE di `https://workspace.jabnet.id` — login/dashboard/map operasional.
+**Production status:** LIVE di `https://workspace.jabnet.id` - login/dashboard/map operasional.
 
 **MySQL refactor pattern (untuk reference jika edit storage.ts):**
 
@@ -41,7 +41,7 @@ return row!;
 const [rows] = await this.pool.execute("SELECT * FROM x WHERE id = ?", [123]);
 const row = (rows as any[])[0];
 
-// Raw query via Drizzle sql`` template (preferred — auto-binds interpolations):
+// Raw query via Drizzle sql`` template (preferred - auto-binds interpolations):
 //   .all() / .run() / .get() DO NOT exist on MySQL Drizzle. Use .execute() yang return [rows, fields].
 const rows: any = ((await this.db.execute(sql`SELECT * FROM x WHERE id = ${id}`))[0] as any);
 
@@ -58,7 +58,7 @@ try {
 } catch (e) { await conn.rollback(); throw e; }
 finally { conn.release(); }
 
-// Batched lookup (anti N+1) — pakai inArray + Map. Pattern wajib untuk list endpoints:
+// Batched lookup (anti N+1) - pakai inArray + Map. Pattern wajib untuk list endpoints:
 async getOdpsByIds(odpIds: number[]): Promise<Map<number, Odp>> {
   const map = new Map<number, Odp>();
   if (odpIds.length === 0) return map;
@@ -86,50 +86,50 @@ async getOdpsByIds(odpIds: number[]): Promise<Map<number, Odp>> {
 
 ```
 ftth-v411/
-├─ client/              # React app
-│  ├─ App.tsx           # Router + lazy routes (45+ pages)
-│  ├─ main.tsx          # React entry
-│  ├─ index.css         # Tailwind + design tokens (sky/blue primary)
-│  ├─ pages/            # All page components
-│  │  ├─ portal/        # Customer portal (PortalLogin/Verify/Dashboard)
-│  │  ├─ UsersPage.tsx  # Enterprise user mgmt with detail drawer + bulk actions
-│  │  ├─ RolesPage.tsx  # Role + permission matrix with preview dialog
-│  │  ├─ LoyaltyAdminPage.tsx  # JABNET Sahabat program admin
-│  │  ├─ PublicApiPage.tsx     # Open API key management
-│  │  ├─ AnnouncementsPage.tsx # News/feature update broadcast
-│  │  ├─ BugReportsPage.tsx    # In-app bug tracking
-│  │  └─ … (Marketing, Collection, Map, etc.)
-│  ├─ components/
-│  │  ├─ layout/         # Sidebar, Layout, BottomNav
-│  │  ├─ notifications/  # NotificationBell (top-right floating)
-│  │  └─ ui/             # shadcn primitives
-│  └─ context/AuthContext.tsx   # Auth via localStorage `ftth_user`
-├─ server/
-│  ├─ index.ts                  # Express bootstrap, mounts 3 routers
-│  ├─ routes.ts                 # Main router (~3500 lines, all staff endpoints)
-│  ├─ customer-portal-routes.ts # /api/portal/* (OTP-auth, lightweight)
-│  ├─ public-api-routes.ts      # /api/public/v1/* (API key bearer auth)
-│  ├─ storage.ts                # ALL DB access — single class DatabaseStorage (~5000 lines)
-│  ├─ billing-sync-worker.ts    # Polls billing.jabnet.id every 60-600s
-│  ├─ traffic-snapshot-worker.ts # Polls Mikrotik PPP every 15min
-│  ├─ mpwa.ts                    # WhatsApp gateway adapter
-│  └─ genieacs.ts                # ONT TR-069 (reboot, WiFi config)
-├─ shared/schema.ts              # Drizzle table defs + ALL_PERMISSIONS list
-├─ public/                       # Favicons, manifest.json, icons/
-├─ tools/                        # backup scripts, db migrations
-├─ index.html                    # Vite entry HTML — title "JABNET Workspace"
-├─ vite.config.ts                # @ alias → ./client, @shared → ./shared
-├─ tsconfig.json                 # Strict, paths matching vite alias
-└─ package.json                  # name=jabnet-ftth-manager, version=4.1.10
++- client/              # React app
+|  +- App.tsx           # Router + lazy routes (45+ pages)
+|  +- main.tsx          # React entry
+|  +- index.css         # Tailwind + design tokens (sky/blue primary)
+|  +- pages/            # All page components
+|  |  +- portal/        # Customer portal (PortalLogin/Verify/Dashboard)
+|  |  +- UsersPage.tsx  # Enterprise user mgmt with detail drawer + bulk actions
+|  |  +- RolesPage.tsx  # Role + permission matrix with preview dialog
+|  |  +- LoyaltyAdminPage.tsx  # JABNET Sahabat program admin
+|  |  +- PublicApiPage.tsx     # Open API key management
+|  |  +- AnnouncementsPage.tsx # News/feature update broadcast
+|  |  +- BugReportsPage.tsx    # In-app bug tracking
+|  |  +- … (Marketing, Collection, Map, etc.)
+|  +- components/
+|  |  +- layout/         # Sidebar, Layout, BottomNav
+|  |  +- notifications/  # NotificationBell (top-right floating)
+|  |  +- ui/             # shadcn primitives
+|  +- context/AuthContext.tsx   # Auth via localStorage `ftth_user`
++- server/
+|  +- index.ts                  # Express bootstrap, mounts 3 routers
+|  +- routes.ts                 # Main router (~3500 lines, all staff endpoints)
+|  +- customer-portal-routes.ts # /api/portal/* (OTP-auth, lightweight)
+|  +- public-api-routes.ts      # /api/public/v1/* (API key bearer auth)
+|  +- storage.ts                # ALL DB access - single class DatabaseStorage (~5000 lines)
+|  +- billing-sync-worker.ts    # Polls billing.jabnet.id every 60-600s
+|  +- traffic-snapshot-worker.ts # Polls Mikrotik PPP every 15min
+|  +- mpwa.ts                    # WhatsApp gateway adapter
+|  +- genieacs.ts                # ONT TR-069 (reboot, WiFi config)
++- shared/schema.ts              # Drizzle table defs + ALL_PERMISSIONS list
++- public/                       # Favicons, manifest.json, icons/
++- tools/                        # backup scripts, db migrations
++- index.html                    # Vite entry HTML - title "JABNET Workspace"
++- vite.config.ts                # @ alias → ./client, @shared → ./shared
++- tsconfig.json                 # Strict, paths matching vite alias
++- package.json                  # name=jabnet-ftth-manager, version=4.1.10
 ```
 
 ---
 
 ## Auth Models (3 separate)
 
-1. **Staff token** — header `Authorization: Bearer <hex token>`. Login via `POST /api/auth/login` (admin/admin123 default). Token disimpan di `users.token`, juga di localStorage `ftth_user` untuk SPA.
-2. **Customer portal session** — bearer token dari `customer_portal_sessions` table. Login via `POST /api/portal/auth/request-otp` → `verify-otp`. OTP via MPWA WhatsApp gateway (dev mode: log ke console).
-3. **Public API key** — header `Authorization: Bearer jbk_live_<32hex>`. Bcrypt hashed, scoped (`marketing:read`, `reports:read`, `leads:read`, `collections:read`, `sahabat:read`, `tickets:read`, `*`). Created via `POST /api/api-keys` (admin only).
+1. **Staff token** - header `Authorization: Bearer <hex token>`. Login via `POST /api/auth/login` (admin/admin123 default). Token disimpan di `users.token`, juga di localStorage `ftth_user` untuk SPA.
+2. **Customer portal session** - bearer token dari `customer_portal_sessions` table. Login via `POST /api/portal/auth/request-otp` → `verify-otp`. OTP via MPWA WhatsApp gateway (dev mode: log ke console).
+3. **Public API key** - header `Authorization: Bearer jbk_live_<32hex>`. Bcrypt hashed, scoped (`marketing:read`, `reports:read`, `leads:read`, `collections:read`, `sahabat:read`, `tickets:read`, `*`). Created via `POST /api/api-keys` (admin only).
 
 ---
 
@@ -178,8 +178,8 @@ ftth-v411/
 
 ### Public Open API (untuk integrasi AI / BI)
 - Base URL: `/api/public/v1/*`
-- Scope `marketing:read` ⭐ (RECOMMENDED) — 13 endpoint untuk ops daily analysis
-  - `/marketing/overview` ⭐ ONE-SHOT JSON dengan momentum, top performers, hot spots, pre-computed redFlags + greenLights
+- Scope `marketing:read`  (RECOMMENDED) - 13 endpoint untuk ops daily analysis
+  - `/marketing/overview`  ONE-SHOT JSON dengan momentum, top performers, hot spots, pre-computed redFlags + greenLights
   - `/marketing/canvassing/sessions`, `/canvassing/performance`, `/canvassing/reports`
   - `/marketing/leads/funnel`, `/leads/attribution`, `/leads/performance`
   - `/marketing/coverage` (per district), `/heatmap` (GIS lat/lng)
@@ -189,35 +189,35 @@ ftth-v411/
 - Usage logged ke `api_key_usage_logs` table, 30-day retention
 - Admin page `/api-keys` dengan key list, create dialog (one-time full key display), usage log viewer, full docs dialog
 
-### Design System v4.2.0 (TELCO PREMIUM — RULES CRITICAL)
+### Design System v4.2.0 (TELCO PREMIUM - RULES CRITICAL)
 
 **WAJIB IKUTI POLA INI** untuk konsistensi. Semua komponen di `client/components/ui/`, design tokens di `client/index.css`.
 
-**Core Components (JANGAN recreate — PAKAI yang ada):**
-- `<PageHeader icon title description accent actions onRefresh lastUpdated />` — wajib di top tiap page (accent: primary|success|warning|info|violet|rose)
-- `<PageContainer>` + `<PageSection title description actions />` — wrapper standar
-- `<StatTile icon label value description accent trend onClick />` — untuk KPI (accent: primary|success|warning|danger|info|violet|neutral)
-- `<StatusBadge variant label size appearance />` — untuk status (variant: success|warning|danger|info|neutral|pending · appearance: subtle|solid|outline|dot)
-- `<EmptyState icon title description action variant size />` — no generic "tidak ada data"
-- `<Card variant padding>` — 6 variants (default, flat, elevated, ghost, glass, gradient) + padding presets
-- `<Button variant size loading leftIcon rightIcon>` — 9 variants (+gradient, outline-primary, ghost-primary, success, warning), 7 sizes (+xs, xl, icon-sm/xs)
-- `<Input inputSize leftIcon rightIcon error>` — size + icon slots + error state
-- Skeletons: `<SkeletonKPIGrid>`, `<SkeletonCard>`, `<SkeletonTable>`, `<SkeletonChart>`, `<SkeletonList>` — gunakan instead of spinner
+**Core Components (JANGAN recreate - PAKAI yang ada):**
+- `<PageHeader icon title description accent actions onRefresh lastUpdated />` - wajib di top tiap page (accent: primary|success|warning|info|violet|rose)
+- `<PageContainer>` + `<PageSection title description actions />` - wrapper standar
+- `<StatTile icon label value description accent trend onClick />` - untuk KPI (accent: primary|success|warning|danger|info|violet|neutral)
+- `<StatusBadge variant label size appearance />` - untuk status (variant: success|warning|danger|info|neutral|pending · appearance: subtle|solid|outline|dot)
+- `<EmptyState icon title description action variant size />` - no generic "tidak ada data"
+- `<Card variant padding>` - 6 variants (default, flat, elevated, ghost, glass, gradient) + padding presets
+- `<Button variant size loading leftIcon rightIcon>` - 9 variants (+gradient, outline-primary, ghost-primary, success, warning), 7 sizes (+xs, xl, icon-sm/xs)
+- `<Input inputSize leftIcon rightIcon error>` - size + icon slots + error state
+- Skeletons: `<SkeletonKPIGrid>`, `<SkeletonCard>`, `<SkeletonTable>`, `<SkeletonChart>`, `<SkeletonList>` - gunakan instead of spinner
 
 **Phase 2 Advanced:**
-- `<DataTable columns data searchable onRowClick emptyTitle>` — TanStack table wrapper
-- `<FormField label htmlFor required error hint><Input {...} /></FormField>` + `<FormRow cols>` + `<FormSection>` — zod compat
-- `<Combobox options value onChange searchPlaceholder>` — searchable select
+- `<DataTable columns data searchable onRowClick emptyTitle>` - TanStack table wrapper
+- `<FormField label htmlFor required error hint><Input {...} /></FormField>` + `<FormRow cols>` + `<FormSection>` - zod compat
+- `<Combobox options value onChange searchPlaceholder>` - searchable select
 - `<Command>` primitives untuk command palette
 
 **Layout:**
-- `<TopBar>` — global header dengan breadcrumb + Cmd+K search + status lights + notif + user menu (integrated)
-- `<Sidebar>` — gradient logo, permission-filtered, count badges, online profile dot
-- `<BottomNav>` — mobile, gradient active indicator, asset tone colors
-- `<FloatingMenuButton>` — untuk fullscreen pages (/map, /canvassing) di mobile
-- `<BottomSheet>` — spring animation, swipe-to-dismiss
+- `<TopBar>` - global header dengan breadcrumb + Cmd+K search + status lights + notif + user menu (integrated)
+- `<Sidebar>` - gradient logo, permission-filtered, count badges, online profile dot
+- `<BottomNav>` - mobile, gradient active indicator, asset tone colors
+- `<FloatingMenuButton>` - untuk fullscreen pages (/map, /canvassing) di mobile
+- `<BottomSheet>` - spring animation, swipe-to-dismiss
 
-**Color System (WAJIB — JANGAN hardcoded hex):**
+**Color System (WAJIB - JANGAN hardcoded hex):**
 - Semantic: `bg-primary`, `bg-success`, `bg-warning`, `bg-destructive`, `bg-info`, `bg-muted`
 - Chart palette: `chart-1` … `chart-8` (via CSS var, theme-aware)
 - Asset topology: `asset-pop`, `asset-odc`, `asset-odp`, `asset-pole`, `asset-cable`
@@ -257,9 +257,9 @@ ftth-v411/
 - **UsersPage** (`/users`): KPI tiles, search/filter, bulk select + bulk action bar (activate/deactivate/set_role), avatar dengan gradient sesuai role + online dot
 - **UserDetailDrawer** dengan 4 tabs: Overview / Produktivitas / Aktivitas (audit timeline) / Akses (granted permissions per group)
 - **Backend endpoints**:
-  - `GET /api/users/:id/activity` — audit timeline filtered
-  - `GET /api/users/:id/stats` — productivity counters (logins, actions, tickets/leads/collections assigned, canvassing reports)
-  - `POST /api/users/bulk-action` — activate/deactivate/set_role/delete
+  - `GET /api/users/:id/activity` - audit timeline filtered
+  - `GET /api/users/:id/stats` - productivity counters (logins, actions, tickets/leads/collections assigned, canvassing reports)
+  - `POST /api/users/bulk-action` - activate/deactivate/set_role/delete
 - **RolesPage** (`/roles`): 4 KPI tiles, role cards dengan user count, permission preview dialog (read-only mode), full edit dialog dengan per-group matrix + presets
 - Auto-sync permission migration: setiap startup, semua role auto-grant permission keys terbaru. Administrator role paksa `write` untuk semua.
 - Unique constraint `idx_users_username` mencegah duplicate user.
@@ -269,7 +269,7 @@ ftth-v411/
 ## Critical Gotchas / Things to Know
 
 1. **Build flow tidak biasa**: Vite build client → static assets ke `dist/public/`. Esbuild bundle server → `dist/index.mjs`. Production = `node dist/index.mjs` (no tsx).
-2. **Storage class adalah satu file gigantic** (~5000 lines). Methods di-organize per domain dengan section header `// ====================`. Hati-hati waktu edit — pakai Grep dulu cari method yang sudah ada.
+2. **Storage class adalah satu file gigantic** (~5000 lines). Methods di-organize per domain dengan section header `// ====================`. Hati-hati waktu edit - pakai Grep dulu cari method yang sudah ada.
 3. **Permission system 3-level**: `none` / `read` / `write`. Check via `hasPermission(req, "key")` (read) atau `hasWritePermission(req, "key")` (write). Permission key didefine di `shared/schema.ts` `ALL_PERMISSIONS` array.
 4. **Mobile UX pattern (consistent across pages)**:
    - Negative margin untuk full-bleed: `-m-4 md:-m-6 -mt-16 md:-mt-6 pb-20 md:pb-0`
@@ -281,12 +281,12 @@ ftth-v411/
 7. **MPWA WhatsApp gateway**: settings via `app_settings` table (`mpwa_url`, `mpwa_token`, `mpwa_enabled`). Dev mode (mpwa_enabled=false): OTP di-log ke console + return `debugOtp` di response.
 8. **Lead API enrichment**: `/api/public/v1/leads` + `/collections` sekarang return `assignedToName`, `assignedToUsername`, `assignedToRole` via `_lookupUsers()` helper batch query.
 9. **Customer fields mapping**: backend uses snake_case, frontend uses camelCase via Drizzle. `customer_id` (text, billing ID like "052500015") berbeda dengan `id` (autoincrement int).
-10. **NEVER deploy to production tanpa user explicit OK** — production sekarang di `workspace.jabnet.id` (cPanel Passenger di `103.194.47.165`). Deploy: `git push origin main` → GHA build → user pull di cPanel `Git Version Control → Update from Remote` → Restart Node.js App. (Prod lama `fiber-tools.arkanova.id` masih co-existing dengan PM2.)
+10. **NEVER deploy to production tanpa user explicit OK** - production sekarang di `workspace.jabnet.id` (cPanel Passenger di `103.194.47.165`). Deploy: `git push origin main` → GHA build → user pull di cPanel `Git Version Control → Update from Remote` → Restart Node.js App. (Prod lama `fiber-tools.arkanova.id` masih co-existing dengan PM2.)
 11. **Google Maps API key**: di-load runtime via `GET /api/public-config` (no auth, 60s in-memory cache) dari `app_settings.google_maps_api_key`. Set/ganti key di `/integrations` tanpa rebuild. Fallback chain: settings table → `VITE_GOOGLE_MAPS_API_KEY` env → hardcoded legacy key. Key WAJIB whitelist domain di GCP Console HTTP referrers.
 12. **cPanel keep-alive**: cron `*/4 * * * * curl -s https://workspace.jabnet.id/api/health > /dev/null 2>&1` untuk cegah Passenger idle spin-down (~5 menit threshold).
-13. **Server route cache** (`server/route-cache.ts`): generic TTL Map cache untuk endpoint read-heavy. Sekarang di-wire ke `/api/dashboard` + `/api/map-data/infra` (60s TTL). Auto-invalidate via router middleware saat mutation asset/customer sukses — pattern `/api/(pops|odcs|odps|poles|cables|cable-cores)` busts dashboard+map-infra, `/api/customers` busts dashboard only.
-14. **Vendor bundle split** (`vite.config.ts`): manualChunks pisahkan react/radix/query/forms/motion/maps/chart ke chunk masing-masing. Map page hanya load `maps-vendor` (Leaflet+Google Maps) saat dibuka. Repeat visitor pakai vendor cache. JANGAN balikin ke single bundle — main `index-*.js` tetap di ~170KB.
-15. **Polling pause-on-blur**: queryClient default `refetchIntervalInBackground: false` — semua `refetchInterval` auto pause saat tab blurred. Raw `setInterval` di portal traffic 3s tick pakai `document.visibilitychange` listener — wajib untuk mobile portal (phone lock screen). Kalau perlu keep-alive polling, override per-query dengan `refetchIntervalInBackground: true`.
+13. **Server route cache** (`server/route-cache.ts`): generic TTL Map cache untuk endpoint read-heavy. Sekarang di-wire ke `/api/dashboard` + `/api/map-data/infra` (60s TTL). Auto-invalidate via router middleware saat mutation asset/customer sukses - pattern `/api/(pops|odcs|odps|poles|cables|cable-cores)` busts dashboard+map-infra, `/api/customers` busts dashboard only.
+14. **Vendor bundle split** (`vite.config.ts`): manualChunks pisahkan react/radix/query/forms/motion/maps/chart ke chunk masing-masing. Map page hanya load `maps-vendor` (Leaflet+Google Maps) saat dibuka. Repeat visitor pakai vendor cache. JANGAN balikin ke single bundle - main `index-*.js` tetap di ~170KB.
+15. **Polling pause-on-blur**: queryClient default `refetchIntervalInBackground: false` - semua `refetchInterval` auto pause saat tab blurred. Raw `setInterval` di portal traffic 3s tick pakai `document.visibilitychange` listener - wajib untuk mobile portal (phone lock screen). Kalau perlu keep-alive polling, override per-query dengan `refetchIntervalInBackground: true`.
 
 ---
 
@@ -306,11 +306,11 @@ ftth-v411/
 
 User reported: customer data + collection data not always in sync. Fixed:
 
-1. **Field-class whitelist** — billing-critical fields (isIsolir, billingStatus, dueDate, lastPaymentDate) ALWAYS sync. Info fields (name, phone, email, address) respect `manualOverrides` array.
-2. **Manual override API**: `POST /api/customers/:id/manual-overrides` body `{lockedFields: ["address","phone"]}` — admin lock fields dari sync overwrite. Whitelist 10 field yang boleh di-lock.
+1. **Field-class whitelist** - billing-critical fields (isIsolir, billingStatus, dueDate, lastPaymentDate) ALWAYS sync. Info fields (name, phone, email, address) respect `manualOverrides` array.
+2. **Manual override API**: `POST /api/customers/:id/manual-overrides` body `{lockedFields: ["address","phone"]}` - admin lock fields dari sync overwrite. Whitelist 10 field yang boleh di-lock.
 3. **`updateCustomer` bug fix**: explicit `manualOverrides` di POST body tidak lagi ke-overwrite oleh auto-detect logic.
-4. **Reconciliation pass per cycle**: `reconcileCollectionState()` cek 2 case — (a) isolir tapi no open collection → auto-open, (b) lunas tapi open collection → auto-close.
-5. **Force-resync endpoint**: `POST /api/billing/sync/customer/:id/force` — bypass scheduler, sync 1 customer immediately, return before/after diff.
+4. **Reconciliation pass per cycle**: `reconcileCollectionState()` cek 2 case - (a) isolir tapi no open collection → auto-open, (b) lunas tapi open collection → auto-close.
+5. **Force-resync endpoint**: `POST /api/billing/sync/customer/:id/force` - bypass scheduler, sync 1 customer immediately, return before/after diff.
 6. **Sync health endpoint**: `GET /api/billing/sync/health` returns `{customersTotal, isolirCount, openCollectionsCount, drift, staleSyncCount, oldestStaleSync, lastSyncAt}` untuk admin visibility.
 
 ---
@@ -354,20 +354,20 @@ mysql -u jabnet_crm_user -p'Galon@12345' jabnet_fiber      # DB CLI
 
 ---
 
-## v5.2.0 — Teamspace + Struktur Divisi + Modul HR (Juli 2026)
+## v5.2.0 - Teamspace + Struktur Divisi + Modul HR (Juli 2026)
 
-Pengembangan besar setelah v4.3.0 — SEMUA sudah live di branch
+Pengembangan besar setelah v4.3.0 - SEMUA sudah live di branch
 `claude/fiber-jabnet-access-2nn8mp` (repo kanggalon710/workspace). Dokumen wajib baca:
 
 | Dokumen | Isi |
 |---|---|
 | `PRD-JABNET-TEAMSPACE.md` | Teamspace (clone Cicle): tim, board tugas, chat+read-by, jadwal, check-in WA, dokumen, pengumuman, kinerja+AI, cheers |
-| `AUDIT-RESPONSE.md` | 11 bug audit eksternal — semua fixed; keputusan scope |
+| `AUDIT-RESPONSE.md` | 11 bug audit eksternal - semua fixed; keputusan scope |
 | `KONSEP-DIVISI.md` | Restrukturisasi navigasi per DIVISI + status implementasi PRD-HR |
-| `PRDHR.md` (upload) | PRD HR & Payroll (reverse-eng GajiHub) — HR-1 & HR-2 selesai, HR-3 sebagian |
+| `PRDHR.md` (upload) | PRD HR & Payroll (reverse-eng GajiHub) - HR-1 & HR-2 selesai, HR-3 sebagian |
 | `LOCAL-DEV.md` | Cara run lokal (Docker MySQL → db:push → dev) |
 
-### v5.4 — Collection SOP churn→reaktivasi (integrasi lintas-divisi)
+### v5.4 - Collection SOP churn→reaktivasi (integrasi lintas-divisi)
 
 Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi antar-divisi:
 
@@ -375,14 +375,14 @@ Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi ant
 |---|---|---|---|
 | Baru Isolir (`new`) | sistem | 3h | Dihubungi |
 | Dihubungi (`contacted`) | Finance | 4h | Delegasi CS |
-| Delegasi Layanan Pelanggan (`delegasi_cs`) 🆕 | CS | 7h | Delegasi Marketing |
-| Delegasi Marketing (`delegasi_marketing`) 🆕 | Marketing | 7h | — (write-off by age) |
-| Lunas/Reaktivasi (`paid`) · Churn (`written_off`) | — | — | terminal |
+| Delegasi Layanan Pelanggan (`delegasi_cs`)  | CS | 7h | Delegasi Marketing |
+| Delegasi Marketing (`delegasi_marketing`)  | Marketing | 7h | - (write-off by age) |
+| Lunas/Reaktivasi (`paid`) · Churn (`written_off`) | - | - | terminal |
 
 - **Schema**: `collection_stages` + kolom `owner_division` / `sla_days` / `next_stage_key`
-  (migrasi idempotent + `applyCollectionSopLadder(mitraId)` — hanya set metadata key SOP,
+  (migrasi idempotent + `applyCollectionSopLadder(mitraId)` - hanya set metadata key SOP,
   tambah 2 stage delegasi; stage custom tak disentuh). Metadata seed di `COLLECTION_SOP_META`.
-- **Engine auto-delegasi**: `storage.runCollectionSopAdvance()` — anchor `daysInStage` dari
+- **Engine auto-delegasi**: `storage.runCollectionSopAdvance()` - anchor `daysInStage` dari
   `stage_change` terakhir (fallback openedAt), advance 1 langkah/run bila lewat SLA. Logika murni
   `shared/collectionSop.ts` (`decideSopAdvance`, `stageKeysForDivision`) + unit test (9). Dipanggil
   tiap cycle billing-sync + manual `/collections/run-thresholds` (respons kini `{opened,writtenOff,advanced}`).
@@ -396,21 +396,21 @@ Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi ant
 - **Marketing 2 pipeline**: (1) `/leads` lead dari canvassing (auto-integrasi lama: `createLead`→
   `emitLeadEvent`→pipeline card), (2) `/collections/marketing` reaktivasi (delegasi collection).
 
-### v5.4b — Beranda divisi = dashboard data + Public API per-divisi
+### v5.4b - Beranda divisi = dashboard data + Public API per-divisi
 
 - **Beranda tiap divisi** (`DivisionHubPage`) bukan lagi grid modul (navigasi ada di
-  sidebar) — kini **dashboard laporan**: KPI diperkaya + breakdown (pipeline collection
+  sidebar) - kini **dashboard laporan**: KPI diperkaya + breakdown (pipeline collection
   per tahap untuk Keuangan/CS/Marketing, kapasitas core/port untuk Teknik/NOC) dari
   endpoint existing (`/dashboard`, `/collections/stats`).
 - **Emoji dihapus menyeluruh** dari UI staff (bulk-strip + konversi glyph fungsional ke
-  Lucide di peta/tickets/customers/field-picker). Tanda tipografis (✓ ○ ☑ ☎) dipertahankan.
+  Lucide di peta/tickets/customers/field-picker). Tanda tipografis (✓ ○  ) dipertahankan.
   DIKECUALIKAN sadar: konten pesan WhatsApp/broadcast (dikirim ke pelanggan) + emoji
   program loyalti/Sahabat (tier & reward pilihan admin, ikut ke pesan WA).
 - **Public API per-divisi** (scope `divisions:read`) untuk AI agent analisa kerja tim
   daily→weekly→monthly:
   - `GET /api/public/v1/divisions?period=daily|weekly|monthly|quarterly` (atau `?from=&to=`)
-    — semua divisi: output tim (tiket/lead/collection/canvassing) + snapshot KPI domain.
-  - `GET /api/public/v1/divisions/:key` — 1 divisi: per-anggota output diurut kontribusi +
+    - semua divisi: output tim (tiket/lead/collection/canvassing) + snapshot KPI domain.
+  - `GET /api/public/v1/divisions/:key` - 1 divisi: per-anggota output diurut kontribusi +
     totals + snapshot. Anggota dipetakan dari `role` (ROLE_TO_DIVISION di public-api-routes).
   - Agregasi reuse `getOpsStatsForUsers` + `getAllUsers` (sama seperti teamspace/performance).
     Scope terdaftar di `VALID_API_SCOPES` (routes.ts) + `/schema` + picker `/api-keys`.
@@ -421,8 +421,8 @@ Arsitektur singkat v5.x:
 - **Teamspace**: board tim = pipeline dengan `pipelines.team_id`; header konsisten `TeamModuleNav`.
 - **HR/SDM**: halaman HR `/hrd/sdm` (izin `hr_sdm`) + ESS `/hr/absen` (semua staff).
   Storage section "SDM / HRD" di storage.ts; endpoint prefix `/api/hr/*`.
-  Payroll engine murni: `shared/payroll.ts` (TER PPh21 + BPJS, unit-tested) —
+  Payroll engine murni: `shared/payroll.ts` (TER PPh21 + BPJS, unit-tested) -
   VERIFIKASI tarif vs referensi resmi sebelum bayar gaji sungguhan.
 - **Lead intake**: rule `lead_created` di-seed otomatis → lead canvassing langsung jadi kartu pipeline (dedup phone).
-- Migrasi DB semuanya idempotent di startup (`runTeamspaceMigrations` + blok HR) — deploy tetap pull+build+restart.
+- Migrasi DB semuanya idempotent di startup (`runTeamspaceMigrations` + blok HR) - deploy tetap pull+build+restart.
 - Test: `npx tsx --test shared/*.test.ts` (262 test). Typecheck & build wajib hijau sebelum push.

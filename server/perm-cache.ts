@@ -3,7 +3,7 @@
  * TTL: 60s. Invalidated on user/role mutations.
  *
  * Why: Auth middleware calls getUserEffectivePermissions() on every
- * authenticated request — same result for same user during a session.
+ * authenticated request - same result for same user during a session.
  */
 
 import type { PermissionLevel } from "@shared/schema";
@@ -52,7 +52,7 @@ export function permCacheStats(): { size: number; maxEntries: number; ttlMs: num
   return { size: cache.size, maxEntries: CACHE_MAX_ENTRIES, ttlMs: CACHE_TTL_MS };
 }
 
-// ── Per-(userId, mitraId) cache ──────────────────────────────────────────────
+// -- Per-(userId, mitraId) cache ----------------------------------------------
 // Same TTL as global cache for consistency. Key: `${userId}:${mitraId}`.
 
 const PERM_CACHE_AT_MITRA_MAX_ENTRIES = 2000;

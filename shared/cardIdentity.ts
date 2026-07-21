@@ -1,4 +1,4 @@
-/** Pure helpers for cross-pipeline card lineage — no I/O, unit-testable. */
+/** Pure helpers for cross-pipeline card lineage - no I/O, unit-testable. */
 
 export type CardRelationType = "mirror" | "duplicate" | "linked" | "child";
 

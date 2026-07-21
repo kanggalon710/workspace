@@ -1,4 +1,4 @@
-# Spec — Card CSV Import/Export (Phase 6)
+# Spec - Card CSV Import/Export (Phase 6)
 
 > Date: 2026-06-08 · Mitra-scoped · Pipelines-unification roadmap Phase 6.
 
@@ -12,11 +12,11 @@ The other parity features (tags, source, contact actions) already exist via the 
 ## Decisions (confirmed)
 
 1. **Scope:** export **and** import.
-2. **Import mapping:** flexible — the user maps each CSV header to a target (Title / Stage / Assignee /
+2. **Import mapping:** flexible - the user maps each CSV header to a target (Title / Stage / Assignee /
    Priority / a custom field / ignore). Not a fixed header format.
 3. **Errors:** skip invalid rows + return a report (created N, skipped M with reasons). Not all-or-nothing.
 
-## 1. Pure module — `shared/cardCsv.ts` (no DB, unit-tested)
+## 1. Pure module - `shared/cardCsv.ts` (no DB, unit-tested)
 
 ```ts
 export interface ExportColumn { key: string; label: string }
@@ -52,7 +52,7 @@ error); `priority` ∈ {low,medium,high,urgent} else `"medium"`; each non-empty 
 injected `validateValue` (first failure → row error with the field label). The injected validator keeps
 the module pure/testable; the server passes a wrapper over `validateFieldValue`.
 
-## 2. Export — `GET /api/pipelines/:id/cards/export`
+## 2. Export - `GET /api/pipelines/:id/cards/export`
 
 Gated `requirePipelineCapability(..., "view")`. Loads the pipeline's cards, fields, stages, and the
 assignable users; resolves each card's stage label + assignee name; builds rows via `formatCardForExport`
@@ -60,9 +60,9 @@ and columns via `buildExportColumns`; serializes with the existing `toCSV(data, 
 `text/csv; charset=utf-8` with `Content-Disposition: attachment; filename="<pipeline-name>-cards.csv"`.
 Exports all (non-archived) cards in the pipeline.
 
-## 3. Import — `POST /api/pipelines/:id/cards/import`
+## 3. Import - `POST /api/pipelines/:id/cards/import`
 
-Gated `requirePipelineCapability(..., "cards")`. Body `{ rows: MappedImportRow[] }` — the client has
+Gated `requirePipelineCapability(..., "cards")`. Body `{ rows: MappedImportRow[] }` - the client has
 already mapped CSV headers to targets. The handler builds `ImportCtx` (stageByLabel from `listStages`,
 userByName from the assignable users, fieldsById from `listFields`, firstStageId), then for each row:
 `resolveImportRow(row, ctx, validate)` where `validate` wraps `validateFieldValue` (per field type +
@@ -75,7 +75,7 @@ options + multi-user). On `ok` → `createCard({ stageId, title, assigneeId, pri
 
 - **Export button** (pipeline board header and/or the pipeline card menu on `PipelinesPage`): `fetch`es
   the export endpoint with the auth header, reads the blob, and triggers a download (an `<a download>` /
-  `window.open` can't send the `Authorization` header — same reason the photo endpoints are fetched).
+  `window.open` can't send the `Authorization` header - same reason the photo endpoints are fetched).
 - **Import dialog** (`CardImportDialog.tsx`): upload `.csv` → parse to `string[][]` (reuse the
   `ExportImportPage` parser, extracted/copied) → a **mapping UI**: for each CSV header a `<select>` of
   targets (Judul [required, exactly one] / Stage / Assignee / Prioritas / a custom field / "Abaikan") →

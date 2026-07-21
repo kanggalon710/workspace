@@ -1,4 +1,4 @@
-/** Pure collection metrics — no I/O. Derives billing values used by the pipeline automation engine. */
+/** Pure collection metrics - no I/O. Derives billing values used by the pipeline automation engine. */
 import type { RuleConditionOp } from "./schema.js";
 
 export type CollectionAttrKey =

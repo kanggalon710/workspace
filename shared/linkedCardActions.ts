@@ -1,4 +1,4 @@
-/** Pure helpers for cross-pipeline linked-card actions — no I/O, unit-testable. */
+/** Pure helpers for cross-pipeline linked-card actions - no I/O, unit-testable. */
 import { isValidRelationType, type CardRelationType } from "./cardIdentity.js";
 
 export interface SpawnLineageConfig { relationType: CardRelationType; reuseExisting: boolean }

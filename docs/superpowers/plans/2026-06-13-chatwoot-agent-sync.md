@@ -1,4 +1,4 @@
-# Chatwoot Agent Sync (Mapping) — Batch 2c Implementation Plan
+# Chatwoot Agent Sync (Mapping) - Batch 2c Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`).
 
@@ -57,7 +57,7 @@ await this.pool.execute(`CREATE TABLE IF NOT EXISTS chatwoot_agent_links (
 )`);
 ```
 
-- [ ] **Step 3: Storage methods** (add near other chatwoot storage methods, ~line 10130; ensure `chatwootAgentLinks` imported from schema — add to the existing schema import):
+- [ ] **Step 3: Storage methods** (add near other chatwoot storage methods, ~line 10130; ensure `chatwootAgentLinks` imported from schema - add to the existing schema import):
 ```ts
 async listChatwootAgentLinks(): Promise<ChatwootAgentLink[]> {
   const mitraId = getMitraId();
@@ -128,7 +128,7 @@ test("suggestAgentMatchesByEmail matches case-insensitively, skips empty", () =>
 
 - [ ] **Step 3: Implement `shared/chatwootAgent.ts`**
 ```ts
-/** Pure: Chatwoot agent payload → DTO + email-based user↔agent suggestions. No I/O — testable. */
+/** Pure: Chatwoot agent payload → DTO + email-based user↔agent suggestions. No I/O - testable. */
 
 export type ChatwootAgent = { id: number; name: string; email: string | null; role: string | null; available: boolean };
 
@@ -176,7 +176,7 @@ git commit -m "feat(chatwoot): pure agent mapper + email-match suggestions (shar
 
 **Files:** `server/chatwoot.ts`, `server/routes.ts`
 
-- [ ] **Step 1: `server/chatwoot.ts`** — append after the contact-sync functions:
+- [ ] **Step 1: `server/chatwoot.ts`** - append after the contact-sync functions:
 ```ts
 /** List agents of the active mitra's account. Chatwoot returns a bare array (or {payload}). */
 export async function listAgents(): Promise<any[]> {
@@ -185,7 +185,7 @@ export async function listAgents(): Promise<any[]> {
 }
 ```
 
-- [ ] **Step 2: `server/routes.ts`** — add after the contact-sync endpoints. Confirm `requireUserInScope` + `storage.getUserIdsInMitra` exist (they do).
+- [ ] **Step 2: `server/routes.ts`** - add after the contact-sync endpoints. Confirm `requireUserInScope` + `storage.getUserIdsInMitra` exist (they do).
 ```ts
 /** Agent mapping (Batch 2c). List = chatwoot read; set/clear = chatwoot_settings write. */
 router.get("/api/integrations/chatwoot/agents", async (req: Request, res: Response) => {
@@ -249,7 +249,7 @@ router.delete("/api/integrations/chatwoot/users/:userId/agent", async (req: Requ
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 ```
-> Confirm `storage.getAllUsers()` exists (it does — used elsewhere). If a tenant-scoped user lister exists, prefer it; otherwise the `memberIds.has` filter above keeps it tenant-correct.
+> Confirm `storage.getAllUsers()` exists (it does - used elsewhere). If a tenant-scoped user lister exists, prefer it; otherwise the `memberIds.has` filter above keeps it tenant-correct.
 
 - [ ] **Step 3: Verify** `npm run typecheck` → 0 errors.
 
@@ -265,7 +265,7 @@ git commit -m "feat(chatwoot): agent list + user-agent mapping endpoints (guarde
 
 **Files:** `client/lib/chatwoot.ts`, `client/hooks/useChatwoot.ts`, create `client/components/chatwoot/AgentSelector.tsx`
 
-- [ ] **Step 1: `client/lib/chatwoot.ts`** — add types + methods:
+- [ ] **Step 1: `client/lib/chatwoot.ts`** - add types + methods:
 ```ts
 export type ChatwootAgent = { id: number; name: string; email: string | null; role: string | null; available: boolean };
 export type AgentMapData = {
@@ -278,9 +278,9 @@ export type AgentMapData = {
   setUserAgent: (userId: number, agentId: string) => api.put<{ ok: boolean }>(`/integrations/chatwoot/users/${userId}/agent`, { agentId }),
   clearUserAgent: (userId: number) => api.delete<{ ok: boolean }>(`/integrations/chatwoot/users/${userId}/agent`),
 ```
-(Confirm `api.delete<T>(path)` exists — it does: `delete: <T>(path, body?)`.)
+(Confirm `api.delete<T>(path)` exists - it does: `delete: <T>(path, body?)`.)
 
-- [ ] **Step 2: `client/hooks/useChatwoot.ts`** — add:
+- [ ] **Step 2: `client/hooks/useChatwoot.ts`** - add:
 ```ts
 export function useChatwootAgents() {
   return useQuery({ queryKey: ["chatwoot-agents"], queryFn: () => chatwootApi.listAgents(), staleTime: 60_000, retry: 0 });
@@ -388,7 +388,7 @@ export default function ChatwootAgentMapPage() {
                   <li key={u.id} className="flex flex-col md:flex-row md:items-center gap-2 py-2.5">
                     <div className="md:w-56 min-w-0">
                       <p className="text-sm font-medium truncate">{u.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{u.email || "—"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{u.email || "-"}</p>
                     </div>
                     <div className="flex-1 flex items-center gap-2">
                       <div className="flex-1">
@@ -416,7 +416,7 @@ export default function ChatwootAgentMapPage() {
 ```
 > Verify `SkeletonTable` exists (grep `Skeleton` in `client/components/ui/skeleton`); if not, use `SkeletonList`. Verify the `/api/users` response is the array shape used here (grep how UsersPage consumes it; adjust `.email`/`.name` field names if needed).
 
-- [ ] **Step 2: `client/App.tsx`** — lazy import + route gated `chatwoot_settings`:
+- [ ] **Step 2: `client/App.tsx`** - lazy import + route gated `chatwoot_settings`:
 ```tsx
 const ChatwootAgentMapPage = lazy(() => import("@/pages/ChatwootAgentMapPage"));
 ```
@@ -424,7 +424,7 @@ const ChatwootAgentMapPage = lazy(() => import("@/pages/ChatwootAgentMapPage"));
 <Route path="/integrations/chatwoot/agents">{() => <WithPerm permission="chatwoot_settings"><ChatwootAgentMapPage /></WithPerm>}</Route>
 ```
 
-- [ ] **Step 3: `client/pages/IntegrationPage.tsx`** — in the Chatwoot card, add a button (next to existing ones) to open the page: `useLocation` → `setLocation("/integrations/chatwoot/agents")`, label "Pemetaan Agent". Gate render on the chatwoot status being configured if convenient (optional; the route is permission-gated regardless).
+- [ ] **Step 3: `client/pages/IntegrationPage.tsx`** - in the Chatwoot card, add a button (next to existing ones) to open the page: `useLocation` → `setLocation("/integrations/chatwoot/agents")`, label "Pemetaan Agent". Gate render on the chatwoot status being configured if convenient (optional; the route is permission-gated regardless).
 
 - [ ] **Step 4: Verify** `npm run typecheck && npm run build` → 0 errors, build ok.
 
@@ -456,6 +456,6 @@ Expected: 0 errors · all tests pass (incl. `chatwootAgent`) · build ok.
 
 ## Self-review notes
 - **Spec coverage:** §1 table → A1; §2 pure → A2; §3 backend (listAgents + storage + routes) → A1,A3; §4 frontend → A4,A5; §5 isolation (account-scoped list, mitra-guarded writes, `chatwoot_settings`) → A3; §6 testing → A2,A6. Covered.
-- **Type consistency:** `ChatwootAgent` defined in `shared/chatwootAgent.ts` (A2) and mirrored in `client/lib/chatwoot.ts` (A4) — keep in sync (or re-export from shared like the communications DTOs). `setChatwootAgentLink(userId, agentId:string, name, email)` consistent A1↔A3.
+- **Type consistency:** `ChatwootAgent` defined in `shared/chatwootAgent.ts` (A2) and mirrored in `client/lib/chatwoot.ts` (A4) - keep in sync (or re-export from shared like the communications DTOs). `setChatwootAgentLink(userId, agentId:string, name, email)` consistent A1↔A3.
 - **Deferred:** provisioning/invite, ticket auto-routing, status sync-back.
 - **Verify-before-use:** `getAllUsers` name, `/api/users` response shape, `SkeletonTable` vs `SkeletonList`, `Combobox` clear contract, IntegrationPage `useLocation` import.

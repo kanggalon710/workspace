@@ -11,15 +11,15 @@
 **Spec:** `docs/superpowers/specs/2026-06-04-pipelines-rbac-design.md`
 
 **CRITICAL conventions (Phase 1/2 lessons):**
-- Every endpoint responds via `sendSuccess(res, data)` — never raw `res.json`.
-- New table/column via startup `CREATE TABLE IF NOT EXISTS` / `ALTER TABLE ADD COLUMN IF NOT EXISTS` in `server/storage.ts` — NOT `db:push`.
+- Every endpoint responds via `sendSuccess(res, data)` - never raw `res.json`.
+- New table/column via startup `CREATE TABLE IF NOT EXISTS` / `ALTER TABLE ADD COLUMN IF NOT EXISTS` in `server/storage.ts` - NOT `db:push`.
 - Every storage query filters `mitraId = getMitraId()`.
 - **Security-critical phase:** the access resolver must gate EVERY pipeline read and mutation. A missed route = an access-control hole. Reviews will check every endpoint.
 
 **Key reference points (verified):**
 - `req.authUser` type: `server/routes.ts:26-36`. Assembled in `authMiddleware`: `server/routes.ts:192-204`. `computeAuthFlags`: `routes.ts:147-153`.
 - `getUserEffectivePermissionsAtMitra`: `server/storage.ts:6756`; `_resolvePermsAtMitra` (6 return sites): `server/storage.ts:6782-6850`.
-- Pipeline routes block: `server/routes.ts` ~4189–4455 (Phase 1+2). Guards `requirePermission`/`requireWritePermission` at `routes.ts:238-249`. `isJabnetRoot(req)` exists in routes.ts.
+- Pipeline routes block: `server/routes.ts` ~4189-4455 (Phase 1+2). Guards `requirePermission`/`requireWritePermission` at `routes.ts:238-249`. `isJabnetRoot(req)` exists in routes.ts.
 - Roles list endpoint: `GET /api/roles` (client `api.get("/roles")`).
 
 ---
@@ -39,11 +39,11 @@
 
 ---
 
-## Task 1: Schema — `pipeline_access` table + `restricted` column + startup migration
+## Task 1: Schema - `pipeline_access` table + `restricted` column + startup migration
 
 **Files:** Modify `shared/schema.ts`, `server/storage.ts`.
 
-- [ ] **Step 1: schema.ts — add column + table + types** after the Phase-2 `pipelineCardValues` block. Add `restricted` to the EXISTING `pipelines` table definition (add the column line inside the existing `mysqlTable("pipelines", {...})`):
+- [ ] **Step 1: schema.ts - add column + table + types** after the Phase-2 `pipelineCardValues` block. Add `restricted` to the EXISTING `pipelines` table definition (add the column line inside the existing `mysqlTable("pipelines", {...})`):
 ```ts
   restricted: int("restricted").notNull().default(0),
 ```
@@ -66,9 +66,9 @@ export type PipelineAccess = typeof pipelineAccess.$inferSelect;
 export type PipelineAccessLevel = "view" | "edit";
 ```
 
-- [ ] **Step 2: storage.ts — startup migration.** After the Phase-2 `pipeline_card_values` CREATE TABLE try/catch (search `pipelines custom fields setup failed`), add:
+- [ ] **Step 2: storage.ts - startup migration.** After the Phase-2 `pipeline_card_values` CREATE TABLE try/catch (search `pipelines custom fields setup failed`), add:
 ```ts
-    // Pipelines Phase 3 — pipeline-level RBAC. Additive, idempotent.
+    // Pipelines Phase 3 - pipeline-level RBAC. Additive, idempotent.
     try {
       await this.db.execute(sql`ALTER TABLE pipelines ADD COLUMN IF NOT EXISTS restricted INT NOT NULL DEFAULT 0`);
       await this.db.execute(sql`
@@ -102,7 +102,7 @@ git commit -m "feat(pipelines): RBAC schema (pipeline_access + restricted) + sta
 
 **Files:** Modify `server/storage.ts`, `server/routes.ts`.
 
-- [ ] **Step 1: storage.ts — add `roleId` to the resolver return.** In `_resolvePermsAtMitra` (`server/storage.ts:6782`), each of the SIX `return` objects must include `roleId`. The function already computes a local `roleId` variable. Update each returned object literal to add `roleId`:
+- [ ] **Step 1: storage.ts - add `roleId` to the resolver return.** In `_resolvePermsAtMitra` (`server/storage.ts:6782`), each of the SIX `return` objects must include `roleId`. The function already computes a local `roleId` variable. Update each returned object literal to add `roleId`:
   - the "user not found" empty (`roleId: null`),
   - the global-role result (`roleId`),
   - the legacy-admin result (`roleId: null`),
@@ -115,17 +115,17 @@ to
 `{ perms: ...; canSeeAllData: boolean; roleName: string | null; isSystem: boolean; roleId: number | null }`.
 The gating spread in `getUserEffectivePermissionsAtMitra` (`{ ...result, perms: ... }`) already passes `roleId` through.
 
-- [ ] **Step 2: routes.ts — add the field to the type.** In the `req.authUser` interface (`server/routes.ts:26-36`), after `roleId: number | null;` add:
+- [ ] **Step 2: routes.ts - add the field to the type.** In the `req.authUser` interface (`server/routes.ts:26-36`), after `roleId: number | null;` add:
 ```ts
       effectiveRoleId: number | null;  // resolved per-mitra role id (distinct from global roleId)
 ```
 
-- [ ] **Step 3: routes.ts — set it in authMiddleware.** In the `req.authUser = {...}` assembly (`routes.ts:192`), add:
+- [ ] **Step 3: routes.ts - set it in authMiddleware.** In the `req.authUser = {...}` assembly (`routes.ts:192`), add:
 ```ts
         effectiveRoleId: eff.roleId,
 ```
 
-- [ ] **Step 4:** `npm run typecheck` → 0 errors. (TS will flag any other caller of the perms function that destructures the return — there shouldn't be one needing change since it's an additive field.)
+- [ ] **Step 4:** `npm run typecheck` → 0 errors. (TS will flag any other caller of the perms function that destructures the return - there shouldn't be one needing change since it's an additive field.)
 - [ ] **Step 5:** commit
 ```bash
 git add server/storage.ts server/routes.ts
@@ -165,7 +165,7 @@ test("restricted with no grant is none even if key is write", () => {
 
 - [ ] **Step 3: implement** (`server/pipeline-access-helpers.ts`):
 ```ts
-/** Pure helper for pipeline-level RBAC — no DB. */
+/** Pure helper for pipeline-level RBAC - no DB. */
 export type PipelineLevel = "none" | "view" | "edit";
 
 export function resolvePipelineLevel(args: {
@@ -194,7 +194,7 @@ git commit -m "feat(pipelines): resolvePipelineLevel pure helper with tests"
 
 ---
 
-## Task 4: Storage — access methods
+## Task 4: Storage - access methods
 
 **Files:** Modify `server/storage.ts` (append to the pipelines section; extend schema imports with `pipelineAccess, type PipelineAccess`).
 
@@ -343,12 +343,12 @@ git commit -m "feat(pipelines): access resolver, guards, /access endpoints, list
 
 **Files:** Modify `server/routes.ts` (the pipeline routes from Phase 1+2).
 
-For EACH route below, add the guard as the line AFTER the existing `requirePermission`/`requireWritePermission` check. Pipeline id is `Number(req.params.id)` unless noted; for card/field/value routes resolve the card/field first to get its `pipelineId`. **A missed route is a security hole — every route in this list must be guarded.**
+For EACH route below, add the guard as the line AFTER the existing `requirePermission`/`requireWritePermission` check. Pipeline id is `Number(req.params.id)` unless noted; for card/field/value routes resolve the card/field first to get its `pipelineId`. **A missed route is a security hole - every route in this list must be guarded.**
 
 - [ ] **Step 1: pipeline + stage routes**
   - `GET /api/pipelines/:id` → add `if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;` (after the existing perm check, before loading). Also attach the caller's level to the response: change its `sendSuccess(res, { ...pipeline, stages, fields })` to include `level: await getPipelineLevel(req, pipeline.id)`.
   - `PATCH /api/pipelines/:id`, `POST /api/pipelines/:id/archive` → `requirePipelineEdit(...:id)`.
-  - `POST /api/pipelines/reorder` → admin/own-level: this reorders multiple pipelines; require `requireWritePermission("pipelines")` only (leave as-is — reordering the list is a per-user view concern; do NOT per-pipeline gate). (Note in code comment.)
+  - `POST /api/pipelines/reorder` → admin/own-level: this reorders multiple pipelines; require `requireWritePermission("pipelines")` only (leave as-is - reordering the list is a per-user view concern; do NOT per-pipeline gate). (Note in code comment.)
   - `GET /api/pipelines/:id/stages` → `requirePipelineView(:id)`.
   - `POST /api/pipelines/:id/stages`, `PATCH/DELETE /api/pipelines/:id/stages/:stageId`, `POST /api/pipelines/:id/stages/reorder` → `requirePipelineEdit(:id)`.
 
@@ -359,11 +359,11 @@ For EACH route below, add the guard as the line AFTER the existing `requirePermi
   - `PATCH /api/pipelines/cards/:cardId`, `POST .../move`, `DELETE /api/pipelines/cards/:cardId` → resolve card → `requirePipelineEdit(card.pipelineId)`.
 
 - [ ] **Step 3: comment / follower / field / value routes**
-  - `GET/POST /api/pipelines/cards/:cardId/comments`, `DELETE /api/pipelines/cards/comments/:id`, `GET/POST/DELETE followers` → resolve the card → view for GET, edit for POST/DELETE. (For `DELETE .../comments/:id`, load the comment's card via the comment row if available; if storage lacks a getComment, gate by `requireWritePermission("pipelines")` + note — but prefer: the delete-comment route is edit-level; resolve via the comment's cardId. If no getComment method exists, add a minimal `getCommentCardId(id)` to storage, OR keep the coarse write guard and document the gap.)
+  - `GET/POST /api/pipelines/cards/:cardId/comments`, `DELETE /api/pipelines/cards/comments/:id`, `GET/POST/DELETE followers` → resolve the card → view for GET, edit for POST/DELETE. (For `DELETE .../comments/:id`, load the comment's card via the comment row if available; if storage lacks a getComment, gate by `requireWritePermission("pipelines")` + note - but prefer: the delete-comment route is edit-level; resolve via the comment's cardId. If no getComment method exists, add a minimal `getCommentCardId(id)` to storage, OR keep the coarse write guard and document the gap.)
   - `GET /api/pipelines/:id/fields` → `requirePipelineView(:id)`. `POST/PATCH/DELETE/reorder fields` → `requirePipelineEdit(:id)`.
   - `PUT /api/pipelines/cards/:cardId/values` → resolve card → `requirePipelineEdit(card.pipelineId)` (in addition to the existing field-value validation).
 
-- [ ] **Step 4: verify no double-load bugs** — where a route now loads the card both for the guard and for its logic, load once and reuse.
+- [ ] **Step 4: verify no double-load bugs** - where a route now loads the card both for the guard and for its logic, load once and reuse.
 
 - [ ] **Step 5:** `npm run typecheck && npm run build` → 0 errors, build OK.
 - [ ] **Step 6: manual API check on dev** (restart so the ALTER + table apply): as a non-admin role with `pipelines:read` and NO grant, `GET /api/pipelines/<restrictedId>` → 403; `GET /api/pipelines` omits it. As admin → full.
@@ -375,7 +375,7 @@ git commit -m "feat(pipelines): enforce per-pipeline view/edit on all routes"
 
 ---
 
-## Task 7: Frontend hooks — access + level
+## Task 7: Frontend hooks - access + level
 
 **Files:** Modify `client/hooks/usePipelines.ts`.
 
@@ -408,7 +408,7 @@ git commit -m "feat(pipelines): client hooks for access grants + level"
 
 ---
 
-## Task 8: Frontend — access dialog + list badge + board controls
+## Task 8: Frontend - access dialog + list badge + board controls
 
 **Files:** Create `client/components/pipelines/PipelineAccessDialog.tsx`; modify `client/pages/PipelinesPage.tsx`, `client/pages/PipelineBoardPage.tsx`.
 
@@ -477,9 +477,9 @@ export function PipelineAccessDialog({ pipelineId, open, onClose }: { pipelineId
 }
 ```
 
-- [ ] **Step 2: PipelinesPage — "Terbatas" badge.** On each pipeline card, when `(p as any).restricted` is truthy, render a small badge (use existing `StatusBadge` or a `<span>` with muted styling): `Terbatas`. (The list response includes `restricted`.)
+- [ ] **Step 2: PipelinesPage - "Terbatas" badge.** On each pipeline card, when `(p as any).restricted` is truthy, render a small badge (use existing `StatusBadge` or a `<span>` with muted styling): `Terbatas`. (The list response includes `restricted`.)
 
-- [ ] **Step 3: PipelineBoardPage — derive writable from level + "Akses" button.**
+- [ ] **Step 3: PipelineBoardPage - derive writable from level + "Akses" button.**
   - `usePipeline(pid)` now returns `level` on the pipeline detail. Replace the board's `writable` derivation: `const writable = pipeline?.level === "edit";` (fall back to `false` while loading). Keep `canWrite("pipelines")` only as a coarse fallback if `level` is absent.
   - Add an "Akses" button next to "Kelola Field", shown only when `writable`: opens `PipelineAccessDialog`. Add `const [showAccess, setShowAccess] = useState(false);` and render `{showAccess && pid != null && <PipelineAccessDialog pipelineId={pid} open={showAccess} onClose={() => setShowAccess(false)} />}`.
   - Import: `import { PipelineAccessDialog } from "@/components/pipelines/PipelineAccessDialog";`
@@ -497,7 +497,7 @@ git commit -m "feat(pipelines): access dialog + restricted badge + level-derived
 
 **Files:** none (verification only).
 
-- [ ] **Step 1: tests** — `npx tsx --test server/pipeline-access-helpers.test.ts` (pass) + the Phase 1/2 helper tests still pass.
+- [ ] **Step 1: tests** - `npx tsx --test server/pipeline-access-helpers.test.ts` (pass) + the Phase 1/2 helper tests still pass.
 - [ ] **Step 2:** `npm run typecheck && npm run build` → 0 errors, build OK.
 - [ ] **Step 3: manual e2e on dev** (`jabnet_fiber_dev`; restart so the ALTER + table apply):
   - Pipeline A, "Batasi akses" ON; grant role X=view, role Y=edit.
@@ -507,7 +507,7 @@ git commit -m "feat(pipelines): access dialog + restricted badge + level-derived
   - Admin/System-Admin: full access to A always; "Akses" button visible.
   - Pipeline B unrestricted: still follows the `pipelines` key for all roles (unchanged behaviour).
   - Cross-mitra: another mitra never sees A's grants/pipeline; guessing ids → 403/empty.
-- [ ] **Step 4: whole-implementation review** (final reviewer). MUST verify: (a) EVERY pipeline read/mutation route calls a per-pipeline guard (enumerate them — no route left with only the coarse `requirePermission`); (b) `sendSuccess` everywhere; (c) startup ALTER+CREATE present; (d) `effectiveRoleId` correctly resolved per-mitra (not the global role); (e) admin/System-Admin bypass intact; (f) list filtering can't leak a restricted pipeline; (g) tenant isolation on all access queries. Then STOP — user merges to dev, pushes, restarts dev app, tests; prod only on explicit OK.
+- [ ] **Step 4: whole-implementation review** (final reviewer). MUST verify: (a) EVERY pipeline read/mutation route calls a per-pipeline guard (enumerate them - no route left with only the coarse `requirePermission`); (b) `sendSuccess` everywhere; (c) startup ALTER+CREATE present; (d) `effectiveRoleId` correctly resolved per-mitra (not the global role); (e) admin/System-Admin bypass intact; (f) list filtering can't leak a restricted pipeline; (g) tenant isolation on all access queries. Then STOP - user merges to dev, pushes, restarts dev app, tests; prod only on explicit OK.
 
 ---
 
@@ -515,5 +515,5 @@ git commit -m "feat(pipelines): access dialog + restricted badge + level-derived
 - **Spec coverage:** schema+migration (T1), effectiveRoleId (T2), pure resolver (T3), storage access (T4), resolver+guards+/access+list-filter (T5), enforcement on all routes (T6), hooks (T7), dialog+badge+board (T8), verification (T9). Opt-in default = unrestricted falls through to key (T3 helper). Out-of-scope (stage/field/per-user) absent.
 - **Phase 1/2 lessons:** sendSuccess on /access endpoints (T5) + list (T5); startup ALTER/CREATE (T1); review item (a)/(b)/(c) in T9.
 - **Type consistency:** `resolvePipelineLevel`/`PipelineLevel` (T3) used in T5; storage `getPipelineAccess/setPipelineAccess/getGrantLevelForRole/getGrantsForRole` (T4) ↔ routes (T5/T6) ↔ hooks `usePipelineAccess/setAccess` (T7). `effectiveRoleId` defined T2, used T5. `level` attached in T5/T6, consumed T8.
-- **Security focus:** T6 enumerates every route; T9 review item (a) re-verifies none was missed. The one acknowledged soft spot — `DELETE /cards/comments/:id` resolving its pipeline — is called out in T6 Step 3 with a concrete resolution (add `getCommentCardId` or document the coarse guard); implementer must pick the secure option.
-- **Flagged adaptation points:** dialog component props (T8) verify-before-finalize; whether any existing caller destructures the perms-function return (T2 Step 4 — additive field, low risk).
+- **Security focus:** T6 enumerates every route; T9 review item (a) re-verifies none was missed. The one acknowledged soft spot - `DELETE /cards/comments/:id` resolving its pipeline - is called out in T6 Step 3 with a concrete resolution (add `getCommentCardId` or document the coarse guard); implementer must pick the secure option.
+- **Flagged adaptation points:** dialog component props (T8) verify-before-finalize; whether any existing caller destructures the perms-function return (T2 Step 4 - additive field, low risk).

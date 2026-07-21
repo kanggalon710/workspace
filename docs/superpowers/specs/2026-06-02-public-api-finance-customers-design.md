@@ -1,4 +1,4 @@
-# Public API — Finance + Subscriber + Executive Report (Fase 1)
+# Public API - Finance + Subscriber + Executive Report (Fase 1)
 
 > **Status**: Design disetujui 2026-06-02. Lanjutan dari rekomendasi "data untuk AI reporting".
 > **Goal**: Ekspos data revenue/billing, subscriber base, dan satu laporan executive one-shot ke Public API (`/api/public/v1/*`) supaya AI bisa bikin laporan harian → quarter. Tenant-scoped, agregat-only (tanpa PII), mengikuti pola `requireScope` + rate-limit yang sudah ada.
@@ -7,7 +7,7 @@
 
 ## Context
 
-Public API saat ini (`server/public-api-routes.ts`, ~962 baris) sudah punya 6 scope read: `marketing:read` (lengkap), `reports:read` (daily/weekly/range summary), `leads:read`, `collections:read`, `sahabat:read`, `tickets:read`. **Lubang terbesar: tidak ada data revenue/billing & subscriber base** — padahal datanya ada.
+Public API saat ini (`server/public-api-routes.ts`, ~962 baris) sudah punya 6 scope read: `marketing:read` (lengkap), `reports:read` (daily/weekly/range summary), `leads:read`, `collections:read`, `sahabat:read`, `tickets:read`. **Lubang terbesar: tidak ada data revenue/billing & subscriber base** - padahal datanya ada.
 
 ### Temuan kualitas data (prod `jabnet_fiber`, 808 customers, read-only audit 2026-06-02)
 
@@ -30,10 +30,10 @@ Public API saat ini (`server/public-api-routes.ts`, ~962 baris) sudah punya 6 sc
 
 Prod `WORKERS_ENABLED=false` (lihat memory `reference-prod-billing-sync-manual`), jadi tidak boleh mengandalkan background worker. Pakai **lazy snapshot**:
 
-- Tabel baru **`kpi_snapshots`** — 1 baris per `(mitra_id, snapshot_date)`. Ukuran mungil (≤365 baris/tahun/mitra).
+- Tabel baru **`kpi_snapshots`** - 1 baris per `(mitra_id, snapshot_date)`. Ukuran mungil (≤365 baris/tahun/mitra).
 - **Penulis lazy** (`ensureKpiSnapshotForToday()` di `storage.ts`): dipanggil di awal handler endpoint finance/customers/executive. Cek "snapshot mitra ini untuk tanggal lokal hari ini sudah ada?" via 1 SELECT ringan. Kalau belum → hitung agregat (COUNT/SUM dari customers + collections) lalu INSERT. Idempotent (unique `(mitra_id, snapshot_date)`; pakai `INSERT … ON DUPLICATE KEY UPDATE` atau cek-lalu-insert).
 - Karena cron keep-alive hit `/api/health` tiap 4 menit + traffic normal, snapshot hari itu pasti terbentuk begitu ada request finance/exec pertama. Beban ~1 agregat/hari/mitra.
-- **Tanggal lokal**: pakai timezone server (WIB) — `snapshot_date` = `YYYY-MM-DD` lokal.
+- **Tanggal lokal**: pakai timezone server (WIB) - `snapshot_date` = `YYYY-MM-DD` lokal.
 
 > Catatan: snapshot hanya dipicu oleh request ke endpoint baru ini (atau bisa juga dipanggil di `/health` kalau mau dijamin). MVP: panggil di handler finance/customers/executive. Cukup karena AI/cron yang konsumsi pasti hit endpoint tsb.
 
@@ -64,8 +64,8 @@ Index/unique: `uniq_kpi_snapshot_mitra_date` UNIQUE `(mitra_id, snapshot_date)`.
 
 Tambah ke daftar scope (`server/public-api-routes.ts` schema + validasi). Auto-grantable saat create API key di `/api-keys`.
 
-- `finance:read` — revenue, billing status, collections recovery (agregat).
-- `customers:read` — subscriber base counts & activations (agregat).
+- `finance:read` - revenue, billing status, collections recovery (agregat).
+- `customers:read` - subscriber base counts & activations (agregat).
 - `/reports/executive` pakai scope **`reports:read`** yang sudah ada (gabungan agregat).
 
 ### 3. Param periode seragam
@@ -82,9 +82,9 @@ Semua endpoint time-series & executive menerima:
 
 ## Endpoints & response shape
 
-Base: `/api/public/v1`. Semua pakai envelope mentah JSON yang sama dengan endpoint public existing (lihat `requireScope`). Semua agregat — **tanpa PII**.
+Base: `/api/public/v1`. Semua pakai envelope mentah JSON yang sama dengan endpoint public existing (lihat `requireScope`). Semua agregat - **tanpa PII**.
 
-### `GET /finance/overview` — scope `finance:read`
+### `GET /finance/overview` - scope `finance:read`
 Point-in-time (panggil `ensureKpiSnapshotForToday()` dulu).
 ```json
 {
@@ -102,10 +102,10 @@ Point-in-time (panggil `ensureKpiSnapshotForToday()` dulu).
 ```
 `prev`/`deltaPct` pada `mrr` diambil dari snapshot kemarin (null kalau belum ada).
 
-### `GET /finance/timeseries?metric=mrr|active|isolir|revenue_at_risk&period=` — scope `finance:read`
+### `GET /finance/timeseries?metric=mrr|active|isolir|revenue_at_risk&period=` - scope `finance:read`
 Dari `kpi_snapshots`. Return `{ metric, period, buckets:[{bucket,value}] }`. Bucket bulanan/quarter = nilai snapshot pada/terakhir di tiap bucket (point-in-time, bukan sum).
 
-### `GET /finance/collections?period=` — scope `finance:read`
+### `GET /finance/collections?period=` - scope `finance:read`
 Dari `collections` (sumber timestamp asli).
 ```json
 {
@@ -118,7 +118,7 @@ Dari `collections` (sumber timestamp asli).
 }
 ```
 
-### `GET /customers/overview` — scope `customers:read`
+### `GET /customers/overview` - scope `customers:read`
 ```json
 {
   "asOf": "...",
@@ -128,11 +128,11 @@ Dari `collections` (sumber timestamp asli).
 }
 ```
 
-### `GET /customers/timeseries?metric=new_activations|active|net_adds&period=` — scope `customers:read`
+### `GET /customers/timeseries?metric=new_activations|active|net_adds&period=` - scope `customers:read`
 - `new_activations`: dari `install_date` (histori asli, retroaktif penuh). Buang baris `install_date < '2000-01-01'` (garbage).
-- `active` / `net_adds`: dari `kpi_snapshots` (akumulasi ke depan; `net_adds` = `active[t] - active[t-1]`). Sebelum snapshot terkumpul, buckets bisa kosong/parsial — di-flag via field `coverage: "from 2026-06-02"`.
+- `active` / `net_adds`: dari `kpi_snapshots` (akumulasi ke depan; `net_adds` = `active[t] - active[t-1]`). Sebelum snapshot terkumpul, buckets bisa kosong/parsial - di-flag via field `coverage: "from 2026-06-02"`.
 
-### `GET /reports/executive?period=&from=&to=` — scope `reports:read` ⭐
+### `GET /reports/executive?period=&from=&to=` - scope `reports:read`
 One-shot padat untuk AI. Memanggil agregator yang sama (reuse fungsi storage finance/customers/collections).
 ```json
 {
@@ -165,7 +165,7 @@ Scope `finance:read` & `customers:read` **agregat-only**. TIDAK ada field PII di
 | `server/public-api-routes.ts` | + 2 scope di list scope & validasi. + 6 endpoint (handler tipis → panggil storage). + entri di `/schema` endpoint list & `scopes`. |
 | `client/pages/PublicApiPage.tsx` | (opsional, kalau scope di-hardcode di UI) tambah `finance:read`, `customers:read` ke daftar scope yang bisa dicentang saat create key. |
 
-**Tidak diubah:** rate-limit, auth bearer, tenant context wiring — semua reuse.
+**Tidak diubah:** rate-limit, auth bearer, tenant context wiring - semua reuse.
 
 ---
 

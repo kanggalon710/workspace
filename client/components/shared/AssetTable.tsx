@@ -79,7 +79,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Filtered data ──
+  // -- Filtered data --
   const filtered = useMemo(() => {
     if (!data) return [];
     let result = data.filter((item) => {
@@ -111,7 +111,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
     return result;
   }, [data, search, sortKey, sortDir, activeFilters]);
 
-  // ── Pagination ──
+  // -- Pagination --
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -183,7 +183,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
     }
   };
 
-  // ── Export CSV ──
+  // -- Export CSV --
   const exportCSV = () => {
     if (!filtered.length) return;
     const headers = columns.map(c => c.label);
@@ -199,7 +199,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
     toast.success("Data berhasil diexport ke CSV");
   };
 
-  // ── Bulk Actions ──
+  // -- Bulk Actions --
   const toggleSelect = (id: number) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -246,7 +246,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
 
   const hasActiveFilters = Object.values(activeFilters).some(v => v && v !== "__all__");
 
-  // ── Virtualization ──
+  // -- Virtualization --
   const rowVirtualizer = useVirtualizer({
     count: paginatedData.length,
     getScrollElement: () => tableContainerRef.current,
@@ -335,7 +335,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
         )}
       </div>
 
-      {/* ── Bulk Action Bar ── */}
+      {/* -- Bulk Action Bar -- */}
       {selectedIds.size > 0 && (
         <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-4 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
           <span className="text-sm font-medium">{selectedIds.size} item dipilih</span>
@@ -353,7 +353,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
         </div>
       )}
 
-      {/* ── CARD VIEW ── */}
+      {/* -- CARD VIEW -- */}
       {viewMode === "card" && renderCard ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
@@ -376,7 +376,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
           )}
         </div>
       ) : (
-        /* ── TABLE VIEW ── */
+        /* -- TABLE VIEW -- */
         <div ref={tableContainerRef} className="rounded-lg border overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar relative">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-background z-20 shadow-sm">
@@ -519,7 +519,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
         </div>
       )}
 
-      {/* ── Pagination ── */}
+      {/* -- Pagination -- */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Total: {filtered.length} data</span>

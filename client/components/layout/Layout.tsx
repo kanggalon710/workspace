@@ -19,7 +19,7 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const { collapsed } = useSidebar();
   const isFullScreen = location === "/map" || location === "/canvassing";
-  // v4.2.6: TechnicianWorkPage (/work/:id) dirender FULL chrome-less — tanpa sidebar, topbar, padding, atau bottom-nav.
+  // v4.2.6: TechnicianWorkPage (/work/:id) dirender FULL chrome-less - tanpa sidebar, topbar, padding, atau bottom-nav.
   // Ini halaman mobile-first untuk teknisi lapangan yang butuh layar maksimal.
   const isChromeless = location.startsWith("/work/");
   const pageLabel = FULLSCREEN_LABELS[location];
@@ -37,7 +37,7 @@ export function Layout({ children }: LayoutProps) {
           collapsed ? "md:ml-0" : "md:ml-64"
         } ${isFullScreen ? "h-screen overflow-hidden flex flex-col" : "min-h-screen pb-16 md:pb-0"}`}
       >
-        {/* Global Top Bar — sticky header (hidden on fullscreen pages) */}
+        {/* Global Top Bar - sticky header (hidden on fullscreen pages) */}
         {!isFullScreen && <TopBar />}
 
         {/* Content area */}
@@ -59,7 +59,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
-      {/* Floating menu button — mobile full-screen pages (Map/Canvassing) */}
+      {/* Floating menu button - mobile full-screen pages (Map/Canvassing) */}
       {isFullScreen && <FloatingMenuButton pageLabel={pageLabel} />}
 
       {!isFullScreen && <BottomNav />}

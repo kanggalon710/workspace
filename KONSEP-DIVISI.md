@@ -1,4 +1,4 @@
-# Konsep Workspace Berbasis Divisi — v5.1
+# Konsep Workspace Berbasis Divisi - v5.1
 
 > Restrukturisasi besar (Juli 2026, feedback owner): dashboard global **dihapus**,
 > workspace disusun ulang per **divisi**. Tiap divisi punya "rumah" sendiri
@@ -8,14 +8,14 @@
 
 ## Prinsip
 
-1. **Per-divisi, bukan per-fitur** — staf marketing membuka workspace dan hanya
+1. **Per-divisi, bukan per-fitur** - staf marketing membuka workspace dan hanya
    melihat: `Marketing` + `Teamspace` (+ Pipelines/menu umum bila diberi izin).
-2. **Beranda = pintu masuk** (`/`) — role dengan divisi utama langsung diarahkan
+2. **Beranda = pintu masuk** (`/`) - role dengan divisi utama langsung diarahkan
    ke hub divisinya (mapping `ROLE_HOME_DIVISION`); admin/lintas-divisi melihat
    grid semua divisi.
-3. **Hub divisi** (`/divisi/:key`) — KPI relevan (dari endpoint existing,
+3. **Hub divisi** (`/divisi/:key`) - KPI relevan (dari endpoint existing,
    permission-aware) + grid modul + pintasan divisi lain.
-4. **Menu umum terpisah** — `Pipelines` berdiri sendiri; `Integrasi & Tools`
+4. **Menu umum terpisah** - `Pipelines` berdiri sendiri; `Integrasi & Tools`
    menampung yang lintas divisi (Pengumuman, Bug, Integrasi API, Public API,
    Kelola Mitra, Manajemen Role).
 
@@ -45,35 +45,35 @@ Role baru cukup ditambahkan di `ROLE_HOME_DIVISION`.
 
 Hub v1 (sudah): KPI dari `/api/dashboard` + tugas Teamspace. Berikutnya per divisi:
 
-- **Marketing** — sudah matang (`/marketing`); hub menautkan ke sana.
-- **Teknik** — laporan WO per teknisi + SLA, aset baru per periode, ODP kritis trend.
-- **NOC** — uptime router/ONT, isolir trend harian (kpi_snapshots), alert center.
-- **Layanan Pelanggan** — tiket per kanal, respon WhatsApp, NPS/keluhan.
-- **Keuangan** — aging collection, recovery rate, pendapatan per paket.
-- **HRD** — produktivitas per user (endpoint `/api/users/:id/stats`), skor Teamspace.
+- **Marketing** - sudah matang (`/marketing`); hub menautkan ke sana.
+- **Teknik** - laporan WO per teknisi + SLA, aset baru per periode, ODP kritis trend.
+- **NOC** - uptime router/ONT, isolir trend harian (kpi_snapshots), alert center.
+- **Layanan Pelanggan** - tiket per kanal, respon WhatsApp, NPS/keluhan.
+- **Keuangan** - aging collection, recovery rate, pendapatan per paket.
+- **HRD** - produktivitas per user (endpoint `/api/users/:id/stats`), skor Teamspace.
 
 Pola implementasi: tambah selector KPI di `DivisionHubPage` (atau ganti hub jadi
-halaman laporan penuh gaya Cicle seperti `TeamReportPanel`) — struktur navigasi
+halaman laporan penuh gaya Cicle seperti `TeamReportPanel`) - struktur navigasi
 tidak perlu berubah lagi.
 
-## Modul HR & Payroll (PRD-HR / PRDHR.md — pengganti GajiHub)
+## Modul HR & Payroll (PRD-HR / PRDHR.md - pengganti GajiHub)
 
 Status implementasi (di stack workspace: Express + Drizzle MySQL, bukan Next/Prisma):
 
-**HR-1 SELESAI** — registry karyawan + wizard profil 3 langkah + import massal;
+**HR-1 SELESAI** - registry karyawan + wizard profil 3 langkah + import massal;
 struktur organisasi/jabatan/pangkat; presensi ESS `/hr/absen` (GPS+selfie+IP,
 radius multi-kantor, di luar radius → Approval Presensi); shift tetap + roster
 rotasi per tanggal (telat otomatis); cuti 5 jenis + saldo + alur berjenjang
 Manajer→HR; lembur; kalender libur; import mesin fingerprint (Fingerspot).
 
-**HR-2 SELESAI** — payroll: komponen gaji per karyawan, generate massal per
+**HR-2 SELESAI** - payroll: komponen gaji per karyawan, generate massal per
 periode (otomatis: alpha, lembur approved, cuti unpaid, cicilan kasbon,
 reimburse), PPh 21 TER PMK 168/2023 + BPJS TK/Kes (mesin murni ber-unit-test
-`shared/payroll.ts` — VERIFIKASI tarif sebelum bayar sungguhan), slip ESS
+`shared/payroll.ts` - VERIFIKASI tarif sebelum bayar sungguhan), slip ESS
 (paid-only), tandai bayar (memicu potong sisa kasbon + reimburse paid),
 ekspor jurnal CSV. Kasbon berplafon (default 1× gaji pokok) + reimburse.
 
-**HR-3 SELESAI + Dashboard HR (FR-HR-15xx)** — pelacakan lokasi teknisi (ping 5-menit ESS
+**HR-3 SELESAI + Dashboard HR (FR-HR-15xx)** - pelacakan lokasi teknisi (ping 5-menit ESS
 selama jam kerja, transparan, retensi 30 hari, panel "Posisi Teknisi Hari
 Ini"); master klien + kunjungan dengan validasi RADIUS (check-in luar radius
 ditandai); KPI form builder berbobot + penilaian 1-5 + rekap 0-100; petty

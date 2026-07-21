@@ -1,4 +1,4 @@
-/** Dashboard per divisi (v5.4): tiap divisi punya "ruang laporan" sendiri —
+/** Dashboard per divisi (v5.4): tiap divisi punya "ruang laporan" sendiri -
  *  KPI relevan + ringkasan data (pipeline collection / kapasitas jaringan / tugas)
  *  dari endpoint existing, hanya bila punya izin. Navigasi antar-modul ada di sidebar,
  *  jadi halaman ini fokus ke DATA, bukan daftar menu. */
@@ -20,10 +20,10 @@ import {
 } from "lucide-react";
 
 const fmtRp = (n: any) => (n == null ? "Rp 0" : `Rp ${Number(n).toLocaleString("id-ID")}`);
-const fmt = (v: any) => (v == null ? "—" : String(v));
+const fmt = (v: any) => (v == null ? "-" : String(v));
 const pct = (used: number, total: number) => (total > 0 ? Math.round((used / total) * 100) : 0);
 
-/** Baris breakdown sederhana (bar horizontal) — tanpa lib chart, ringan. */
+/** Baris breakdown sederhana (bar horizontal) - tanpa lib chart, ringan. */
 function BarRow({ label, value, max, color, suffix }: { label: string; value: number; max: number; color: string; suffix?: string }) {
   const w = max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0;
   return (
@@ -89,7 +89,7 @@ export default function DivisionHubPage() {
     );
   }
 
-  // ── KPI tiles per divisi ──
+  // -- KPI tiles per divisi --
   type Tile = { icon: any; label: string; value: string; accent: any; path?: string; description?: string };
   const tiles: Tile[] = [];
 
@@ -143,7 +143,7 @@ export default function DivisionHubPage() {
     tiles.push({ icon: CheckSquare, label: "Tugas Tim Terbuka", value: String(openTasks), accent: "violet", path: "/teamspace/tasks", description: "seluruh tim Anda" });
   }
 
-  // ── Breakdown: pipeline collection per stage (Keuangan / CS / Marketing) ──
+  // -- Breakdown: pipeline collection per stage (Keuangan / CS / Marketing) --
   const collectionBreakdown = useMemo(() => {
     if (!wantsCollections || !colStats || colStages.length === 0) return null;
     const byStage = colStats.byStage ?? {};
@@ -155,7 +155,7 @@ export default function DivisionHubPage() {
     return { rows, max };
   }, [wantsCollections, colStats, colStages]);
 
-  // ── Breakdown: kapasitas jaringan (Teknik / NOC) ──
+  // -- Breakdown: kapasitas jaringan (Teknik / NOC) --
   const capacity = useMemo(() => {
     if (!dash || !(key === "teknik" || key === "noc")) return null;
     const core = dash.totalCoreUsage ?? { total: 0, used: 0 };

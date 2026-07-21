@@ -27,7 +27,7 @@ export function CollectionMetricsDialog({ pipelineId, open, onClose }: { pipelin
                 <StatTile icon={CheckCircle2} label="Lunas" value={m.paidCount} accent="success" />
                 <StatTile icon={XCircle} label="Write-Off" value={m.writeoffCount} accent="danger" />
                 <StatTile icon={Wallet} label="Outstanding" value={rupiah(m.totalOutstanding)} accent="warning" />
-                <StatTile icon={TrendingUp} label="Success Rate" value={m.successRate == null ? "—" : `${Math.round(m.successRate * 100)}%`} accent="primary" />
+                <StatTile icon={TrendingUp} label="Success Rate" value={m.successRate == null ? "-" : `${Math.round(m.successRate * 100)}%`} accent="primary" />
               </div>
 
               <section>

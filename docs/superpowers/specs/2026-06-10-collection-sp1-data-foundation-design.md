@@ -1,8 +1,8 @@
-# Spec — SP1: Collection Data Foundation (days_overdue & billing variables)
+# Spec - SP1: Collection Data Foundation (days_overdue & billing variables)
 
 > Date: 2026-06-10 · Mitra-scoped · First sub-project of the "Collection Parameters in Pipeline Engine"
 > epic. Build on `dev`. Hybrid architecture (config-driven engine + variables in the generic rule builder).
-> Target context: pipeline 7 "Penagihan (Collections)" for JABNET — but built generically for all tenants.
+> Target context: pipeline 7 "Penagihan (Collections)" for JABNET - but built generically for all tenants.
 
 ## Goal
 
@@ -11,11 +11,11 @@ in rule conditions. This is the foundation the rest of the epic (SP2 config + st
 pass + triggers, SP4 cycles, SP5 dashboard) builds on.
 
 After SP1, an admin can author a rule such as: *trigger = billing_sync, condition = `days_overdue` > 30 →
-(any existing action)* — without any code. No new triggers or config UI yet (those are SP2/SP3).
+(any existing action)* - without any code. No new triggers or config UI yet (those are SP2/SP3).
 
 ## Scope
 
-**In scope — customer-derived attributes** (resolved from `pipeline_cards.source_customer_id` → `customers`):
+**In scope - customer-derived attributes** (resolved from `pipeline_cards.source_customer_id` → `customers`):
 - `days_overdue` (number)
 - `outstanding_amount` (currency)
 - `invoice_due_date` (date)
@@ -23,7 +23,7 @@ After SP1, an admin can author a rule such as: *trigger = billing_sync, conditio
 - `billing_status` (text)
 
 **Deferred to SP2** (stage-derived, need the stage-role/mapping model that SP2 introduces):
-- `collection_status`, `writeoff_status` — registered as known attr keys now, but evaluating them is SP2.
+- `collection_status`, `writeoff_status` - registered as known attr keys now, but evaluating them is SP2.
 
 **Explicitly out of scope (later SPs):** stage-mapping range table, thresholds/entry-mode/write-off config,
 the dedicated collection engine pass, new triggers (`days_overdue_reached`, `payment_received`, …),
@@ -38,7 +38,7 @@ the dedicated collection engine pass, new triggers (`days_overdue_reached`, `pay
 3. **Customer is the source of truth.** `outstanding_amount = billingPrice`, except when the customer is paid
    (`billing_status` ∈ {`lunas`,`paid`} case-insensitive) → `0`.
 
-## 1. Pure module — `shared/collectionMetrics.ts` (no I/O, unit-tested)
+## 1. Pure module - `shared/collectionMetrics.ts` (no I/O, unit-tested)
 
 ```ts
 export type CollectionAttrKey =
@@ -83,12 +83,12 @@ invalid → 0), `isPaidStatus` (lunas/PAID/" Lunas " true; "overdue"/null false)
 (paid → outstanding 0; unpaid → billingPrice; null price → 0), `compareAttr` (days_overdue gt/lt/eq numeric;
 billing_status eq/contains string; empty/not_empty; date lexical gt).
 
-## 2. Condition model extension — `shared/schema.ts`
+## 2. Condition model extension - `shared/schema.ts`
 
 Extend the condition type so a row can target a billing attr instead of a field:
 ```ts
 export type RuleCondition = {
-  source?: "field" | "stage" | "billing";   // default "field" (back-compat — existing rows have no source)
+  source?: "field" | "stage" | "billing";   // default "field" (back-compat - existing rows have no source)
   fieldId?: number;                          // for source "field" (was required; now optional)
   attr?: CollectionAttrKey;                  // for source "billing"
   op: RuleConditionOp;
@@ -100,7 +100,7 @@ renders `ConditionsBuilder` without `stages`, so only field conditions exist on 
 → treated as `"field"`. SP1 adds the optional `source` + `attr`; the `"stage"` value already exists in the
 shared `ConditionsBuilder` for other consumers and is left untouched here.
 
-## 3. Engine — evaluator + snapshot wiring
+## 3. Engine - evaluator + snapshot wiring
 
 ### 3a. Evaluator (`server/pipeline-automation-helpers.ts`, where `evaluateConditionGroups` lives)
 Add an optional snapshot parameter and resolve `billing` conditions through `compareAttr`:
@@ -125,7 +125,7 @@ const snapshot = await storage.getCardCollectionSnapshot(card.id);
 Fetch only when at least one group has a `billing` condition (cheap guard to avoid a customer lookup on
 every non-collection rule).
 
-### 3c. Storage — `getCardCollectionSnapshot(cardId)`
+### 3c. Storage - `getCardCollectionSnapshot(cardId)`
 ```ts
 async getCardCollectionSnapshot(cardId: number): Promise<CollectionSnapshot | null> {
   const card = await this.getCard(cardId);              // mitra-scoped
@@ -144,10 +144,10 @@ Wherever rule conditions are validated/parsed on save (the rules POST/PATCH vali
 "billing"` rows: require a valid `attr` ∈ `COLLECTION_ATTRS` keys and a valid `op`; `value` required unless
 `op` ∈ {`empty`,`not_empty`}. Reject unknown attrs. Field/stage rows validated as today.
 
-## 5. UI — `ConditionsBuilder.tsx` + `ruleFormState.ts`
+## 5. UI - `ConditionsBuilder.tsx` + `ruleFormState.ts`
 
 - `ConditionsBuilder` gains a **"Billing"** source. The source selector must show even when no `stages` prop is
-  passed (the rules dialog passes none) — so a `billing` option is always available; `stage` only when `stages`
+  passed (the rules dialog passes none) - so a `billing` option is always available; `stage` only when `stages`
   is provided (unchanged). In the rules dialog the row therefore offers **Field / Billing**.
 - A `billing` row renders: source select + an **attr dropdown** (`COLLECTION_ATTRS` labels) + operator select +
   value input. Reuse the existing `OPS` operator list (harmless extras like `contains` on a number are fine).
@@ -158,7 +158,7 @@ Wherever rule conditions are validated/parsed on save (the rules POST/PATCH vali
 
 ## 6. Testing
 
-- `shared/collectionMetrics.test.ts` (above) — the pure core, run with `npx tsx --test`.
+- `shared/collectionMetrics.test.ts` (above) - the pure core, run with `npx tsx --test`.
 - Evaluator: extend the existing helper test (if any) or a focused test that `evaluateConditionGroups` returns
   true/false for a `billing` `days_overdue > 30` condition given a snapshot, and false when snapshot is null.
 - Engine wiring, storage, validation, UI: typecheck + build + manual on dev (author a rule with a

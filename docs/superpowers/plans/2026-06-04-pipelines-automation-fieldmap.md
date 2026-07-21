@@ -34,11 +34,11 @@
 
 ---
 
-## Task 1: Schema — `pipeline_rule_field_maps` + startup migration
+## Task 1: Schema - `pipeline_rule_field_maps` + startup migration
 
 **Files:** Modify `shared/schema.ts`, `server/storage.ts`.
 
-- [ ] **Step 1: schema.ts** — after the Phase-4a `pipelineRuleFires` block, add:
+- [ ] **Step 1: schema.ts** - after the Phase-4a `pipelineRuleFires` block, add:
 ```ts
 export const pipelineRuleFieldMaps = mysqlTable("pipeline_rule_field_maps", {
   id: int("id").autoincrement().primaryKey(),
@@ -55,7 +55,7 @@ export const pipelineRuleFieldMaps = mysqlTable("pipeline_rule_field_maps", {
 export type PipelineRuleFieldMap = typeof pipelineRuleFieldMaps.$inferSelect;
 ```
 
-- [ ] **Step 2: storage.ts startup migration** — after the Phase-4a `pipeline_rule_fires` CREATE TABLE try/catch (search `pipeline_rule_fires setup failed`), add:
+- [ ] **Step 2: storage.ts startup migration** - after the Phase-4a `pipeline_rule_fires` CREATE TABLE try/catch (search `pipeline_rule_fires setup failed`), add:
 ```ts
     try {
       await this.db.execute(sql`
@@ -134,7 +134,7 @@ git commit -m "feat(pipelines): pickMappedValues helper with tests"
 
 ---
 
-## Task 3: Storage — access check + field-map CRUD + wire into rule CRUD
+## Task 3: Storage - access check + field-map CRUD + wire into rule CRUD
 
 **Files:** Modify `server/storage.ts` (extend schema import with `pipelineRuleFieldMaps, type PipelineRuleFieldMap`).
 
@@ -186,18 +186,18 @@ git commit -m "feat(pipelines): canUserAccessPipeline + rule field-map storage"
 
 ---
 
-## Task 4: Service — assignee guard + apply mapped values
+## Task 4: Service - assignee guard + apply mapped values
 
 **Files:** Modify `server/pipeline-automation.ts`.
 
-- [ ] **Step 1: import the helper** — add `pickMappedValues` to the existing import from `./pipeline-automation-helpers.js`.
+- [ ] **Step 1: import the helper** - add `pickMappedValues` to the existing import from `./pipeline-automation-helpers.js`.
 
 - [ ] **Step 2: replace the create-card block** inside the loop (the part from `await storage.createCard(...)` through `await storage.recordRuleFire(...)`) with:
 ```ts
       const assigneeId = (rule.copyAssignee && card.assigneeId && await storage.canUserAccessPipeline(card.assigneeId, rule.targetPipelineId))
         ? card.assigneeId : null;
       if (rule.copyAssignee && card.assigneeId && assigneeId === null) {
-        console.warn(`[automation] rule ${rule.id}: assignee ${card.assigneeId} lacks access to pipeline ${rule.targetPipelineId} — created unassigned`);
+        console.warn(`[automation] rule ${rule.id}: assignee ${card.assigneeId} lacks access to pipeline ${rule.targetPipelineId} - created unassigned`);
       }
       const newCard = await storage.createCard(rule.targetPipelineId, {
         stageId: rule.targetStageId,
@@ -215,7 +215,7 @@ git commit -m "feat(pipelines): canUserAccessPipeline + rule field-map storage"
       }
       await storage.recordRuleFire(rule.id, card.id);
 ```
-(The whole loop stays inside the existing outer try/catch — mapping/guard failures still never break the card action.)
+(The whole loop stays inside the existing outer try/catch - mapping/guard failures still never break the card action.)
 
 - [ ] **Step 3:** `npm run typecheck && npm run build` → 0 errors, build OK.
 - [ ] **Step 4:** commit
@@ -226,7 +226,7 @@ git commit -m "feat(pipelines): assignee-access guard + apply mapped field value
 
 ---
 
-## Task 5: Endpoints — fieldMaps payload + same-type validation + GET returns maps
+## Task 5: Endpoints - fieldMaps payload + same-type validation + GET returns maps
 
 **Files:** Modify `server/routes.ts` (the rule endpoints).
 
@@ -251,7 +251,7 @@ git commit -m "feat(pipelines): assignee-access guard + apply mapped field value
   }
 ```
 
-- [ ] **Step 2: GET /api/pipelines/:id/rules** — include each rule's fieldMaps. Replace the body:
+- [ ] **Step 2: GET /api/pipelines/:id/rules** - include each rule's fieldMaps. Replace the body:
 ```ts
   router.get("/api/pipelines/:id/rules", async (req, res) => {
     if (!requirePermission(req, res, "pipelines")) return;
@@ -262,14 +262,14 @@ git commit -m "feat(pipelines): assignee-access guard + apply mapped field value
   });
 ```
 
-- [ ] **Step 3: POST** — accept + validate `fieldMaps`. In the create handler, after the existing target-access check and before `createRule`, add:
+- [ ] **Step 3: POST** - accept + validate `fieldMaps`. In the create handler, after the existing target-access check and before `createRule`, add:
 ```ts
     const mapErr = await validateRuleFieldMaps(Number(req.params.id), Number(targetPipelineId), req.body?.fieldMaps);
     if (mapErr) return sendError(res, mapErr, 400);
 ```
 and pass `fieldMaps: req.body?.fieldMaps` into the `storage.createRule(..., { ..., fieldMaps: req.body?.fieldMaps }, ...)` data object.
 
-- [ ] **Step 4: PATCH** — validate when fieldMaps present. The rule's target pipeline may come from the body (`targetPipelineId`) or the existing rule. Resolve it: load the rule's current target if not in body. In the patch handler, after the existing target-access check, add:
+- [ ] **Step 4: PATCH** - validate when fieldMaps present. The rule's target pipeline may come from the body (`targetPipelineId`) or the existing rule. Resolve it: load the rule's current target if not in body. In the patch handler, after the existing target-access check, add:
 ```ts
     if (req.body?.fieldMaps !== undefined) {
       const current = (await storage.listRules(Number(req.params.id))).find((r) => r.id === Number(req.params.ruleId));
@@ -290,11 +290,11 @@ git commit -m "feat(pipelines): rule endpoints accept+validate fieldMaps (same-t
 
 ---
 
-## Task 6: Frontend hooks — carry fieldMaps
+## Task 6: Frontend hooks - carry fieldMaps
 
 **Files:** Modify `client/hooks/usePipelines.ts`.
 
-- [ ] **Step 1: a rule-with-maps type + reuse mutations.** The `createRule`/`updateRule` mutations already pass the whole body object through (`(b: any) => api.post(...)` / `({ruleId, ...b}) => api.patch(...)`), so `fieldMaps` flows automatically — NO mutation change needed. Only add a type for consumption:
+- [ ] **Step 1: a rule-with-maps type + reuse mutations.** The `createRule`/`updateRule` mutations already pass the whole body object through (`(b: any) => api.post(...)` / `({ruleId, ...b}) => api.patch(...)`), so `fieldMaps` flows automatically - NO mutation change needed. Only add a type for consumption:
 ```ts
 export type RuleWithMaps = PipelineRule & { fieldMaps?: { id: number; sourceFieldId: number; targetFieldId: number }[] };
 ```
@@ -318,7 +318,7 @@ git commit -m "feat(pipelines): useRules returns fieldMaps"
 
 ---
 
-## Task 7: Frontend — "Pemetaan field" section in the rule dialog
+## Task 7: Frontend - "Pemetaan field" section in the rule dialog
 
 **Files:** Modify `client/components/pipelines/PipelineRulesDialog.tsx`.
 
@@ -349,7 +349,7 @@ Add a row helper + the create-in-target action:
     } catch (e: any) { toast.error(e?.message || "Gagal membuat field di target"); }
   };
 ```
-> `usePipelineMutations(targetId).createField` posts to `/pipelines/:targetId/fields` (P2). `created` is the new field (has `.id`). Verify the create-field mutation returns the row (it does — P2 createField reselects).
+> `usePipelineMutations(targetId).createField` posts to `/pipelines/:targetId/fields` (P2). `created` is the new field (has `.id`). Verify the create-field mutation returns the row (it does - P2 createField reselects).
 
 - [ ] **Step 2: include maps in create + reset; load maps when editing.** In the `add()` submit, pass `fieldMaps`:
 ```tsx
@@ -395,7 +395,7 @@ and reset `setMaps([])` alongside the other resets on success.
           )}
 ```
 
-- [ ] **Step 4: rule-list summary** — append a mapped-field note. In the rule list row, after the trigger→target sentence, add:
+- [ ] **Step 4: rule-list summary** - append a mapped-field note. In the rule list row, after the trigger→target sentence, add:
 ```tsx
                 {r.fieldMaps && r.fieldMaps.length > 0 && <span className="text-[10px] text-muted-foreground ml-1">· +{r.fieldMaps.length} field</span>}
 ```
@@ -422,12 +422,12 @@ git commit -m "feat(pipelines): field-mapping section in rule dialog (+ create-i
   - Try mapping number→text (create a text field in B, map A.harga→B.text) → save rejected with 400 (type mismatch).
   - Map to a B field, then delete that B field, then fire → value skipped, card still created, move succeeds.
   - Restricted target + assignee with no grant → unassigned. Cross-mitra isolation. Delete rule → field maps gone.
-- [ ] **Step 4: whole-implementation review.** MUST verify: (a) assignee guard `canUserAccessPipeline` mirrors P3 (admin/unrestricted/restricted) + tenant-scoped; (b) field-map same-type validation enforced server-side on POST+PATCH; (c) fire-time mapping is defensive (skips deleted target fields) and inside the never-throw try/catch; (d) sendSuccess on all endpoints; (e) startup CREATE TABLE present; (f) tenant isolation on map storage; (g) deleteRule clears maps; (h) create-in-target uses the P2 endpoint against the TARGET pipeline (not source). Then STOP — user merges to dev, pushes, restarts, tests; prod only on explicit OK.
+- [ ] **Step 4: whole-implementation review.** MUST verify: (a) assignee guard `canUserAccessPipeline` mirrors P3 (admin/unrestricted/restricted) + tenant-scoped; (b) field-map same-type validation enforced server-side on POST+PATCH; (c) fire-time mapping is defensive (skips deleted target fields) and inside the never-throw try/catch; (d) sendSuccess on all endpoints; (e) startup CREATE TABLE present; (f) tenant isolation on map storage; (g) deleteRule clears maps; (h) create-in-target uses the P2 endpoint against the TARGET pipeline (not source). Then STOP - user merges to dev, pushes, restarts, tests; prod only on explicit OK.
 
 ---
 
 ## Self-Review Notes (author)
 - **Spec coverage:** schema+migration (T1); pickMappedValues (T2); canUserAccessPipeline + map storage + rule-CRUD wiring (T3); assignee guard + apply maps in service (T4); endpoints fieldMaps + same-type validation + GET maps (T5); hooks (T6); dialog mapping UI + create-in-target (T7); verification (T8). Soft-required untouched (correct). Out-of-scope (built-in fields, runtime create, type conversion) absent.
 - **Lessons enforced:** sendSuccess (T5); startup CREATE TABLE only (T1); service stays in never-throw try/catch (T4); tenant scoping on all new storage (T3).
-- **Type consistency:** `pickMappedValues` (T2) used in service (T4). Storage `canUserAccessPipeline`/`getRuleFieldMaps`/`setRuleFieldMaps` (T3) ↔ service (T4) ↔ endpoints (T5). `createRule`/`updateRule` `fieldMaps` param (T3) ↔ route payload (T5) ↔ dialog (T7). `RuleWithMaps` (T6) consumed in dialog (T7). `getUserEffectivePermissionsAtMitra` returns `roleId` (added in P3) — relied on by `canUserAccessPipeline`.
+- **Type consistency:** `pickMappedValues` (T2) used in service (T4). Storage `canUserAccessPipeline`/`getRuleFieldMaps`/`setRuleFieldMaps` (T3) ↔ service (T4) ↔ endpoints (T5). `createRule`/`updateRule` `fieldMaps` param (T3) ↔ route payload (T5) ↔ dialog (T7). `RuleWithMaps` (T6) consumed in dialog (T7). `getUserEffectivePermissionsAtMitra` returns `roleId` (added in P3) - relied on by `canUserAccessPipeline`.
 - **Flagged adaptation points:** dialog `Combobox`/`Button` props (T7) verify-before-finalize; the P2 `createField` mutation returns the created field row (confirm `.id`); the create-in-target must use `usePipelineMutations(targetPipelineId).createField` so it hits the target pipeline.

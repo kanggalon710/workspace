@@ -34,7 +34,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 interface UserItem { id: number; name: string; username: string; role: string; }
 interface LeadDetail extends Lead { activities?: LeadActivity[] }
 interface OdpItem { id: number; name: string; }
@@ -69,7 +69,7 @@ function fmtDateTime(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-// ── Time range filter (by lead createdAt) ───────────────────────────────────
+// -- Time range filter (by lead createdAt) -----------------------------------
 type RangePreset = "all" | "7d" | "30d" | "custom";
 const RANGE_LABELS: Record<RangePreset, string> = {
   all: "Semua",
@@ -78,7 +78,7 @@ const RANGE_LABELS: Record<RangePreset, string> = {
   custom: "Custom",
 };
 
-// ── Convert Lead Dialog ───────────────────────────────────────────────────
+// -- Convert Lead Dialog ---------------------------------------------------
 function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
   lead: LeadDetail;
   odps: OdpItem[];
@@ -190,7 +190,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
                   {generatingId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground">Format: YYMMCKKNNNNN — TH+BL+Cycle+Kec+Urut (auto)</p>
+              <p className="text-[10px] text-muted-foreground">Format: YYMMCKKNNNNN - TH+BL+Cycle+Kec+Urut (auto)</p>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground">Paket Layanan <span className="text-red-500">*</span></label>
@@ -205,7 +205,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
               <label className="text-xs font-medium text-muted-foreground">Router MikroTik</label>
               <select value={routerId ?? ""} onChange={e => { setRouterId(e.target.value ? parseInt(e.target.value) : null); setProfileName(""); }}
                 className="w-full text-sm rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="">— Pilih Router —</option>
+                <option value="">- Pilih Router -</option>
                 {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.host})</option>)}
               </select>
             </div>
@@ -214,7 +214,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
                 <label className="text-xs font-medium text-muted-foreground">Profile MikroTik</label>
                 <select value={profileName} onChange={e => setProfileName(e.target.value)}
                   className="w-full text-sm rounded-md border border-input bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring">
-                  <option value="">— Pilih Profile —</option>
+                  <option value="">- Pilih Profile -</option>
                   {profiles.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                 </select>
               </div>
@@ -258,7 +258,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
   );
 }
 
-// ── Lead Detail Drawer ─────────────────────────────────────────────────────
+// -- Lead Detail Drawer -----------------------------------------------------
 function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert, onDelete }: {
   leadId: number; users: UserItem[]; odps: OdpItem[]; convertedLeadIds: Set<number>; onClose: () => void; onConvert?: (lead: LeadDetail) => void; onDelete?: (leadId: number) => void;
 }) {
@@ -330,7 +330,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
       toast.error("File harus berupa gambar");
       return;
     }
-    // Auto-compress (no size limit — user upload apapun oke)
+    // Auto-compress (no size limit - user upload apapun oke)
     try {
       const { compressImage, formatBytes } = await import("@/lib/imageCompress");
       const result = await compressImage(file);
@@ -380,7 +380,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                   {LEAD_STAGE_LABELS[lead.stage as LeadStage]}
                 </Badge>
                 <span className="text-[11px] text-muted-foreground">
-                  {LEAD_CATEGORY_LABELS[lead.category as keyof typeof LEAD_CATEGORY_LABELS] ?? lead.category ?? "—"} • {sourceLabel(lead.source)}
+                  {LEAD_CATEGORY_LABELS[lead.category as keyof typeof LEAD_CATEGORY_LABELS] ?? lead.category ?? "-"} • {sourceLabel(lead.source)}
                 </span>
               </DialogDescription>
             </div>
@@ -442,7 +442,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
             </div>
           ) : (
             <>
-              {/* Wilayah banner — highlight lokasi lead supaya gampang scan */}
+              {/* Wilayah banner - highlight lokasi lead supaya gampang scan */}
               {(() => {
                 const village = (lead as any).village?.trim();
                 const district = (lead as any).district?.trim();
@@ -453,7 +453,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                 if (district) wilayahLines.push(district);
                 const hasWilayah = wilayahLines.length > 0;
 
-                // ODP reference — important untuk coverage planning
+                // ODP reference - important untuk coverage planning
                 const linkedOdp = lead.odpId != null ? odps.find((o) => o.id === lead.odpId) : null;
                 const hasOdp = !!linkedOdp;
 
@@ -486,7 +486,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                           </div>
                         )}
 
-                        {/* ODP reference — critical untuk instalasi */}
+                        {/* ODP reference - critical untuk instalasi */}
                         <div className="mt-2 pt-2 border-t flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full shrink-0 ${hasOdp ? "bg-green-500" : "bg-red-500"}`} />
                           <div className="flex-1 min-w-0 text-xs">
@@ -551,7 +551,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                     className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1"
                     disabled={assignLead.isPending}
                   >
-                    <option value="">— Belum ditugaskan —</option>
+                    <option value="">- Belum ditugaskan -</option>
                     {marketingUsers.map((u) => (
                       <option key={u.id} value={u.id}>{u.name} (@{u.username})</option>
                     ))}
@@ -707,7 +707,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                 </div>
               )}
 
-              {/* Danger zone — hapus lead, terisolasi di bawah */}
+              {/* Danger zone - hapus lead, terisolasi di bawah */}
               {me?.role === "admin" && onDelete && (
                 <div className="mt-6 pt-4 border-t border-dashed border-red-200 dark:border-red-900">
                   <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60">
@@ -739,7 +739,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
 }
 
 
-// ── Kanban Card ────────────────────────────────────────────────────────────
+// -- Kanban Card ------------------------------------------------------------
 function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: UserItem[]; isConverted?: boolean; onClick: () => void }) {
   const assigned = users.find(u => u.id === lead.assignedTo);
   const stageColor = LEAD_STAGE_COLORS[lead.stage as LeadStage] ?? "#6B7280";
@@ -748,7 +748,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
   const ageDays = Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86400000);
   const isTerminal = lead.stage === "won" || lead.stage === "lost";
 
-  // ── Lead Temperature / Scoring ──
+  // -- Lead Temperature / Scoring --
   // Based on: priority, age in stage, last update
   const lastUpdateAt = (lead as any).updatedAt || lead.createdAt;
   const daysSinceUpdate = Math.floor((Date.now() - new Date(lastUpdateAt).getTime()) / 86400000);
@@ -795,14 +795,14 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
       )}
     >
       <CardContent className="p-3 space-y-2">
-        {/* ── Top row: Name + indicators + action ── */}
+        {/* -- Top row: Name + indicators + action -- */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               {isHot && (
                 <span
                   className="inline-flex items-center justify-center h-4 w-4 rounded-sm bg-warning/15 shrink-0"
-                  title="Hot lead — aktivitas baru"
+                  title="Hot lead - aktivitas baru"
                 >
                   <Flame className="h-3 w-3 text-warning" />
                 </span>
@@ -810,7 +810,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
               {isStalled && (
                 <span
                   className="inline-flex items-center justify-center h-4 w-4 rounded-sm bg-destructive/15 shrink-0"
-                  title={`Stalled — tidak ada update ${daysSinceUpdate} hari`}
+                  title={`Stalled - tidak ada update ${daysSinceUpdate} hari`}
                 >
                   <AlertTriangle className="h-3 w-3 text-destructive" />
                 </span>
@@ -828,7 +828,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
           <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
         </div>
 
-        {/* ── Wilayah ── */}
+        {/* -- Wilayah -- */}
         {wilayah && (
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <MapPin className="h-3 w-3 shrink-0 text-primary/60" />
@@ -836,7 +836,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
           </div>
         )}
 
-        {/* ── Age + last activity row ── */}
+        {/* -- Age + last activity row -- */}
         <div className="flex items-center justify-between gap-2 text-2xs">
           <div
             className="inline-flex items-center gap-1 font-semibold"
@@ -865,7 +865,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
           )}
         </div>
 
-        {/* ── Status badges ── */}
+        {/* -- Status badges -- */}
         <div className="flex flex-wrap gap-1">
           {priority === "high" && !isStalled && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
@@ -894,7 +894,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
           )}
         </div>
 
-        {/* ── Assigned user ── */}
+        {/* -- Assigned user -- */}
         {assigned && (
           <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white text-[9px] font-black shrink-0">
@@ -910,7 +910,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
   );
 }
 
-// ── List View Lead Row (list-optimized — quick stage change) ────────────────
+// -- List View Lead Row (list-optimized - quick stage change) ----------------
 function ListLeadRow({
   lead, users, isConverted, onClick, onStageChange,
 }: {
@@ -962,7 +962,7 @@ function ListLeadRow({
   return (
     <Card className={cn("overflow-hidden relative transition-all hover:shadow-elev-md", borderAccent)}>
       <CardContent className="p-0">
-        {/* Clickable card body — opens drawer for detail */}
+        {/* Clickable card body - opens drawer for detail */}
         <button onClick={onClick} className="w-full text-left p-3 md:p-4 hover:bg-muted/30 transition-colors">
           <div className="flex items-start gap-3">
             {/* Stage color indicator */}
@@ -1053,7 +1053,7 @@ function ListLeadRow({
           </div>
         </button>
 
-        {/* Quick stage action buttons — hanya kalau lead belum terminal */}
+        {/* Quick stage action buttons - hanya kalau lead belum terminal */}
         {!isTerminal && nextStages.length > 0 && (
           <div className="flex gap-1.5 px-3 md:px-4 pb-3 pt-2 border-t border-border/40 bg-muted/20 overflow-x-auto no-scrollbar">
             <span className="text-2xs text-muted-foreground font-semibold uppercase tracking-wider shrink-0 self-center">
@@ -1094,10 +1094,10 @@ function ListLeadRow({
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+// -- Main Page --------------------------------------------------------------
 export default function LeadPipelinePage() {
   const { user: me } = useAuth();
-  // Default view: list di mobile (<768px), kanban di desktop — persist preference
+  // Default view: list di mobile (<768px), kanban di desktop - persist preference
   const [view, setView] = useState<"kanban" | "list">(() => {
     if (typeof window === "undefined") return "kanban";
     const saved = localStorage.getItem("lead_pipeline_view") as "kanban" | "list" | null;
@@ -1155,7 +1155,7 @@ export default function LeadPipelinePage() {
     staleTime: 120_000,
   });
 
-  // ── Time range filter (by createdAt) — diterapkan ke seluruh halaman ──
+  // -- Time range filter (by createdAt) - diterapkan ke seluruh halaman --
   const customRangeValid = rangePreset !== "custom" || (!!customFrom && !!customTo && customFrom <= customTo);
   const timeFiltered = useMemo(() => {
     if (rangePreset === "all") return leads;
@@ -1183,7 +1183,7 @@ export default function LeadPipelinePage() {
     return acc;
   }, {} as Record<LeadStage, Lead[]>);
 
-  // ── Stage change mutation (with note + photo) ──
+  // -- Stage change mutation (with note + photo) --
   const pageStageMut = useMutation({
     mutationFn: async (data: { id: number; stage: LeadStage; lossReason?: string; note?: string; photoData?: string }) => {
       await api.patch(`/marketing/leads/${data.id}/stage`, { stage: data.stage, lossReason: data.lossReason });
@@ -1244,7 +1244,7 @@ export default function LeadPipelinePage() {
     }
   };
 
-  // ── Drag-and-drop handlers ──
+  // -- Drag-and-drop handlers --
   const handleDragStart = (id: number) => (e: React.DragEvent) => {
     setDraggingId(id);
     e.dataTransfer.effectAllowed = "move";
@@ -1288,7 +1288,7 @@ export default function LeadPipelinePage() {
                 )}
               </div>
               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                Lead dari canvassing / prospect finder — kelola sampai jadi pelanggan.
+                Lead dari canvassing / prospect finder - kelola sampai jadi pelanggan.
               </p>
             </div>
           </div>
@@ -1328,7 +1328,7 @@ export default function LeadPipelinePage() {
           </div>
         </div>
 
-        {/* Stats row — compact, 4 kolom 1 baris */}
+        {/* Stats row - compact, 4 kolom 1 baris */}
         <div className="grid grid-cols-4 gap-1.5 md:gap-2">
           <div className="rounded-lg border border-border bg-card px-2 py-1.5 md:px-3 md:py-2 border-l-[3px] border-l-primary">
             <div className="text-[9px] md:text-2xs text-muted-foreground uppercase tracking-wider font-semibold truncate">Total</div>
@@ -1450,7 +1450,7 @@ export default function LeadPipelinePage() {
           </div>
         </div>
       ) : view === "kanban" ? (
-        /* ═══ KANBAN — horizontal scroll outer, vertical scroll per-column ═══ */
+        /* === KANBAN - horizontal scroll outer, vertical scroll per-column === */
         <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
           <div className="flex gap-3 h-full items-stretch w-max">
             {LEAD_STAGES.filter(s => stageFilter === "all" || stageFilter === s).map((stage) => {
@@ -1497,7 +1497,7 @@ export default function LeadPipelinePage() {
         </div>
 
       ) : (
-        /* ═══ LIST VIEW — full-page vertical scroll dengan quick stage actions ═══ */
+        /* === LIST VIEW - full-page vertical scroll dengan quick stage actions === */
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
           <div className="space-y-2 pb-2">
             {filtered.map((lead) => (
@@ -1514,7 +1514,7 @@ export default function LeadPipelinePage() {
         </div>
       )}
 
-      {/* ═══════════ DRAWER ═══════════ */}
+      {/* =========== DRAWER =========== */}
       {selectedLeadId !== null && (
         <LeadDrawer leadId={selectedLeadId} users={users} odps={odps} convertedLeadIds={convertedLeadIds}
           onClose={() => setSelectedLeadId(null)}
@@ -1522,13 +1522,13 @@ export default function LeadPipelinePage() {
           onDelete={(id) => setDeleteLeadId(id)} />
       )}
 
-      {/* Convert dialog at page level — outside drawer z-index */}
+      {/* Convert dialog at page level - outside drawer z-index */}
       {convertLead && (
         <ConvertLeadDialog lead={convertLead} odps={odps} open={!!convertLead}
           onOpenChange={(v) => { if (!v) setConvertLead(null); }} />
       )}
 
-      {/* Stage change confirmation dialog — untuk drag-drop + tombol */}
+      {/* Stage change confirmation dialog - untuk drag-drop + tombol */}
       <Dialog open={!!stageChangeFor} onOpenChange={(o) => !o && setStageChangeFor(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -1625,7 +1625,7 @@ export default function LeadPipelinePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete dialog at page level — outside drawer z-index */}
+      {/* Delete dialog at page level - outside drawer z-index */}
       <AlertDialog open={deleteLeadId !== null} onOpenChange={(o) => { if (!o) setDeleteLeadId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,4 +1,4 @@
-# LP2b — Campaign Capture — Implementation Plan
+# LP2b - Campaign Capture - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -65,10 +65,10 @@ test("no ad keys → empty object", () => {
 });
 ```
 
-- [ ] **Step 2: Run — expect fail**
+- [ ] **Step 2: Run - expect fail**
 
 Run: `npx tsx --test shared/adCampaignFields.test.ts`
-Expected: FAIL — module not found.
+Expected: FAIL - module not found.
 
 - [ ] **Step 3: Implement**
 
@@ -116,7 +116,7 @@ export function extractAdRefs(payload: any): AdRefs {
 }
 ```
 
-- [ ] **Step 4: Run — expect pass**
+- [ ] **Step 4: Run - expect pass**
 
 Run: `npx tsx --test shared/adCampaignFields.test.ts`
 Expected: PASS (3 tests). `npx tsc --noEmit` → 0 errors.
@@ -132,7 +132,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Schema + migration — 3 lead columns
+## Task 2: Schema + migration - 3 lead columns
 
 **Files:**
 - Modify: `shared/schema.ts` (`leads` table, before the closing `});`)
@@ -172,7 +172,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Catalogs — IntakeLead + field-map + condition attrs
+## Task 3: Catalogs - IntakeLead + field-map + condition attrs
 
 **Files:**
 - Modify: `shared/leadIntake.ts` (`IntakeLead` interface ~line 10-25; `LEAD_ATTRS` ~line 30-44) + `shared/leadIntake.test.ts`
@@ -207,7 +207,7 @@ In `shared/leadIntake.ts`:
   { key: "adSet", label: "Ad Set", fieldTypes: TEXTISH },
   { key: "adName", label: "Ad Name", fieldTypes: TEXTISH },
 ```
-(`attrRaw`/`leadToFieldValues` already handle arbitrary string attrs via `(l as any)[attr]` default branch — no logic change needed.)
+(`attrRaw`/`leadToFieldValues` already handle arbitrary string attrs via `(l as any)[attr]` default branch - no logic change needed.)
 
 - [ ] **Step 3: Run leadIntake test**
 
@@ -234,7 +234,7 @@ In `shared/leadConditions.ts`, add to `LEAD_CONDITION_ATTRS` (after `odpId` or w
   { key: "adSet", label: "Ad Set", ops: TEXT },
   { key: "adName", label: "Ad Name", ops: TEXT },
 ```
-(`TEXT` const = `["eq","neq","contains"]` already defined in the file. `leadConditionRaw` default branch `(lead as any)[attr]` already handles campaign — no change.)
+(`TEXT` const = `["eq","neq","contains"]` already defined in the file. `leadConditionRaw` default branch `(lead as any)[attr]` already handles campaign - no change.)
 
 - [ ] **Step 6: Run leadConditions test + typecheck**
 
@@ -300,7 +300,7 @@ In `server/routes.ts`, find the meta webhook createLead block (~line 9530: `cons
 import { resolveAdFields } from "./lead-campaign.js";
 import { withMitra } from "./tenant-context.js";
 ```
-(If `withMitra` is already imported in routes.ts, don't duplicate — check first.)
+(If `withMitra` is already imported in routes.ts, don't duplicate - check first.)
 - Immediately BEFORE the `const createdLead = await storage.createLead({` line in the meta handler, add:
 ```ts
         const ad = await withMitra(1, () => resolveAdFields("meta_ads", v));
@@ -337,10 +337,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 5: Client — show campaign in lead detail
+## Task 5: Client - show campaign in lead detail
 
 **Files:**
-- Modify: `client/pages/LeadPipelinePage.tsx` (lead detail section — near the existing `<InfoRow label="Sumber" .../>` ~line 516)
+- Modify: `client/pages/LeadPipelinePage.tsx` (lead detail section - near the existing `<InfoRow label="Sumber" .../>` ~line 516)
 
 - [ ] **Step 1: Add campaign InfoRow(s)**
 
@@ -394,11 +394,11 @@ Expected: all PASS (≥ prior count).
 
 - [ ] **Step 5: Update memory**
 
-Update `memory/project-leads-pipeline-integration.md`: LP2b DONE on dev (belum push) — campaign/adSet/adName cols, extractAdRefs, resolve via ad_campaigns registry (no Graph API), field-map+condition attrs, lead detail display. Add commit range. Mark LP2b done in the slice list.
+Update `memory/project-leads-pipeline-integration.md`: LP2b DONE on dev (belum push) - campaign/adSet/adName cols, extractAdRefs, resolve via ad_campaigns registry (no Graph API), field-map+condition attrs, lead detail display. Add commit range. Mark LP2b done in the slice list.
 
 ---
 
-## Self-Review (penulis plan — sudah dijalankan)
+## Self-Review (penulis plan - sudah dijalankan)
 
 **Spec coverage:** §extractAdRefs→T1; §3 cols + migration→T2; §IntakeLead+catalogs→T3; §resolveAdFields + webhook capture (withMitra)→T4; §client display→T5; §best-effort/tenant→T4 (try/catch + withMitra(1)); §testing→T1/T3/T6. AC1-6 covered.
 

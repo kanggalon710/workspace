@@ -1,4 +1,4 @@
-/** Teamspace worker (v5.0 Fase 2) — scheduler check-in rutin (FR-802/804).
+/** Teamspace worker (v5.0 Fase 2) - scheduler check-in rutin (FR-802/804).
  *  Tick tiap 60 detik: pertanyaan aktif yang jatuh tempo hari+jam-nya dikirim SEKALI
  *  per hari (dedup via last_sent_date; shouldSendNow pakai ">=" jadi tahan downtime).
  *  Pengiriman: notifikasi in-app + WhatsApp via MPWA (best-effort, hormati mpwa_enabled).
@@ -23,7 +23,7 @@ class TeamspaceWorker {
 
   async start(): Promise<void> {
     if (this.timer) return;
-    console.log("[TeamspaceWorker] started (tick 60s — check-in scheduler + KPI snapshot 30m)");
+    console.log("[TeamspaceWorker] started (tick 60s - check-in scheduler + KPI snapshot 30m)");
     this.timer = setInterval(() => { void this.tick(); }, TICK_MS);
   }
 
@@ -39,12 +39,12 @@ class TeamspaceWorker {
       const all = await storage.listActiveCheckinQuestionsAllMitra();
       const due = all.filter((q) => shouldSendNow(q, now));
       for (const q of due) {
-        // Tandai terkirim DULUAN — bila error di tengah, tidak spam ulang tiap menit;
+        // Tandai terkirim DULUAN - bila error di tengah, tidak spam ulang tiap menit;
         // instance berikutnya tetap jalan di hari jadwal berikutnya.
         await storage.markCheckinSent(q.id, localDateStr(now));
         await this.dispatchQuestion(q);
       }
-      // §14.4: snapshot KPI Teamspace tiap ~30 menit (upsert per hari — tulisan
+      // §14.4: snapshot KPI Teamspace tiap ~30 menit (upsert per hari - tulisan
       // terakhir = keadaan end-of-day, dasar grafik tren periode-ke-periode).
       if (this.tickCount % 30 === 0) {
         await storage.writeTeamspaceKpiSnapshots().catch((e: any) =>
@@ -80,10 +80,10 @@ class TeamspaceWorker {
             });
           }
 
-          // 2) WhatsApp via MPWA — best-effort; null config = disabled (dev mode log saja).
+          // 2) WhatsApp via MPWA - best-effort; null config = disabled (dev mode log saja).
           const cfg = await loadMpwaConfig();
           if (!cfg) {
-            console.log(`[TeamspaceWorker] MPWA off — check-in #${q.id} "${q.questionText.slice(0, 40)}" → ${recipients.length} penerima (in-app only)`);
+            console.log(`[TeamspaceWorker] MPWA off - check-in #${q.id} "${q.questionText.slice(0, 40)}" → ${recipients.length} penerima (in-app only)`);
             return resolve();
           }
           for (const uid of recipients) {
@@ -92,7 +92,7 @@ class TeamspaceWorker {
               const phone = (u as any)?.phone as string | null;
               if (!phone || (u as any)?.isActive === 0) continue;
               const msg = [
-                `📋 *Check-in ${teamName}*`,
+                ` *Check-in ${teamName}*`,
                 "",
                 q.questionText,
                 "",

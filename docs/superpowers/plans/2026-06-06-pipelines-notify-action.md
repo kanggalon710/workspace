@@ -22,7 +22,7 @@
 
 **Files:** `shared/schema.ts`, `server/pipeline-automation-helpers.ts`, `server/pipeline-automation-helpers.test.ts`
 
-- [ ] **Step 1: Schema — actionType union + NotifyConfig**
+- [ ] **Step 1: Schema - actionType union + NotifyConfig**
 
 In `shared/schema.ts`, change `export type PipelineRuleActionType = "create_card" | "set_field" | "move_stage" | "assign";` to include `"notify"`:
 ```ts
@@ -67,9 +67,9 @@ test("shapeRuleActions notify: label from channels + target", () => {
 - [ ] **Step 3: Run tests, verify FAIL**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: FAIL — `parseActionConfig` returns null for "notify"; `notifyLabel` undefined.
+Expected: FAIL - `parseActionConfig` returns null for "notify"; `notifyLabel` undefined.
 
-- [ ] **Step 4: Implement — `parseActionConfig` notify case**
+- [ ] **Step 4: Implement - `parseActionConfig` notify case**
 
 In `server/pipeline-automation-helpers.ts`, extend `parseActionConfig`'s return type to include `NotifyConfig` and add the notify branch before the final `return null;`. Import `NotifyConfig` in the type import. The function signature becomes:
 ```ts
@@ -101,11 +101,11 @@ Add before `return null;`:
     return out;
   }
 ```
-(Import: change the existing `import type { PipelineRule, RuleCondition } from "../shared/schema.js";` — or wherever types are imported — to also bring in `NotifyConfig`.)
+(Import: change the existing `import type { PipelineRule, RuleCondition } from "../shared/schema.js";` - or wherever types are imported - to also bring in `NotifyConfig`.)
 
-- [ ] **Step 5: Implement — `shapeRuleActions` notify case**
+- [ ] **Step 5: Implement - `shapeRuleActions` notify case**
 
-In `shapeRuleActions`, add a branch (alongside set_field/move_stage/assign/create_card) — read the existing branches to match the `base` object pattern:
+In `shapeRuleActions`, add a branch (alongside set_field/move_stage/assign/create_card) - read the existing branches to match the `base` object pattern:
 ```ts
     } else if (a.actionType === "notify") {
       const cfg = parseActionConfig("notify", a.actionConfig) as import("../shared/schema.js").NotifyConfig | null;
@@ -129,18 +129,18 @@ Run: `npm run typecheck` → 0 (server-side; client residuals may appear later, 
 
 ```bash
 git add shared/schema.ts server/pipeline-automation-helpers.ts server/pipeline-automation-helpers.test.ts
-git commit -m "feat(pipelines): notify action — NotifyConfig type + parseActionConfig/shapeRuleActions notify (P4b-2)"
+git commit -m "feat(pipelines): notify action - NotifyConfig type + parseActionConfig/shapeRuleActions notify (P4b-2)"
 ```
 
 ---
 
-### Task 2: Engine — applyAction +rule + notify branch + webhook
+### Task 2: Engine - applyAction +rule + notify branch + webhook
 
 **Files:** `server/pipeline-automation.ts`
 
 - [ ] **Step 1: Thread `rule` into `applyAction`**
 
-Change the signature `export async function applyAction(action: PipelineRuleAction, card: PipelineCard, actorId: number)` → `export async function applyAction(action: PipelineRuleAction, rule: PipelineRule, card: PipelineCard, actorId: number)`. In `applyRuleActions`, change the call `if (await applyAction(action, card, actorId)) acted = true;` → `if (await applyAction(action, rule, card, actorId)) acted = true;`. (`rule` is already the loop's parameter.) The existing create_card/set_field/move_stage/assign branches don't use `rule` — leave them.
+Change the signature `export async function applyAction(action: PipelineRuleAction, card: PipelineCard, actorId: number)` → `export async function applyAction(action: PipelineRuleAction, rule: PipelineRule, card: PipelineCard, actorId: number)`. In `applyRuleActions`, change the call `if (await applyAction(action, card, actorId)) acted = true;` → `if (await applyAction(action, rule, card, actorId)) acted = true;`. (`rule` is already the loop's parameter.) The existing create_card/set_field/move_stage/assign branches don't use `rule` - leave them.
 
 - [ ] **Step 2: Add the webhook helper + payload builder**
 
@@ -180,7 +180,7 @@ Inside `applyAction`, before the final `return false;`, add (`buildTargetTitle` 
 ```ts
   if (action.actionType === "notify") {
     const cfg = parseActionConfig("notify", action.actionConfig) as NotifyConfig | null;
-    if (!cfg) { console.warn(`[automation] notify action ${action.id}: config invalid — skipped`); return false; }
+    if (!cfg) { console.warn(`[automation] notify action ${action.id}: config invalid - skipped`); return false; }
     let acted = false;
     if (cfg.channels.includes("bell")) {
       const userId = cfg.bellTarget === "user" ? cfg.bellUserId
@@ -195,7 +195,7 @@ Inside `applyAction`, before the final `return false;`, add (`buildTargetTitle` 
         });
         acted = true;
       } else {
-        console.warn(`[automation] notify action ${action.id}: bell target has no recipient — skipped bell`);
+        console.warn(`[automation] notify action ${action.id}: bell target has no recipient - skipped bell`);
       }
     }
     if (cfg.channels.includes("webhook") && cfg.webhookUrl) {
@@ -211,18 +211,18 @@ Inside `applyAction`, before the final `return false;`, add (`buildTargetTitle` 
 - [ ] **Step 4: Typecheck + build + tests**
 
 Run: `npm run typecheck && npm run build && npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: `pipeline-automation.ts` = 0 errors; build green; tests pass. Residuals (if any) in client only (later tasks) — but this task adds no client breakage, so likely 0. Report.
+Expected: `pipeline-automation.ts` = 0 errors; build green; tests pass. Residuals (if any) in client only (later tasks) - but this task adds no client breakage, so likely 0. Report.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add server/pipeline-automation.ts
-git commit -m "feat(pipelines): engine — applyAction +rule + notify branch (bell + webhook) (P4b-2)"
+git commit -m "feat(pipelines): engine - applyAction +rule + notify branch (bell + webhook) (P4b-2)"
 ```
 
 ---
 
-### Task 3: Routes — validate notify
+### Task 3: Routes - validate notify
 
 **Files:** `server/routes.ts`
 
@@ -248,7 +248,7 @@ Read `validateActionConfig` (~line 4276). It currently handles set_field/move_st
     return null;
   }
 ```
-(Match the function's existing return-style — it returns a string error or null. If it has a trailing `return null;` for unknown types, place the notify branch before it.)
+(Match the function's existing return-style - it returns a string error or null. If it has a trailing `return null;` for unknown types, place the notify branch before it.)
 
 - [ ] **Step 2: `validateActions` allows notify**
 
@@ -263,18 +263,18 @@ Find `validateActions` (the P4d-1 per-action validator). It dispatches `set_fiel
 - [ ] **Step 3: Typecheck + build**
 
 Run: `npm run typecheck && npm run build`
-Expected: routes.ts = 0 errors, build green. Report residuals (client, later tasks — likely none yet).
+Expected: routes.ts = 0 errors, build green. Report residuals (client, later tasks - likely none yet).
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add server/routes.ts
-git commit -m "feat(pipelines): rule routes — validate notify action config (P4b-2)"
+git commit -m "feat(pipelines): rule routes - validate notify action config (P4b-2)"
 ```
 
 ---
 
-### Task 4: ruleFormState — notify draft fields
+### Task 4: ruleFormState - notify draft fields
 
 **Files:** `client/components/pipelines/ruleFormState.ts`
 
@@ -343,13 +343,13 @@ In `ruleToDraft`'s per-action mapping (the `if (a.actionType === "create_card") 
 - [ ] **Step 4: Typecheck**
 
 Run: `npm run typecheck`
-Expected: ruleFormState.ts = 0 errors. Residuals now in `RuleActionEditor.tsx` (it doesn't render notify fields yet — but it compiles since it just won't reference them) and possibly none. Report. NOTE: if `RuleActionEditor.tsx` constructs `ActionDraft` objects literally anywhere it may need the new fields — but it uses `emptyAction()`/`patch()`, so it should still compile.
+Expected: ruleFormState.ts = 0 errors. Residuals now in `RuleActionEditor.tsx` (it doesn't render notify fields yet - but it compiles since it just won't reference them) and possibly none. Report. NOTE: if `RuleActionEditor.tsx` constructs `ActionDraft` objects literally anywhere it may need the new fields - but it uses `emptyAction()`/`patch()`, so it should still compile.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add client/components/pipelines/ruleFormState.ts
-git commit -m "feat(pipelines): ruleFormState — notify ActionDraft fields + draft<->payload (P4b-2)"
+git commit -m "feat(pipelines): ruleFormState - notify ActionDraft fields + draft<->payload (P4b-2)"
 ```
 
 ---
@@ -358,7 +358,7 @@ git commit -m "feat(pipelines): ruleFormState — notify ActionDraft fields + dr
 
 **Files:** `client/components/pipelines/RuleActionEditor.tsx`, `client/components/pipelines/PipelineRulesDialog.tsx`, `client/hooks/usePipelines.ts`
 
-- [ ] **Step 1: Hook — `RuleActionView.notifyLabel`**
+- [ ] **Step 1: Hook - `RuleActionView.notifyLabel`**
 
 In `client/hooks/usePipelines.ts`, add `notifyLabel?: string;` to the `RuleActionView` type (alongside `setFieldLabel?`, `moveStageName?`, etc.).
 
@@ -416,7 +416,7 @@ In `client/components/pipelines/RuleActionEditor.tsx`:
         </div>
       )}
 ```
-(Confirm `staffUsers`, `FormField`, `Combobox`, `Input`, `Switch`, `ActionDraft` are already imported/props in this component — the assign block already uses `staffUsers` + the create_card block uses `Switch`. `value._key` exists on ActionDraft.)
+(Confirm `staffUsers`, `FormField`, `Combobox`, `Input`, `Switch`, `ActionDraft` are already imported/props in this component - the assign block already uses `staffUsers` + the create_card block uses `Switch`. `value._key` exists on ActionDraft.)
 
 - [ ] **Step 3: Dialog read-side notify label**
 
@@ -424,7 +424,7 @@ In `client/components/pipelines/PipelineRulesDialog.tsx`, the read-side `label(a
 ```tsx
       a.actionType === "notify" ? `kirim notif (${a.notifyLabel ?? "?"})` :
 ```
-Place it in the chain before the final create_card fallback (match the existing ternary structure — read it first).
+Place it in the chain before the final create_card fallback (match the existing ternary structure - read it first).
 
 - [ ] **Step 4: Typecheck + build**
 
@@ -455,6 +455,6 @@ git commit -m "feat(pipelines): RuleActionEditor notify block + read-side label 
 
 - **Spec coverage:** §1 config → T1 (schema) + T4 (draft); §2 engine (applyAction+rule, notify branch, webhook helper, payload) → T2; §3 validation → T3; §4 helpers (parse + shape) → T1; §5 frontend (ruleFormState → T4, RuleActionEditor → T5, read-side → T5, hook → T5); §7 edge cases (no recipient, webhook fail, loop-safety, dedup, multi-action) covered by T2 logic + T5 manual.
 - **Type consistency:** `NotifyConfig` shape identical in schema (T1), parseActionConfig (T1), engine cast (T2), validate (T3). `ActionDraft` notify fields identical in T4 (type+emptyAction+draft+hydrate) and consumed in T5 editor. `notifyLabel` produced in shapeRuleActions (T1), typed on RuleActionView (T5), read in dialog (T5).
-- **No migration:** `action_type varchar(16)` fits "notify"; `action_config` opaque JSON — confirmed, no DB step.
+- **No migration:** `action_type varchar(16)` fits "notify"; `action_config` opaque JSON - confirmed, no DB step.
 - **No placeholders;** pure helpers TDD'd (T1); engine/routes verified via typecheck+build; UI via typecheck+build+manual.
 - **DRY/SoC/semantic:** reuse `buildTargetTitle` for `{title}`; pure parse/shape helpers; `<FormField>` + `type="url"` input + all editor buttons already `type="button"` (notify block adds Switches/Inputs only, no new buttons).

@@ -1,5 +1,5 @@
 /**
- * Chatwoot Contact Sync Worker (Batch 2f) — opsional, otomatis.
+ * Chatwoot Contact Sync Worker (Batch 2f) - opsional, otomatis.
  *
  * Untuk tiap mitra aktif yang meng-enable `chatwoot_autosync_contacts` (mitra_integrations)
  * DAN Chatwoot terkonfigurasi: sync pelanggan yang belum/perlu sync ke Chatwoot contact,

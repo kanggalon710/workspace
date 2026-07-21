@@ -1,4 +1,4 @@
-# Billing-sourced Auto-create for Custom Pipelines — Implementation Plan
+# Billing-sourced Auto-create for Custom Pipelines - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Shared pure module — catalog + match/map/title helpers
+### Task 1: Shared pure module - catalog + match/map/title helpers
 
 **Files:**
 - Create: `shared/pipelineBillingIntake.ts`
@@ -115,7 +115,7 @@ test("catalogs are exported and sane", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/pipelineBillingIntake.test.ts`
-Expected: FAIL — cannot find module `./pipelineBillingIntake.js`.
+Expected: FAIL - cannot find module `./pipelineBillingIntake.js`.
 
 - [ ] **Step 3: Write the module**
 
@@ -247,7 +247,7 @@ export function customerTitle(c: IntakeCustomer, titleSource: string): string {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/pipelineBillingIntake.test.ts`
-Expected: PASS — all 7 tests.
+Expected: PASS - all 7 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -258,7 +258,7 @@ git commit -m "feat(pipelines): pure billing-intake catalog + match/map/title he
 
 ---
 
-### Task 2: Schema — card source columns + createCard passthrough
+### Task 2: Schema - card source columns + createCard passthrough
 
 **Files:**
 - Modify: `shared/schema.ts` (pipelineCards table)
@@ -266,7 +266,7 @@ git commit -m "feat(pipelines): pure billing-intake catalog + match/map/title he
 
 - [ ] **Step 1: Add columns to the schema**
 
-In `shared/schema.ts`, in the `pipelineCards` table definition, add after the `stageEnteredAt` (or any existing nullable) column — add these two lines among the column defs:
+In `shared/schema.ts`, in the `pipelineCards` table definition, add after the `stageEnteredAt` (or any existing nullable) column - add these two lines among the column defs:
 
 ```ts
   sourceCustomerId: int("source_customer_id"),
@@ -317,7 +317,7 @@ git commit -m "feat(pipelines): pipeline_cards source_customer_id/source_rule_id
 
 ---
 
-### Task 3: Storage — list billing_sync rules + source-linked cards
+### Task 3: Storage - list billing_sync rules + source-linked cards
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -500,7 +500,7 @@ git commit -m "feat(pipelines): billing-intake runner (create + auto-resolve) wi
 
 ---
 
-### Task 5: Routes — validate billing_sync triggerConfig
+### Task 5: Routes - validate billing_sync triggerConfig
 
 **Files:**
 - Modify: `server/routes.ts` (`validateTriggerConfig`)
@@ -568,7 +568,7 @@ git commit -m "feat(pipelines): validate billing_sync triggerConfig"
 
 ---
 
-### Task 6: Frontend — billing_sync editor in PipelineRulesDialog
+### Task 6: Frontend - billing_sync editor in PipelineRulesDialog
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -648,7 +648,7 @@ Render (only when `triggerType === "billing_sync"`):
 )}
 ```
 
-Use the dialog's existing styling classes (copy from the time/stage_enter sub-forms). `StageSelect` / `FieldMapEditor` here are illustrative — implement them inline using the same select markup already used in the dialog for stage pickers and the existing field-map rows. `FieldMapEditor` renders rows of: a **billing attribute** select (`BILLING_ATTRS`) + a **target field** select (only fields where `attrCompatibleWithFieldType(attr, field.type)`), plus add/remove-row buttons — mirror the existing create_card field-map editor in this dialog.
+Use the dialog's existing styling classes (copy from the time/stage_enter sub-forms). `StageSelect` / `FieldMapEditor` here are illustrative - implement them inline using the same select markup already used in the dialog for stage pickers and the existing field-map rows. `FieldMapEditor` renders rows of: a **billing attribute** select (`BILLING_ATTRS`) + a **target field** select (only fields where `attrCompatibleWithFieldType(attr, field.type)`), plus add/remove-row buttons - mirror the existing create_card field-map editor in this dialog.
 
 - [ ] **Step 3: Build the payload on save**
 
@@ -717,8 +717,8 @@ Expected: > 0 (trigger type wired across schema/routes/runner/frontend).
 ## Self-Review
 
 - **Spec coverage:** trigger filter (customerType/status/isIsolir/billingStatus) → Task 1 helper + Task 5 validation + Task 6 UI. Schema source columns → Task 2. Dedup/active-card → Task 4 runner (`activeByCustomer`, skip resolve stage). Create + auto-resolve → Task 4. Fixed mapping catalog + type-compat → Task 1 (`BILLING_ATTRS`, `attrCompatibleWithFieldType`), enforced Task 5, edited Task 6. Execution after sync (incl. manual Sync Now) → Task 4 worker hook in `_runOnceInner`. Routes validation → Task 5. UI → Task 6. Testing → Task 1 + Task 7. All spec sections covered.
-- **Placeholders:** Tasks 1–5 + 7 contain complete code. Task 6 (a 548-line existing component) gives concrete state/JSX/payload code and instructs mirroring existing sub-form patterns by reading the file — appropriate for integrating into a large existing component rather than reproducing it wholesale.
-- **Type consistency:** `IntakeCustomer`, `BillingFilter`, `BILLING_ATTRS`, `customerMatchesFilter`, `customerToFieldValues`, `customerTitle`, `attrCompatibleWithFieldType` defined in Task 1 and consumed identically in Tasks 4–6. `createCard` gains `sourceCustomerId`/`sourceRuleId` in Task 2 and is called with them in Task 4. `listBillingSyncRules`/`getSourceCardsForRule` defined in Task 3 and used in Task 4. `triggerConfig` shape `{filter, resolveStageId, titleSource, fieldMap}` consistent across Tasks 4 (parse), 5 (validate), 6 (build).
+- **Placeholders:** Tasks 1-5 + 7 contain complete code. Task 6 (a 548-line existing component) gives concrete state/JSX/payload code and instructs mirroring existing sub-form patterns by reading the file - appropriate for integrating into a large existing component rather than reproducing it wholesale.
+- **Type consistency:** `IntakeCustomer`, `BillingFilter`, `BILLING_ATTRS`, `customerMatchesFilter`, `customerToFieldValues`, `customerTitle`, `attrCompatibleWithFieldType` defined in Task 1 and consumed identically in Tasks 4-6. `createCard` gains `sourceCustomerId`/`sourceRuleId` in Task 2 and is called with them in Task 4. `listBillingSyncRules`/`getSourceCardsForRule` defined in Task 3 and used in Task 4. `triggerConfig` shape `{filter, resolveStageId, titleSource, fieldMap}` consistent across Tasks 4 (parse), 5 (validate), 6 (build).
 
 ## Deploy note
-Schema migration (`source_customer_id`/`source_rule_id`) runs automatically on startup via `p4cColAdds` — no manual SQL. On prod, `WORKERS_ENABLED=false`, so intake runs on each manual **"Sync Now"** (same as collections auto-open today).
+Schema migration (`source_customer_id`/`source_rule_id`) runs automatically on startup via `p4cColAdds` - no manual SQL. On prod, `WORKERS_ENABLED=false`, so intake runs on each manual **"Sync Now"** (same as collections auto-open today).

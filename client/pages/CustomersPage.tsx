@@ -312,7 +312,7 @@ function CustomerForm({ item, onSubmit, isPending }: { item: Customer | null; on
           >
             <SelectTrigger><SelectValue placeholder="Pilih ODP..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">— Belum dihubungkan —</SelectItem>
+              <SelectItem value="__none__">- Belum dihubungkan -</SelectItem>
               {odps?.map((o) => {
                 const util = odpUtil?.odps.find((u) => u.id === o.id);
                 const used = util?.usedPorts ?? 0;
@@ -326,7 +326,7 @@ function CustomerForm({ item, onSubmit, isPending }: { item: Customer | null; on
                           isFull ? "bg-red-500" : used / cap >= 0.75 ? "bg-yellow-500" : "bg-green-500"
                         }`}
                       />
-                      {o.name} — {used}/{cap} port
+                      {o.name} - {used}/{cap} port
                       {isFull ? " (Penuh)" : util?.nextPort ? ` · next: ${util.nextPort}` : ""}
                     </span>
                   </SelectItem>
@@ -368,7 +368,7 @@ function CustomerForm({ item, onSubmit, isPending }: { item: Customer | null; on
         <Textarea {...register("notes")} placeholder="Catatan tambahan..." />
       </div>
 
-      {/* Lock info panel — only when editing */}
+      {/* Lock info panel - only when editing */}
       {item && (() => {
         const locks = parseOverrides(item);
         if (locks.length === 0) {
@@ -602,7 +602,7 @@ function DistrictCard({
               <span className="flex-1 text-xs font-medium truncate">{v.name || "Tidak diketahui"}</span>
               <span className="w-14 text-center text-xs font-bold">{v.total}</span>
               <span className="w-14 text-center text-xs text-green-600 font-medium">{v.active}</span>
-              <span className="w-14 text-center text-xs text-yellow-600 font-medium">{v.suspended > 0 ? v.suspended : "—"}</span>
+              <span className="w-14 text-center text-xs text-yellow-600 font-medium">{v.suspended > 0 ? v.suspended : "-"}</span>
               <Button variant="ghost" size="sm" className="h-6 w-14 px-1 text-[10px]"
                 onClick={() => onFilterVillage(d.district, v.name)}>
                 Lihat
@@ -613,7 +613,7 @@ function DistrictCard({
             <span className="flex-1 text-xs font-bold">Total</span>
             <span className="w-14 text-center text-xs font-bold">{d.total}</span>
             <span className="w-14 text-center text-xs font-bold text-green-600">{d.active}</span>
-            <span className="w-14 text-center text-xs font-bold text-yellow-600">{d.suspended > 0 ? d.suspended : "—"}</span>
+            <span className="w-14 text-center text-xs font-bold text-yellow-600">{d.suspended > 0 ? d.suspended : "-"}</span>
             <span className="w-14"></span>
           </div>
           {/* Type breakdown */}
@@ -663,7 +663,7 @@ function exportCustomersCSV(customers: Customer[], odpMap: Map<number, string>) 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
 // ========================================================================
-// v4.1.3+: CustomerLocalEditForm — hanya edit 6 field LOCAL (koordinat, ODP,
+// v4.1.3+: CustomerLocalEditForm - hanya edit 6 field LOCAL (koordinat, ODP,
 // ONT SN, notes). Semua field billing (nama, phone, alamat, paket, dll)
 // sync dari billing.jabnet.id dan TIDAK bisa diubah di FTTH Tools.
 // ========================================================================
@@ -715,18 +715,18 @@ function CustomerLocalEditForm({
           <Badge variant="outline" className="text-[9px] ml-auto">billing.jabnet.id</Badge>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-          <div><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{item.name ?? "—"}</span></div>
+          <div><span className="text-muted-foreground">Nama:</span> <span className="font-medium">{item.name ?? "-"}</span></div>
           <div><span className="text-muted-foreground">Customer ID:</span> <span className="font-mono">{item.customerId}</span></div>
-          <div><span className="text-muted-foreground">Phone:</span> <span className="font-mono">{item.phone ?? "—"}</span></div>
-          <div><span className="text-muted-foreground">Email:</span> <span className="font-mono">{anyItem.email ?? "—"}</span></div>
-          <div className="col-span-2"><span className="text-muted-foreground">Alamat:</span> {item.address ?? "—"}</div>
-          <div><span className="text-muted-foreground">Paket:</span> {item.package ?? "—"}</div>
-          <div><span className="text-muted-foreground">Status:</span> <span className={item.isIsolir === 1 ? "text-red-600" : "text-green-600"}>{item.status ?? "—"}{item.isIsolir === 1 ? " (isolir)" : ""}</span></div>
-          <div><span className="text-muted-foreground">Kecamatan:</span> {anyItem.district ?? "—"}</div>
-          <div><span className="text-muted-foreground">Kelurahan:</span> {anyItem.village ?? "—"}</div>
-          <div><span className="text-muted-foreground">Tipe:</span> {anyItem.customerType ?? "—"}</div>
-          <div><span className="text-muted-foreground">Install:</span> {item.installDate ?? "—"}</div>
-          <div><span className="text-muted-foreground">PPPoE:</span> <span className="font-mono text-[11px]">{anyItem.pppoeUsername ?? "—"}</span></div>
+          <div><span className="text-muted-foreground">Phone:</span> <span className="font-mono">{item.phone ?? "-"}</span></div>
+          <div><span className="text-muted-foreground">Email:</span> <span className="font-mono">{anyItem.email ?? "-"}</span></div>
+          <div className="col-span-2"><span className="text-muted-foreground">Alamat:</span> {item.address ?? "-"}</div>
+          <div><span className="text-muted-foreground">Paket:</span> {item.package ?? "-"}</div>
+          <div><span className="text-muted-foreground">Status:</span> <span className={item.isIsolir === 1 ? "text-red-600" : "text-green-600"}>{item.status ?? "-"}{item.isIsolir === 1 ? " (isolir)" : ""}</span></div>
+          <div><span className="text-muted-foreground">Kecamatan:</span> {anyItem.district ?? "-"}</div>
+          <div><span className="text-muted-foreground">Kelurahan:</span> {anyItem.village ?? "-"}</div>
+          <div><span className="text-muted-foreground">Tipe:</span> {anyItem.customerType ?? "-"}</div>
+          <div><span className="text-muted-foreground">Install:</span> {item.installDate ?? "-"}</div>
+          <div><span className="text-muted-foreground">PPPoE:</span> <span className="font-mono text-[11px]">{anyItem.pppoeUsername ?? "-"}</span></div>
           <div><span className="text-muted-foreground">Harga:</span> Rp {(item.billingPrice ?? 0).toLocaleString("id-ID")}</div>
         </div>
         <div className="text-[10px] text-muted-foreground pt-1 border-t">
@@ -854,7 +854,7 @@ export default function CustomersPage() {
     setBillingSyncing(true);
     try {
       const r: any = await api.post("/billing/sync", {});
-      toast.success(`Sync selesai — ${r?.updated ?? 0} diperbarui, ${r?.created ?? 0} dibuat`, {
+      toast.success(`Sync selesai - ${r?.updated ?? 0} diperbarui, ${r?.created ?? 0} dibuat`, {
         description: `Total ${r?.total ?? 0} pelanggan · error ${r?.errors ?? 0}`,
       });
       refetchCooldown();
@@ -894,7 +894,7 @@ export default function CustomersPage() {
   const [pageSize, setPageSize] = useState(50);
   const [sortBy, setSortBy] = useState<"name" | "district" | "package" | "status">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  // unlockTarget removed — billing sync protection no longer needed
+  // unlockTarget removed - billing sync protection no longer needed
   const queryClient = useQueryClient();
 
   const odpMap = useMemo(() => {
@@ -903,7 +903,7 @@ export default function CustomersPage() {
     return m;
   }, [odps]);
 
-  // PPPoE active sessions — fetch all active sessions every 30s
+  // PPPoE active sessions - fetch all active sessions every 30s
   // v4.1.2: sekarang simpan full session data (IP, MAC, uptime, traffic) bukan cuma name,
   // agar bisa di-display di detail dialog tanpa fetch ulang.
   type PppSession = {
@@ -1288,13 +1288,13 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Pelanggan</h1>
-          <p className="text-muted-foreground text-sm">Data pelanggan FTTH JABNET — tersinkronisasi dengan billing</p>
+          <p className="text-muted-foreground text-sm">Data pelanggan FTTH JABNET - tersinkronisasi dengan billing</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => exportCustomersCSV(filtered, odpMap)}>
             <Download className="h-4 w-4 mr-1" /> Export CSV
           </Button>
-{/* v4.1.3+: Tambah pelanggan DISABLED — billing.jabnet.id adalah source of truth.
+{/* v4.1.3+: Tambah pelanggan DISABLED - billing.jabnet.id adalah source of truth.
               Admin register pelanggan di billing, lalu sync worker auto-import ke FTTH Tools. */}
           {canEditCustomers && (
             <Button size="sm" variant="outline" onClick={() => {
@@ -1392,7 +1392,7 @@ export default function CustomersPage() {
       {showDistrictView && (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
-            Ringkasan {districtSummaries.length} Kecamatan — Klik untuk detail desa/kelurahan
+            Ringkasan {districtSummaries.length} Kecamatan - Klik untuk detail desa/kelurahan
           </p>
           <div className="grid gap-2 md:grid-cols-2">
             {districtSummaries.map(d => (
@@ -1492,7 +1492,7 @@ export default function CustomersPage() {
                 </Select>
               </div>
 
-              {/* ODP — searchable */}
+              {/* ODP - searchable */}
               <div>
                 <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">ODP</Label>
                 <div className="mt-1">
@@ -1571,7 +1571,7 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* v4.2.5: KPI breakdown integrasi — clickable filter pills */}
+      {/* v4.2.5: KPI breakdown integrasi - clickable filter pills */}
       <div className="rounded-lg border bg-card overflow-hidden">
         <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Status Integrasi PPPoE & ONT</span>
@@ -1754,7 +1754,7 @@ export default function CustomersPage() {
                               {anyC.village && <div className="text-[11px] text-muted-foreground">{anyC.village}</div>}
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </td>
                         <td className="py-2.5 px-4">
@@ -1763,7 +1763,7 @@ export default function CustomersPage() {
                               <Badge variant="outline" className="text-xs">{c.package}</Badge>
                               {anyC.billingPrice ? <div className="text-xs text-muted-foreground mt-1">{formatRp(anyC.billingPrice)}</div> : null}
                             </div>
-                          ) : <span className="text-muted-foreground">—</span>}
+                          ) : <span className="text-muted-foreground">-</span>}
                         </td>
                         <td className="py-2.5 px-4">
                           {c.odpId ? (
@@ -1814,13 +1814,13 @@ export default function CustomersPage() {
                                     {ont.ontRxPower ? ` (${ont.ontRxPower}dBm)` : ""}
                                   </Badge>
                                 ) : !anyC.pppoeUsername ? (
-                                  <span className="text-xs text-muted-foreground">—</span>
+                                  <span className="text-xs text-muted-foreground">-</span>
                                 ) : null}
                               </div>
                             );
                           })()}
                         </td>
-                        <td className="py-2.5 px-4 text-muted-foreground text-xs">{c.phone ?? "—"}</td>
+                        <td className="py-2.5 px-4 text-muted-foreground text-xs">{c.phone ?? "-"}</td>
                         <td className="py-2.5 px-4">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600"
@@ -1849,7 +1849,7 @@ export default function CustomersPage() {
         {filtered.length > pageSize && (
           <div className="flex items-center justify-between px-4 py-3 border-t">
             <p className="text-xs text-muted-foreground">
-              Menampilkan {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} dari {filtered.length}
+              Menampilkan {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filtered.length)} dari {filtered.length}
             </p>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1}
@@ -1901,13 +1901,13 @@ export default function CustomersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog — v4.1.3+: hanya edit 6 field local, sisanya read-only dari billing */}
+      {/* Edit Dialog - v4.1.3+: hanya edit 6 field local, sisanya read-only dari billing */}
       <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Data Lokal Pelanggan</DialogTitle>
             <DialogDescription>
-              {editItem?.name} ({editItem?.customerId}) — field data billing hanya bisa diubah di <a href="https://billing.jabnet.id" target="_blank" rel="noreferrer" className="underline text-primary">billing.jabnet.id</a>
+              {editItem?.name} ({editItem?.customerId}) - field data billing hanya bisa diubah di <a href="https://billing.jabnet.id" target="_blank" rel="noreferrer" className="underline text-primary">billing.jabnet.id</a>
             </DialogDescription>
           </DialogHeader>
           {editItem && <CustomerLocalEditForm item={editItem} onSubmit={handleUpdate} isPending={isPending} />}
@@ -1976,11 +1976,11 @@ export default function CustomersPage() {
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">Telepon</span>
-                    <p>{dc.phone || "—"}</p>
+                    <p>{dc.phone || "-"}</p>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">Email</span>
-                    <p>{dc.email || "—"}</p>
+                    <p>{dc.email || "-"}</p>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">Status</span>
@@ -1992,15 +1992,15 @@ export default function CustomersPage() {
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <div className="col-span-2">
                       <span className="text-xs text-muted-foreground">Alamat</span>
-                      <p>{dc.address || "—"}</p>
+                      <p>{dc.address || "-"}</p>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Kecamatan</span>
-                      <p>{dc.district || "—"}</p>
+                      <p>{dc.district || "-"}</p>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Desa / Kelurahan</span>
-                      <p>{dc.village || "—"}</p>
+                      <p>{dc.village || "-"}</p>
                     </div>
                   </div>
                 </div>
@@ -2009,19 +2009,19 @@ export default function CustomersPage() {
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <div>
                       <span className="text-xs text-muted-foreground">Paket Layanan</span>
-                      <p>{dc.package || "—"}</p>
+                      <p>{dc.package || "-"}</p>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Harga Billing</span>
-                      <p>{dc.billingPrice ? formatRp(dc.billingPrice) : "—"}</p>
+                      <p>{dc.billingPrice ? formatRp(dc.billingPrice) : "-"}</p>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Status Billing</span>
-                      <p>{dc.billingStatus === "belum_lunas" ? "Belum Lunas" : dc.billingStatus === "lunas" ? "Lunas" : dc.billingStatus || "—"}</p>
+                      <p>{dc.billingStatus === "belum_lunas" ? "Belum Lunas" : dc.billingStatus === "lunas" ? "Lunas" : dc.billingStatus || "-"}</p>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Tanggal Pasang</span>
-                      <p>{dc.installDate || "—"}</p>
+                      <p>{dc.installDate || "-"}</p>
                     </div>
                   </div>
                 </div>
@@ -2030,11 +2030,11 @@ export default function CustomersPage() {
                   <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <div>
                       <span className="text-xs text-muted-foreground">ODP</span>
-                      <p>{dc.odpId ? (odpMap.get(dc.odpId) ?? `ODP #${dc.odpId}`) : "—"}</p>
+                      <p>{dc.odpId ? (odpMap.get(dc.odpId) ?? `ODP #${dc.odpId}`) : "-"}</p>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Nomor Port</span>
-                      <p>{dc.portNumber ?? "—"}</p>
+                      <p>{dc.portNumber ?? "-"}</p>
                     </div>
                   </div>
                 </div>
@@ -2101,7 +2101,7 @@ export default function CustomersPage() {
                   <div>
                     <span className="text-xs text-muted-foreground">Password PPPoE</span>
                     <div className="flex items-center gap-2">
-                      <p className="font-mono">{detailShowPassword ? (dc.pppoePassword || "—") : "********"}</p>
+                      <p className="font-mono">{detailShowPassword ? (dc.pppoePassword || "-") : "********"}</p>
                       <button
                         type="button"
                         className="text-muted-foreground hover:text-foreground"
@@ -2113,15 +2113,15 @@ export default function CustomersPage() {
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">Profile / Paket MikroTik</span>
-                    <p>{dc.pppoeProfile || "—"}</p>
+                    <p>{dc.pppoeProfile || "-"}</p>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">Router</span>
-                    <p>{dc.pppoeRouterId ? (routerMap.get(dc.pppoeRouterId) ?? `Router #${dc.pppoeRouterId}`) : "—"}</p>
+                    <p>{dc.pppoeRouterId ? (routerMap.get(dc.pppoeRouterId) ?? `Router #${dc.pppoeRouterId}`) : "-"}</p>
                   </div>
                 </div>
 
-                {/* ── LIVE SESSION DATA (v4.1.2) — muncul hanya kalau online ── */}
+                {/* -- LIVE SESSION DATA (v4.1.2) - muncul hanya kalau online -- */}
                 {online && session && (
                   <div className="border-t pt-3 space-y-2">
                     <div className="flex items-center gap-2">
@@ -2134,23 +2134,23 @@ export default function CustomersPage() {
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
                       <div>
                         <span className="text-xs text-muted-foreground">IP Address</span>
-                        <p className="font-mono text-xs">{session.address || "—"}</p>
+                        <p className="font-mono text-xs">{session.address || "-"}</p>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground">MAC Address</span>
-                        <p className="font-mono text-xs">{session.callerId || (session as any)["caller-id"] || "—"}</p>
+                        <p className="font-mono text-xs">{session.callerId || (session as any)["caller-id"] || "-"}</p>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground">Uptime</span>
-                        <p className="text-xs">{session.uptime || "—"}</p>
+                        <p className="text-xs">{session.uptime || "-"}</p>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground">Service</span>
-                        <p className="text-xs uppercase">{session.service || "—"}</p>
+                        <p className="text-xs uppercase">{session.service || "-"}</p>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground">Session ID</span>
-                        <p className="font-mono text-[10px]">{session.sessionId || session.id || "—"}</p>
+                        <p className="font-mono text-[10px]">{session.sessionId || session.id || "-"}</p>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground">RADIUS</span>
@@ -2182,11 +2182,11 @@ export default function CustomersPage() {
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
-                        <div><span className="text-xs text-muted-foreground">Serial Number</span><p className="font-mono text-xs">{ont.ontSerialNumber || "—"}</p></div>
-                        <div><span className="text-xs text-muted-foreground">Manufacturer / Model</span><p className="text-xs">{ont.ontManufacturer || "—"} {ont.ontModel || ""}</p></div>
-                        <div><span className="text-xs text-muted-foreground">IP Address</span><p className="font-mono text-xs">{ont.ontIpAddress || "—"}</p></div>
-                        <div><span className="text-xs text-muted-foreground">RX Power</span><p className={`text-xs font-mono font-medium ${parseFloat(ont.ontRxPower || "0") > -25 ? "text-green-600" : parseFloat(ont.ontRxPower || "0") > -28 ? "text-amber-600" : "text-red-600"}`}>{ont.ontRxPower ? `${ont.ontRxPower} dBm` : "—"}</p></div>
-                        <div><span className="text-xs text-muted-foreground">Last Inform</span><p className="text-xs">{ont.ontLastInform ? new Date(ont.ontLastInform).toLocaleString("id-ID") : "—"}</p></div>
+                        <div><span className="text-xs text-muted-foreground">Serial Number</span><p className="font-mono text-xs">{ont.ontSerialNumber || "-"}</p></div>
+                        <div><span className="text-xs text-muted-foreground">Manufacturer / Model</span><p className="text-xs">{ont.ontManufacturer || "-"} {ont.ontModel || ""}</p></div>
+                        <div><span className="text-xs text-muted-foreground">IP Address</span><p className="font-mono text-xs">{ont.ontIpAddress || "-"}</p></div>
+                        <div><span className="text-xs text-muted-foreground">RX Power</span><p className={`text-xs font-mono font-medium ${parseFloat(ont.ontRxPower || "0") > -25 ? "text-green-600" : parseFloat(ont.ontRxPower || "0") > -28 ? "text-amber-600" : "text-red-600"}`}>{ont.ontRxPower ? `${ont.ontRxPower} dBm` : "-"}</p></div>
+                        <div><span className="text-xs text-muted-foreground">Last Inform</span><p className="text-xs">{ont.ontLastInform ? new Date(ont.ontLastInform).toLocaleString("id-ID") : "-"}</p></div>
                         <div><span className="text-xs text-muted-foreground">Cocok via</span><p className="text-xs">{ont.matchBy === "pppoe" ? "PPPoE Username" : "Serial Number"}</p></div>
                       </div>
                       {/* Deep link ke GenieACS page */}
@@ -2247,9 +2247,9 @@ export default function CustomersPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// v4.2.5: Integration Audit Dialog — fuzzy match customer "PPPoE saja" ke device GenieACS
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// v4.2.5: Integration Audit Dialog - fuzzy match customer "PPPoE saja" ke device GenieACS
+// -------------------------------------------------------------------------
 
 // v4.2.10: prefer PON Serial format saat ada (yang OLT register-kan), fallback ke factory serial.
 // PON serial format: vendor prefix (4 chars) + 8 hex MAC. Contoh: ZXICAEE7F72F, FHTTC127A7C1.

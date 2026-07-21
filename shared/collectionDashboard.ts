@@ -1,4 +1,4 @@
-/** Pure collection dashboard aggregation — no I/O. */
+/** Pure collection dashboard aggregation - no I/O. */
 
 export interface MetricsCard { stageId: number; sourceCustomerId: number | null; }
 export interface MetricsSnapshot { daysOverdue: number; outstandingAmount: number; billingStatus: string | null; }

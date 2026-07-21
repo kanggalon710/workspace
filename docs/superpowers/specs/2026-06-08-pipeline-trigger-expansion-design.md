@@ -1,4 +1,4 @@
-# Spec — Pipeline Trigger Expansion: card events (Phase 2)
+# Spec - Pipeline Trigger Expansion: card events (Phase 2)
 
 > Date: 2026-06-08 · Mitra-scoped · Extends the pipeline automation engine's dispatch side.
 
@@ -6,7 +6,7 @@
 
 Add card-event triggers to the rule engine so tenants can automate on card edits, not just stage
 entry / time / billing sync. Phase 2 adds `card_updated`, `assignee_changed`, and `field_updated`.
-Conditions and actions are reused unchanged — only the dispatch side is generalized.
+Conditions and actions are reused unchanged - only the dispatch side is generalized.
 
 ## Decisions (confirmed)
 
@@ -15,7 +15,7 @@ Conditions and actions are reused unchanged — only the dispatch side is genera
    (billing reactions already covered by `billing_sync` auto-resolve).
 2. **Fire mode:** fire on **every occurrence** (no `hasRuleFired` dedup). `stage_enter` keeps its
    once-per-card behavior.
-3. **field_updated granularity:** `triggerConfig.fieldId` optional — empty = any field, set = only that field.
+3. **field_updated granularity:** `triggerConfig.fieldId` optional - empty = any field, set = only that field.
 4. **Loop-safety:** events are dispatched only from user-facing routes, never from automation's own
    storage mutations (a `set_field` action does NOT re-trigger `field_updated`). Same invariant that
    already makes `stage_enter` loop-safe.
@@ -29,7 +29,7 @@ Conditions and actions are reused unchanged — only the dispatch side is genera
 - `runStageEnterAutomations` becomes a thin caller: `matchStageEnterRules(...)` → `runRulesForCard(..., { dedup: true })`.
 - New `dispatchCardEvent(eventType, card, actorId, ctx?: { changedFieldIds?: number[] })`: lists the
   card's pipeline rules with `triggerType === eventType` + enabled, filters via the pure
-  `eventRuleMatches`, then `runRulesForCard(matched, card, actorId, { dedup: false })`. Best-effort —
+  `eventRuleMatches`, then `runRulesForCard(matched, card, actorId, { dedup: false })`. Best-effort -
   never throws to the caller (wraps in try/catch + console.warn, like the existing functions).
 
 ## Pure module (`shared/pipelineEventTriggers.ts`, unit-tested)
@@ -54,7 +54,7 @@ Conditions and actions are reused unchanged — only the dispatch side is genera
 ## Routes / validation
 
 - `shared/schema.ts`: `RuleTriggerType` gains `"card_updated" | "assignee_changed" | "field_updated"`
-  (column is `varchar(16)`; longest, `assignee_changed`, is exactly 16 chars — fits).
+  (column is `varchar(16)`; longest, `assignee_changed`, is exactly 16 chars - fits).
 - `validateTriggerConfig`: `card_updated`/`assignee_changed` need no config; `field_updated` →
   if `triggerConfig.fieldId` is present it must be a field of this pipeline.
 - **Fix (mirrors the billing_sync fix):** the rule CREATE handler currently persists `triggerConfig`
@@ -72,7 +72,7 @@ Conditions and actions are reused unchanged — only the dispatch side is genera
 
 ## Testing
 
-`shared/pipelineEventTriggers.test.ts` — `eventRuleMatches`: field-specific match (in/not-in
+`shared/pipelineEventTriggers.test.ts` - `eventRuleMatches`: field-specific match (in/not-in
 `changedFieldIds`), any-field match (no `fieldId`), wrong-type no-match, `card_updated`/
 `assignee_changed` always match. Engine refactor + route hooks verified via typecheck + build.
 

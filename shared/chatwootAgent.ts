@@ -1,4 +1,4 @@
-/** Pure: Chatwoot agent payload → DTO + email-based user↔agent suggestions. No I/O — testable. */
+/** Pure: Chatwoot agent payload → DTO + email-based user↔agent suggestions. No I/O - testable. */
 
 export type ChatwootAgent = { id: number; name: string; email: string | null; role: string | null; available: boolean };
 

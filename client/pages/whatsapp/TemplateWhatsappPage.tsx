@@ -65,7 +65,7 @@ interface MpwaButton {
 type Tab = "unofficial" | "official";
 type FilterType = "all" | "pelanggan" | "reseller";
 
-// v4.2.23: URL helpers — supaya view state survive page refresh
+// v4.2.23: URL helpers - supaya view state survive page refresh
 function readUrlState(): {
   view: "list" | "form-pelanggan" | "form-reseller";
   editingId: number | null;
@@ -109,7 +109,7 @@ function writeUrlState(view: "list" | "form-pelanggan" | "form-reseller", editin
 export default function TemplateWhatsappPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("unofficial");
-  // v4.2.23: init from URL — supaya refresh tetap di form
+  // v4.2.23: init from URL - supaya refresh tetap di form
   const initialState = useMemo(() => readUrlState(), []);
   const [view, setView] = useState<"list" | "form-pelanggan" | "form-reseller">(initialState.view);
   const [editing, setEditing] = useState<Template | null>(null);
@@ -340,9 +340,9 @@ export default function TemplateWhatsappPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // Form Template
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function TemplateForm({ template, type, onBack }: {
   template: Template | null;
   type: "pelanggan" | "reseller";
@@ -360,7 +360,7 @@ function TemplateForm({ template, type, onBack }: {
   // v4.2.23: upload progress + compatibility mode
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // v4.2.23: Compatibility mode — Native Button default (tap-able), Text+Link fallback kalau ada issue
+  // v4.2.23: Compatibility mode - Native Button default (tap-able), Text+Link fallback kalau ada issue
   const [compatMode, setCompatMode] = useState<"native" | "text-link">(
     (template as any)?.compatMode === "text-link" ? "text-link" : "native"
   );
@@ -503,7 +503,7 @@ function TemplateForm({ template, type, onBack }: {
     }, 0);
   }
 
-  // Real-time preview render — WhatsApp markdown supports *bold* _italic_ ~strike~ ```mono```
+  // Real-time preview render - WhatsApp markdown supports *bold* _italic_ ~strike~ ```mono```
   const previewHtml = useMemo(() => {
     let html = content
       .replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -665,7 +665,7 @@ function TemplateForm({ template, type, onBack }: {
         )}
       </div>
 
-      {/* v4.2.22: Section 3 — Tombol Interaktif + Image (MPWA send-button) */}
+      {/* v4.2.22: Section 3 - Tombol Interaktif + Image (MPWA send-button) */}
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-start gap-2">
           <Link2 className="h-4 w-4 text-violet-600 mt-0.5" />
@@ -678,7 +678,7 @@ function TemplateForm({ template, type, onBack }: {
           </div>
         </div>
 
-        {/* Image upload — v4.2.23 */}
+        {/* Image upload - v4.2.23 */}
         <div>
           <label className="text-xs font-bold uppercase tracking-wider">
             <ImageIcon className="inline h-3 w-3 mr-1" />
@@ -710,10 +710,10 @@ function TemplateForm({ template, type, onBack }: {
                     </div>
                   </div>
                 </div>
-                {/* v4.2.23: warning kalau image localhost — MPWA gak bisa fetch */}
+                {/* v4.2.23: warning kalau image localhost - MPWA gak bisa fetch */}
                 {/^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.|10\.)/i.test(imageUrl) && (
                   <div className="mt-2 rounded-md bg-rose-50 border border-rose-200 px-3 py-2 text-[11px] text-rose-900 leading-snug">
-                    <strong> Image localhost terdeteksi:</strong> URL <code className="font-mono text-[10px]">{imageUrl}</code> hanya bisa diakses dari komputer Galon — <strong>MPWA server di internet tidak bisa fetch image ini</strong>.
+                    <strong> Image localhost terdeteksi:</strong> URL <code className="font-mono text-[10px]">{imageUrl}</code> hanya bisa diakses dari komputer Galon - <strong>MPWA server di internet tidak bisa fetch image ini</strong>.
                     Saat broadcast, sistem otomatis skip image (pesan tetap kirim tanpa image header).
                     <div className="mt-1 font-semibold">Solusi:</div>
                     <ul className="list-disc ml-4 mt-0.5">
@@ -772,7 +772,7 @@ function TemplateForm({ template, type, onBack }: {
             />
           </div>
 
-          {/* Custom URL input — opsional kalau mau pakai image yang sudah di-host */}
+          {/* Custom URL input - opsional kalau mau pakai image yang sudah di-host */}
           <details className="mt-2">
             <summary className="text-[10px] text-muted-foreground cursor-pointer">Atau paste URL custom (CDN/imgur)</summary>
             <Input
@@ -788,7 +788,7 @@ function TemplateForm({ template, type, onBack }: {
         <div>
           <label className="text-xs font-bold uppercase tracking-wider">Footer Text (Opsional, max 60 char)</label>
           <Input
-            placeholder="JABNET — Internet Cepat & Stabil"
+            placeholder="JABNET - Internet Cepat & Stabil"
             value={footer}
             onChange={(e) => setFooter(e.target.value)}
             maxLength={60}
@@ -800,7 +800,7 @@ function TemplateForm({ template, type, onBack }: {
         <div className="rounded-md border bg-muted/10 p-3">
           <label className="text-xs font-bold uppercase tracking-wider mb-2 block">Mode Pengiriman</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {/* Native Button — tap-able tombol */}
+            {/* Native Button - tap-able tombol */}
             <label className={cn(
               "rounded-md border-2 p-2.5 cursor-pointer transition",
               compatMode === "native" ? "border-violet-500 bg-violet-50/40 ring-2 ring-violet-200" : "border-muted hover:border-foreground/30"
@@ -822,7 +822,7 @@ function TemplateForm({ template, type, onBack }: {
                 </div>
               </div>
             </label>
-            {/* Text + Link — fallback */}
+            {/* Text + Link - fallback */}
             <label className={cn(
               "rounded-md border-2 p-2.5 cursor-pointer transition",
               compatMode === "text-link" ? "border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-200" : "border-muted hover:border-foreground/30"
@@ -849,9 +849,9 @@ function TemplateForm({ template, type, onBack }: {
             <div className="mt-2 rounded-md bg-violet-50 border border-violet-200 px-3 py-2 text-[11px] text-violet-900 leading-snug">
               <strong> Tips supaya native button reliable:</strong>
               <ul className="list-disc ml-4 mt-1 space-y-0.5">
-                <li>Image header WAJIB pakai <strong>URL public</strong> — host di imgur/CDN, bukan localhost/intranet</li>
+                <li>Image header WAJIB pakai <strong>URL public</strong> - host di imgur/CDN, bukan localhost/intranet</li>
                 <li><strong>Tipe URL/Call/Copy</strong> lebih sering diterima WA dibanding Reply</li>
-                <li>Beberapa WA versi tertentu (terutama yang sangat baru/lama) mungkin tetap menolak — kalau itu kejadian massal, switch ke <em>Text + Link</em></li>
+                <li>Beberapa WA versi tertentu (terutama yang sangat baru/lama) mungkin tetap menolak - kalau itu kejadian massal, switch ke <em>Text + Link</em></li>
               </ul>
             </div>
           )}
@@ -946,7 +946,7 @@ function TemplateForm({ template, type, onBack }: {
             </div>
           )}
 
-          {/* Preview tombol — sesuai render di HP */}
+          {/* Preview tombol - sesuai render di HP */}
           {buttons.length > 0 && (
             <div className="mt-3 rounded-md border-2 border-emerald-200 bg-emerald-50/40 p-3">
               <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-2 flex items-center gap-1.5">

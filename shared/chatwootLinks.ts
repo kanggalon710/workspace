@@ -1,4 +1,4 @@
-/** Pure builders for Chatwoot deep-link URLs. No I/O — testable. */
+/** Pure builders for Chatwoot deep-link URLs. No I/O - testable. */
 
 function base(baseUrl: string | null | undefined, accountId: number | null | undefined): string | null {
   if (!baseUrl || accountId == null) return null;

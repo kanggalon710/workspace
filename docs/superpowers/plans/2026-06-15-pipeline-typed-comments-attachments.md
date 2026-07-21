@@ -10,10 +10,10 @@
 
 **Conventions (read before starting):**
 - Sibling imports in shared modules use the `.js` extension (moduleResolution: Bundler). `import x from "./foo.js"`.
-- DB rejects `ADD COLUMN IF NOT EXISTS` — use the info_schema-guarded `loyaltyColumnAdditions` array in `server/storage.ts` (pattern at `server/storage.ts:778-795`).
+- DB rejects `ADD COLUMN IF NOT EXISTS` - use the info_schema-guarded `loyaltyColumnAdditions` array in `server/storage.ts` (pattern at `server/storage.ts:778-795`).
 - All storage queries are tenant-scoped via `getMitraId()`.
 - Staff `/api/*` must respond via `sendSuccess`/`sendError`.
-- Do NOT push or deploy — the user does that.
+- Do NOT push or deploy - the user does that.
 
 **Local verification harness** (used in later tasks; start once, reuse):
 ```bash
@@ -87,7 +87,7 @@ test("isCardCommentType validates membership", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/cardCommentTypes.test.ts`
-Expected: FAIL — cannot find module `./cardCommentTypes.js`.
+Expected: FAIL - cannot find module `./cardCommentTypes.js`.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -129,7 +129,7 @@ export function isCardCommentType(key: string): boolean {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/cardCommentTypes.test.ts`
-Expected: PASS — 4 tests.
+Expected: PASS - 4 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -212,10 +212,10 @@ git commit -m "feat(pipelines): comment.type + attachment.comment_id columns + m
 
 ---
 
-## Task 3: Storage — typed comments, comment-linked attachments, grouping, cascade delete
+## Task 3: Storage - typed comments, comment-linked attachments, grouping, cascade delete
 
 **Files:**
-- Modify: `server/storage.ts` — `addComment` (2263), `addCardAttachment` (2281), `listCardAttachments` (2301), `deleteComment` (2275); add `getAttachmentsByCardGrouped`, `getCommentAttachmentsToDelete`.
+- Modify: `server/storage.ts` - `addComment` (2263), `addCardAttachment` (2281), `listCardAttachments` (2301), `deleteComment` (2275); add `getAttachmentsByCardGrouped`, `getCommentAttachmentsToDelete`.
 
 - [ ] **Step 1: `addComment` accepts a validated type**
 
@@ -277,7 +277,7 @@ Replace `listCardAttachments` (`server/storage.ts:2301-2306`):
       .orderBy(desc(pipelineCardAttachments.id));
   }
 ```
-Ensure `isNull` is imported from `drizzle-orm` at the top of `server/storage.ts` (it imports `eq, and, desc, …` already — add `isNull` to that import list if missing).
+Ensure `isNull` is imported from `drizzle-orm` at the top of `server/storage.ts` (it imports `eq, and, desc, …` already - add `isNull` to that import list if missing).
 
 - [ ] **Step 4: Add a grouped lookup for a card's comment attachments (anti-N+1)**
 
@@ -302,7 +302,7 @@ Add right after `listCardAttachments`:
     return map;
   }
 ```
-Add `isNotNull` to the `drizzle-orm` import list (`asc` is already imported — confirm; it is used at `server/storage.ts:2260`).
+Add `isNotNull` to the `drizzle-orm` import list (`asc` is already imported - confirm; it is used at `server/storage.ts:2260`).
 
 - [ ] **Step 5: Cascade-delete a comment's attachments**
 
@@ -336,14 +336,14 @@ git commit -m "feat(pipelines): storage for typed comments + comment-linked atta
 
 ---
 
-## Task 4: Routes — extract attachment-save helper, multipart comment POST, cascade delete
+## Task 4: Routes - extract attachment-save helper, multipart comment POST, cascade delete
 
 **Files:**
-- Modify: `server/routes.ts` — attachment POST (5571-5595), comment POST (5540-5549), comment DELETE (5551-5559).
+- Modify: `server/routes.ts` - attachment POST (5571-5595), comment POST (5540-5549), comment DELETE (5551-5559).
 
 - [ ] **Step 1: Extract a shared single-file save helper**
 
-Above the `// ── Card attachments ──` block (`server/routes.ts:5570`), add a module-level helper (place it near the other top-level helpers like `validateTriggerConfig`, i.e. outside the route registration but in the same module scope). It encapsulates the per-file loop body currently inline at `server/routes.ts:5585-5594`:
+Above the `// -- Card attachments --` block (`server/routes.ts:5570`), add a module-level helper (place it near the other top-level helpers like `validateTriggerConfig`, i.e. outside the route registration but in the same module scope). It encapsulates the per-file loop body currently inline at `server/routes.ts:5585-5594`:
 ```ts
 /** Validate + persist one uploaded file as a card attachment row. Shared by the
  *  generic attachments endpoint (commentId=null) and the comment endpoint. Returns
@@ -435,7 +435,7 @@ Replace the comment DELETE handler (`server/routes.ts:5551-5559`) with:
     sendSuccess(res, { ok: true });
   });
 ```
-(`deletePhoto` is already imported — used at `server/routes.ts:5626`.)
+(`deletePhoto` is already imported - used at `server/routes.ts:5626`.)
 
 - [ ] **Step 5: Enrich the card-detail GET (per-comment attachments + author names)**
 
@@ -484,10 +484,10 @@ git commit -m "feat(pipelines): multipart typed comments + per-comment attachmen
 
 ---
 
-## Task 5: Client hook — multipart addComment + comment detail type
+## Task 5: Client hook - multipart addComment + comment detail type
 
 **Files:**
-- Modify: `client/hooks/usePipelines.ts` — `CardDetail` (37-43), `addComment` (161).
+- Modify: `client/hooks/usePipelines.ts` - `CardDetail` (37-43), `addComment` (161).
 
 - [ ] **Step 1: Extend the `CardDetail.comments` type**
 
@@ -495,7 +495,7 @@ In `client/hooks/usePipelines.ts`, replace the `comments` line of `CardDetail` (
 ```ts
   comments: { id: number; authorId: number; authorName?: string; body: string; type?: string; photoPath: string | null; attachments?: CardAttachment[]; createdAt: string }[];
 ```
-(`CardAttachment` is already exported from this file — used by `useCardAttachments`. If the type alias is declared below this line, move the `CardDetail` type after it or rely on TS hoisting of `type` aliases, which is fine within a module.)
+(`CardAttachment` is already exported from this file - used by `useCardAttachments`. If the type alias is declared below this line, move the `CardDetail` type after it or rely on TS hoisting of `type` aliases, which is fine within a module.)
 
 - [ ] **Step 2: Convert `addComment` to multipart (type + files), reusing the compress flow**
 
@@ -883,7 +883,7 @@ Append the feature to `memory/project-leads-pipeline-integration.md` (or a new `
 
 ---
 
-## Self-Review Notes (author check — all resolved)
+## Self-Review Notes (author check - all resolved)
 
 - **Spec coverage:** AC1 dropdown → Task 7; AC2 submit text/file + linked attachment → Tasks 3-4,7; AC3 compress → Task 5; AC4 timeline icons/author/gallery → Tasks 4-5,7; AC5 generic Lampiran excludes comment files → Task 3 Step 3; AC6 cascade delete → Tasks 3-4; AC7 humanized activity → Task 8; AC8 tenant/perm/typecheck → throughout + Task 9.
 - **Type consistency:** `saveOneAttachment` opts shape matches `addCardAttachment` data shape (incl. `commentId`); `addComment(cardId, authorId, body, type)` signature matches the route call; `CardDetail.comments[]` (type/authorName/attachments) matches the GET enrichment and `CardComments` props.

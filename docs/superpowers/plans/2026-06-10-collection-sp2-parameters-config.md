@@ -1,9 +1,9 @@
-# SP2 — Collection Parameters Config + Stage Mapping Implementation Plan
+# SP2 - Collection Parameters Config + Stage Mapping Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO git worktrees, NO branch switches. Verify `git branch --show-current` is `dev` before committing.**
 
-**Goal:** Store + edit per-pipeline collection parameters (entry threshold/mode, write-off threshold/action, entry/paid/write-off stage refs) and a configurable overdue-range → stage mapping table. Config + UI only — no automation runs yet (SP3).
+**Goal:** Store + edit per-pipeline collection parameters (entry threshold/mode, write-off threshold/action, entry/paid/write-off stage refs) and a configurable overdue-range → stage mapping table. Config + UI only - no automation runs yet (SP3).
 
 **Architecture:** Two dedicated mitra-scoped tables (`collection_config` 1-row/pipeline + `collection_stage_map` N-rows). A pure module validates the config + map and resolves overdue→stage (SP3 reuses it). Storage upsert (replace-all map in a transaction). Admin-gated GET/PUT endpoints. A new `CollectionParametersDialog` opened from the board settings menu.
 
@@ -12,13 +12,13 @@
 ---
 
 ## File Structure
-- **Modify** `shared/schema.ts` — `collectionConfig` + `collectionStageMap` tables + inferred types.
-- **Create** `shared/collectionConfig.ts` (+ `.test.ts`) — entry-mode/write-off enums, `validateStageMap`, `stageForOverdue`, `validateCollectionConfig`.
-- **Modify** `server/storage.ts` — startup migrations (CREATE TABLE) + `getCollectionConfig` + `upsertCollectionConfig`.
-- **Modify** `server/routes.ts` — `GET`/`PUT /api/pipelines/:id/collection-config`.
-- **Modify** `client/hooks/usePipelines.ts` — `useCollectionConfig` + `useSaveCollectionConfig`.
+- **Modify** `shared/schema.ts` - `collectionConfig` + `collectionStageMap` tables + inferred types.
+- **Create** `shared/collectionConfig.ts` (+ `.test.ts`) - entry-mode/write-off enums, `validateStageMap`, `stageForOverdue`, `validateCollectionConfig`.
+- **Modify** `server/storage.ts` - startup migrations (CREATE TABLE) + `getCollectionConfig` + `upsertCollectionConfig`.
+- **Modify** `server/routes.ts` - `GET`/`PUT /api/pipelines/:id/collection-config`.
+- **Modify** `client/hooks/usePipelines.ts` - `useCollectionConfig` + `useSaveCollectionConfig`.
 - **Create** `client/components/pipelines/CollectionParametersDialog.tsx`.
-- **Modify** `client/pages/PipelineBoardPage.tsx` — menu button + dialog mount.
+- **Modify** `client/pages/PipelineBoardPage.tsx` - menu button + dialog mount.
 
 ---
 
@@ -28,7 +28,7 @@
 
 - [ ] **Step 1: Add the tables to `shared/schema.ts`**
 
-Add immediately AFTER the `collectionStages` table block (search for `export const collectionStages = mysqlTable`) — or anywhere among the pipeline tables:
+Add immediately AFTER the `collectionStages` table block (search for `export const collectionStages = mysqlTable`) - or anywhere among the pipeline tables:
 ```ts
 export const collectionConfig = mysqlTable("collection_config", {
   id: int("id").autoincrement().primaryKey(),
@@ -181,7 +181,7 @@ Run: `npx tsx --test shared/collectionConfig.test.ts` → FAIL (module not found
 
 Create `shared/collectionConfig.ts`:
 ```ts
-/** Pure helpers for per-pipeline collection parameters — no I/O. SP3 reuses stageForOverdue. */
+/** Pure helpers for per-pipeline collection parameters - no I/O. SP3 reuses stageForOverdue. */
 
 export type CollectionEntryMode = "create" | "move" | "create_if_not_exists" | "reopen";
 export type WriteoffAction = "move_stage" | "custom_rule";
@@ -276,7 +276,7 @@ git commit -m "feat(collection): pure config helpers (validate map/config, stage
 
 ---
 
-## Task 3: Storage — get + upsert
+## Task 3: Storage - get + upsert
 
 **Files:** Modify `server/storage.ts`.
 
@@ -287,7 +287,7 @@ With the other `../shared/*.js` imports at the top, add:
 import { collectionConfig, collectionStageMap, type CollectionConfig, type CollectionStageMapRow } from "../shared/schema.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
 ```
-NOTE: `collectionConfig`/`collectionStageMap` are NEW exports from schema — if schema is imported via a big destructured `import { ... } from "../shared/schema.js"` already, ADD the two table names + the two types to that existing import instead of a duplicate line. Grep for the existing schema import first.
+NOTE: `collectionConfig`/`collectionStageMap` are NEW exports from schema - if schema is imported via a big destructured `import { ... } from "../shared/schema.js"` already, ADD the two table names + the two types to that existing import instead of a duplicate line. Grep for the existing schema import first.
 
 - [ ] **Step 2: Add the two methods to the `DatabaseStorage` class**
 
@@ -573,7 +573,7 @@ export function CollectionParametersDialog({ pipelineId, open, onClose }: { pipe
                     <h4 className="text-xs font-semibold text-muted-foreground">Auto Write-Off</h4>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                       <span className="text-sm">Write-off setelah</span>
-                      <Input type="number" inputSize="sm" className="w-24" value={writeoffThreshold} onChange={(e) => setWriteoffThreshold(e.target.value)} placeholder="—" />
+                      <Input type="number" inputSize="sm" className="w-24" value={writeoffThreshold} onChange={(e) => setWriteoffThreshold(e.target.value)} placeholder="-" />
                       <span className="text-sm">hari overdue (kosong = nonaktif)</span>
                     </div>
                     {writeoffThreshold.trim() !== "" && (
@@ -592,7 +592,7 @@ export function CollectionParametersDialog({ pipelineId, open, onClose }: { pipe
                         <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-1.5 rounded-lg border border-border/60 p-2">
                           <div className="flex items-center gap-1.5">
                             <Input type="number" inputSize="sm" className="w-16" value={String(r.minOverdueDays)} onChange={(e) => setRow(i, { minOverdueDays: Number(e.target.value) || 0 })} />
-                            <span className="text-xs">–</span>
+                            <span className="text-xs">-</span>
                             <Input type="number" inputSize="sm" className="w-16" value={r.maxOverdueDays == null ? "" : String(r.maxOverdueDays)} placeholder="∞" onChange={(e) => setRow(i, { maxOverdueDays: e.target.value.trim() === "" ? null : Number(e.target.value) })} />
                             <span className="text-xs whitespace-nowrap">hari →</span>
                           </div>
@@ -673,10 +673,10 @@ git add -A && git commit -m "chore(collection): SP2 final verification" || echo 
 ## Manual acceptance (on dev, pipeline 7 / JABNET)
 1. Pipeline 7 → header → **Collection** button → dialog opens.
 2. Enable; set entry 7 days, mode Create-if-not-exists, entry stage + paid stage; write-off 180 days → move to Write Off stage.
-3. Build the mapping (1–7→FU1, 8–14→FU2, 15–30→FU3, 31–60→Visit, 61–90→Isolir, 181–∞→Write Off). Save → reopen shows the same.
+3. Build the mapping (1-7→FU1, 8-14→FU2, 15-30→FU3, 31-60→Visit, 61-90→Isolir, 181-∞→Write Off). Save → reopen shows the same.
 4. Overlapping ranges → toast error, save blocked.
 5. Non-`manage` role: no Collection button; PUT returns 403.
 
 ## Notes
-- No automation runs yet — this only stores config (verify in SP3 that the engine reads it).
+- No automation runs yet - this only stores config (verify in SP3 that the engine reads it).
 - Tenant isolation: storage scopes every query to `getMitraId()`; the endpoint checks stage/rule ownership against the pipeline.

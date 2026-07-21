@@ -1,12 +1,12 @@
 # Pipelines Multi-Action per Rule (P4d-1) Design
 
 > First slice of P4d (advanced automation). Turns a rule's action from **1:1** into
-> **1:N** — one rule can run several ordered actions (e.g. `create_card` in B, then
+> **1:N** - one rule can run several ordered actions (e.g. `create_card` in B, then
 > `move_stage` the source card to a terminal stage). Trigger and conditions stay at
 > the rule level. Other P4d slices (advanced assign, OR/nested conditions, chaining)
 > are separate, later specs.
 
-**Base branch:** `feat/pipelines-multi-action` off `dev` (includes P4a–P4c + rule edit-mode).
+**Base branch:** `feat/pipelines-multi-action` off `dev` (includes P4a-P4c + rule edit-mode).
 **Status:** Approved design, ready for spec review.
 
 **Context note:** `/pipelines` data on dev is still test data, so a normalized model
@@ -52,20 +52,20 @@ export const pipelineRuleActions = mysqlTable("pipeline_rule_actions", {
 }));
 ```
 
-### `pipeline_rule_field_maps` — re-home to the action
+### `pipeline_rule_field_maps` - re-home to the action
 - Add `actionId: int("action_id")` (nullable for migration, then always set).
 - A field-map now belongs to one **create_card action**, not the rule.
 - Drop the old `uniqueIndex("uniq_rule_field_map_source")` on `(ruleId, sourceFieldId)`
   and add `uniqueIndex("uniq_action_field_map_source")` on `(actionId, sourceFieldId)`
-  — so two create_card actions in one rule can each map the same source field.
+  - so two create_card actions in one rule can each map the same source field.
 - Keep `ruleId` column (denormalized; still used for delete-by-rule cleanup).
 
-### `pipeline_rules` — action columns become legacy
+### `pipeline_rules` - action columns become legacy
 `action_type`, `action_config`, `target_pipeline_id`, `target_stage_id`,
 `title_template`, `copy_assignee` stay on the row but are **no longer read by the
 engine** (kept to avoid a destructive migration; backfilled into the first action).
 Trigger fields (`trigger_type`/`trigger_config`/`trigger_stage_id`), `conditions`,
-`enabled`, `name` stay rule-level. **Conditions remain rule-level** — one condition
+`enabled`, `name` stay rule-level. **Conditions remain rule-level** - one condition
 set gates all actions; per-action conditions are out of scope (a later slice).
 
 ### Types (`shared/schema.ts`)
@@ -73,21 +73,21 @@ set gates all actions; per-action conditions are out of scope (a later slice).
 export type PipelineRuleAction = typeof pipelineRuleActions.$inferSelect;
 ```
 
-## 2. Migration (startup, idempotent — `server/storage.ts`)
+## 2. Migration (startup, idempotent - `server/storage.ts`)
 
 Per [[reference-startup-add-column]] (info_schema guard + plain ALTER; DB rejects
 `ADD COLUMN IF NOT EXISTS`):
 
 1. `CREATE TABLE IF NOT EXISTS pipeline_rule_actions (...)` (raw DDL).
 2. Add `pipeline_rule_field_maps.action_id INT NULL` (guarded).
-3. Backfill (idempotent — skip rules that already have action rows):
+3. Backfill (idempotent - skip rules that already have action rows):
    - For each rule with **zero** rows in `pipeline_rule_actions`, INSERT one action
      (position 0) from the rule's legacy columns
      (`action_type/action_config/target_*/title_template/copy_assignee`).
    - `UPDATE pipeline_rule_field_maps SET action_id = <that action id> WHERE rule_id = <rule> AND action_id IS NULL`.
 4. Swap the field-map unique index: `DROP INDEX uniq_rule_field_map_source` then
    `ADD UNIQUE uniq_action_field_map_source (action_id, source_field_id)`, each in its
-   own try/catch (idempotent — ignore "doesn't exist"/"duplicate key name").
+   own try/catch (idempotent - ignore "doesn't exist"/"duplicate key name").
 
 Runs against `jabnet_fiber_dev` first; prod only on explicit OK (no prod rule data yet).
 
@@ -95,26 +95,26 @@ Runs against `jabnet_fiber_dev` first; prod only on explicit OK (no prod rule da
 
 Split the current `applyRuleAction(rule, card, actorId)`:
 
-- `applyAction(action: PipelineRuleAction, card, actorId): Promise<boolean>` — the
+- `applyAction(action: PipelineRuleAction, card, actorId): Promise<boolean>` - the
   existing per-type switch, but reading from an **action row** (its `actionConfig`,
   `target_*`, `title_template`, `copy_assignee`, and field-maps via
   `storage.getActionFieldMaps(action.id)`). Returns whether it mutated.
-- `applyRuleActions(rule, card, actorId): Promise<boolean>` — load
+- `applyRuleActions(rule, card, actorId): Promise<boolean>` - load
   `storage.listRuleActions(rule.id)` ordered by `position`; run each via `applyAction`
-  in a per-action try/catch (**one action failing logs + continues to the next** —
+  in a per-action try/catch (**one action failing logs + continues to the next** -
   judgment call, approved); return `acted = true if ANY action acted`.
 
 `runStageEnterAutomations` and `runTimeTriggers` call `applyRuleActions` instead of
 `applyRuleAction`. A fire is recorded when conditions pass AND `acted` is true (same
-as today). **Loop-safety unchanged** — all actions mutate via `storage.*`, never the
+as today). **Loop-safety unchanged** - all actions mutate via `storage.*`, never the
 HTTP routes, so a `move_stage`/`create_card` action cannot re-enter the automation
 service.
 
 ## 4. Storage (`server/storage.ts`)
 
-- `listRuleActions(ruleId): Promise<PipelineRuleAction[]>` — mitra-scoped, ordered by position.
+- `listRuleActions(ruleId): Promise<PipelineRuleAction[]>` - mitra-scoped, ordered by position.
 - `getActionFieldMaps(actionId): Promise<PipelineRuleFieldMap[]>`.
-- `setRuleActions(ruleId, actions[])` — replace-all: delete this rule's actions +
+- `setRuleActions(ruleId, actions[])` - replace-all: delete this rule's actions +
   their field-maps, then insert each action (position = index) and its field-maps
   (with `actionId`). One transaction-ish sequence (best-effort; dev-only data).
 - `createRule`/`updateRule` accept `actions?: ActionInput[]` and call `setRuleActions`
@@ -133,12 +133,12 @@ service.
   - Per action: create_card → target pipeline access (`getPipelineLevel === "none"` → 403)
     + `validateRuleFieldMaps`; set_field/move_stage/assign → `validateActionConfig`.
   - Trigger + conditions validated as today.
-- **GET** enriches each rule with an `actions: [...]` array — each action shaped with
+- **GET** enriches each rule with an `actions: [...]` array - each action shaped with
   its human labels (`setFieldLabel`/`moveStageName`/`assigneeName`/`targetPipelineName`/
   `targetStageName`/`fieldMaps` via `shapeRuleFieldMaps`), mirroring today's single-action
   enrichment but per action.
 - **API shifts to `actions[]`** (drops the legacy single-action request/response shape).
-  The rule dialog is the only client and dev data is test-only — judgment call, approved.
+  The rule dialog is the only client and dev data is test-only - judgment call, approved.
 
 ## 6. Frontend
 
@@ -161,7 +161,7 @@ action portion currently inline in `PipelineRulesDialog.tsx` into a reusable uni
 ### `PipelineRulesDialog.tsx`
 - Replace the single action block with a **list of `<RuleActionEditor>`** + an
   "+ Tambah aksi" button + per-action remove + **reorder up/down** (buttons, not
-  drag — simpler; order matters for "create then close"). Judgment call, approved.
+  drag - simpler; order matters for "create then close"). Judgment call, approved.
 - Read-side: collapsed summary shows the trigger `→ N aksi` (with the first action
   inline if one); detail panel lists each action with its existing per-type rendering.
 
@@ -184,7 +184,7 @@ action portion currently inline in `PipelineRulesDialog.tsx` into a reusable uni
 | `server/pipeline-automation-helpers.ts` (+ test) | `shapeRuleActions` pure helper for GET enrichment (label/field-map shaping per action) |
 | `server/routes.ts` | POST/PATCH `actions[]` validation; GET `actions[]` enrichment |
 | `client/hooks/usePipelines.ts` | `RuleWithMaps` carries `actions: RuleActionView[]` |
-| `client/components/pipelines/RuleActionEditor.tsx` | **new** — single-action editor |
+| `client/components/pipelines/RuleActionEditor.tsx` | **new** - single-action editor |
 | `client/components/pipelines/ruleFormState.ts` | `RuleDraft.actions` + `ActionDraft`; draft↔payload over the array |
 | `client/components/pipelines/PipelineRulesDialog.tsx` | action-list UI (add/remove/reorder) + read-side per-action |
 
@@ -207,16 +207,16 @@ Gate = `npm run typecheck` (0) + `npm run build` + manual checklist:
 ## Out of scope (later P4d slices)
 
 - Per-action conditions (conditions stay rule-level).
-- Advanced assign (role/round-robin) — P4d-2.
-- OR/nested conditions — P4d-3.
-- Chaining (action triggers another rule) — P4d-4.
+- Advanced assign (role/round-robin) - P4d-2.
+- OR/nested conditions - P4d-3.
+- Chaining (action triggers another rule) - P4d-4.
 - Drag-and-drop reorder (buttons suffice for now).
 
 ## Consistency with memory
 
-- [[project-pipelines-engine]] — P4d-1; update the P4 line on merge.
-- [[feedback-coding-standards]] — new `RuleActionEditor` component (SoC), pure
+- [[project-pipelines-engine]] - P4d-1; update the P4 line on merge.
+- [[feedback-coding-standards]] - new `RuleActionEditor` component (SoC), pure
   `shapeRuleActions`/`draftToPayload` (DRY/testable), semantic markup.
-- [[reference-startup-add-column]] — migration uses info_schema guard + plain ALTER.
-- [[reference-api-response-envelope]] — routes use `sendSuccess`/`sendError`.
-- [[reference-tenant-isolation-gotchas]] — all new storage methods scope by `getMitraId()`.
+- [[reference-startup-add-column]] - migration uses info_schema guard + plain ALTER.
+- [[reference-api-response-envelope]] - routes use `sendSuccess`/`sendError`.
+- [[reference-tenant-isolation-gotchas]] - all new storage methods scope by `getMitraId()`.

@@ -50,7 +50,7 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 function fmtRelative(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60_000);
   if (m < 1) return "baru saja";
@@ -138,7 +138,7 @@ export default function MpwaPage() {
                 <StatusPill status={status} />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Kelola template pesan WA — OTP, loyalty, billing, notifikasi.
+                Kelola template pesan WA - OTP, loyalty, billing, notifikasi.
               </p>
             </div>
           </div>
@@ -287,7 +287,7 @@ export default function MpwaPage() {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────
+// --- Sub-components -----------------------------------------------
 
 function StatusPill({ status }: { status: MpwaStatus | undefined }) {
   if (!status) return null;
@@ -410,7 +410,7 @@ function TemplateRow({
   );
 }
 
-// ── Edit/Create Template Dialog ───────────────────────────────────
+// -- Edit/Create Template Dialog -----------------------------------
 function TemplateDialog({
   template, onClose, onSaved,
 }: {
@@ -458,7 +458,7 @@ function TemplateDialog({
           <DialogTitle>{isNew ? "Template Baru" : `Edit: ${template?.name}`}</DialogTitle>
           <DialogDescription>
             {template?.isSystem === 1
-              ? "Template sistem — key tidak bisa diubah, kategori tetap. Hanya nama, deskripsi, dan content yang bisa di-edit."
+              ? "Template sistem - key tidak bisa diubah, kategori tetap. Hanya nama, deskripsi, dan content yang bisa di-edit."
               : "Atur isi pesan + placeholder yang akan di-substitute saat kirim."}
           </DialogDescription>
         </DialogHeader>
@@ -555,7 +555,7 @@ function TemplateDialog({
   );
 }
 
-// ── Test Send Dialog ──────────────────────────────────────────────
+// -- Test Send Dialog ----------------------------------------------
 function TestTemplateDialog({
   template, configured, onClose,
 }: {
@@ -592,7 +592,7 @@ function TestTemplateDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Send className="h-4 w-4 text-emerald-600" /> Test Kirim — {template.name}
+            <Send className="h-4 w-4 text-emerald-600" /> Test Kirim - {template.name}
           </DialogTitle>
           <DialogDescription>
             Isi nomor tujuan + nilai placeholder. Pesan akan dikirim langsung via MPWA gateway.
@@ -618,7 +618,7 @@ function TestTemplateDialog({
               placeholder="08123456789 / 628123456789"
               className="mt-1 font-mono"
             />
-            <p className="text-[10px] text-muted-foreground mt-1">Format bebas (08xx atau 628xx) — auto normalize.</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Format bebas (08xx atau 628xx) - auto normalize.</p>
           </div>
           {placeholders.length > 0 && (
             <div className="space-y-2">

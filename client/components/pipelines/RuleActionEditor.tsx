@@ -1,4 +1,4 @@
-// SoC: single-action editor — given an ActionDraft and catalogues, renders the
+// SoC: single-action editor - given an ActionDraft and catalogues, renders the
 // right fields for the action type and emits changes via onChange.
 // Each create_card action fetches its OWN target pipeline inside this component
 // so multiple actions with different targets can coexist in the same rule form.
@@ -24,7 +24,7 @@ export function RuleActionEditor(props: {
 }): JSX.Element {
   const { value, onChange, sourceFields, selfStages, allPipelines, staffUsers } = props;
 
-  // Per-action target pipeline fetch — each action owns its own query so
+  // Per-action target pipeline fetch - each action owns its own query so
   // two create_card actions can target different pipelines simultaneously.
   const targetPipe = usePipeline(value.targetPipelineId ? Number(value.targetPipelineId) : null).data;
   const targetMutations = usePipelineMutations(
@@ -32,7 +32,7 @@ export function RuleActionEditor(props: {
   );
   const targetFields = targetPipe?.fields ?? [];
 
-  // ── helpers ─────────────────────────────────────────────────────────────────
+  // -- helpers -----------------------------------------------------------------
 
   const patch = (partial: Partial<ActionDraft>) => onChange({ ...value, ...partial });
 
@@ -63,7 +63,7 @@ export function RuleActionEditor(props: {
     }
   };
 
-  // ── render ───────────────────────────────────────────────────────────────────
+  // -- render -------------------------------------------------------------------
 
   return (
     <div className="space-y-3">
@@ -87,7 +87,7 @@ export function RuleActionEditor(props: {
         />
       </FormField>
 
-      {/* ── create_card ──────────────────────────────────────────────────────── */}
+      {/* -- create_card -------------------------------------------------------- */}
       {value.actionType === "create_card" && (
         <>
           <FormField
@@ -128,7 +128,7 @@ export function RuleActionEditor(props: {
             hint="Kosong = kartu independen. Pilih relasi agar kartu baru tertaut ke entitas yang sama (muncul di 'Kartu Terkait').">
             <Combobox
               options={[
-                { value: "", label: "— Tidak tertaut —" },
+                { value: "", label: "- Tidak tertaut -" },
                 { value: "mirror", label: "Mirror" },
                 { value: "duplicate", label: "Duplikat" },
                 { value: "linked", label: "Tertaut" },
@@ -136,7 +136,7 @@ export function RuleActionEditor(props: {
               ]}
               value={value.relationType}
               onChange={(v) => patch({ relationType: v })}
-              placeholder="— Tidak tertaut —"
+              placeholder="- Tidak tertaut -"
             />
           </FormField>
           {value.relationType && (
@@ -239,7 +239,7 @@ export function RuleActionEditor(props: {
         </>
       )}
 
-      {/* ── move_linked ─────────────────────────────────────────────────────── */}
+      {/* -- move_linked ------------------------------------------------------- */}
       {value.actionType === "move_linked" && (
         <>
           <FormField label="Pindahkan kartu tertaut di pipeline" htmlFor="rule-ml-pipeline" required>
@@ -269,7 +269,7 @@ export function RuleActionEditor(props: {
         </>
       )}
 
-      {/* ── set_field_linked ─────────────────────────────────────────────────── */}
+      {/* -- set_field_linked --------------------------------------------------- */}
       {value.actionType === "set_field_linked" && (
         <>
           <FormField label="Set field di kartu tertaut di pipeline" htmlFor="rule-sfl-pipeline" required>
@@ -319,7 +319,7 @@ export function RuleActionEditor(props: {
         </>
       )}
 
-      {/* ── assign_linked ────────────────────────────────────────────────────── */}
+      {/* -- assign_linked ------------------------------------------------------ */}
       {value.actionType === "assign_linked" && (
         <>
           <FormField label="Sinkron assignee ke kartu tertaut di pipeline" htmlFor="rule-al-pipeline" required>
@@ -338,7 +338,7 @@ export function RuleActionEditor(props: {
         </>
       )}
 
-      {/* ── set_field ────────────────────────────────────────────────────────── */}
+      {/* -- set_field ---------------------------------------------------------- */}
       {value.actionType === "set_field" && (
         <>
           <FormField label="Set field" htmlFor="rule-set-field" required>
@@ -366,7 +366,7 @@ export function RuleActionEditor(props: {
         </>
       )}
 
-      {/* ── move_stage ───────────────────────────────────────────────────────── */}
+      {/* -- move_stage --------------------------------------------------------- */}
       {value.actionType === "move_stage" && (
         <FormField label="Pindahkan ke stage" htmlFor="rule-move-stage" required>
           <Combobox
@@ -380,7 +380,7 @@ export function RuleActionEditor(props: {
         </FormField>
       )}
 
-      {/* ── assign ───────────────────────────────────────────────────────────── */}
+      {/* -- assign ------------------------------------------------------------- */}
       {value.actionType === "assign" && (
         <FormField
           label="Tugaskan ke"
@@ -396,7 +396,7 @@ export function RuleActionEditor(props: {
         </FormField>
       )}
 
-      {/* ── notify ───────────────────────────────────────────────────────────── */}
+      {/* -- notify ------------------------------------------------------------- */}
       {value.actionType === "notify" && (
         <NotifyConfigFields
           value={value}

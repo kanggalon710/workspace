@@ -1,8 +1,8 @@
-# LP2 — Lead-Attribute Rule Builder — Implementation Plan
+# LP2 - Lead-Attribute Rule Builder - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Lead-trigger rules dapat memakai kondisi atribut lead (OR-of-AND) — `source`, `category`, `district`, `village`, `priority`, `distanceMeters`, `odpId`(exists) — dievaluasi terhadap lead saat intake, sebelum dedup/create.
+**Goal:** Lead-trigger rules dapat memakai kondisi atribut lead (OR-of-AND) - `source`, `category`, `district`, `village`, `priority`, `distanceMeters`, `odpId`(exists) - dievaluasi terhadap lead saat intake, sebelum dedup/create.
 
 **Architecture:** Extend pola `source:"billing"` yang sudah ada dengan `source:"lead"`. Pure module `shared/leadConditions.ts` (catalog + evaluator), dipakai `runLeadIntake` (LP1) untuk skip rule yang gagal kondisi. `applyConditionOp` diekstrak & dipakai bersama evaluator card existing (DRY). UI: `ConditionsBuilder` mode-lead.
 
@@ -98,7 +98,7 @@ test("catalog validators", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/leadConditions.test.ts`
-Expected: FAIL — module not found.
+Expected: FAIL - module not found.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -164,7 +164,7 @@ export function compareLeadAttr(lead: IntakeLead, attr: string, op: RuleConditio
 }
 
 /** OR-of-AND terhadap lead. Group kosong/none → true. Hanya menilai kondisi source:"lead"
- *  (kondisi non-lead di rule lead dianggap true — UI me-restrict ke lead, ini guard defensif). */
+ *  (kondisi non-lead di rule lead dianggap true - UI me-restrict ke lead, ini guard defensif). */
 export function evaluateLeadConditionGroups(groups: RuleCondition[][], lead: IntakeLead): boolean {
   if (!groups || groups.length === 0) return true;
   return groups.some((g) => g.every((c) => {
@@ -190,7 +190,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Schema — add `"lead"` to condition source
+## Task 2: Schema - add `"lead"` to condition source
 
 **Files:**
 - Modify: `shared/schema.ts` (`RuleCondition` ~line 811)
@@ -229,7 +229,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Server helpers — accept lead conditions + DRY op refactor
+## Task 3: Server helpers - accept lead conditions + DRY op refactor
 
 **Files:**
 - Modify: `server/pipeline-automation-helpers.ts` (`parseConditionGroups` ~line 207; `evaluateConditions` ~line 52)
@@ -273,7 +273,7 @@ Replace with:
 ```
 (`applyConditionOp` trims internally, so behavior is identical.)
 
-> NOTE: do NOT add a `c.source === "lead"` branch to `evaluateConditions` here — the card automation engine never evaluates lead conditions (lead conditions are evaluated by the lead intake path in Task 4). If a lead condition somehow reaches this card evaluator, it has no `fieldId`; `values.get(undefined)` → `""`, and only `empty` would match — harmless and unreachable in practice.
+> NOTE: do NOT add a `c.source === "lead"` branch to `evaluateConditions` here - the card automation engine never evaluates lead conditions (lead conditions are evaluated by the lead intake path in Task 4). If a lead condition somehow reaches this card evaluator, it has no `fieldId`; `values.get(undefined)` → `""`, and only `empty` would match - harmless and unreachable in practice.
 
 - [ ] **Step 3: Run existing helper tests + typecheck**
 
@@ -292,7 +292,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Intake — evaluate lead conditions before dedup
+## Task 4: Intake - evaluate lead conditions before dedup
 
 **Files:**
 - Modify: `server/lead-intake.ts`
@@ -332,7 +332,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 5: Server validation — accept `source:"lead"` conditions
+## Task 5: Server validation - accept `source:"lead"` conditions
 
 **Files:**
 - Modify: `server/routes.ts` (`validateConditions` ~line 4644)
@@ -392,7 +392,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 6: ConditionsBuilder — lead mode
+## Task 6: ConditionsBuilder - lead mode
 
 **Files:**
 - Modify: `client/components/pipelines/ConditionsBuilder.tsx`
@@ -473,7 +473,7 @@ Then wrap the existing source-selector + field/billing blocks so they only rende
                     </>
                   )}
 ```
-Keep the existing op `<Combobox>` (it already uses `opsForRow`) and the value `<Input>` (gated by `NEEDS_VALUE(row.op)` — for `odpId` empty/not_empty the value input hides automatically). The stage-value branch stays under `!leadMode` (lead rows never use stage).
+Keep the existing op `<Combobox>` (it already uses `opsForRow`) and the value `<Input>` (gated by `NEEDS_VALUE(row.op)` - for `odpId` empty/not_empty the value input hides automatically). The stage-value branch stays under `!leadMode` (lead rows never use stage).
 
 > Implementation note: do this by literally moving the current source-selector `<div className="w-24 ...">`, the field dropdown block, and the billing dropdown block inside the `!leadMode` `<>...</>` branch, and adding the lead-attr `<Combobox>` as the `leadMode` branch. The op Combobox + value Input remain shared below the branch. Verify `opsForRow` is computed once (replace the old `const opsForRow = isStageRow ? STAGE_OPS : OPS;`).
 
@@ -493,7 +493,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 7: ruleFormState — lead-aware condition serialization
+## Task 7: ruleFormState - lead-aware condition serialization
 
 **Files:**
 - Modify: `client/components/pipelines/ruleFormState.ts`
@@ -567,7 +567,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 8: PipelineRulesDialog — render lead conditions builder + summary
+## Task 8: PipelineRulesDialog - render lead conditions builder + summary
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -594,11 +594,11 @@ When the user switches trigger type to a lead type, any pre-existing field/stage
                     setTriggerType(next);
                   }}
 ```
-(Adapt to the actual existing onChange — preserve any logic it already has; just add the conditions reset when crossing the lead boundary.)
+(Adapt to the actual existing onChange - preserve any logic it already has; just add the conditions reset when crossing the lead boundary.)
 
 - [ ] **Step 3: Show lead conditions in the rule summary/detail**
 
-The rule list detail hides the conditions block for lead (LP1 changed the guard at ~line 404 to `r.triggerType !== "billing_sync" && !String(r.triggerType ?? "").startsWith("lead_")`). For lead rules we DO want to show conditions now. Change that guard so lead rules show conditions: the condition-count chip (~line 353) and the conditions detail (~line 404) should render when the rule HAS conditions, regardless of lead. Simplest: change both guards from `... && !String(r.triggerType ?? "").startsWith("lead_")` to just check conditions presence (drop the lead exclusion for the CONDITIONS block only — keep actions hidden for lead). Concretely, for the conditions chip + conditions detail blocks, use `(r.conditions?.groups?.length ?? 0) > 0` as the guard and remove the `!startsWith("lead_")` part for those two blocks. Leave the ACTIONS detail block still excluding lead.
+The rule list detail hides the conditions block for lead (LP1 changed the guard at ~line 404 to `r.triggerType !== "billing_sync" && !String(r.triggerType ?? "").startsWith("lead_")`). For lead rules we DO want to show conditions now. Change that guard so lead rules show conditions: the condition-count chip (~line 353) and the conditions detail (~line 404) should render when the rule HAS conditions, regardless of lead. Simplest: change both guards from `... && !String(r.triggerType ?? "").startsWith("lead_")` to just check conditions presence (drop the lead exclusion for the CONDITIONS block only - keep actions hidden for lead). Concretely, for the conditions chip + conditions detail blocks, use `(r.conditions?.groups?.length ?? 0) > 0` as the guard and remove the `!startsWith("lead_")` part for those two blocks. Leave the ACTIONS detail block still excluding lead.
 
 - [ ] **Step 4: Build + typecheck**
 
@@ -639,11 +639,11 @@ Buat rule `lead_created`, source=Coverage Check, tambah kondisi lead: `distanceM
 
 - [ ] **Step 5: Update memory**
 
-Update `memory/project-leads-pipeline-integration.md`: LP2 DONE on dev (belum push) — `source:"lead"` conditions, LEAD_CONDITION_ATTRS, applyConditionOp extracted (DRY), ConditionsBuilder leadMode; campaign→LP2b, reverse→LP4 next. Add commit range.
+Update `memory/project-leads-pipeline-integration.md`: LP2 DONE on dev (belum push) - `source:"lead"` conditions, LEAD_CONDITION_ATTRS, applyConditionOp extracted (DRY), ConditionsBuilder leadMode; campaign→LP2b, reverse→LP4 next. Add commit range.
 
 ---
 
-## Self-Review (penulis plan — sudah dijalankan)
+## Self-Review (penulis plan - sudah dijalankan)
 
 **Spec coverage:** §source:"lead"→T2; §LEAD_CONDITION_ATTRS+evaluator+applyConditionOp→T1; §intake gate→T4; §parseConditionGroups keep lead + DRY refactor→T3; §validateConditions lead→T5; §ConditionsBuilder lead-mode→T6; §ruleFormState serialize/hydrate→T7; §dialog render+summary→T8; §tenant/perf/audit unchanged (no new query, eval in-memory)→by construction; §testing→T1/T9. All covered.
 

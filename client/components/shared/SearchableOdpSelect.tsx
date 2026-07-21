@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, ChevronDown, Check, X } from "lucide-react";
 
 /**
- * SearchableOdpSelect — dropdown ODP dengan search/find.
+ * SearchableOdpSelect - dropdown ODP dengan search/find.
  *
  * Dipakai di semua tempat yang butuh pilih ODP (customer edit, map edit,
  * customer filter, add form, dsb) biar tim tidak perlu scroll panjang.
@@ -18,7 +18,7 @@ export function SearchableOdpSelect({
   value,
   onChange,
   odps,
-  placeholder = "— Pilih ODP —",
+  placeholder = "- Pilih ODP -",
   nullLabel = "(tidak ada)",
   allowNull = true,
   disabled = false,
@@ -125,7 +125,7 @@ export function SearchableOdpSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Cari ODP — ketik nama atau kode..."
+              placeholder="Cari ODP - ketik nama atau kode..."
               className="flex h-9 w-full rounded-md bg-transparent px-2 text-xs outline-none placeholder:text-muted-foreground"
             />
             {query && (

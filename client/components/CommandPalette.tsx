@@ -51,14 +51,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     document.documentElement.classList.contains("dark")
   );
 
-  // ── Terakhir Dikunjungi: rekam route (dedupe, max 12) → grup teratas saat ⌘K dibuka ──
+  // -- Terakhir Dikunjungi: rekam route (dedupe, max 12) → grup teratas saat ⌘K dibuka --
   useEffect(() => {
     if (!location || location === "/login") return;
     try {
       const prev: string[] = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
       const next = [location, ...prev.filter((p) => p !== location)].slice(0, 12);
       localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-    } catch { /* storage blocked — abaikan */ }
+    } catch { /* storage blocked - abaikan */ }
   }, [location]);
   const [recents, setRecents] = useState<string[]>([]);
   useEffect(() => {
@@ -66,7 +66,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     try { setRecents(JSON.parse(localStorage.getItem(RECENT_KEY) || "[]")); } catch { setRecents([]); }
   }, [open]);
 
-  // ── Search All Teamspace (gaya Cicle): cari tim/kartu/dokumen dari ⌘K ──
+  // -- Search All Teamspace (gaya Cicle): cari tim/kartu/dokumen dari ⌘K --
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   useEffect(() => {
@@ -109,7 +109,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     setDarkMode(!darkMode);
   };
 
-  // ── Navigation items ──
+  // -- Navigation items --
   const navigationItems: CommandItemDef[] = [
     { id: "beranda", label: "Beranda (Pilih Divisi)", icon: LayoutDashboard, path: "/", keywords: ["beranda", "home", "divisi"], shortcut: "⌘D" },
     { id: "dashboard", label: "Dashboard Jaringan", icon: LayoutDashboard, path: "/dashboard-jaringan", permission: "dashboard", keywords: ["dashboard", "jaringan", "noc"] },
@@ -117,7 +117,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { id: "customers", label: "Pelanggan", icon: Users, path: "/customers", permission: "customers", keywords: ["customer", "pelanggan", "user"] },
     { id: "marketing", label: "Marketing Dashboard", icon: BarChart3, path: "/marketing", permission: "marketing_dashboard" },
     { id: "canvassing", label: "Canvassing", icon: MapPinned, path: "/canvassing", permission: "canvassing" },
-    // "Lead Pipeline" (/leads) disembunyikan — lead sekarang ada di /pipelines/2.
+    // "Lead Pipeline" (/leads) disembunyikan - lead sekarang ada di /pipelines/2.
     { id: "contacts", label: "Kontak", icon: Contact, path: "/contacts", permission: "contacts" },
     { id: "prospects", label: "Prospect Finder", icon: Search, path: "/prospects", permission: "prospects" },
     { id: "loyalty", label: "JABNET Sahabat", icon: Heart, path: "/loyalty", permission: "loyalty_admin" },
@@ -271,11 +271,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 <CommandSeparator />
               </>
             )}
-            {/* Search All Teamspace (gaya Cicle): hasil konten live — value diberi suffix
+            {/* Search All Teamspace (gaya Cicle): hasil konten live - value diberi suffix
                 search agar lolos filter cmdk (match tim bisa dari deskripsi). */}
             {tsResults && (tsResults.teams.length + tsResults.cards.length + tsResults.docs.length) > 0 && (
               <>
-                <CommandGroup heading="Teamspace — Hasil Pencarian">
+                <CommandGroup heading="Teamspace - Hasil Pencarian">
                   {tsResults.teams.map((t) => (
                     <CommandItem key={`ts-team-${t.id}`} value={`${t.name} ${search}`} onSelect={() => navigate(`/teamspace/teams/${t.id}`)}>
                       <UsersRound />

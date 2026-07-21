@@ -48,7 +48,7 @@ export function EmployeeWizard({ userId, userName, users, onClose }: Props) {
 
   const sel = (k: string, options: Array<[string, string]>) => (
     <select value={p[k] ?? ""} onChange={set(k)} className={inputCls}>
-      <option value="">–</option>
+      <option value="">-</option>
       {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
     </select>
   );
@@ -56,7 +56,7 @@ export function EmployeeWizard({ userId, userName, users, onClose }: Props) {
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[88vh] overflow-y-auto">
-        <DialogTitle>Profil Karyawan — {userName}</DialogTitle>
+        <DialogTitle>Profil Karyawan - {userName}</DialogTitle>
         {/* Step indicator */}
         <div className="flex items-center gap-1.5">
           {STEPS.map((s, i) => (
@@ -89,13 +89,13 @@ export function EmployeeWizard({ userId, userName, users, onClose }: Props) {
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Struktur Organisasi">
               <select value={p.orgUnitId ?? ""} onChange={set("orgUnitId")} className={inputCls}>
-                <option value="">–</option>
+                <option value="">-</option>
                 {(orgs?.orgUnits ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </Field>
             <Field label="Jabatan">
               <select value={p.positionId ?? ""} onChange={set("positionId")} className={inputCls}>
-                <option value="">–</option>
+                <option value="">-</option>
                 {(orgs?.positions ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </Field>
@@ -103,7 +103,7 @@ export function EmployeeWizard({ userId, userName, users, onClose }: Props) {
             <Field label="Status Karyawan">{sel("employmentStatus", [["tetap", "Tetap"], ["kontrak", "Kontrak"], ["probation", "Probation"], ["lepas", "Lepas/Harian"]])}</Field>
             <Field label="Atasan Langsung">
               <select value={p.supervisorId ?? ""} onChange={set("supervisorId")} className={inputCls}>
-                <option value="">–</option>
+                <option value="">-</option>
                 {users.filter((u) => u.id !== userId).map((u) => <option key={u.id} value={u.id}>{u.name || u.username}</option>)}
               </select>
             </Field>

@@ -33,7 +33,7 @@ In `shared/schema.ts`, in the `pipelineFields = mysqlTable(...)` definition, add
 
 - [ ] **Step 2: Add the idempotent startup migration**
 
-In `server/storage.ts`, find the `p4cColAdds` array (~line 6709) and add one entry for the new column (the existing loop applies it with an info_schema guard + plain `ALTER` — the DB rejects `ADD COLUMN IF NOT EXISTS`):
+In `server/storage.ts`, find the `p4cColAdds` array (~line 6709) and add one entry for the new column (the existing loop applies it with an info_schema guard + plain `ALTER` - the DB rejects `ADD COLUMN IF NOT EXISTS`):
 
 ```ts
     const p4cColAdds: Array<{ table: string; column: string; ddl: string }> = [
@@ -62,7 +62,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Registry — relabel Assignee + config helpers + multi-aware filter (TDD)
+## Task 2: Registry - relabel Assignee + config helpers + multi-aware filter (TDD)
 
 **Files:**
 - Modify: `shared/pipelineFieldTypes.ts`
@@ -105,7 +105,7 @@ test("cardMatchesFilter: single assignee = equality, multi assignee = membership
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `npx tsx --test shared/pipelineFieldTypes.test.ts`
-Expected: FAIL — `parseFieldConfig`/`isMultiUser` are not exported; label assertion fails.
+Expected: FAIL - `parseFieldConfig`/`isMultiUser` are not exported; label assertion fails.
 
 - [ ] **Step 3: Implement the registry changes**
 
@@ -167,7 +167,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Validation — multi-assignee value (TDD)
+## Task 3: Validation - multi-assignee value (TDD)
 
 **Files:**
 - Modify: `server/pipeline-field-helpers.ts`
@@ -202,7 +202,7 @@ test("empty value always allowed (soft-required)", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test server/pipeline-field-helpers.test.ts`
-Expected: FAIL — `validateFieldValue` doesn't accept a 4th arg / multi case returns wrong result.
+Expected: FAIL - `validateFieldValue` doesn't accept a 4th arg / multi case returns wrong result.
 
 - [ ] **Step 3: Implement the validation change**
 
@@ -308,7 +308,7 @@ In `server/storage.ts`, add this method right after `getUserIdsInMitra` (~line 5
 
 - [ ] **Step 3: Add the route**
 
-In `server/routes.ts`, add this route next to the other `/api/pipelines/*` routes (e.g. just before `router.get("/api/pipelines/:id/cards", ...)` at ~line 4503). It is gated by the `pipelines` read permission — NOT admin:
+In `server/routes.ts`, add this route next to the other `/api/pipelines/*` routes (e.g. just before `router.get("/api/pipelines/:id/cards", ...)` at ~line 4503). It is gated by the `pipelines` read permission - NOT admin:
 
 ```ts
   router.get("/api/pipelines/assignable-users", async (req, res) => {
@@ -318,7 +318,7 @@ In `server/routes.ts`, add this route next to the other `/api/pipelines/*` route
   });
 ```
 
-IMPORTANT: register this BEFORE any `/api/pipelines/:id`-style param route that could swallow `assignable-users` as an `:id`. Verify by reading the surrounding routes — if a `GET /api/pipelines/:id` exists earlier and would match `/api/pipelines/assignable-users`, place this route ABOVE it. (Express matches in registration order.)
+IMPORTANT: register this BEFORE any `/api/pipelines/:id`-style param route that could swallow `assignable-users` as an `:id`. Verify by reading the surrounding routes - if a `GET /api/pipelines/:id` exists earlier and would match `/api/pipelines/assignable-users`, place this route ABOVE it. (Express matches in registration order.)
 
 - [ ] **Step 4: Verify typecheck + build**
 
@@ -446,7 +446,7 @@ Add the import at the top:
 import { useAssignableUsers } from "@/hooks/usePipelines";
 ```
 
-(`useQuery`/`api` may still be used elsewhere in the file — leave their imports. If, after Task 8, neither is used, remove them then.)
+(`useQuery`/`api` may still be used elsewhere in the file - leave their imports. If, after Task 8, neither is used, remove them then.)
 
 - [ ] **Step 3: `PipelineBoardPage` uses the hook**
 
@@ -517,7 +517,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 7: ManageFieldsDialog — Single/Multi radio for Assignee
+## Task 7: ManageFieldsDialog - Single/Multi radio for Assignee
 
 **Files:**
 - Modify: `client/components/pipelines/ManageFieldsDialog.tsx`
@@ -602,7 +602,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 8: FieldValueInput — single vs multi assignee input
+## Task 8: FieldValueInput - single vs multi assignee input
 
 **Files:**
 - Modify: `client/components/pipelines/FieldValueInput.tsx`
@@ -635,7 +635,7 @@ with:
       );
 ```
 
-(The switch already has `field` in scope — confirm the function signature destructures or receives `field`; the existing code references `field.options` via `parseOptions(field)`, so `field` is available.)
+(The switch already has `field` in scope - confirm the function signature destructures or receives `field`; the existing code references `field.options` via `parseOptions(field)`, so `field` is available.)
 
 - [ ] **Step 2: Add the `UserMultiSelect` component**
 
@@ -717,7 +717,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 9: BoardCard — resolve assignee values to names in chips
+## Task 9: BoardCard - resolve assignee values to names in chips
 
 **Files:**
 - Modify: `client/components/pipelines/BoardCard.tsx`
@@ -765,7 +765,7 @@ Replace with:
               {f.label}: {f.type === "user" ? resolveUserNames(f, raw, usersById) : fieldText(f, raw)}
 ```
 
-(`usersById` is already a prop of `BoardCard` — see its props at ~line 56.)
+(`usersById` is already a prop of `BoardCard` - see its props at ~line 56.)
 
 - [ ] **Step 2: Verify typecheck + build**
 
@@ -807,11 +807,11 @@ Expected: success (Vite client + esbuild server bundle).
 - [ ] **Step 4: Manual checklist (record results)**
 
 On the dev "Leads (Marketing)" pipeline:
-- ManageFields → add field, pick **Assignee** → the Tunggal/Banyak radio appears; for non-Assignee types it does not. ✅
+- ManageFields → add field, pick **Assignee** → the Tunggal/Banyak radio appears; for non-Assignee types it does not.
 - Create one **Tunggal** + one **Banyak** Assignee field.
-- As a **non-admin** pipeline user: open a card → both assignee inputs load users (only active-mitra members appear). ✅ (#1 RBAC/tenant)
-- Assign one user (single) and several (multi); reopen → values persist; card chip + drawer show **names**, not IDs. ✅
-- Board filter → pick the Assignee field → pick a user → only cards with that user remain (works for single and multi). ✅
+- As a **non-admin** pipeline user: open a card → both assignee inputs load users (only active-mitra members appear).  (#1 RBAC/tenant)
+- Assign one user (single) and several (multi); reopen → values persist; card chip + drawer show **names**, not IDs.
+- Board filter → pick the Assignee field → pick a user → only cards with that user remain (works for single and multi).
 - (Singleton/other slice-A behavior unaffected.)
 
 - [ ] **Step 5: Final commit (only if the manual pass required a fixup; otherwise skip)**
@@ -827,7 +827,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Self-review notes (author)
 
-- **Spec coverage:** config column → Task 1; registry relabel + helpers + multi filter → Task 2; validation → Task 3; tenant-scoped non-admin endpoint (#1 RBAC) → Task 4 + consumers in Task 6; create UX Single/Multi → Task 7; single/multi input → Task 8; name display (fixes ID-in-chip) → Task 9. Single=userId string (back-compat) / multi=JSON array consistent across Tasks 2/3/8/9. Immutability (no edit of config) honored — PATCH route untouched. No assignee notifications / no card.assigneeId sync (out of scope, not implemented). Multi-tenant: Task 4 mitra-scoped.
+- **Spec coverage:** config column → Task 1; registry relabel + helpers + multi filter → Task 2; validation → Task 3; tenant-scoped non-admin endpoint (#1 RBAC) → Task 4 + consumers in Task 6; create UX Single/Multi → Task 7; single/multi input → Task 8; name display (fixes ID-in-chip) → Task 9. Single=userId string (back-compat) / multi=JSON array consistent across Tasks 2/3/8/9. Immutability (no edit of config) honored - PATCH route untouched. No assignee notifications / no card.assigneeId sync (out of scope, not implemented). Multi-tenant: Task 4 mitra-scoped.
 - **Type consistency:** `parseFieldConfig`/`isMultiUser`/`useAssignableUsers`/`AssignableUser`/`getAssignableUsers`/`UserMultiSelect`/`resolveUserNames` names used identically across tasks. `config: string | null` on `PipelineField` (Task 1) read by `parseFieldConfig` (Task 2) and stored by `createField` (Task 5).
 - **Route ordering caveat** explicitly flagged in Task 4 Step 3 (register `assignable-users` before any `/api/pipelines/:id` param route).
 - **No placeholders.**

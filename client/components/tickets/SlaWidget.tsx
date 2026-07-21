@@ -18,7 +18,7 @@ interface SlaStats {
 }
 
 function fmtMinutes(m: number | null): string {
-  if (m == null) return "—";
+  if (m == null) return "-";
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   const min = m % 60;

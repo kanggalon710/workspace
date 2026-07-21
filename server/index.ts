@@ -1,4 +1,4 @@
-// config.ts harus jadi import PERTAMA — dia load dotenv sebelum storage.ts buat MySQL pool
+// config.ts harus jadi import PERTAMA - dia load dotenv sebelum storage.ts buat MySQL pool
 import "./config.js";
 import express from "express";
 import session from "express-session";
@@ -16,7 +16,7 @@ import { trafficSnapshotWorker } from "./traffic-snapshot-worker.js";
 import { teamspaceWorker } from "./teamspace-worker.js";
 import { withMitra } from "./tenant-context.js";
 
-// Worker enable flags — di-set di .env (default: enable kalau env tidak diset = backward compat).
+// Worker enable flags - di-set di .env (default: enable kalau env tidak diset = backward compat).
 // Untuk cPanel "prod baru", default-nya false (avoid dual-write dgn prod existing).
 const workersGloballyEnabled = process.env.WORKERS_ENABLED !== "false";
 const flag = (name: string, defaultVal = true): boolean => {
@@ -38,7 +38,7 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 // Middleware
-// Limit 10MB — cukup untuk foto bukti lapangan (auto-compress ke ~300KB per foto)
+// Limit 10MB - cukup untuk foto bukti lapangan (auto-compress ke ~300KB per foto)
 // Tapi bisa tahan kalau user upload batch, foto mentah sebelum compress, dll.
 // Default Express 100KB kekecilan → "request entity too large" error.
 app.use(express.json({ limit: "10mb" }));
@@ -60,7 +60,7 @@ app.use(session({
   },
 }));
 
-// v4.2.13: Multi-domain — portal.jabnet.id khusus pelanggan, fiber-tools.arkanova.id staff
+// v4.2.13: Multi-domain - portal.jabnet.id khusus pelanggan, fiber-tools.arkanova.id staff
 // Saat request masuk dari domain portal, batasi hanya /api/portal/* + /portal/* + static
 const PORTAL_HOSTS = new Set(["portal.jabnet.id", "portal.jabnet.local"]);
 function isPortalHost(req: express.Request): boolean {
@@ -79,7 +79,7 @@ app.use((req, res, next) => {
   return res.status(404).json({ success: false, error: "Endpoint tidak tersedia di domain ini" });
 });
 
-// API Routes — urutan mount penting:
+// API Routes - urutan mount penting:
 //   1. Portal pelanggan (public customer endpoints)
 //   2. Public API v1 (API key bearer auth, untuk integrasi eksternal)
 //   3. Main router (staff endpoints)
@@ -88,7 +88,7 @@ app.use(publicApiRouter);
 app.use(pipelinesTickRouter);
 app.use(router);
 
-// Serve frontend — auto-detect dev (tsx) vs production (esbuild bundle):
+// Serve frontend - auto-detect dev (tsx) vs production (esbuild bundle):
 //   - Production bundle di dist/index.mjs → __dirname=/var/www/ftth-tools/dist → publicPath=./public
 //   - Dev via tsx server/index.ts → __dirname=/tmp/ftth-v4xx/server → publicPath=../dist/public
 const publicPath = existsSync(path.join(__dirname, "public"))
@@ -112,7 +112,7 @@ app.use((_req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
 
-// Global error handler — catch any uncaught error from route handlers
+// Global error handler - catch any uncaught error from route handlers
 // (Express 5 sudah handle Promise rejection, ini safety net untuk sync throws)
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("[ExpressError]", err?.stack ?? err);
@@ -146,7 +146,7 @@ if (BILLING_SYNC_ENABLED) {
   console.log("[Startup] billing sync worker disabled via env (BILLING_SYNC_ENABLED=false)");
 }
 
-// Batch 2f: Chatwoot contact auto-sync worker (opsional, default off — perlu CHATWOOT_CONTACT_SYNC_ENABLED=true)
+// Batch 2f: Chatwoot contact auto-sync worker (opsional, default off - perlu CHATWOOT_CONTACT_SYNC_ENABLED=true)
 if (CHATWOOT_CONTACT_SYNC_ENABLED) {
   chatwootContactSyncWorker.start().catch(e => console.error("[ChatwootContactSyncWorker] startup failed:", e));
 } else {
@@ -169,7 +169,7 @@ if (TEAMSPACE_WORKER_ENABLED) {
 
 // v4.2.3: Atomic expire+revert worker untuk Speed-on-Demand boost (poll tiap 60 detik)
 // IMPORTANT: revert MikroTik DULU, baru mark expired di DB. Kalau revert gagal,
-// tetap status=active untuk retry loop berikutnya — supaya customer ga dapat boost
+// tetap status=active untuk retry loop berikutnya - supaya customer ga dapat boost
 // gratis selamanya kalau MikroTik sempat offline saat expire fire.
 if (!BOOST_EXPIRE_ENABLED) console.log("[Startup] boost expire worker disabled via env (BOOST_EXPIRE_ENABLED=false)");
 const boostExpireInterval = !BOOST_EXPIRE_ENABLED ? null : setInterval(async () => {
@@ -184,7 +184,7 @@ const boostExpireInterval = !BOOST_EXPIRE_ENABLED ? null : setInterval(async () 
     for (const r of overdue) {
       const hasProfile = !!(r as any).originalPppProfile;
 
-      // ── Step 1: Revert MikroTik (kalau ada data profile) ──
+      // -- Step 1: Revert MikroTik (kalau ada data profile) --
       if (hasProfile) {
         const result = await revertBoost(
           r.customerId,
@@ -206,7 +206,7 @@ const boostExpireInterval = !BOOST_EXPIRE_ENABLED ? null : setInterval(async () 
         console.log(`[BoostExpire] ✓ reverted profile for redemption #${r.id} (customer #${r.customerId})`);
       }
 
-      // ── Step 2: Mark expired di DB (atomic) ──
+      // -- Step 2: Mark expired di DB (atomic) --
       try {
         await storage.markRevertedAndExpired(r.id);
         success++;
@@ -216,7 +216,7 @@ const boostExpireInterval = !BOOST_EXPIRE_ENABLED ? null : setInterval(async () 
         continue;
       }
 
-      // ── Step 3: WA notif ke customer ──
+      // -- Step 3: WA notif ke customer --
       try {
         const customer = await storage.getCustomer(r.customerId);
         const loyalty = await storage.getOrCreateCustomerLoyalty(r.customerId);
@@ -240,13 +240,13 @@ const boostExpireInterval = !BOOST_EXPIRE_ENABLED ? null : setInterval(async () 
   }
 }, 60_000);
 
-// v4.2.17: SLA escalation worker — cek tiket aktif tiap 5 menit
+// v4.2.17: SLA escalation worker - cek tiket aktif tiap 5 menit
 // Trigger di 25%/10% time remaining, dan saat breached. Notif supervisor + log.
 if (!SLA_ESCALATION_ENABLED) console.log("[Startup] SLA escalation worker disabled via env (SLA_ESCALATION_ENABLED=false)");
 const slaEscalationInterval = !SLA_ESCALATION_ENABLED ? null : setInterval(async () => {
   try {
     // Multi-tenant: iterate semua mitra aktif. Storage methods (getTicketsNeedingSlaEscalation,
-    // createNotification, recordSlaEscalation) butuh tenant context — tanpa withMitra mereka throw
+    // createNotification, recordSlaEscalation) butuh tenant context - tanpa withMitra mereka throw
     // "Missing context" dan escalation diam-diam tidak pernah jalan.
     const mitras = await storage.listMitras(false);
     const { notifyRolesTelegram } = await import("./telegram.js");
@@ -264,12 +264,12 @@ const slaEscalationInterval = !SLA_ESCALATION_ENABLED ? null : setInterval(async
           .map((u: any) => u.id);
 
         for (const { ticket, level } of escalations) {
-          const emoji = level === "breached" ? "🚨" : level === "warning_10pct" ? "⚠️" : "⏰";
+          const emoji = level === "breached" ? "" : level === "warning_10pct" ? "" : "⏰";
           const headline =
             level === "breached" ? "SLA TERLEWAT" :
             level === "warning_10pct" ? "SLA hampir habis (<10%)" :
             "SLA segera habis (<25%)";
-          const msg = `${emoji} *${headline}*\n\n*${(ticket as any).ticketNumber}* — ${(ticket as any).title}\nDeadline: ${new Date((ticket as any).slaDeadline).toLocaleString("id-ID")}\nStatus: ${(ticket as any).status}`;
+          const msg = `${emoji} *${headline}*\n\n*${(ticket as any).ticketNumber}* - ${(ticket as any).title}\nDeadline: ${new Date((ticket as any).slaDeadline).toLocaleString("id-ID")}\nStatus: ${(ticket as any).status}`;
           try {
             await notifyRolesTelegram(["System-Admin", "Admin", "Administrator", "admin", "Supervisor"], "sla_escalation", msg);
           } catch (e: any) { console.warn("[SLA Esc] telegram fail:", e.message); }
@@ -296,7 +296,7 @@ const slaEscalationInterval = !SLA_ESCALATION_ENABLED ? null : setInterval(async
   }
 }, 5 * 60_000);
 
-// v4.2.17: CSAT scheduler — kirim WhatsApp survey 24h setelah ticket close (tiap 10 menit cek due ones)
+// v4.2.17: CSAT scheduler - kirim WhatsApp survey 24h setelah ticket close (tiap 10 menit cek due ones)
 if (!CSAT_SCHEDULER_ENABLED) console.log("[Startup] CSAT scheduler disabled via env (CSAT_SCHEDULER_ENABLED=false)");
 const csatSchedulerInterval = !CSAT_SCHEDULER_ENABLED ? null : setInterval(async () => {
   try {
@@ -314,7 +314,7 @@ const csatSchedulerInterval = !CSAT_SCHEDULER_ENABLED ? null : setInterval(async
             if (!ticket || !csat.customerId) { await storage.markCsatFailed(csat.id, "ticket/customer missing"); continue; }
             const customer = await storage.getCustomer(csat.customerId);
             if (!customer?.phone) { await storage.markCsatFailed(csat.id, "no phone"); continue; }
-            // Cari domain portal — default portal.jabnet.id, fallback fiber-tools
+            // Cari domain portal - default portal.jabnet.id, fallback fiber-tools
             const portalBase = (await storage.getSetting("portal_base_url")) || "https://portal.jabnet.id";
             const csatUrl = `${portalBase}/csat/${csat.token}`;
             // Cari teknisi yang resolve
@@ -345,7 +345,7 @@ const csatSchedulerInterval = !CSAT_SCHEDULER_ENABLED ? null : setInterval(async
   }
 }, 10 * 60_000);
 
-// Graceful shutdown untuk PM2 restart — drain in-flight sync sebelum exit
+// Graceful shutdown untuk PM2 restart - drain in-flight sync sebelum exit
 const shutdown = async (sig: string) => {
   console.log(`[Server] ${sig} received, stopping workers...`);
   if (boostExpireInterval) clearInterval(boostExpireInterval);
@@ -374,7 +374,7 @@ process.on("unhandledRejection", (reason: any) => {
 });
 process.on("uncaughtException", (err: Error) => {
   console.error("[uncaughtException]", err?.stack ?? err);
-  // Keep running — worker loops auto-recover
+  // Keep running - worker loops auto-recover
 });
 
 app.listen(PORT, () => {

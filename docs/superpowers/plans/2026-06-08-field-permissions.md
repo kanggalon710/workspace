@@ -1,8 +1,8 @@
-# Field-level Permissions (Phase 3b-i) — Implementation Plan
+# Field-level Permissions (Phase 3b-i) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Per (custom field × role) access — hidden / view / edit — overriding the default pipeline capability, enforced server-side and reflected in the card UI + export.
+**Goal:** Per (custom field × role) access - hidden / view / edit - overriding the default pipeline capability, enforced server-side and reflected in the card UI + export.
 
 **Architecture:** A pure resolver reads `config.fieldPerms` and resolves access for a role (admin bypass; default inherits the pipeline `cards` capability). The server strips hidden field values from card/board responses, sends a `fieldAccess` map on card detail, rejects non-edit value writes, and drops hidden columns on export. The card form hides/disables fields accordingly; the field editor adds a role × level grid.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Pure module — field-permission resolver
+### Task 1: Pure module - field-permission resolver
 
 **Files:**
 - Create: `shared/fieldPermissions.ts`
@@ -64,7 +64,7 @@ test("isFieldHiddenForRole + canEditField", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/fieldPermissions.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -115,7 +115,7 @@ export function canEditField(field: { config: string | null }, roleId: number | 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/fieldPermissions.test.ts`
-Expected: PASS — all 5 tests.
+Expected: PASS - all 5 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -126,7 +126,7 @@ git commit -m "feat(pipelines): pure field-permission resolver"
 
 ---
 
-### Task 2: Server enforcement — strip hidden, fieldAccess map, reject writes, export
+### Task 2: Server enforcement - strip hidden, fieldAccess map, reject writes, export
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -150,7 +150,7 @@ async function fieldAccessForRequest(req: Request, pipelineId: number, fields: {
 }
 ```
 
-- [ ] **Step 2: Card detail GET — strip hidden + attach fieldAccess**
+- [ ] **Step 2: Card detail GET - strip hidden + attach fieldAccess**
 
 In `GET /api/pipelines/cards/:cardId` (~line 4680), the handler ends with
 `sendSuccess(res, { ...card, comments, activity, followers, fields, values });`. Replace that line with:
@@ -167,7 +167,7 @@ In `GET /api/pipelines/cards/:cardId` (~line 4680), the handler ends with
     sendSuccess(res, { ...card, comments, activity, followers, fields, values: visibleValues, fieldAccess });
 ```
 
-- [ ] **Step 3: Board cards GET — strip hidden values**
+- [ ] **Step 3: Board cards GET - strip hidden values**
 
 In `GET /api/pipelines/:id/cards` (~line 4591), it does
 `sendSuccess(res, cards.map((c) => ({ ...c, values: valuesByCard[c.id] ?? {} })));`. The board is
@@ -185,7 +185,7 @@ display-only, so just strip hidden field values. Replace with:
     }));
 ```
 
-- [ ] **Step 4: PUT /values — reject non-edit writes**
+- [ ] **Step 4: PUT /values - reject non-edit writes**
 
 In `PUT /api/pipelines/cards/:cardId/values`, after the existing field-format validation loop and the
 conditional-required enforcement, BEFORE `setCardValues`, add:
@@ -198,9 +198,9 @@ conditional-required enforcement, BEFORE `setCardValues`, add:
       }
     }
 ```
-(`fields`/`byId`/`card` are already in scope in this handler — confirm by reading.)
+(`fields`/`byId`/`card` are already in scope in this handler - confirm by reading.)
 
-- [ ] **Step 5: Export — drop hidden columns**
+- [ ] **Step 5: Export - drop hidden columns**
 
 In `GET /api/pipelines/:id/cards/export`, after `fields` is loaded and before building `csvFields`, filter
 out fields hidden for the requester:
@@ -225,7 +225,7 @@ git commit -m "feat(pipelines): enforce field-level permissions (strip/reject/ex
 
 ---
 
-### Task 3: Client — card form gating by fieldAccess
+### Task 3: Client - card form gating by fieldAccess
 
 **Files:**
 - Modify: `client/components/pipelines/CardDetailModal.tsx`
@@ -258,7 +258,7 @@ In `FieldCustomSection` (reading `card.fields`, `card.fieldAccess`, `draft`, `ca
   ```
 Keep the asterisk on required (visible) fields. When `fieldAccess` is absent (older server), default to
 showing all (treat `access[f.id]` as `"edit"` fallback) so nothing breaks: use
-`const lvl = access[f.id] ?? "edit";` and gate on `lvl !== undefined`/`=== "edit"` accordingly — i.e.
+`const lvl = access[f.id] ?? "edit";` and gate on `lvl !== undefined`/`=== "edit"` accordingly - i.e.
 if the response has no `fieldAccess` key at all, fall back to the prior behavior (show all, editable when
 `writable`). Implement the fallback explicitly: `const hasAccessMap = (card as any).fieldAccess != null;`
 and when `!hasAccessMap`, treat every field as `"edit"`.
@@ -277,14 +277,14 @@ git commit -m "feat(pipelines): card form respects field-level access (hide/disa
 
 ---
 
-### Task 4: Editor — role × level grid in ManageFieldsDialog
+### Task 4: Editor - role × level grid in ManageFieldsDialog
 
 **Files:**
 - Modify: `client/components/pipelines/ManageFieldsDialog.tsx`
 - (maybe) Modify: `client/hooks/usePipelines.ts` (a roles query if none exists)
 
 **Context:** READ `ManageFieldsDialog.tsx` (the create/edit form + how it builds `config` via `buildConfig`
-— from the field-rules work it merges `visibleWhen`/`requiredWhen`; add `fieldPerms` the same way) and how
+- from the field-rules work it merges `visibleWhen`/`requiredWhen`; add `fieldPerms` the same way) and how
 the app fetches roles (grep `useRoles` / `/api/roles`). The dialog already has per-field edit state.
 
 - [ ] **Step 1: Add a "Akses per Role" section + persist fieldPerms**
@@ -317,17 +317,17 @@ git commit -m "feat(pipelines): per-role field access editor in ManageFieldsDial
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/fieldPermissions.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "fieldPermissions\|fieldAccess\|fieldPerms\|resolveFieldAccess" server/ shared/ client/ | sort` → expect shared module + test, routes, card modal, manage-fields dialog.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/fieldPermissions.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "fieldPermissions\|fieldAccess\|fieldPerms\|resolveFieldAccess" server/ shared/ client/ | sort` → expect shared module + test, routes, card modal, manage-fields dialog.
 
 ---
 
 ## Self-Review
 
-- **Spec coverage:** `fieldPerms` in config + resolver (admin bypass, default inherit) → Task 1. Server: strip hidden from card detail (+ `fieldAccess` map) and board, reject non-edit writes, export drops hidden → Task 2 (steps 2–5). Client hide/disable composed with Phase 4 `isFieldVisible` → Task 3. Editor role×level grid persisting to config → Task 4. Testing → Task 1 + Task 5. All covered. (Refinement: board strips only — no `fieldAccess` map needed there since it's display-only; documented in Task 2 Step 3.)
-- **Placeholders:** Tasks 1–3 + 5 are full code. Tasks 2/4 flag real in-scope variables (`fields`/`byId`/`card` in the values handler; the roles hook) and instruct reading. The client fallback for an older server (no `fieldAccess` key) is specified explicitly.
+- **Spec coverage:** `fieldPerms` in config + resolver (admin bypass, default inherit) → Task 1. Server: strip hidden from card detail (+ `fieldAccess` map) and board, reject non-edit writes, export drops hidden → Task 2 (steps 2-5). Client hide/disable composed with Phase 4 `isFieldVisible` → Task 3. Editor role×level grid persisting to config → Task 4. Testing → Task 1 + Task 5. All covered. (Refinement: board strips only - no `fieldAccess` map needed there since it's display-only; documented in Task 2 Step 3.)
+- **Placeholders:** Tasks 1-3 + 5 are full code. Tasks 2/4 flag real in-scope variables (`fields`/`byId`/`card` in the values handler; the roles hook) and instruct reading. The client fallback for an older server (no `fieldAccess` key) is specified explicitly.
 - **Type consistency:** `FieldAccessLevel` + `resolveFieldAccess`/`parseFieldPerms`/`isFieldHiddenForRole`/`canEditField` (Task 1) consumed in Task 2 (`fieldAccessForRequest`) and the editor's `parseFieldPerms` hydrate (Task 4). `fieldAccessForRequest(req, pipelineId, fields)` returns `Map<number, FieldAccessLevel>` used consistently across card detail / board / values / export. `ctx { isAdmin, baseEditable }` matches the resolver signature; `baseEditable = getPipelineCapabilities(...).has("cards")`.
 
 ## Deploy note

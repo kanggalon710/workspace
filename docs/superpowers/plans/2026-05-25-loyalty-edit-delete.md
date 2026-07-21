@@ -6,7 +6,7 @@
 
 **Architecture:** Per-table `deleted_at TIMESTAMP NULL` for referrals/discounts/redemptions. New `is_frozen/frozen_reason/frozen_at/frozen_by` on `customer_loyalty`. List endpoints filter `WHERE deleted_at IS NULL` by default with `?includeDeleted=true` override. State guards block destructive actions on terminal-state rows (applied discount, active redemption, rewarded referral). All write endpoints call `logAudit()`. Frontend renders edit/delete controls conditionally on `canWrite("loyalty_admin")`.
 
-**Tech Stack:** Express 5, Drizzle ORM (MySQL), React 18 + TypeScript, TanStack Query 5, shadcn/ui. No automated test suite — verification via `npx tsc --noEmit`, `npm run build`, `curl` smoke tests, browser UI walkthrough.
+**Tech Stack:** Express 5, Drizzle ORM (MySQL), React 18 + TypeScript, TanStack Query 5, shadcn/ui. No automated test suite - verification via `npx tsc --noEmit`, `npm run build`, `curl` smoke tests, browser UI walkthrough.
 
 **Spec:** `docs/superpowers/specs/2026-05-25-loyalty-edit-delete-design.md`
 
@@ -46,7 +46,7 @@ Add to `customerLoyalty` definition (before `createdAt`):
 
 ```ts
   // Admin freeze (v4.4.0)
-  isFrozen: int("is_frozen").notNull().default(0),                 // 0/1 — block reward issuance
+  isFrozen: int("is_frozen").notNull().default(0),                 // 0/1 - block reward issuance
   frozenReason: varchar("frozen_reason", { length: 255 }),
   frozenAt: text("frozen_at"),
   frozenBy: int("frozen_by"),                                       // user_id staff
@@ -74,7 +74,7 @@ Add to `customerReferrals` definition (before `createdAt`):
 
 In `server/storage.ts`, find the startup section that runs ALTER statements (near line 580-600 where `users.active_mitra_id` and similar ALTERs run inside the migration loop). Add a new block AFTER the existing ALTERs but BEFORE the seed step.
 
-Pattern to follow — query `information_schema.columns` first to make it idempotent:
+Pattern to follow - query `information_schema.columns` first to make it idempotent:
 
 ```ts
     // ====================
@@ -142,7 +142,7 @@ EOF
 
 ---
 
-## Task 2: Storage — referrals edit/soft-delete + filter
+## Task 2: Storage - referrals edit/soft-delete + filter
 
 **Files:**
 - Modify: `server/storage.ts` (near `linkReferralToCustomer` ~line 2088)
@@ -152,7 +152,7 @@ EOF
 Locate `linkReferralToCustomer(referralId, customerId, staffUserId)` (around line 2088). Insert these two methods immediately AFTER it:
 
 ```ts
-  /** Edit manual referral entry — block kalau status sudah 'rewarded' */
+  /** Edit manual referral entry - block kalau status sudah 'rewarded' */
   async updateCustomerReferral(
     id: number,
     patch: { refereeName?: string | null; refereePhone?: string | null; notes?: string | null },
@@ -174,7 +174,7 @@ Locate `linkReferralToCustomer(referralId, customerId, staffUserId)` (around lin
     return updated!;
   }
 
-  /** Soft delete manual referral — block kalau status sudah 'rewarded' */
+  /** Soft delete manual referral - block kalau status sudah 'rewarded' */
   async softDeleteCustomerReferral(id: number): Promise<{ statusAtDelete: string }> {
     const mitraId = getMitraId();
     const [existing] = await this.db.select().from(customerReferrals)
@@ -197,7 +197,7 @@ Search `server/storage.ts` for the function that serves `/api/loyalty/admin/refe
 grep -nE "FROM customer_referrals" /home/ygao-t580/Works/Jabnet/Website/ftth-tools/server/storage.ts | head
 ```
 
-Locate the admin list method (the one returning all referrals with referrer name lookup — around line 2509-2540 based on earlier grep showing `cr.mitra_id = ${mitraId}` joins).
+Locate the admin list method (the one returning all referrals with referrer name lookup - around line 2509-2540 based on earlier grep showing `cr.mitra_id = ${mitraId}` joins).
 
 In that method, find the `WHERE cr.mitra_id = ${mitraId}` clause and add `AND (cr.deleted_at IS NULL OR ${includeDeleted ? 1 : 0} = 1)`. Wrap method signature to accept `options?: { includeDeleted?: boolean }`:
 
@@ -219,7 +219,7 @@ async listAdminReferrals(options?: { includeDeleted?: boolean }): Promise<any[]>
 }
 ```
 
-**Note:** Preserve the exact existing SELECT field list — only add `cr.deleted_at AS deletedAt` and the `AND (cr.deleted_at IS NULL OR ${includeDeleted} = 1)` clause. Do not rewrite the rest of the query.
+**Note:** Preserve the exact existing SELECT field list - only add `cr.deleted_at AS deletedAt` and the `AND (cr.deleted_at IS NULL OR ${includeDeleted} = 1)` clause. Do not rewrite the rest of the query.
 
 - [ ] **Step 3: Typecheck**
 
@@ -246,7 +246,7 @@ EOF
 
 ---
 
-## Task 3: Storage — discounts edit/soft-delete + filter
+## Task 3: Storage - discounts edit/soft-delete + filter
 
 **Files:**
 - Modify: `server/storage.ts` (near `getCustomerDiscounts` ~line 1907)
@@ -256,7 +256,7 @@ EOF
 Locate `getCustomerDiscounts` (line 1907). Find the end of that method, then insert these two methods after it:
 
 ```ts
-  /** Edit discount — hanya status 'pending' yang boleh edit */
+  /** Edit discount - hanya status 'pending' yang boleh edit */
   async updateCustomerDiscount(
     id: number,
     patch: {
@@ -284,7 +284,7 @@ Locate `getCustomerDiscounts` (line 1907). Find the end of that method, then ins
     return updated!;
   }
 
-  /** Soft delete discount — block 'applied' (uang sudah keluar) */
+  /** Soft delete discount - block 'applied' (uang sudah keluar) */
   async softDeleteCustomerDiscount(id: number): Promise<{ statusAtDelete: string }> {
     const mitraId = getMitraId();
     const [existing] = await this.db.select().from(customerDiscounts)
@@ -316,7 +316,7 @@ async getCustomerDiscounts(
 }
 ```
 
-Make sure `isNull` is imported from `drizzle-orm`. Check the current imports — likely already imported. If not, add `isNull` to the existing import line.
+Make sure `isNull` is imported from `drizzle-orm`. Check the current imports - likely already imported. If not, add `isNull` to the existing import line.
 
 - [ ] **Step 3: Find and update admin discounts list method**
 
@@ -344,7 +344,7 @@ EOF
 
 ---
 
-## Task 4: Storage — redemptions edit/soft-delete + filter
+## Task 4: Storage - redemptions edit/soft-delete + filter
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -362,7 +362,7 @@ Note the line numbers. The list/get method is where you'll add the `includeDelet
 Insert after the existing cancel/reject methods:
 
 ```ts
-  /** Edit redemption — hanya status 'pending' (sebelum verify → MikroTik apply) */
+  /** Edit redemption - hanya status 'pending' (sebelum verify → MikroTik apply) */
   async updatePointRedemption(
     id: number,
     patch: { rewardKey?: string; rewardLabel?: string; speedMultiplier?: number; durationHours?: number; pointsCost?: number; notes?: string | null },
@@ -387,7 +387,7 @@ Insert after the existing cancel/reject methods:
     return updated!;
   }
 
-  /** Soft delete redemption — block status 'active'.
+  /** Soft delete redemption - block status 'active'.
    *  Pending → auto-refund poin sebelum soft-delete.
    *  Cancelled/expired/rejected → langsung soft-delete (sudah di-refund saat lifecycle action). */
   async softDeletePointRedemption(
@@ -399,7 +399,7 @@ Insert after the existing cancel/reject methods:
     const [existing] = await this.db.select().from(pointRedemptions)
       .where(and(eq(pointRedemptions.id, id), eq(pointRedemptions.mitraId, mitraId)));
     if (!existing) throw new Error("Redemption tidak ditemukan");
-    if (existing.status === "active") throw new Error("Redemption 'active' tidak bisa dihapus — cancel dulu untuk revert MikroTik");
+    if (existing.status === "active") throw new Error("Redemption 'active' tidak bisa dihapus - cancel dulu untuk revert MikroTik");
 
     let refunded = false;
     if (existing.status === "pending") {
@@ -437,7 +437,7 @@ Insert after the existing cancel/reject methods:
 
 - [ ] **Step 3: Add filter to existing redemption list method**
 
-Find the method serving `/api/loyalty/admin/points/redemptions` (likely `listPointRedemptionsAdmin` or similar — locate via `grep -n "FROM point_redemptions" server/storage.ts`). Add `includeDeleted` to its options:
+Find the method serving `/api/loyalty/admin/points/redemptions` (likely `listPointRedemptionsAdmin` or similar - locate via `grep -n "FROM point_redemptions" server/storage.ts`). Add `includeDeleted` to its options:
 
 ```ts
 async listPointRedemptionsAdmin(options?: { status?: string; includeDeleted?: boolean }): Promise<PointRedemption[]> {
@@ -449,7 +449,7 @@ async listPointRedemptionsAdmin(options?: { status?: string; includeDeleted?: bo
 }
 ```
 
-If the existing method already takes `options` with `status` only — extend its signature with `includeDeleted` and add `if (!options?.includeDeleted) conds.push(isNull(pointRedemptions.deletedAt))` to the where conditions. Preserve all existing fields/joins.
+If the existing method already takes `options` with `status` only - extend its signature with `includeDeleted` and add `if (!options?.includeDeleted) conds.push(isNull(pointRedemptions.deletedAt))` to the where conditions. Preserve all existing fields/joins.
 
 Confirm `isNull` is imported from `drizzle-orm` at top of file. If not, add to existing import line.
 
@@ -472,7 +472,7 @@ EOF
 
 ---
 
-## Task 5: Storage — Sahabat profile (4 methods)
+## Task 5: Storage - Sahabat profile (4 methods)
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -488,7 +488,7 @@ Insert the 4 new methods after the existing tier/refresh-level methods (consolid
 - [ ] **Step 2: Add `adjustSahabatPoints` method**
 
 ```ts
-  /** Atomic points adjust dengan reason — block kalau result < 0.
+  /** Atomic points adjust dengan reason - block kalau result < 0.
    *  Tulis row di point_transactions source='manual_adjust'. */
   async adjustSahabatPoints(
     customerId: number,
@@ -563,7 +563,7 @@ Insert the 4 new methods after the existing tier/refresh-level methods (consolid
 - [ ] **Step 4: Add `setSahabatCode` method**
 
 ```ts
-  /** Rename sahabatCode — validate regex + unique. Update referralCode legacy alias same value. */
+  /** Rename sahabatCode - validate regex + unique. Update referralCode legacy alias same value. */
   async setSahabatCode(
     customerId: number,
     newCode: string,
@@ -642,7 +642,7 @@ EOF
 
 ---
 
-## Task 6: Frozen guard — block reward issuance
+## Task 6: Frozen guard - block reward issuance
 
 **Files:**
 - Modify: `server/storage.ts:2003-2085` (function `rewardReferralsOnFirstPayment`)
@@ -653,11 +653,11 @@ In `rewardReferralsOnFirstPayment`, between the `for (const r of rows)` start an
 
 ```ts
     for (const r of rows) {
-      // Frozen guard — skip reward issuance kalau referrer freeze (admin manual action)
+      // Frozen guard - skip reward issuance kalau referrer freeze (admin manual action)
       const [referrerCheck] = await this.db.select().from(customerLoyalty)
         .where(eq(customerLoyalty.customerId, r.referrerCustomerId));
       if (referrerCheck && Number((referrerCheck as any).isFrozen ?? 0) === 1) {
-        console.log(`[Sahabat] ⏸ Referral #${r.id} skip reward — referrer #${r.referrerCustomerId} is frozen: ${(referrerCheck as any).frozenReason ?? "no reason"}`);
+        console.log(`[Sahabat] ⏸ Referral #${r.id} skip reward - referrer #${r.referrerCustomerId} is frozen: ${(referrerCheck as any).frozenReason ?? "no reason"}`);
         continue;
       }
 
@@ -683,7 +683,7 @@ EOF
 
 ---
 
-## Task 7: Routes — referrals PUT/DELETE
+## Task 7: Routes - referrals PUT/DELETE
 
 **Files:**
 - Modify: `server/routes.ts` (insert after `POST /api/loyalty/admin/referrals/:id/link` at line ~3941-3955)
@@ -693,7 +693,7 @@ EOF
 Insert immediately after the closing brace of `router.post("/api/loyalty/admin/referrals/:id/link", ...)`:
 
 ```ts
-/** PUT /api/loyalty/admin/referrals/:id — edit referee name/phone/notes (block rewarded) */
+/** PUT /api/loyalty/admin/referrals/:id - edit referee name/phone/notes (block rewarded) */
 router.put("/api/loyalty/admin/referrals/:id", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -713,7 +713,7 @@ router.put("/api/loyalty/admin/referrals/:id", async (req: Request, res: Respons
   }
 });
 
-/** DELETE /api/loyalty/admin/referrals/:id — soft delete (block rewarded) */
+/** DELETE /api/loyalty/admin/referrals/:id - soft delete (block rewarded) */
 router.delete("/api/loyalty/admin/referrals/:id", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -766,7 +766,7 @@ TOKEN=$(curl -sS -X POST http://localhost:3002/api/auth/login \
   -d '{"username":"admin","password":"Admin@1234"}' | grep -oE '"token":"[^"]+"' | cut -d'"' -f4)
 echo "Token: $TOKEN"
 
-# List referrals (default — no deleted)
+# List referrals (default - no deleted)
 curl -sS http://localhost:3002/api/loyalty/admin/referrals \
   -H "Authorization: Bearer $TOKEN" | head -c 500
 echo
@@ -799,7 +799,7 @@ EOF
 
 ---
 
-## Task 8: Routes — discounts PUT/DELETE
+## Task 8: Routes - discounts PUT/DELETE
 
 **Files:**
 - Modify: `server/routes.ts` (insert after `POST /api/loyalty/admin/discounts/:id/cancel` at line ~3824-3836)
@@ -809,7 +809,7 @@ EOF
 Insert after the `/cancel` route closes:
 
 ```ts
-/** PUT /api/loyalty/admin/discounts/:id — edit type/value/source/description (status='pending' only) */
+/** PUT /api/loyalty/admin/discounts/:id - edit type/value/source/description (status='pending' only) */
 router.put("/api/loyalty/admin/discounts/:id", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -829,7 +829,7 @@ router.put("/api/loyalty/admin/discounts/:id", async (req: Request, res: Respons
   }
 });
 
-/** DELETE /api/loyalty/admin/discounts/:id — soft delete (block status='applied') */
+/** DELETE /api/loyalty/admin/discounts/:id - soft delete (block status='applied') */
 router.delete("/api/loyalty/admin/discounts/:id", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -859,7 +859,7 @@ router.get("/api/loyalty/admin/discounts", async (req: Request, res: Response) =
   try {
     const status = String(req.query.status ?? "");
     const includeDeleted = req.query.includeDeleted === "true";
-    // Adjust storage call to match actual method signature — pass includeDeleted
+    // Adjust storage call to match actual method signature - pass includeDeleted
     const rows = await storage.listAdminDiscounts({ status: status || undefined, includeDeleted });
     res.json(rows);
   } catch (e: any) {
@@ -888,7 +888,7 @@ EOF
 
 ---
 
-## Task 9: Routes — redemptions PUT/DELETE
+## Task 9: Routes - redemptions PUT/DELETE
 
 **Files:**
 - Modify: `server/routes.ts` (insert after `POST .../points/redemptions/:id/cancel` at line ~4331-4350)
@@ -896,7 +896,7 @@ EOF
 - [ ] **Step 1: Add 2 new endpoints**
 
 ```ts
-/** PUT /api/loyalty/admin/points/redemptions/:id — edit boost params (status='pending' only) */
+/** PUT /api/loyalty/admin/points/redemptions/:id - edit boost params (status='pending' only) */
 router.put("/api/loyalty/admin/points/redemptions/:id", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -916,7 +916,7 @@ router.put("/api/loyalty/admin/points/redemptions/:id", async (req: Request, res
   }
 });
 
-/** DELETE /api/loyalty/admin/points/redemptions/:id — soft delete (block 'active', auto-refund pending) */
+/** DELETE /api/loyalty/admin/points/redemptions/:id - soft delete (block 'active', auto-refund pending) */
 router.delete("/api/loyalty/admin/points/redemptions/:id", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -974,7 +974,7 @@ EOF
 
 ---
 
-## Task 10: Routes — Sahabat profile 4 endpoints
+## Task 10: Routes - Sahabat profile 4 endpoints
 
 **Files:**
 - Modify: `server/routes.ts` (insert after `POST .../sahabat/:customerId/tier` at line ~4195-4218)
@@ -984,7 +984,7 @@ EOF
 Insert after the closing brace of the `/tier` route:
 
 ```ts
-/** POST /api/loyalty/admin/sahabat/:customerId/points-adjust — adjust points balance (delta + reason) */
+/** POST /api/loyalty/admin/sahabat/:customerId/points-adjust - adjust points balance (delta + reason) */
 router.post("/api/loyalty/admin/sahabat/:customerId/points-adjust", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -1006,7 +1006,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/points-adjust", async (req: 
   }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/level — override sahabat level */
+/** POST /api/loyalty/admin/sahabat/:customerId/level - override sahabat level */
 router.post("/api/loyalty/admin/sahabat/:customerId/level", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -1025,7 +1025,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/level", async (req: Request,
   }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/code — rename sahabatCode */
+/** POST /api/loyalty/admin/sahabat/:customerId/code - rename sahabatCode */
 router.post("/api/loyalty/admin/sahabat/:customerId/code", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -1044,7 +1044,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/code", async (req: Request, 
   }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/freeze — toggle freeze flag */
+/** POST /api/loyalty/admin/sahabat/:customerId/freeze - toggle freeze flag */
 router.post("/api/loyalty/admin/sahabat/:customerId/freeze", async (req: Request, res: Response) => {
   if (!requireAuth(req, res)) return;
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -1125,7 +1125,7 @@ EOF
 
 ---
 
-## Task 11: Frontend — DiscountRow edit/delete
+## Task 11: Frontend - DiscountRow edit/delete
 
 **Files:**
 - Modify: `client/pages/LoyaltyAdminPage.tsx:1008-1100` (DiscountRow function) + parent at ~115-180 (state + mutations)
@@ -1168,7 +1168,7 @@ Near existing `applyMut`/`cancelMut` mutations (lines 154-172), add:
   });
 ```
 
-Note: confirm the existing `qc` variable name (likely `queryClient`) — match what the file uses. Same for `api.put`/`api.delete` patterns — check existing mutations for the actual helper.
+Note: confirm the existing `qc` variable name (likely `queryClient`) - match what the file uses. Same for `api.put`/`api.delete` patterns - check existing mutations for the actual helper.
 
 - [ ] **Step 2: Pass props to DiscountRow + wire up trigger**
 
@@ -1229,7 +1229,7 @@ Inside the row, find the existing Apply/Cancel button block (search for the JSX 
 )}
 ```
 
-Verify `Pencil` and `Trash2` are imported from `lucide-react` at top of file — if not, add to existing import.
+Verify `Pencil` and `Trash2` are imported from `lucide-react` at top of file - if not, add to existing import.
 
 - [ ] **Step 4: Add edit dialog at bottom of LoyaltyAdminPage return JSX**
 
@@ -1293,7 +1293,7 @@ Near the existing `applyFor` dialog (~line 378-415), add:
       <AlertDialogTitle>Hapus Diskon?</AlertDialogTitle>
       <AlertDialogDescription>
         Diskon Rp {deleteDiscountFor?.discountValue?.toLocaleString("id-ID") ?? "-"} akan disembunyikan dari list.
-        Soft delete — masih bisa di-restore via SQL admin kalau perlu.
+        Soft delete - masih bisa di-restore via SQL admin kalau perlu.
       </AlertDialogDescription>
     </AlertDialogHeader>
     <div className="my-2">
@@ -1347,14 +1347,14 @@ EOF
 
 ---
 
-## Task 12: Frontend — ReferralsTable edit/delete
+## Task 12: Frontend - ReferralsTable edit/delete
 
 **Files:**
 - Modify: `client/pages/LoyaltyAdminPage.tsx:1219-1450` (ReferralsTable function)
 
 - [ ] **Step 1: Add state + mutations**
 
-In `ReferralsTable` function (line 1219), the function has its own scope. Check whether it uses parent state or local state — likely local. Add local state at top of function body:
+In `ReferralsTable` function (line 1219), the function has its own scope. Check whether it uses parent state or local state - likely local. Add local state at top of function body:
 
 ```tsx
 function ReferralsTable({ referrals, loading }: any) {
@@ -1525,7 +1525,7 @@ EOF
 
 ---
 
-## Task 13: Frontend — PointRedemptionsTab edit/delete
+## Task 13: Frontend - PointRedemptionsTab edit/delete
 
 **Files:**
 - Modify: `client/pages/LoyaltyAdminPage.tsx:1585-1980` (PointRedemptionsTab function)
@@ -1589,7 +1589,7 @@ Find the row JSX inside the redemptions list rendering (search for `redemption.m
     size="icon-xs"
     variant="ghost"
     disabled={r.status === "active"}
-    title={r.status === "active" ? "Boost masih jalan — cancel dulu" : "Hapus"}
+    title={r.status === "active" ? "Boost masih jalan - cancel dulu" : "Hapus"}
     onClick={() => { setDeleteFor(r); setDeleteReason(""); }}
   >
     <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -1644,7 +1644,7 @@ Before the component's root closing tag, add:
       <AlertDialogTitle>Hapus Redemption?</AlertDialogTitle>
       <AlertDialogDescription>
         {deleteFor?.status === "pending"
-          ? "Status 'pending' — poin akan otomatis di-refund saat hapus."
+          ? "Status 'pending' - poin akan otomatis di-refund saat hapus."
           : "Row akan disembunyikan dari list (soft delete)."}
       </AlertDialogDescription>
     </AlertDialogHeader>
@@ -1684,7 +1684,7 @@ EOF
 
 ---
 
-## Task 14: Frontend — SahabatDetailDrawer admin actions
+## Task 14: Frontend - SahabatDetailDrawer admin actions
 
 **Files:**
 - Modify: `client/components/sahabat/SahabatDetailDrawer.tsx`
@@ -1760,7 +1760,7 @@ Inside the drawer component function body, near top, add:
   });
 ```
 
-Confirm `customerId` is in scope — it's likely a prop. Confirm exact useQuery key from existing detail fetch in this file; match it.
+Confirm `customerId` is in scope - it's likely a prop. Confirm exact useQuery key from existing detail fetch in this file; match it.
 
 - [ ] **Step 3: Add "Admin Actions" accordion at end of drawer body**
 
@@ -1801,7 +1801,7 @@ Inside the drawer body JSX, after the existing tabs/content, add a conditional s
             <Textarea placeholder="Alasan (min 3 huruf)" value={pointsReason}
               onChange={(e) => setPointsReason(e.target.value)} className="mb-2" />
             {Math.abs(pointsDelta) > 10000 && (
-              <div className="text-xs text-warning mb-2">⚠ Adjustment besar (&gt; 10.000 poin)</div>
+              <div className="text-xs text-warning mb-2"> Adjustment besar (&gt; 10.000 poin)</div>
             )}
             <Button size="sm" className="w-full"
               disabled={pointsDelta === 0 || pointsReason.trim().length < 3}
@@ -1874,7 +1874,7 @@ Inside the drawer body JSX, after the existing tabs/content, add a conditional s
             </h4>
             <div className="text-xs text-muted-foreground mb-2">
               {detail?.loyalty?.isFrozen === 1
-                ? "Aktifkan kembali — referral reward akan kembali jalan normal."
+                ? "Aktifkan kembali - referral reward akan kembali jalan normal."
                 : "Stop reward issuance untuk akun ini (referral inbound tetap di-record tapi tidak generate voucher)."}
             </div>
             {detail?.loyalty?.isFrozen !== 1 && (
@@ -1933,7 +1933,7 @@ EOF
 
 ---
 
-## Task 15: Frontend — "Tampilkan terhapus" toggle
+## Task 15: Frontend - "Tampilkan terhapus" toggle
 
 **Files:**
 - Modify: `client/pages/LoyaltyAdminPage.tsx` (3 places: discounts ~340, referrals ~370, redemptions ~1585)
@@ -1948,7 +1948,7 @@ In the parent `LoyaltyAdminPage` component (top, near other state), add:
   const [showDeletedRedemptions, setShowDeletedRedemptions] = useState(false);
 ```
 
-Find the 3 `useQuery` calls for discounts/referrals/redemptions (search for `queryKey: ["loyalty-discounts"]`, `["loyalty-referrals"]`, `["loyalty-redemptions"]` — confirm the exact strings used). Update each:
+Find the 3 `useQuery` calls for discounts/referrals/redemptions (search for `queryKey: ["loyalty-discounts"]`, `["loyalty-referrals"]`, `["loyalty-redemptions"]` - confirm the exact strings used). Update each:
 
 **Discounts:**
 ```tsx
@@ -1966,7 +1966,7 @@ const { data: referrals, isLoading: refLoading } = useQuery({
 });
 ```
 
-**Redemptions:** (likely lives inside `PointRedemptionsTab` — see Task 13). Update its useQuery similarly with `showDeletedRedemptions` flag passed as prop from parent.
+**Redemptions:** (likely lives inside `PointRedemptionsTab` - see Task 13). Update its useQuery similarly with `showDeletedRedemptions` flag passed as prop from parent.
 
 - [ ] **Step 2: Add toggle pills in each tab header**
 
@@ -1981,7 +1981,7 @@ In the discounts tab section (~line 340-360 area), before the discounts list, ad
 </div>
 ```
 
-Mirror the same in referrals tab (pass `showDeletedReferrals` + setter as props to `<ReferralsTable>` and have it render the toggle, OR keep the toggle in parent above the table). Pick whichever fits the existing structure better — keeping the toggle in parent is simpler.
+Mirror the same in referrals tab (pass `showDeletedReferrals` + setter as props to `<ReferralsTable>` and have it render the toggle, OR keep the toggle in parent above the table). Pick whichever fits the existing structure better - keeping the toggle in parent is simpler.
 
 For redemptions, add the toggle inside `PointRedemptionsTab` since it's a separate component. Add a prop `showDeleted: boolean; onShowDeletedChange: (v: boolean) => void` from parent.
 
@@ -2101,7 +2101,7 @@ This project has no automated test suite. Validation is:
 - DB schema check per Step 4 ✓
 - Audit log check per Step 4 ✓
 
-Update `CLAUDE.md` `What's NOT Yet Done` section: remove the "loyalty edit/delete" item (if listed) or skip if not listed. Actually CLAUDE.md doesn't list this — no doc update needed.
+Update `CLAUDE.md` `What's NOT Yet Done` section: remove the "loyalty edit/delete" item (if listed) or skip if not listed. Actually CLAUDE.md doesn't list this - no doc update needed.
 
 - [ ] **Step 6: Push to remote (only after user explicit OK)**
 
@@ -2115,10 +2115,10 @@ Expected: ~15 commits ready to push. Stop here. Per CLAUDE.md rule: "NEVER deplo
 
 ## Open Questions for Implementation Time
 
-1. **`pointRedemptions.durationHours` vs `durationDays`** — spec mentioned days, but schema column is `duration_hours`. Plan uses hours. Confirm with spec author if days was intentional → would need additional column. Current plan: hours.
-2. **`customer_discounts.discountType` enum** — spec listed `[credit|voucher|service]`. Schema reality: `voucher_indomaret|free_days|percent|cash_bonus|speed_upgrade`. Plan uses schema reality.
-3. **Sahabat detail query** — `getSahabatDetail()` may need to be updated to surface new freeze fields. Verify at Task 14 Step 3a.
-4. **Admin discounts list method name** — Task 8 Step 2 assumes a method exists; if route uses raw SQL inline, refactor to thread `includeDeleted` into the query directly.
-5. **Existing query key names** — Tasks 11/12/13 assume `["loyalty-discounts"]`, `["loyalty-referrals"]`, `["loyalty-redemptions"]`. Verify and match exact strings during implementation.
+1. **`pointRedemptions.durationHours` vs `durationDays`** - spec mentioned days, but schema column is `duration_hours`. Plan uses hours. Confirm with spec author if days was intentional → would need additional column. Current plan: hours.
+2. **`customer_discounts.discountType` enum** - spec listed `[credit|voucher|service]`. Schema reality: `voucher_indomaret|free_days|percent|cash_bonus|speed_upgrade`. Plan uses schema reality.
+3. **Sahabat detail query** - `getSahabatDetail()` may need to be updated to surface new freeze fields. Verify at Task 14 Step 3a.
+4. **Admin discounts list method name** - Task 8 Step 2 assumes a method exists; if route uses raw SQL inline, refactor to thread `includeDeleted` into the query directly.
+5. **Existing query key names** - Tasks 11/12/13 assume `["loyalty-discounts"]`, `["loyalty-referrals"]`, `["loyalty-redemptions"]`. Verify and match exact strings during implementation.
 
-These are confirm-at-implementation items, not blockers — the plan is complete enough to execute and pivot on the actual call sites.
+These are confirm-at-implementation items, not blockers - the plan is complete enough to execute and pivot on the actual call sites.

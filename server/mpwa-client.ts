@@ -1,5 +1,5 @@
 /**
- * v4.2.21: MPWAClient — Full typed client untuk MPWA Jabnet Gateway
+ * v4.2.21: MPWAClient - Full typed client untuk MPWA Jabnet Gateway
  *
  * Base URL: https://mpwa.jabnet.id
  * Spec: 17 endpoint + webhook receiver
@@ -11,11 +11,11 @@
  *   const qr = await client.generateQR("628999");
  */
 
-// ─── Types ───
+// --- Types ---
 
 export interface MPWAClientConfig {
   apiKey: string;
-  sender?: string;          // optional — bisa di-override per-call
+  sender?: string;          // optional - bisa di-override per-call
   baseUrl?: string;         // default https://mpwa.jabnet.id
   timeoutMs?: number;       // default 30000
 }
@@ -92,7 +92,7 @@ export interface MPWACheckNumberResult {
   jid: string;
 }
 
-// ─── Helpers ───
+// --- Helpers ---
 
 export function normalizePhone(phone: string): string {
   if (!phone) return "";
@@ -109,7 +109,7 @@ export function maskApiKey(key: string): string {
   return key.slice(0, 4) + "****" + key.slice(-4);
 }
 
-// ─── Client ───
+// --- Client ---
 
 const DEFAULT_BASE_URL = "https://mpwa.jabnet.id";
 
@@ -158,9 +158,9 @@ export class MPWAClient {
     }
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.1 — Send Text Message
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.1 - Send Text Message
+  // ================================================================
   async sendText(number: string, message: string, opts: MPWASendOpts = {}): Promise<MPWAResponse> {
     return this.post("/send-message", this.payload({
       number: normalizePhone(number),
@@ -171,10 +171,10 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.2 — Send Product
+  // ================================================================
+  //  Section 3.2 - Send Product
   //  url: https://wa.me/p/{productId}/{ownerNumber}
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async sendProduct(number: string, productUrl: string, message: string = "", opts: MPWASendOpts = {}): Promise<MPWAResponse> {
     return this.post("/send-product", this.payload({
       number: normalizePhone(number),
@@ -184,10 +184,10 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.3 — Send Text to Channel
+  // ================================================================
+  //  Section 3.3 - Send Text to Channel
   //  channelUrl: https://whatsapp.com/channel/XXXX
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async sendChannel(channelUrl: string, message: string, footer?: string): Promise<MPWAResponse> {
     return this.post("/send-text-channel", this.payload({
       url: channelUrl,
@@ -196,10 +196,10 @@ export class MPWAClient {
     }, false /* number tidak perlu */));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.4 — Send Media (image/video/audio/document)
+  // ================================================================
+  //  Section 3.4 - Send Media (image/video/audio/document)
   //  url: DIRECT URL (bukan Google Drive share link)
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async sendMedia(number: string, mediaType: MediaType, mediaUrl: string, opts: MPWASendOpts & { caption?: string } = {}): Promise<MPWAResponse> {
     return this.post("/send-media", this.payload({
       number: normalizePhone(number),
@@ -210,10 +210,10 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.5 — Send Sticker
+  // ================================================================
+  //  Section 3.5 - Send Sticker
   //  url: image/gif (auto-konversi ke webp)
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async sendSticker(number: string, stickerUrl: string): Promise<MPWAResponse> {
     return this.post("/send-sticker", this.payload({
       number: normalizePhone(number),
@@ -221,9 +221,9 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.6 — Send Poll
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.6 - Send Poll
+  // ================================================================
   async sendPoll(
     number: string,
     name: string,
@@ -241,10 +241,10 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.7 — Send Button (max 5)
+  // ================================================================
+  //  Section 3.7 - Send Button (max 5)
   //  image WAJIB.
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async sendButton(
     number: string,
     payload: { message: string; image: string; button: MPWAButton[]; footer?: string },
@@ -274,10 +274,10 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.8 — Send List Message
+  // ================================================================
+  //  Section 3.8 - Send List Message
   //  sections: 1-5 sections berisi rows
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async sendList(
     number: string,
     payload: {
@@ -306,9 +306,9 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.9 — Send Location
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.9 - Send Location
+  // ================================================================
   async sendLocation(number: string, latitude: number | string, longitude: number | string): Promise<MPWAResponse> {
     return this.post("/send-location", this.payload({
       number: normalizePhone(number),
@@ -317,9 +317,9 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.10 — Send VCard
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.10 - Send VCard
+  // ================================================================
   async sendVCard(number: string, name: string, phone: string): Promise<MPWAResponse> {
     return this.post("/send-vcard", this.payload({
       number: normalizePhone(number),
@@ -328,10 +328,10 @@ export class MPWAClient {
     }));
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.11 — Generate QR Code
+  // ================================================================
+  //  Section 3.11 - Generate QR Code
   //  Flow: hit → user scan → hit ulang → cek status/msg
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async generateQR(device: string, force = false): Promise<MPWAResponse> {
     return this.post("/generate-qr", {
       api_key: this.apiKey,
@@ -340,9 +340,9 @@ export class MPWAClient {
     });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.12 — Create User (admin only)
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.12 - Create User (admin only)
+  // ================================================================
   async createUser(payload: {
     username: string;
     password: string;
@@ -353,41 +353,41 @@ export class MPWAClient {
     return this.post("/create-user", { api_key: this.apiKey, ...payload });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.13 — Disconnect / Logout Device
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.13 - Disconnect / Logout Device
+  // ================================================================
   async logoutDevice(): Promise<MPWAResponse> {
     if (!this.sender) throw new Error("logoutDevice: sender wajib di constructor");
     return this.post("/logout-device", { api_key: this.apiKey, sender: this.sender });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.14 — Delete Device
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.14 - Delete Device
+  // ================================================================
   async deleteDevice(): Promise<MPWAResponse> {
     if (!this.sender) throw new Error("deleteDevice: sender wajib di constructor");
     return this.post("/delete-device", { api_key: this.apiKey, sender: this.sender });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.15 — User Info
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.15 - User Info
+  // ================================================================
   async infoUser(username: string): Promise<MPWAResponse<MPWAInfoUser>> {
     return this.post("/info-user", { api_key: this.apiKey, username });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.16 — Device Info
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.16 - Device Info
+  // ================================================================
   async infoDevice(number?: string): Promise<MPWAResponse<MPWAInfoDevice>> {
     const num = number ? normalizePhone(number) : this.sender;
     if (!num) throw new Error("infoDevice: number wajib (atau set sender di constructor)");
     return this.post("/info-devices", { api_key: this.apiKey, number: num });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  //  Section 3.17 — Check Number
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
+  //  Section 3.17 - Check Number
+  // ================================================================
   async checkNumber(number: string): Promise<MPWAResponse<MPWACheckNumberResult>> {
     return this.post("/check-number", this.payload({
       number: normalizePhone(number),

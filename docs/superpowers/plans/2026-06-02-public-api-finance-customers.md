@@ -4,7 +4,7 @@
 
 **Goal:** Expose aggregate revenue/billing, subscriber-base, and a one-shot executive report to the Public API (`/api/public/v1/*`) so AI can build daily→quarterly reports.
 
-**Architecture:** New `kpi_snapshots` table written lazily (no worker — prod workers disabled) accumulates daily KPIs for MRR/subscriber trends; point-in-time + activation/recovery trends derive directly from `customers.install_date` and `collections` timestamps. Pure period-bucketing / delta / flag logic lives in a new isolated `server/reporting-helpers.ts` (unit-tested); DB aggregation lives in `server/storage.ts`; thin handlers in `server/public-api-routes.ts`. All endpoints tenant-scoped via `getMitraId()` and aggregate-only (no PII).
+**Architecture:** New `kpi_snapshots` table written lazily (no worker - prod workers disabled) accumulates daily KPIs for MRR/subscriber trends; point-in-time + activation/recovery trends derive directly from `customers.install_date` and `collections` timestamps. Pure period-bucketing / delta / flag logic lives in a new isolated `server/reporting-helpers.ts` (unit-tested); DB aggregation lives in `server/storage.ts`; thin handlers in `server/public-api-routes.ts`. All endpoints tenant-scoped via `getMitraId()` and aggregate-only (no PII).
 
 **Tech Stack:** Node 20 + Express 5 + Drizzle ORM (MySQL) + `tsx`/esbuild. Tests via `node:test` run with `tsx --test`. Spec: `docs/superpowers/specs/2026-06-02-public-api-finance-customers-design.md`.
 
@@ -23,7 +23,7 @@
 
 Convention reminders (from existing code):
 - Tenant scope: `const mitraId = getMitraId();` then `eq(table.mitraId, mitraId)` (Drizzle) or `WHERE mitra_id = ${mitraId}` (raw `sql`).
-- Raw query: `const [rows]: any = await this.db.execute(sql\`...\`);` — returns `[rows, fields]`.
+- Raw query: `const [rows]: any = await this.db.execute(sql\`...\`);` - returns `[rows, fields]`.
 - Public handler returns raw `res.json({...})`; on error `res.status(500).json({ error: "internal", message: e.message })`.
 - MySQL migration idempotency: catch errno 1060 (dup column) / 1061 (dup index); `CREATE TABLE IF NOT EXISTS`.
 
@@ -62,7 +62,7 @@ export type KpiSnapshot = typeof kpiSnapshots.$inferSelect;
 - [ ] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
-Expected: 0 errors (the table is defined but not yet used — that's fine).
+Expected: 0 errors (the table is defined but not yet used - that's fine).
 
 - [ ] **Step 3: Commit**
 
@@ -73,7 +73,7 @@ git commit -m "feat(schema): add kpi_snapshots table for finance/subscriber tren
 
 ---
 
-## Task 2: Pure helper — `computePeriodBuckets` (TDD)
+## Task 2: Pure helper - `computePeriodBuckets` (TDD)
 
 **Files:**
 - Create: `server/reporting-helpers.ts`
@@ -127,7 +127,7 @@ test("explicit from/to monthly clamps to range", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `tsx --test server/reporting-helpers.test.ts`
-Expected: FAIL — `Cannot find module './reporting-helpers.ts'` / `computePeriodBuckets is not a function`.
+Expected: FAIL - `Cannot find module './reporting-helpers.ts'` / `computePeriodBuckets is not a function`.
 
 - [ ] **Step 3: Implement**
 
@@ -212,7 +212,7 @@ export function computePeriodBuckets(period: Period, from?: string, to?: string,
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `tsx --test server/reporting-helpers.test.ts`
-Expected: PASS (5 tests). If weekly alignment differs, adjust the test's structural assertions (length + last.end > NOW) — keep them structural, not date-exact.
+Expected: PASS (5 tests). If weekly alignment differs, adjust the test's structural assertions (length + last.end > NOW) - keep them structural, not date-exact.
 
 - [ ] **Step 5: Commit**
 
@@ -223,7 +223,7 @@ git commit -m "feat(reporting): pure period-bucketing helper + tests"
 
 ---
 
-## Task 3: Pure helpers — bucket aggregation + `deltaPct` (TDD)
+## Task 3: Pure helpers - bucket aggregation + `deltaPct` (TDD)
 
 **Files:**
 - Modify: `server/reporting-helpers.ts`
@@ -268,7 +268,7 @@ test("deltaPct computes percentage change, null-safe", () => {
 - [ ] **Step 2: Run to verify fail**
 
 Run: `tsx --test server/reporting-helpers.test.ts`
-Expected: FAIL — functions not exported.
+Expected: FAIL - functions not exported.
 
 - [ ] **Step 3: Implement**
 
@@ -325,7 +325,7 @@ git commit -m "feat(reporting): bucket aggregation + deltaPct helpers + tests"
 
 ---
 
-## Task 4: Pure helper — `buildExecutiveFlags` (TDD)
+## Task 4: Pure helper - `buildExecutiveFlags` (TDD)
 
 **Files:**
 - Modify: `server/reporting-helpers.ts`
@@ -359,7 +359,7 @@ test("buildExecutiveFlags green when healthy, no false red flags", () => {
 - [ ] **Step 2: Run to verify fail**
 
 Run: `tsx --test server/reporting-helpers.test.ts`
-Expected: FAIL — `buildExecutiveFlags` not exported.
+Expected: FAIL - `buildExecutiveFlags` not exported.
 
 - [ ] **Step 3: Implement**
 
@@ -416,7 +416,7 @@ git commit -m "feat(reporting): executive red/green flag rules + tests"
 
 ---
 
-## Task 5: Storage — `kpi_snapshots` migration + `ensureKpiSnapshotForToday`
+## Task 5: Storage - `kpi_snapshots` migration + `ensureKpiSnapshotForToday`
 
 **Files:**
 - Modify: `server/storage.ts` (import; startup migration block; new method)
@@ -430,7 +430,7 @@ In the `@shared/schema` import list in `storage.ts`, add `kpiSnapshots`. Ensure 
 In `seedAdminIfNeeded` (the startup migration area, near the `collection_stages` CREATE TABLE added previously), add:
 
 ```ts
-// kpi_snapshots — lazy daily KPI history for finance/subscriber trends
+// kpi_snapshots - lazy daily KPI history for finance/subscriber trends
 await this.db.execute(sql`
   CREATE TABLE IF NOT EXISTS kpi_snapshots (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -523,7 +523,7 @@ git commit -m "feat(storage): kpi_snapshots migration + lazy ensureKpiSnapshotFo
 
 ---
 
-## Task 6: Storage — `getFinanceOverview` + `getCustomersOverview`
+## Task 6: Storage - `getFinanceOverview` + `getCustomersOverview`
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -614,7 +614,7 @@ async getCustomersOverview(): Promise<any> {
 }
 ```
 
-> Note: `sql.raw(col)` is used only with the fixed literal column names above (`package`/`customer_type`/`district`/`village`) — never with request input.
+> Note: `sql.raw(col)` is used only with the fixed literal column names above (`package`/`customer_type`/`district`/`village`) - never with request input.
 
 - [ ] **Step 3: Typecheck + build**
 
@@ -630,7 +630,7 @@ git commit -m "feat(storage): getFinanceOverview + getCustomersOverview (aggrega
 
 ---
 
-## Task 7: Storage — `getFinanceTimeseries` + `getCustomersTimeseries`
+## Task 7: Storage - `getFinanceTimeseries` + `getCustomersTimeseries`
 
 **Files:**
 - Modify: `server/storage.ts` (import helpers from `./reporting-helpers.ts`)
@@ -699,7 +699,7 @@ git commit -m "feat(storage): finance + customers timeseries (snapshots + instal
 
 ---
 
-## Task 8: Storage — `getCollectionsFinance`
+## Task 8: Storage - `getCollectionsFinance`
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -757,12 +757,12 @@ Expected: 0 errors; build succeeds.
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(storage): collections finance — recovery, aging, days-to-pay"
+git commit -m "feat(storage): collections finance - recovery, aging, days-to-pay"
 ```
 
 ---
 
-## Task 9: Storage — `getExecutiveReport`
+## Task 9: Storage - `getExecutiveReport`
 
 **Files:**
 - Modify: `server/storage.ts` (import `buildExecutiveFlags`, `deltaPct`)
@@ -830,7 +830,7 @@ git commit -m "feat(storage): getExecutiveReport one-shot composite"
 
 ---
 
-## Task 10: Routes — scopes + finance endpoints
+## Task 10: Routes - scopes + finance endpoints
 
 **Files:**
 - Modify: `server/public-api-routes.ts`
@@ -885,7 +885,7 @@ git commit -m "feat(public-api): finance endpoints (overview, timeseries, collec
 
 ---
 
-## Task 11: Routes — customers + executive endpoints
+## Task 11: Routes - customers + executive endpoints
 
 **Files:**
 - Modify: `server/public-api-routes.ts`
@@ -928,10 +928,10 @@ git commit -m "feat(public-api): customers + executive report endpoints"
 
 ---
 
-## Task 12: Routes — `/schema` docs entries
+## Task 12: Routes - `/schema` docs entries
 
 **Files:**
-- Modify: `server/public-api-routes.ts` (the `/api/public/v1/schema` handler — `scopes` array ~line 199, `endpoints` array ~line 209)
+- Modify: `server/public-api-routes.ts` (the `/api/public/v1/schema` handler - `scopes` array ~line 199, `endpoints` array ~line 209)
 
 - [ ] **Step 1: Add scopes**
 
@@ -952,7 +952,7 @@ In the `endpoints` array, add a `FINANCE & SUBSCRIBER` block:
 { method: "GET", path: "/finance/collections",  scope: "finance:read",   desc: "Recovery rate, aging buckets, avg days-to-pay, outstanding. Query: ?period=&from=&to=" },
 { method: "GET", path: "/customers/overview",   scope: "customers:read", desc: "Subscriber counts by status/package/type/district/village + new activations" },
 { method: "GET", path: "/customers/timeseries", scope: "customers:read", desc: "Query: ?metric=new_activations|active|net_adds&period=&from=&to=" },
-{ method: "GET", path: "/reports/executive",    scope: "reports:read",   desc: "⭐ ONE-SHOT untuk AI: revenue + subscriber + collections + ops-ringkas, semua + deltaPct + redFlags/greenLights + trend. Query: ?period=&from=&to=" },
+{ method: "GET", path: "/reports/executive",    scope: "reports:read",   desc: " ONE-SHOT untuk AI: revenue + subscriber + collections + ops-ringkas, semua + deltaPct + redFlags/greenLights + trend. Query: ?period=&from=&to=" },
 ```
 
 - [ ] **Step 3: Typecheck + build**
@@ -969,7 +969,7 @@ git commit -m "docs(public-api): schema entries for finance/customers/executive"
 
 ---
 
-## Task 13: UI — add scopes to API-key create dialog
+## Task 13: UI - add scopes to API-key create dialog
 
 **Files:**
 - Modify: `client/pages/PublicApiPage.tsx` (the `ALL_SCOPES` array ~line 19)
@@ -979,8 +979,8 @@ git commit -m "docs(public-api): schema entries for finance/customers/executive"
 In `ALL_SCOPES`, add (after `marketing:read` or near `collections:read`):
 
 ```ts
-{ key: "finance:read", label: "Revenue & Billing", desc: "MRR, ARPU, revenue-at-risk, billing status, collection recovery & aging. Agregat (tanpa PII). Untuk laporan keuangan harian→quarter.", icon: "💵" },
-{ key: "customers:read", label: "Subscriber Base", desc: "Jumlah pelanggan by status/paket/wilayah, aktivasi baru, net adds. Agregat (tanpa PII).", icon: "👥" },
+{ key: "finance:read", label: "Revenue & Billing", desc: "MRR, ARPU, revenue-at-risk, billing status, collection recovery & aging. Agregat (tanpa PII). Untuk laporan keuangan harian→quarter.", icon: "" },
+{ key: "customers:read", label: "Subscriber Base", desc: "Jumlah pelanggan by status/paket/wilayah, aktivasi baru, net adds. Agregat (tanpa PII).", icon: "" },
 ```
 
 - [ ] **Step 2: Typecheck + build**
@@ -1043,7 +1043,7 @@ git add -A && git commit -m "test(public-api): verify finance/customers/executiv
 
 ## Self-Review
 
-**Spec coverage:** `finance:read`/`customers:read` scopes (T10–13) ✓; `/finance/overview` (T6,10) ✓; `/finance/timeseries` (T7,10) ✓; `/finance/collections` (T8,10) ✓; `/customers/overview` (T6,11) ✓; `/customers/timeseries` (T7,11) ✓; `/reports/executive` (T9,11) ✓; `kpi_snapshots` + lazy writer (T1,5) ✓; uniform period param (T10) ✓; deltas (T3,9) ✓; redFlags/greenLights (T4,9) ✓; privacy/no-PII (T6 design + T14 step5 verify) ✓; schema docs (T12) ✓; UI scopes (T13) ✓.
+**Spec coverage:** `finance:read`/`customers:read` scopes (T10-13) ✓; `/finance/overview` (T6,10) ✓; `/finance/timeseries` (T7,10) ✓; `/finance/collections` (T8,10) ✓; `/customers/overview` (T6,11) ✓; `/customers/timeseries` (T7,11) ✓; `/reports/executive` (T9,11) ✓; `kpi_snapshots` + lazy writer (T1,5) ✓; uniform period param (T10) ✓; deltas (T3,9) ✓; redFlags/greenLights (T4,9) ✓; privacy/no-PII (T6 design + T14 step5 verify) ✓; schema docs (T12) ✓; UI scopes (T13) ✓.
 
 **Out-of-scope honored:** no churn-rate-per-customer, YoY, CAC loop, network/ops endpoints.
 

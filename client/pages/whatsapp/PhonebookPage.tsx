@@ -1,5 +1,5 @@
 /**
- * v4.2.24: Phonebook page — custom contact lists untuk broadcast.
+ * v4.2.24: Phonebook page - custom contact lists untuk broadcast.
  * v4.2.27: + tags untuk kategorisasi + smart filter customers + cross-phonebook import
  *
  * Features:
@@ -115,9 +115,9 @@ export default function PhonebookPage() {
   return <PhonebookList onOpen={(id) => { setSelectedId(id); setView("detail"); }} />;
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // LIST VIEW
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function PhonebookList({ onOpen }: { onOpen: (id: number) => void }) {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -157,7 +157,7 @@ function PhonebookList({ onOpen }: { onOpen: (id: number) => void }) {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold tracking-tight-display">Phonebook</h1>
-            <p className="text-sm text-muted-foreground">Daftar kontak custom untuk broadcast — bukan pelanggan/reseller</p>
+            <p className="text-sm text-muted-foreground">Daftar kontak custom untuk broadcast - bukan pelanggan/reseller</p>
           </div>
         </div>
         <Button onClick={() => { setEditing(null); setCreateOpen(true); }} className="bg-violet-600 hover:bg-violet-700" leftIcon={<Plus className="h-3.5 w-3.5" />}>
@@ -236,9 +236,9 @@ function PhonebookList({ onOpen }: { onOpen: (id: number) => void }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // FORM DIALOG (create/edit)
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function PhonebookFormDialog({ open, existing, onClose }: {
   open: boolean; existing: Phonebook | null; onClose: () => void;
 }) {
@@ -316,9 +316,9 @@ function PhonebookFormDialog({ open, existing, onClose }: {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // DETAIL VIEW (contacts table)
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function PhonebookDetail({ phonebookId, onBack }: { phonebookId: number; onBack: () => void }) {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -564,10 +564,10 @@ function PhonebookDetail({ phonebookId, onBack }: { phonebookId: number; onBack:
                           )}
                         </div>
                       ) : (
-                        <span className="text-[10px] text-muted-foreground/40">—</span>
+                        <span className="text-[10px] text-muted-foreground/40">-</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground truncate max-w-xs">{c.address ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground truncate max-w-xs">{c.address ?? "-"}</td>
                     <td className="px-3 py-2 text-right">
                       <Button size="icon-xs" variant="ghost" onClick={() => { setEditContact(c); setAddContactOpen(true); }}>
                         <Edit3 className="h-3 w-3 text-blue-600" />
@@ -728,9 +728,9 @@ function BulkAddTagDialog({ open, existingTags, selectedCount, loading, onSubmit
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // CONTACT FORM (add/edit single)
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function ContactFormDialog({ open, phonebookId, existing, onClose }: {
   open: boolean; phonebookId: number; existing: Contact | null; onClose: () => void;
 }) {
@@ -780,7 +780,7 @@ function ContactFormDialog({ open, phonebookId, existing, onClose }: {
   const CustomerSuggestions = lookupField !== null && !picked && suggestions.length > 0 ? (
     <div className="absolute z-50 left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg max-h-56 overflow-y-auto">
       <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground border-b bg-muted/40">
-        Pelanggan cocok di billing — klik untuk isi otomatis
+        Pelanggan cocok di billing - klik untuk isi otomatis
       </div>
       {suggestions.map((c) => (
         <button
@@ -947,9 +947,9 @@ function ContactFormDialog({ open, phonebookId, existing, onClose }: {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // IMPORT DIALOG (3 mode: from customers / CSV / paste text)
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebookId: number; onClose: () => void }) {
   const qc = useQueryClient();
   type Mode = "customers" | "phonebook" | "csv" | "paste";
@@ -1149,7 +1149,7 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
               <div className="rounded-lg border bg-sky-50/40 border-sky-200 p-3 space-y-2">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-700">
                   <Sparkles className="h-3 w-3" />
-                  Smart Filter — Kategori per pelanggan
+                  Smart Filter - Kategori per pelanggan
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
@@ -1256,14 +1256,14 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
               <div className="rounded-lg border bg-violet-50/40 border-violet-200 p-3 space-y-2">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-700">
                   <CopyIcon className="h-3 w-3" />
-                  Cross-Phonebook Copy — Ambil dari phonebook lain
+                  Cross-Phonebook Copy - Ambil dari phonebook lain
                 </div>
                 <select
                   value={sourcePhonebookId ?? ""}
                   onChange={(e) => { setSourcePhonebookId(e.target.value ? Number(e.target.value) : null); setSelectedContactIds(new Set()); }}
                   className="w-full px-2 py-1.5 rounded border bg-background text-xs"
                 >
-                  <option value="">— Pilih phonebook sumber —</option>
+                  <option value="">- Pilih phonebook sumber -</option>
                   {allPhonebooks.filter(p => p.id !== phonebookId).map(p => (
                     <option key={p.id} value={p.id}>{p.name} ({p.contactCount} kontak)</option>
                   ))}

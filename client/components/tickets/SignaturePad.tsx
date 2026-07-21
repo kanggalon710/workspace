@@ -1,5 +1,5 @@
 /**
- * v4.2.18 (B.5): Signature Pad — canvas-based, no external lib needed
+ * v4.2.18 (B.5): Signature Pad - canvas-based, no external lib needed
  *
  * Customer e-signature untuk stage Konfirmasi Pelanggan (BAST).
  * Save sebagai PNG attachment dengan metadata signature_type='customer'.

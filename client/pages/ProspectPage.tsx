@@ -11,7 +11,7 @@ import {
   Loader2, ChevronDown, UserPlus, Check,
 } from "lucide-react";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 interface AssetOption {
   id: number;
@@ -31,7 +31,7 @@ interface ProspectResult {
   distance: number;
 }
 
-// ── Config ─────────────────────────────────────────────────────────────────
+// -- Config -----------------------------------------------------------------
 
 const CATEGORIES = [
   { key: "korporat",   label: "Korporat",    icon: Building2,    color: "#3B82F6" },
@@ -66,7 +66,7 @@ const PROSPECT_TO_LEAD_CAT: Record<string, string> = {
   lainnya: "lainnya",
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 function CategoryBadge({ category }: { category: string }) {
   const cfg = CATEGORY_MAP[category];
@@ -80,7 +80,7 @@ function CategoryBadge({ category }: { category: string }) {
   );
 }
 
-// ── Phone fetcher component ────────────────────────────────────────────────
+// -- Phone fetcher component ------------------------------------------------
 
 function PhoneCell({ placeId }: { placeId: string }) {
   const [fetched, setFetched] = useState(false);
@@ -127,7 +127,7 @@ function PhoneCell({ placeId }: { placeId: string }) {
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+// -- Main Page --------------------------------------------------------------
 
 export default function ProspectPage() {
   const [assetType, setAssetType] = useState<string>("odps");

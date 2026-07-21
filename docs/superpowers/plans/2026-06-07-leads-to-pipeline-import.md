@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a one-time dev import that creates a JABNET (mitra 1) "Leads (Marketing)" pipeline in the existing `pipeline_*` engine, seeded from `leads`/`lead_activities` — cards, stages, typed columns (as custom fields), activity timeline (as comments + activity), coords/ODP, and photo evidence (via a new comment `photo_path`).
+**Goal:** Build a one-time dev import that creates a JABNET (mitra 1) "Leads (Marketing)" pipeline in the existing `pipeline_*` engine, seeded from `leads`/`lead_activities` - cards, stages, typed columns (as custom fields), activity timeline (as comments + activity), coords/ODP, and photo evidence (via a new comment `photo_path`).
 
 **Architecture:** One small engine extension (`pipeline_card_comments.photo_path` column + guarded serve endpoint + drawer thumbnail), then a thin import script over a pure, unit-tested mapping module. The live `/leads` page + `leads*` tables are read-only source. JABNET only; dev DB only.
 
@@ -10,9 +10,9 @@
 
 **Base branch:** `feat/leads-to-pipeline-import` (off `dev`). Spec: `docs/superpowers/specs/2026-06-07-leads-to-pipeline-import-design.md`.
 
-**Verification gates:** `npm run typecheck` (0, for engine-side Tasks 1–2) · `npm run build` (green, Tasks 1–2) · `npx tsx --test tools/leadsToPipeline.test.ts` (pass, Task 3) · `npx tsx tools/import-leads-to-pipeline.ts --help` exits 0 (Task 4).
+**Verification gates:** `npm run typecheck` (0, for engine-side Tasks 1-2) · `npm run build` (green, Tasks 1-2) · `npx tsx --test tools/leadsToPipeline.test.ts` (pass, Task 3) · `npx tsx tools/import-leads-to-pipeline.ts --help` exits 0 (Task 4).
 
-**Dev gotcha (baked in):** dev runs `UPLOADS_READ_ONLY=true`, so `saveBase64Photo` THROWS. The import therefore **only references existing `photoPath` files** (readable on dev) and **skips/annotates legacy base64-only photos** — it never writes photo files.
+**Dev gotcha (baked in):** dev runs `UPLOADS_READ_ONLY=true`, so `saveBase64Photo` THROWS. The import therefore **only references existing `photoPath` files** (readable on dev) and **skips/annotates legacy base64-only photos** - it never writes photo files.
 
 ---
 
@@ -31,7 +31,7 @@
 
 ---
 
-### Task 1: Engine schema — `pipeline_card_comments.photo_path`
+### Task 1: Engine schema - `pipeline_card_comments.photo_path`
 
 **Files:** Modify `shared/schema.ts`, `server/storage.ts`
 
@@ -56,13 +56,13 @@ Add a nullable `photoPath` line after `body`:
   photoPath: varchar("photo_path", { length: 255 }),
   createdAt: text("created_at").notNull(),
 ```
-(`varchar` is already imported in this file — confirm by the other `varchar(...)` usages.)
+(`varchar` is already imported in this file - confirm by the other `varchar(...)` usages.)
 
 - [ ] **Step 2: Add the guarded startup migration**
 
 In `server/storage.ts`, find the Phase-4c additive-column block (the `const p4cColAdds: Array<{ table; column; ddl }> = [...]` loop near line 6674 that adds `pipeline_cards.stage_entered_at`). Immediately AFTER that loop's closing (after line ~6692, before the `MODIFY trigger_stage_id` try), add the same-shape guarded ALTER:
 ```ts
-    // Leads→pipeline import — photo evidence on card comments. Additive, idempotent.
+    // Leads→pipeline import - photo evidence on card comments. Additive, idempotent.
     try {
       const [rows]: any = await this.pool.execute(
         `SELECT COUNT(*) AS c FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'pipeline_card_comments' AND column_name = 'photo_path'`,
@@ -75,7 +75,7 @@ In `server/storage.ts`, find the Phase-4c additive-column block (the `const p4cC
       console.warn(`[migration] pipeline_card_comments.photo_path add failed: ${e.message}`);
     }
 ```
-(DB rejects `ADD COLUMN IF NOT EXISTS` — the info_schema COUNT guard is required; mirrors the existing pattern.)
+(DB rejects `ADD COLUMN IF NOT EXISTS` - the info_schema COUNT guard is required; mirrors the existing pattern.)
 
 - [ ] **Step 3: Typecheck + build**
 
@@ -95,7 +95,7 @@ git commit -m "feat(pipelines): pipeline_card_comments.photo_path column + guard
 
 **Files:** Modify `server/storage.ts`, `server/routes.ts`, `client/hooks/usePipelines.ts`, `client/components/pipelines/CardDetailDrawer.tsx`
 
-- [ ] **Step 1: Storage — `getCommentPhotoMeta`**
+- [ ] **Step 1: Storage - `getCommentPhotoMeta`**
 
 In `server/storage.ts`, near `listComments`/`addComment` (~line 1990), add:
 ```ts
@@ -115,7 +115,7 @@ In `server/storage.ts`, near `listComments`/`addComment` (~line 1990), add:
 ```
 (`and`, `eq`, `pipelineCardComments` are already imported/used in this file.)
 
-- [ ] **Step 2: Route — guarded photo stream**
+- [ ] **Step 2: Route - guarded photo stream**
 
 In `server/routes.ts`, find the comment routes (`DELETE /api/pipelines/cards/comments/:id` ~line 4598). Immediately after that route, add:
 ```ts
@@ -129,9 +129,9 @@ In `server/routes.ts`, find the comment routes (`DELETE /api/pipelines/cards/com
     await streamPhoto(meta.photoPath, res);
   });
 ```
-(`requirePermission`, `requirePipelineView`, `sendError`, `streamPhoto`, `storage.getCard` are all already imported/used in this file. This path has more segments than `GET /api/pipelines/cards/:cardId`, so there is no route-matching conflict. `<img>` requests authenticate via the existing `ftth_session` cookie fallback — no extra work.)
+(`requirePermission`, `requirePipelineView`, `sendError`, `streamPhoto`, `storage.getCard` are all already imported/used in this file. This path has more segments than `GET /api/pipelines/cards/:cardId`, so there is no route-matching conflict. `<img>` requests authenticate via the existing `ftth_session` cookie fallback - no extra work.)
 
-- [ ] **Step 3: Client type — add `photoPath` to CardDetail.comments**
+- [ ] **Step 3: Client type - add `photoPath` to CardDetail.comments**
 
 In `client/hooks/usePipelines.ts`, the `CardDetail` type's comments shape is:
 ```ts
@@ -142,7 +142,7 @@ Change to:
   comments: { id: number; authorId: number; body: string; photoPath: string | null; createdAt: string }[];
 ```
 
-- [ ] **Step 4: Drawer — render the thumbnail**
+- [ ] **Step 4: Drawer - render the thumbnail**
 
 In `client/components/pipelines/CardDetailDrawer.tsx`, the comment map currently is:
 ```tsx
@@ -188,7 +188,7 @@ git commit -m "feat(pipelines): card comment photo serve endpoint + drawer thumb
 
 ---
 
-### Task 3: Pure mapping module — `tools/leadsToPipeline.ts` (TDD)
+### Task 3: Pure mapping module - `tools/leadsToPipeline.ts` (TDD)
 
 **Files:** Create `tools/leadsToPipeline.ts`, `tools/leadsToPipeline.test.ts`
 
@@ -238,7 +238,7 @@ test("LEAD_PIPELINE_STAGES: 6 stages, ordered, with labels+colors", () => {
   assert.equal(s.length, 6);
   assert.deepEqual(s.map((x) => x.key), ["new", "contacted", "interested", "negotiation", "won", "lost"]);
   assert.deepEqual(s.map((x) => x.position), [0, 1, 2, 3, 4, 5]);
-  assert.equal(s[4].label, "Closing ✅");
+  assert.equal(s[4].label, "Closing ");
   assert.equal(s[0].color, "#6B7280");
 });
 
@@ -308,7 +308,7 @@ test("activityToActivity: passes type/detail/actor/date", () => {
 - [ ] **Step 2: Run test → FAIL**
 
 Run: `npx tsx --test tools/leadsToPipeline.test.ts`
-Expected: FAIL (`ERR_MODULE_NOT_FOUND` — module doesn't exist).
+Expected: FAIL (`ERR_MODULE_NOT_FOUND` - module doesn't exist).
 
 - [ ] **Step 3: Implement `tools/leadsToPipeline.ts`**
 
@@ -494,7 +494,7 @@ git commit -m "feat(pipelines): pure leads→pipeline mapping module + tests (le
 
 ---
 
-### Task 4: Import script — `tools/import-leads-to-pipeline.ts`
+### Task 4: Import script - `tools/import-leads-to-pipeline.ts`
 
 **Files:** Create `tools/import-leads-to-pipeline.ts`
 
@@ -696,7 +696,7 @@ git add tools/import-leads-to-pipeline.ts
 git commit -m "feat(pipelines): dev import script leads→pipeline (--reset/--help) (leads-import)"
 ```
 
-- [ ] **Step 4: Manual run checklist (relay; the USER runs this on dev — needs the dev DB)**
+- [ ] **Step 4: Manual run checklist (relay; the USER runs this on dev - needs the dev DB)**
 
 Run against the dev database (DB_NAME=jabnet_fiber_dev), e.g. on the dev cPanel box or via an SSH tunnel:
 ```bash
@@ -705,7 +705,7 @@ DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=jabnet_crm_user DB_PASSWORD='Galon@12345'
 ```
 Then verify:
 - App on dev → `/pipelines` → "Leads (Marketing)" pipeline exists (JABNET).
-- 6 stages in order (Prospek Baru → … → Closing ✅ / Tidak Jadi ❌) with the lead colors.
+- 6 stages in order (Prospek Baru → … → Closing  / Tidak Jadi ) with the lead colors.
 - Card count == JABNET leads count; open a card → custom fields populated (phone/source/kecamatan/odp/coords), comment timeline (catatan/telepon/wa/kunjungan), and a photo thumbnail renders for activities that had a photoPath.
 - Activity log shows stage_change/assigned/converted entries.
 - Re-run with `--reset` → still exactly one "Leads (Marketing)" pipeline, same counts (no duplicates).
@@ -715,9 +715,9 @@ Then verify:
 
 ## Self-Review notes (addressed)
 
-- **Spec coverage:** photo column+migration → T1; serve endpoint+meta+type+render → T2; pure mapping (stages/fields/card/values/activities) → T3; import script (pipeline/stages/fields/cards/values/comments/activity, `--reset`) → T4. All spec §1–§6 mapped.
-- **Refinements vs spec (deliberate):** (a) photos are **referenced only** (existing `photoPath`), base64-only skipped+counted — because dev `UPLOADS_READ_ONLY=true` makes `saveBase64Photo` throw; so the script imports **no** `server/uploads` dependency and writes no files. (b) `addComment` storage is **not** modified (the import inserts comments directly; the in-app comment UI gaining photos is out of scope) — YAGNI. (c) `activityToComment` returns `{body,authorId,createdAt}` and the script handles `photo_path` from the raw row (simpler than threading a `photoPathRef`).
-- **DB-shape inputs:** the pure module reads snake_case (`assigned_to`, `odp_id`, `distance_meters`, `loss_reason`, `created_by`, `created_at`, `updated_at`, `photo_path`, `photo_data`, `user_id`) because the script passes raw `mysql2` rows through — no translation layer; tests use snake_case samples.
+- **Spec coverage:** photo column+migration → T1; serve endpoint+meta+type+render → T2; pure mapping (stages/fields/card/values/activities) → T3; import script (pipeline/stages/fields/cards/values/comments/activity, `--reset`) → T4. All spec §1-§6 mapped.
+- **Refinements vs spec (deliberate):** (a) photos are **referenced only** (existing `photoPath`), base64-only skipped+counted - because dev `UPLOADS_READ_ONLY=true` makes `saveBase64Photo` throw; so the script imports **no** `server/uploads` dependency and writes no files. (b) `addComment` storage is **not** modified (the import inserts comments directly; the in-app comment UI gaining photos is out of scope) - YAGNI. (c) `activityToComment` returns `{body,authorId,createdAt}` and the script handles `photo_path` from the raw row (simpler than threading a `photoPathRef`).
+- **DB-shape inputs:** the pure module reads snake_case (`assigned_to`, `odp_id`, `distance_meters`, `loss_reason`, `created_by`, `created_at`, `updated_at`, `photo_path`, `photo_data`, `user_id`) because the script passes raw `mysql2` rows through - no translation layer; tests use snake_case samples.
 - **Type consistency:** `LEAD_PIPELINE_STAGES`/`LEAD_PIPELINE_FIELDS`/`leadToCard`/`leadToFieldValues`/`classifyActivity`/`activityToComment`/`activityToActivity` + `LeadRow`/`ActivityRow` (T3) are exactly the symbols imported by the script (T4); `CardDraft.stageId` resolved via `stageIdByKey` built from stage inserts; field keys in `LEAD_PIPELINE_FIELDS` match `leadToFieldValues` outputs; `CardDetail.comments.photoPath` (T2) matches the new column (T1) and the drawer render (T2).
 - **No placeholders:** every code step is complete. "Find the …" instructions (T1 p4c block, T2 comment routes/map) locate existing code to edit, with the surrounding code quoted.
 - **Standards:** pure `leadsToPipeline` module (SoC/TDD); thin I/O script; DRY reuse of `LEAD_*` constants + `streamPhoto`; semantic `<a>/<img>` with `alt` + `loading="lazy"`; mitra-scoped everywhere (import hardcodes mitra 1; serve endpoint uses `getMitraId` + pipeline-view); guarded migration via info_schema (no `IF NOT EXISTS`).

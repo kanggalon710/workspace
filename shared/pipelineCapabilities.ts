@@ -1,4 +1,4 @@
-/** Pure pipeline RBAC capability model — no React, no DB. Shared by client + server + tests. */
+/** Pure pipeline RBAC capability model - no React, no DB. Shared by client + server + tests. */
 
 export type PipelineCapability = "view" | "cards" | "stages" | "fields" | "automation" | "manage" | "delete" | "comment" | "assign" | "export" | "import";
 
@@ -75,7 +75,7 @@ export function resolvePipelineCapabilities(args: {
 
 /** Roles whose pipeline access is FIXED at full and cannot be granted/reduced per-pipeline:
  *  the seeded per-mitra "Admin" and JABNET "System-Admin" (both isSystem). Mirrors the
- *  server-side isPipelineAdmin(req) short-circuit — grants for these roles are meaningless. */
+ *  server-side isPipelineAdmin(req) short-circuit - grants for these roles are meaningless. */
 export function isAdminLockedRole(role: { name?: string | null; isSystem?: number | null }): boolean {
   return (role.isSystem ?? 0) === 1 && (role.name === "Admin" || role.name === "System-Admin");
 }

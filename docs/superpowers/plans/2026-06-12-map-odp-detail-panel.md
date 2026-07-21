@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Clicking an ODP on /map opens a rich, lazy-loaded mini-dashboard: capacity/utilization, customer-count metrics, connected-customer list with status badges + link to the customer page, and per-customer ACS optical power (RX/TX, status, last inform, uptime) with configurable thresholds — mobile bottom-sheet, desktop dialog.
+**Goal:** Clicking an ODP on /map opens a rich, lazy-loaded mini-dashboard: capacity/utilization, customer-count metrics, connected-customer list with status badges + link to the customer page, and per-customer ACS optical power (RX/TX, status, last inform, uptime) with configurable thresholds - mobile bottom-sheet, desktop dialog.
 
 **Architecture:** Two new lazy endpoints (`/api/odps/:id/detail` = DB-only fast payload; `/api/odps/:id/ont-status` = ACS query, fetched second), pure shared helpers for status/optical classification (tested), an extracted DRY device-matching module reused by the existing `/api/customers/ont-status`, and one `OdpDetailPanel` component hosted responsively (BottomSheet on mobile, Dialog on desktop) replacing the cramped ODP InfoWindow. Search results gain customer→ODP relation + server-backed customer search.
 
@@ -14,18 +14,18 @@
 
 ## Verified background facts (do not re-derive)
 
-- ODP click today: `MapPage.tsx:992` → `setSelectedInfo({type:"odp", data: odpWithUtil…})` → desktop `<InfoWindow>` line 1092 / mobile `<BottomSheet>` line 1280, both render shared `MapInfoWindowContent` (`client/components/map/MapInfoWindow.tsx`) — ODP branch shows Kode/Splitter/PortBar/list nama pelanggan (viewport-limited via `customersByOdp` memo at MapPage:845).
+- ODP click today: `MapPage.tsx:992` → `setSelectedInfo({type:"odp", data: odpWithUtil…})` → desktop `<InfoWindow>` line 1092 / mobile `<BottomSheet>` line 1280, both render shared `MapInfoWindowContent` (`client/components/map/MapInfoWindow.tsx`) - ODP branch shows Kode/Splitter/PortBar/list nama pelanggan (viewport-limited via `customersByOdp` memo at MapPage:845).
 - `odps` schema (shared/schema.ts:53): `name, code, odcId, lat, lng, capacity (default 8), usedCapacity, splitterType, status, address, district, village, notes`.
-- `customers` schema (shared/schema.ts:84+): `odpId, portNumber, customerId (text billing id), name, package, status (varchar default "active"), isIsolir (int), billingStatus, phone, address, pppoeUsername, ontSerialNumber, dueDate…` — index `idx_customers_odp_id` exists.
+- `customers` schema (shared/schema.ts:84+): `odpId, portNumber, customerId (text billing id), name, package, status (varchar default "active"), isIsolir (int), billingStatus, phone, address, pppoeUsername, ontSerialNumber, dueDate…` - index `idx_customers_odp_id` exists.
 - `/api/odps/utilization` (routes.ts:2573) computes used = COUNT of customers per ODP (not `usedCapacity` column). Use the same semantics.
-- GenieACS: `server/genieacs.ts` — `getDevices(config, query?, limit, skip)` light-parses devices incl. `rxPower` (lines 246–254, decode `>100 → (n/100)-40`), `lastInform`, `uptime` (line 225), `status` (online = lastInform < 300s), `serialNumber`, `ponSerialNumber`, `pppoeUsername`. **No `txPower` parsed yet.** `ParsedDevice` interface at line 44.
-- Existing bulk matcher: `GET /api/customers/ont-status` (routes.ts:2966–3041) fetches up to 10 000 devices, builds `byPppoe/bySn/byPonSn` maps, matches each customer (pppoe → factory SN → PON SN). This matching block is what we extract to `server/ont-match.ts`.
-- `getGenieConfig()` (routes.ts:10689) — settings keys `genieacs_host/port/username/password` via mitra-aware `pick()`. Settings UI lives in `client/pages/IntegrationPage.tsx` 1256–1365, saved via `PUT /api/settings/bulk` with `{settings:[{key,value,category,label}]}`.
-- Hardcoded RX thresholds today: GenieAcsDevicesPage.tsx:166–180 and portal PortalDashboardPage.tsx:330–340 (`> -25` good, `-25…-28` warn, `< -28` bad). New configurable settings must default to the same numbers.
-- Response cache util: `server/route-cache.ts` — `getCached<T>(key)`, `setCached(key, data, ttlMs)`.
+- GenieACS: `server/genieacs.ts` - `getDevices(config, query?, limit, skip)` light-parses devices incl. `rxPower` (lines 246-254, decode `>100 → (n/100)-40`), `lastInform`, `uptime` (line 225), `status` (online = lastInform < 300s), `serialNumber`, `ponSerialNumber`, `pppoeUsername`. **No `txPower` parsed yet.** `ParsedDevice` interface at line 44.
+- Existing bulk matcher: `GET /api/customers/ont-status` (routes.ts:2966-3041) fetches up to 10 000 devices, builds `byPppoe/bySn/byPonSn` maps, matches each customer (pppoe → factory SN → PON SN). This matching block is what we extract to `server/ont-match.ts`.
+- `getGenieConfig()` (routes.ts:10689) - settings keys `genieacs_host/port/username/password` via mitra-aware `pick()`. Settings UI lives in `client/pages/IntegrationPage.tsx` 1256-1365, saved via `PUT /api/settings/bulk` with `{settings:[{key,value,category,label}]}`.
+- Hardcoded RX thresholds today: GenieAcsDevicesPage.tsx:166-180 and portal PortalDashboardPage.tsx:330-340 (`> -25` good, `-25…-28` warn, `< -28` bad). New configurable settings must default to the same numbers.
+- Response cache util: `server/route-cache.ts` - `getCached<T>(key)`, `setCached(key, data, ttlMs)`.
 - Customer page has NO `/customers/:id` route; it supports deep-link `/customers?q=<text>` (CustomersPage.tsx:863, already used by GenieACS page). Shortcut buttons must navigate there.
 - Map search: `client/components/map/MapSearchBar.tsx` (187 lines) searches client-side over `data.{pops,odcs,odps,customers,…}`; customers are **viewport-only** (`useMapCustomers(bbox)`); `onResultClick(result)` pans/zooms (MapPage:837 `handleSearchResultClick`).
-- Mobile sheet: `client/components/shared/BottomSheet.tsx` — props `{open, onClose, title?, height?: "sm"|"md"|"lg"|"full"}`.
+- Mobile sheet: `client/components/shared/BottomSheet.tsx` - props `{open, onClose, title?, height?: "sm"|"md"|"lg"|"full"}`.
 - Desktop floating-panel precedent: `CableDetailPanel` (MapPage.tsx:399) = `<Dialog><DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">`.
 - `useIsMobile`-style flag exists in MapPage as `isMobile`; permission guard for map routes: `requirePermission(req, res, "map")`.
 - Tests run: `npx tsx --test shared/*.test.ts client/lib/*.test.ts client/components/pipelines/*.test.ts server/*.test.ts` (server has *.test.ts precedent: billing-admin-helpers.test.ts).
@@ -122,7 +122,7 @@ Run: `npx tsx --test shared/customerStatus.test.ts` → PASS (4 tests)
 
 ```bash
 git add shared/customerStatus.ts shared/customerStatus.test.ts
-git commit -m "feat(shared): customerConnStatus helper — klasifikasi status pelanggan untuk badge/metrics
+git commit -m "feat(shared): customerConnStatus helper - klasifikasi status pelanggan untuk badge/metrics
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -192,7 +192,7 @@ Run: `npx tsx --test shared/opticalPower.test.ts` → FAIL (module not found)
 ```ts
 // shared/opticalPower.ts
 /** Pure optical-power (dBm) classification. Thresholds are CONFIGURABLE per ISP via
- *  app_settings (optical_rx_warn / optical_rx_crit) — never hardcode in UI; defaults
+ *  app_settings (optical_rx_warn / optical_rx_crit) - never hardcode in UI; defaults
  *  mirror the legacy hardcoded values (-25 / -28) used by GenieACS page + portal. */
 
 export type OpticalLevel = "good" | "warn" | "crit" | "unknown";
@@ -226,17 +226,17 @@ export const OPTICAL_LEVEL_META: Record<OpticalLevel, { label: string; variant: 
 
 ```bash
 git add shared/opticalPower.ts shared/opticalPower.test.ts
-git commit -m "feat(shared): classifyOpticalPower — threshold configurable, default -25/-28 dBm
+git commit -m "feat(shared): classifyOpticalPower - threshold configurable, default -25/-28 dBm
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-### Task 3: GenieACS — parse TX power
+### Task 3: GenieACS - parse TX power
 
 **Files:**
-- Modify: `server/genieacs.ts` (ParsedDevice interface ~line 44–63; rx parse block ~246–254; return object ~374–378)
+- Modify: `server/genieacs.ts` (ParsedDevice interface ~line 44-63; rx parse block ~246-254; return object ~374-378)
 
 - [ ] **Step 1: Add `txPower` to the interface**
 
@@ -255,7 +255,7 @@ The existing RX block is:
 ```
 Directly AFTER that whole rx block (after `rxPower` is assigned), add:
 ```ts
-  // TX power — same decode rule as RX (value > 100 → (n/100) - 40 dBm)
+  // TX power - same decode rule as RX (value > 100 → (n/100) - 40 dBm)
   let txPower = "";
   const txRaw = val(raw, "VirtualParameters.TXPower")
     || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.TXPower")
@@ -269,7 +269,7 @@ Directly AFTER that whole rx block (after `rxPower` is assigned), add:
     }
   }
 ```
-(Match the exact style of the rx block when editing — if the rx block guards differently, mirror it.)
+(Match the exact style of the rx block when editing - if the rx block guards differently, mirror it.)
 
 - [ ] **Step 3: Return it**
 
@@ -293,7 +293,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Create: `server/ont-match.ts`
 - Create: `server/ont-match.test.ts`
-- Modify: `server/routes.ts:2966–3041` (`GET /api/customers/ont-status` uses the new module)
+- Modify: `server/routes.ts:2966-3041` (`GET /api/customers/ont-status` uses the new module)
 
 - [ ] **Step 1: Write the failing test**
 
@@ -336,7 +336,7 @@ test("no match → null device", () => {
 ```ts
 // server/ont-match.ts
 /** DRY device↔customer matching shared by /api/customers/ont-status (all customers)
- *  and /api/odps/:id/ont-status (per-ODP panel). Pure — testable without GenieACS. */
+ *  and /api/odps/:id/ont-status (per-ODP panel). Pure - testable without GenieACS. */
 import type { ParsedDevice } from "./genieacs.js";
 
 export type DeviceIndexes = {
@@ -425,7 +425,7 @@ with:
 ```ts
       const { device, matchBy } = matchCustomerDevice(c as any, deviceIdx);
 ```
-(The `statuses[c.id] = {...}` body below stays unchanged — `device` / `matchBy` names match.)
+(The `statuses[c.id] = {...}` body below stays unchanged - `device` / `matchBy` names match.)
 
 - [ ] **Step 6: Verify + commit**
 
@@ -440,7 +440,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 5: Storage — customers by ODP + map customer search
+### Task 5: Storage - customers by ODP + map customer search
 
 **Files:**
 - Modify: `server/storage.ts` (add 2 methods near other customer methods; find with `grep -n "async getCustomers(" server/storage.ts`)
@@ -457,7 +457,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
   }
 ```
 
-- [ ] **Step 2: Add `searchMapCustomers`** (server-backed map search — viewport-independent)
+- [ ] **Step 2: Add `searchMapCustomers`** (server-backed map search - viewport-independent)
 
 ```ts
   /** Cari pelanggan untuk map search (nama / customer_id), light projection, max `limit`. */
@@ -492,17 +492,17 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 6: Server endpoints — ODP detail, ODP ont-status, map customer search
+### Task 6: Server endpoints - ODP detail, ODP ont-status, map customer search
 
 **Files:**
-- Modify: `server/routes.ts` — add 3 routes. ⚠️ Register the two `/api/odps/:id/...` routes BEFORE `GET /api/odps/:id` (line ~2635) so Express doesn't capture them; the photos routes at 2675+ show the pattern (they're registered after — check: photos routes are AFTER `/api/odps/:id` and still work because the path has an extra segment; Express matches exact segment counts, so ordering vs `/api/odps/:id` is actually safe. Place the new routes next to the photos routes at ~2675 for cohesion.)
+- Modify: `server/routes.ts` - add 3 routes.  Register the two `/api/odps/:id/...` routes BEFORE `GET /api/odps/:id` (line ~2635) so Express doesn't capture them; the photos routes at 2675+ show the pattern (they're registered after - check: photos routes are AFTER `/api/odps/:id` and still work because the path has an extra segment; Express matches exact segment counts, so ordering vs `/api/odps/:id` is actually safe. Place the new routes next to the photos routes at ~2675 for cohesion.)
 
-- [ ] **Step 1: Add `GET /api/odps/:id/detail`** (DB-only — fast, no ACS)
+- [ ] **Step 1: Add `GET /api/odps/:id/detail`** (DB-only - fast, no ACS)
 
 Place after the ODP photos routes block:
 
 ```ts
-/** GET /api/odps/:id/detail — mini-dashboard ODP (lazy, dipanggil saat klik di map).
+/** GET /api/odps/:id/detail - mini-dashboard ODP (lazy, dipanggil saat klik di map).
  *  DB-only supaya cepat; data ACS dipisah di /ont-status. */
 router.get("/api/odps/:id/detail", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
@@ -542,12 +542,12 @@ router.get("/api/odps/:id/detail", async (req: Request, res: Response) => {
 });
 ```
 Add the shared import at the top of routes.ts (next to other ../shared imports): `import { customerConnStatus } from "../shared/customerStatus.js";`
-Check `storage.getOdp` exists (`grep -n "async getOdp(" server/storage.ts`) — if it's named differently (e.g. `getOdpById`), use that name.
+Check `storage.getOdp` exists (`grep -n "async getOdp(" server/storage.ts`) - if it's named differently (e.g. `getOdpById`), use that name.
 
-- [ ] **Step 2: Add `GET /api/odps/:id/ont-status`** (ACS — lazy second fetch)
+- [ ] **Step 2: Add `GET /api/odps/:id/ont-status`** (ACS - lazy second fetch)
 
 ```ts
-/** GET /api/odps/:id/ont-status — optical power ONT semua pelanggan satu ODP.
+/** GET /api/odps/:id/ont-status - optical power ONT semua pelanggan satu ODP.
  *  Device list GenieACS di-cache 60s per-mitra (klik ODP berurutan tidak refetch ACS). */
 router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
@@ -558,7 +558,7 @@ router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
 
     const custs = await storage.getCustomersByOdp(id);
 
-    // Cached parsed-device list (per mitra) — pola sama dgn handler ont-status global tapi
+    // Cached parsed-device list (per mitra) - pola sama dgn handler ont-status global tapi
     // tidak menghantam GenieACS tiap klik ODP.
     const mitraKey = `genieacs:devices:${req.authUser!.activeMitraId ?? 1}`;
     let devices = getCached<any[]>(mitraKey);
@@ -596,9 +596,9 @@ router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
 });
 ```
 
-Supporting pieces (place `getOpticalThresholds` near `getGenieConfig` at ~10689 — it reuses the same mitra-aware pick pattern; quote the existing `pick` inside getGenieConfig and mirror it):
+Supporting pieces (place `getOpticalThresholds` near `getGenieConfig` at ~10689 - it reuses the same mitra-aware pick pattern; quote the existing `pick` inside getGenieConfig and mirror it):
 ```ts
-/** Threshold optical power configurable per ISP (app_settings) — default -25/-28 dBm. */
+/** Threshold optical power configurable per ISP (app_settings) - default -25/-28 dBm. */
 async function getOpticalThresholds(): Promise<OpticalThresholds> {
   const mitraId = getMitraId();
   const pick = async (key: string): Promise<string | null> => {
@@ -615,15 +615,15 @@ async function getOpticalThresholds(): Promise<OpticalThresholds> {
   };
 }
 ```
-⚠️ Mirror `getGenieConfig`'s actual pick/fallback logic and `getMitraId`/tenant-context import already present in routes.ts — verify with `sed -n '10689,10710p' server/routes.ts` before writing; adapt to exactly that pattern.
+ Mirror `getGenieConfig`'s actual pick/fallback logic and `getMitraId`/tenant-context import already present in routes.ts - verify with `sed -n '10689,10710p' server/routes.ts` before writing; adapt to exactly that pattern.
 
-Imports to add at top of routes.ts: `import { DEFAULT_OPTICAL_THRESHOLDS, type OpticalThresholds } from "../shared/opticalPower.js";` plus `getCached, setCached` to the existing `./route-cache.js` import (check current names there) and ensure `genieGetDevices` alias matches existing import of `getDevices` (routes.ts already imports it for `/api/customers/integration-audit` — `grep -n "genieGetDevices\|getDevices" server/routes.ts | head -3` and reuse that exact alias).
+Imports to add at top of routes.ts: `import { DEFAULT_OPTICAL_THRESHOLDS, type OpticalThresholds } from "../shared/opticalPower.js";` plus `getCached, setCached` to the existing `./route-cache.js` import (check current names there) and ensure `genieGetDevices` alias matches existing import of `getDevices` (routes.ts already imports it for `/api/customers/integration-audit` - `grep -n "genieGetDevices\|getDevices" server/routes.ts | head -3` and reuse that exact alias).
 
 - [ ] **Step 3: Add `GET /api/map-data/customer-search`**
 
 Place next to `/api/map-data/infra` (~routes.ts:2414):
 ```ts
-/** GET /api/map-data/customer-search?q= — cari pelanggan di luar viewport untuk map search.
+/** GET /api/map-data/customer-search?q= - cari pelanggan di luar viewport untuk map search.
  *  Hasil menyertakan odpId supaya search bisa menampilkan relasi pelanggan→ODP. */
 router.get("/api/map-data/customer-search", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
@@ -654,7 +654,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Create: `client/hooks/useOdpDetail.ts`
 
-- [ ] **Step 1: Implement the hooks (lazy by design — only fetch when panel open)**
+- [ ] **Step 1: Implement the hooks (lazy by design - only fetch when panel open)**
 
 ```ts
 // client/hooks/useOdpDetail.ts
@@ -724,7 +724,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 8: Reusable UI pieces — OpticalPowerBadge, CapacityIndicator, OdpCustomerList, OdpDetailPanel
+### Task 8: Reusable UI pieces - OpticalPowerBadge, CapacityIndicator, OdpCustomerList, OdpDetailPanel
 
 **Files:**
 - Create: `client/components/map/OpticalPowerBadge.tsx`
@@ -732,7 +732,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - Create: `client/components/map/OdpCustomerList.tsx`
 - Create: `client/components/map/OdpDetailPanel.tsx`
 
-These use Tailwind theme tokens (NOT hardcoded hex — design-system rule). `StatusBadge` exists at `client/components/ui/status-badge.tsx` (verify props with `grep -n "interface StatusBadgeProps" -A8 client/components/ui/status-badge.tsx`; it takes `variant`, `label`, `size`, `appearance`).
+These use Tailwind theme tokens (NOT hardcoded hex - design-system rule). `StatusBadge` exists at `client/components/ui/status-badge.tsx` (verify props with `grep -n "interface StatusBadgeProps" -A8 client/components/ui/status-badge.tsx`; it takes `variant`, `label`, `size`, `appearance`).
 
 - [ ] **Step 1: OpticalPowerBadge**
 
@@ -747,16 +747,16 @@ const LEVEL_CLS: Record<string, string> = {
   unknown: "bg-muted text-muted-foreground",
 };
 
-/** Badge dBm dengan indikator warna hijau/kuning/merah — threshold dari server (configurable). */
+/** Badge dBm dengan indikator warna hijau/kuning/merah - threshold dari server (configurable). */
 export function OpticalPowerBadge({ value, kind, thresholds = DEFAULT_OPTICAL_THRESHOLDS }: {
   value: string | number | null | undefined;
   kind: "RX" | "TX";
   thresholds?: OpticalThresholds;
 }) {
-  // TX tidak diklasifikasikan kritis-nya seperti RX — tampil netral kalau ada.
+  // TX tidak diklasifikasikan kritis-nya seperti RX - tampil netral kalau ada.
   const level = kind === "RX" ? classifyOpticalPower(value, thresholds) : (value ? "good" : "unknown");
   const cls = kind === "RX" ? LEVEL_CLS[level] : "bg-muted text-foreground/80";
-  const text = value !== null && value !== undefined && value !== "" ? `${value} dBm` : "—";
+  const text = value !== null && value !== undefined && value !== "" ? `${value} dBm` : "-";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${cls}`}
@@ -817,7 +817,7 @@ function uptimeLabel(s: number | null): string | null {
   return `${m}m`;
 }
 
-/** Daftar pelanggan terhubung ke ODP — card list mobile-first, ACS info lazy-merge. */
+/** Daftar pelanggan terhubung ke ODP - card list mobile-first, ACS info lazy-merge. */
 export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
   customers: OdpDetail["customers"];
   ont?: OdpOntStatus;
@@ -850,7 +850,7 @@ export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
                   {c.portNumber != null && <div><dt className="sr-only">Port</dt><dd>Port {c.portNumber}</dd></div>}
                   {c.ontSerialNumber && <div><dt className="sr-only">ONT</dt><dd className="font-mono">{c.ontSerialNumber}</dd></div>}
                 </dl>
-                {/* Baris ACS — muncul kalau ont-status sudah ter-load & match */}
+                {/* Baris ACS - muncul kalau ont-status sudah ter-load & match */}
                 {acs && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     {acs.matched ? (
@@ -893,7 +893,7 @@ export function OdpCustomerList({ customers, ont, onOpenCustomer }: {
   );
 }
 ```
-⚠️ Verify `formatRelativeTime` exists in `client/lib/dateFormat.ts` (`grep -n "export" client/lib/dateFormat.ts`) — if the export is named differently (e.g. `timeAgo`/`relTime`), use that; if none exists, inline a small `relTime(iso)` helper in this file returning "x mnt lalu"/"x jam lalu" from `Date.now() - parse`.
+ Verify `formatRelativeTime` exists in `client/lib/dateFormat.ts` (`grep -n "export" client/lib/dateFormat.ts`) - if the export is named differently (e.g. `timeAgo`/`relTime`), use that; if none exists, inline a small `relTime(iso)` helper in this file returning "x mnt lalu"/"x jam lalu" from `Date.now() - parse`.
 
 - [ ] **Step 4: OdpDetailPanel** (responsive host: BottomSheet mobile / Dialog desktop; future-proof generic shell)
 
@@ -908,7 +908,7 @@ import { useOdpDetail, useOdpOntStatus } from "@/hooks/useOdpDetail";
 import { CapacityIndicator } from "./CapacityIndicator";
 import { OdpCustomerList } from "./OdpCustomerList";
 
-/** Shell panel detail aset map — responsive (BottomSheet di mobile, Dialog di desktop).
+/** Shell panel detail aset map - responsive (BottomSheet di mobile, Dialog di desktop).
  *  Generik: aset lain (ODC/OLT/FAT) tinggal pakai shell yang sama tanpa redesign. */
 export function MapAssetPanel({ open, onClose, isMobile, title, subtitle, children }: {
   open: boolean; onClose: () => void; isMobile: boolean;
@@ -1016,7 +1016,7 @@ export function OdpDetailPanel({ odpId, isMobile, onClose, onOpenCustomer, onEdi
   );
 }
 ```
-⚠️ Verify `SkeletonList` export + props (`grep -n "SkeletonList" client/components/ui/skeleton.tsx`) — if its prop isn't `rows`, match the real signature; if absent, use 3 stacked `<Skeleton className="h-16 w-full" />`. Verify `text-asset-odp` class exists (`grep -n "asset-odp" client/index.css tailwind.config.*`) — else use `style={{color:"var(--asset-odp)"}}`-free fallback `text-success`.
+ Verify `SkeletonList` export + props (`grep -n "SkeletonList" client/components/ui/skeleton.tsx`) - if its prop isn't `rows`, match the real signature; if absent, use 3 stacked `<Skeleton className="h-16 w-full" />`. Verify `text-asset-odp` class exists (`grep -n "asset-odp" client/index.css tailwind.config.*`) - else use `style={{color:"var(--asset-odp)"}}`-free fallback `text-success`.
 
 - [ ] **Step 5: Verify + commit**
 
@@ -1055,10 +1055,10 @@ with:
                           onClick={() => { setSelectedInfo(null); setMobileInfoSheet(false); setOdpPanel({ id: odp.id, data: odpWithUtil }); }}
 ```
 
-- [ ] **Step 3: Render the panel** — next to the `{selectedCable && <CableDetailPanel …/>}` block (line ~1327) add:
+- [ ] **Step 3: Render the panel** - next to the `{selectedCable && <CableDetailPanel …/>}` block (line ~1327) add:
 
 ```tsx
-      {/* ODP mini-dashboard — lazy detail + ACS (menggantikan InfoWindow ODP) */}
+      {/* ODP mini-dashboard - lazy detail + ACS (menggantikan InfoWindow ODP) */}
       {odpPanel && (
         <OdpDetailPanel
           odpId={odpPanel.id}
@@ -1084,9 +1084,9 @@ with:
         />
       )}
 ```
-(`setLocation` exists at line ~514 `const [, setLocation] = useLocation();`; `readOnly`, `setQuickForm`, `setStartOdpId`, `setDrawMode`, `toast` all already used by the existing InfoWindow handlers — reuse verbatim.)
+(`setLocation` exists at line ~514 `const [, setLocation] = useLocation();`; `readOnly`, `setQuickForm`, `setStartOdpId`, `setDrawMode`, `toast` all already used by the existing InfoWindow handlers - reuse verbatim.)
 
-- [ ] **Step 4: Esc-close** — in the existing keydown effect (line ~649 `else if (selectedInfo) setSelectedInfo(null);`) add a branch BEFORE it:
+- [ ] **Step 4: Esc-close** - in the existing keydown effect (line ~649 `else if (selectedInfo) setSelectedInfo(null);`) add a branch BEFORE it:
 ```ts
         else if (odpPanel) setOdpPanel(null);
 ```
@@ -1105,7 +1105,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 10: Search — customer→ODP relation + server-backed results
+### Task 10: Search - customer→ODP relation + server-backed results
 
 **Files:**
 - Modify: `client/components/map/MapSearchBar.tsx`
@@ -1142,7 +1142,7 @@ Inside the component:
       .map((c) => ({ type: "customer" as const, id: c.id, name: c.name, subtitle: c.customerId, lat: c.lat, lng: c.lng, odpId: c.odpId })),
   ];
 ```
-(Adapt the mapped object's keys to the file's actual `SearchResult` shape — extend that interface with `odpId?: number | null`.)
+(Adapt the mapped object's keys to the file's actual `SearchResult` shape - extend that interface with `odpId?: number | null`.)
 
 (c) In the result-row rendering for `type === "customer"`, add an ODP chip + zoom-to-ODP action when the customer has `odpId` and the ODP is known:
 ```tsx
@@ -1166,7 +1166,7 @@ and a memo at top of component:
   const odpById = new Map<number, any>((data.odps ?? []).map((o: any) => [o.id, o]));
 ```
 
-- [ ] **Step 3: MapPage passes the handler** — at the `<MapSearchBar` usage (line ~1173) add prop:
+- [ ] **Step 3: MapPage passes the handler** - at the `<MapSearchBar` usage (line ~1173) add prop:
 ```tsx
           onOpenOdp={(odpId) => {
             const odp = data?.odps.find((o) => o.id === odpId);
@@ -1175,7 +1175,7 @@ and a memo at top of component:
             setOdpPanel({ id: odpId, data: odp ?? {} });
           }}
 ```
-(Verify how `handleSearchResultClick` pans — `sed -n '836,845p' client/pages/MapPage.tsx` — and mirror its pan/zoom calls exactly.)
+(Verify how `handleSearchResultClick` pans - `sed -n '836,845p' client/pages/MapPage.tsx` - and mirror its pan/zoom calls exactly.)
 
 - [ ] **Step 4: Verify + commit**
 
@@ -1193,9 +1193,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ### Task 11: Optical threshold settings UI (IntegrationPage, GenieACS section)
 
 **Files:**
-- Modify: `client/pages/IntegrationPage.tsx` (GenieACS card, ~lines 1256–1365)
+- Modify: `client/pages/IntegrationPage.tsx` (GenieACS card, ~lines 1256-1365)
 
-- [ ] **Step 1: Read the GenieACS section first** (`sed -n '1256,1370p' client/pages/IntegrationPage.tsx`) — it keeps `genieHost/geniePort/genieUser/geniePass` state hydrated from `GET /api/settings?category=genieacs` and saves via `PUT /api/settings/bulk`.
+- [ ] **Step 1: Read the GenieACS section first** (`sed -n '1256,1370p' client/pages/IntegrationPage.tsx`) - it keeps `genieHost/geniePort/genieUser/geniePass` state hydrated from `GET /api/settings?category=genieacs` and saves via `PUT /api/settings/bulk`.
 
 - [ ] **Step 2: Add two inputs + state following the exact same pattern**
 
@@ -1243,7 +1243,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 12: Final verification — build, tests, live UI smoke (mobile + desktop)
+### Task 12: Final verification - build, tests, live UI smoke (mobile + desktop)
 
 - [ ] **Step 1: Full static verification**
 

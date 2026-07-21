@@ -345,7 +345,7 @@ function ConnectionForm({
           <Select value={cableCoreId || "__none__"} onValueChange={(v) => setCableCoreId(v === "__none__" ? "" : v)}>
             <SelectTrigger><SelectValue placeholder="Pilih core..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">— Tidak ada —</SelectItem>
+              <SelectItem value="__none__">- Tidak ada -</SelectItem>
               {availableCores.map((core) => (
                 <SelectItem key={core.id} value={core.id.toString()}>
                   Tube {core.tubeNumber} / Core {core.coreNumber} ({core.coreColor})
@@ -359,7 +359,7 @@ function ConnectionForm({
           <Select value={splitterId || "__none__"} onValueChange={(v) => setSplitterId(v === "__none__" ? "" : v)}>
             <SelectTrigger><SelectValue placeholder="Pilih splitter..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">— Tidak ada —</SelectItem>
+              <SelectItem value="__none__">- Tidak ada -</SelectItem>
               {(splitters ?? []).map((s) => (
                 <SelectItem key={s.id} value={s.id.toString()}>
                   {s.name} ({s.ratio})
@@ -494,7 +494,7 @@ export default function CoreConnectionPage() {
             Menampilkan koneksi dari/ke{" "}
             <strong>
               {activeFilter.type.toUpperCase()} #{activeFilter.id}
-              {" — "}{resolveName(activeFilter.type, parseInt(activeFilter.id))}
+              {" - "}{resolveName(activeFilter.type, parseInt(activeFilter.id))}
             </strong>
           </span>
           <button
@@ -558,7 +558,7 @@ export default function CoreConnectionPage() {
                         {conn.label ? (
                           <span className="font-medium">{conn.label}</span>
                         ) : (
-                          <span className="text-muted-foreground italic">—</span>
+                          <span className="text-muted-foreground italic">-</span>
                         )}
                       </td>
                       <td className="py-3 pr-4">
@@ -586,7 +586,7 @@ export default function CoreConnectionPage() {
                             {getCableCoreName(conn.cableCoreId)}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="py-3 text-right">

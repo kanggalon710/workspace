@@ -50,7 +50,7 @@ test("RECURRENCE_MODES has 3 entries", () => {
 });
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run - expect FAIL**
 
 Run: `npx tsx --test shared/ruleRecurrence.test.ts` → FAIL (module missing).
 
@@ -59,7 +59,7 @@ Run: `npx tsx --test shared/ruleRecurrence.test.ts` → FAIL (module missing).
 Create `shared/ruleRecurrence.ts`:
 
 ```ts
-/** Pure helpers for per-rule recurrence — no I/O, unit-testable. */
+/** Pure helpers for per-rule recurrence - no I/O, unit-testable. */
 export type RuleRecurrence = "once" | "on_reenter" | "always";
 
 export const RECURRENCE_MODES: { mode: RuleRecurrence; label: string; hint: string }[] = [
@@ -78,7 +78,7 @@ export function dedupBeforeFire(mode: RuleRecurrence): boolean { return mode !==
 export function recordAfterFire(mode: RuleRecurrence): boolean { return mode !== "always"; }
 ```
 
-- [ ] **Step 4: Run — expect 3/3 PASS**
+- [ ] **Step 4: Run - expect 3/3 PASS**
 
 Run: `npx tsx --test shared/ruleRecurrence.test.ts`
 
@@ -137,12 +137,12 @@ Run: `npm run typecheck && npm run build` → 0 errors; OK.
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(recurrence): migration — pipeline_rules.recurrence default once"
+git commit -m "feat(recurrence): migration - pipeline_rules.recurrence default once"
 ```
 
 ---
 
-### Task 4: Storage — persist recurrence + clear-fires methods
+### Task 4: Storage - persist recurrence + clear-fires methods
 
 **Files:** Modify `server/storage.ts` (`createRule` ~2461; `updateRule` ~2469; add two clear methods near `recordRuleFire` ~2582; ensure `inArray` imported)
 
@@ -195,7 +195,7 @@ async clearStageFires(cardId: number, stageId: number, pipelineId: number): Prom
 }
 ```
 
-`inArray` must be in the `drizzle-orm` import (used elsewhere in storage.ts — confirm; add if missing).
+`inArray` must be in the `drizzle-orm` import (used elsewhere in storage.ts - confirm; add if missing).
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -210,7 +210,7 @@ git commit -m "feat(recurrence): persist recurrence + clearReentryFires/clearSta
 
 ---
 
-### Task 5: Engine — per-rule recurrence branch
+### Task 5: Engine - per-rule recurrence branch
 
 **Files:** Modify `server/pipeline-automation.ts` (`runRulesForCard` ~187-198; imports at top)
 
@@ -254,7 +254,7 @@ git commit -m "feat(recurrence): runRulesForCard honors per-rule recurrence mode
 
 ---
 
-### Task 6: Routes — clear-on-leave, recurrence passthrough, retrigger endpoint
+### Task 6: Routes - clear-on-leave, recurrence passthrough, retrigger endpoint
 
 **Files:** Modify `server/routes.ts` (move endpoint ~4846; rule POST ~5311 + PATCH ~5359; add retrigger route near other card routes; ensure `parseRecurrence` imported)
 
@@ -313,18 +313,18 @@ git commit -m "feat(recurrence): clear-on-leave + recurrence passthrough + retri
 
 ---
 
-### Task 7: Client — recurrence in the rule editor
+### Task 7: Client - recurrence in the rule editor
 
 **Files:** Modify `client/components/pipelines/ruleFormState.ts` (`RuleDraft` ~1; `emptyDraft` ~74; `ruleToDraft` ~173; `draftToPayload` ~265); `client/components/pipelines/PipelineRulesDialog.tsx` (state ~41; `applyDraft` ~140; `currentDraft` ~163; trigger UI ~427)
 
-- [ ] **Step 1: ruleFormState — thread recurrence**
+- [ ] **Step 1: ruleFormState - thread recurrence**
 
 In `RuleDraft` type add `recurrence: import("@shared/ruleRecurrence").RuleRecurrence;` (or import the type at top: `import type { RuleRecurrence } from "@shared/ruleRecurrence";` then `recurrence: RuleRecurrence;`).
 In `emptyDraft()` add `recurrence: "once",`.
-In `ruleToDraft` (the stage_enter/time mapper that sets `d.triggerType`), add `d.recurrence = parseRecurrence((r as any).recurrence);` (import `parseRecurrence` from `@shared/ruleRecurrence`). Do this in the function that returns the full draft for all trigger types — set it unconditionally so every draft carries it.
-In `draftToPayload`, include `recurrence: d.recurrence` in the returned `payload` object (alongside `triggerPart`/actions/conditions — add it to the top-level payload spread for all branches; simplest: add `recurrence: d.recurrence,` to the final `payload` object construction).
+In `ruleToDraft` (the stage_enter/time mapper that sets `d.triggerType`), add `d.recurrence = parseRecurrence((r as any).recurrence);` (import `parseRecurrence` from `@shared/ruleRecurrence`). Do this in the function that returns the full draft for all trigger types - set it unconditionally so every draft carries it.
+In `draftToPayload`, include `recurrence: d.recurrence` in the returned `payload` object (alongside `triggerPart`/actions/conditions - add it to the top-level payload spread for all branches; simplest: add `recurrence: d.recurrence,` to the final `payload` object construction).
 
-- [ ] **Step 2: PipelineRulesDialog — state + hydrate + assemble**
+- [ ] **Step 2: PipelineRulesDialog - state + hydrate + assemble**
 
 Add state near the other trigger state (~line 41):
 ```ts
@@ -333,9 +333,9 @@ Add state near the other trigger state (~line 41):
 In `applyDraft(d)` (~140) add: `setRecurrence(d.recurrence);`
 In `currentDraft()` (~163) add `recurrence,` to the returned object.
 
-- [ ] **Step 3: PipelineRulesDialog — the "Pengulangan" select**
+- [ ] **Step 3: PipelineRulesDialog - the "Pengulangan" select**
 
-Import `RECURRENCE_MODES` from `@shared/ruleRecurrence` at the top. In the trigger section, right after the trigger-type `Combobox` (the "Pemicu" FormField ~427), add — only for stage_enter:
+Import `RECURRENCE_MODES` from `@shared/ruleRecurrence` at the top. In the trigger section, right after the trigger-type `Combobox` (the "Pemicu" FormField ~427), add - only for stage_enter:
 ```tsx
               {triggerType === "stage_enter" && (
                 <FormField label="Pengulangan" htmlFor="rule-recurrence"
@@ -363,7 +363,7 @@ git commit -m "feat(recurrence): recurrence select in rule editor"
 
 ---
 
-### Task 8: Client — manual retrigger button
+### Task 8: Client - manual retrigger button
 
 **Files:** Modify `client/hooks/usePipelines.ts` (add `useRetriggerCard`); `client/components/pipelines/CardDetailModal.tsx` (button)
 
@@ -382,7 +382,7 @@ export function useRetriggerCard(cardId: number) {
   });
 }
 ```
-(Match the exact `api.post` signature + the card query key used by `useCard` in this file — verify and adjust the key if different.)
+(Match the exact `api.post` signature + the card query key used by `useCard` in this file - verify and adjust the key if different.)
 
 - [ ] **Step 2: Add the button to CardDetailModal**
 

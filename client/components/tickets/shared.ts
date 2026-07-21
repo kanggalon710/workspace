@@ -3,7 +3,7 @@
 // supaya tidak ada definisi tipe/konstanta yang terduplikasi antar file.
 import { Plus, ArrowRight, UserPlus, MessageSquare, Calendar } from "lucide-react";
 
-// ── Types ────────────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------------
 export interface TicketCategory {
   id: number;
   name: string;
@@ -83,9 +83,9 @@ export interface TicketStats {
   total: number;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------
 export function formatDuration(minutes: number | null): string {
-  if (!minutes) return "—";
+  if (!minutes) return "-";
   if (minutes < 60) return `${minutes} menit`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -93,12 +93,12 @@ export function formatDuration(minutes: number | null): string {
 }
 
 export function formatDate(date: string | null): string {
-  if (!date) return "—";
+  if (!date) return "-";
   return new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function formatDateTime(date: string | null): string {
-  if (!date) return "—";
+  if (!date) return "-";
   return new Date(date).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
@@ -123,7 +123,7 @@ export function slaTone(slaDeadline: string | null | undefined): { tone: "ok" | 
   return { tone, remainingMs: remaining, label };
 }
 
-// ── Config ───────────────────────────────────────────────────────────────
+// -- Config ---------------------------------------------------------------
 export const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   low: { label: "Rendah", color: "bg-gray-100 text-gray-700" },
   medium: { label: "Sedang", color: "bg-blue-100 text-blue-700" },

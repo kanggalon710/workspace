@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { getAuthHeaders } from "@/lib/api";
 
-// ─── Types ─────────────────────────────────────────────────────────────────
+// --- Types -----------------------------------------------------------------
 interface Report {
   id: number;
   sessionId: number;
@@ -50,7 +50,7 @@ interface ReportStats {
   uniqueReporters: number;
 }
 
-// ─── Config ─────────────────────────────────────────────────────────────────
+// --- Config -----------------------------------------------------------------
 const SEVERITY_CFG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   info: { label: "Info", color: "text-blue-700 dark:text-blue-300", bg: "bg-blue-100 dark:bg-blue-950/40", icon: Info },
   warning: { label: "Warning", color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-100 dark:bg-amber-950/40", icon: AlertTriangle },
@@ -81,7 +81,7 @@ function fmtRelative(iso: string) {
   return `${days}h lalu`;
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────
+// --- Main Page -------------------------------------------------------------
 export default function CanvassingReportsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -261,7 +261,7 @@ export default function CanvassingReportsPage() {
               </div>
               <div className="text-2xl font-bold mt-0.5 text-blue-500">{stats?.withPhoto ?? 0}</div>
               <div className="text-[10px] text-muted-foreground">
-                {stats?.total ? `${Math.round((stats.withPhoto / stats.total) * 100)}% dari total` : "—"}
+                {stats?.total ? `${Math.round((stats.withPhoto / stats.total) * 100)}% dari total` : "-"}
               </div>
             </CardContent>
           </Card>
@@ -327,7 +327,7 @@ export default function CanvassingReportsPage() {
         </div>
       </div>
 
-      {/* List view — row-based, click to open detail popup */}
+      {/* List view - row-based, click to open detail popup */}
       <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 kanban-scrollbar">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -347,7 +347,7 @@ export default function CanvassingReportsPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {/* List header — visual scan helper */}
+            {/* List header - visual scan helper */}
             <div className="hidden md:grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 px-3 py-1 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold border-b">
               <div className="w-12">Foto</div>
               <div>Judul & Jenis</div>
@@ -416,8 +416,8 @@ export default function CanvassingReportsPage() {
   );
 }
 
-// ─── ReportListRow ─────────────────────────────────────────────────────────
-// Row-based list — foto thumbnail kecil di kiri, click buka popup detail
+// --- ReportListRow ---------------------------------------------------------
+// Row-based list - foto thumbnail kecil di kiri, click buka popup detail
 function ReportListRow({ report, onClick }: { report: Report; onClick: () => void }) {
   const sev = SEVERITY_CFG[report.severity] ?? SEVERITY_CFG.info;
   const SevIcon = sev.icon;
@@ -479,11 +479,11 @@ function ReportListRow({ report, onClick }: { report: Report; onClick: () => voi
             <span className="font-mono truncate">{report.lat.toFixed(3)}, {report.lng.toFixed(3)}</span>
           </>
         ) : (
-          <span className="italic">—</span>
+          <span className="italic">-</span>
         )}
       </div>
 
-      {/* Chevron (mobile only — indicator it's clickable) */}
+      {/* Chevron (mobile only - indicator it's clickable) */}
       <div className="md:hidden text-muted-foreground">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -493,7 +493,7 @@ function ReportListRow({ report, onClick }: { report: Report; onClick: () => voi
   );
 }
 
-// ─── Detail Dialog ─────────────────────────────────────────────────────────
+// --- Detail Dialog ---------------------------------------------------------
 function ReportDetailDialog({
   id, reports, onClose, onDelete, onZoomPhoto, canDelete,
 }: {

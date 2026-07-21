@@ -1,7 +1,7 @@
 /**
  * v4.2.17: ODP Heatmap & Repeat Issue Detector
  *
- * Tampilkan ODP dengan ≥3 tiket dalam N hari terakhir — kemungkinan masalah upstream/fisik.
+ * Tampilkan ODP dengan ≥3 tiket dalam N hari terakhir - kemungkinan masalah upstream/fisik.
  * Bukan customer-side issue. Action: dispatch senior tech untuk investigate ODP.
  */
 
@@ -43,7 +43,7 @@ export default function TicketHeatmapPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">ODP Repeat Issues</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            ODP dengan tiket berulang — kemungkinan masalah fisik (splitter, kabel, ODP itu sendiri) bukan masalah customer-side.
+            ODP dengan tiket berulang - kemungkinan masalah fisik (splitter, kabel, ODP itu sendiri) bukan masalah customer-side.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -172,7 +172,7 @@ export default function TicketHeatmapPage() {
       <Card className="bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
         <CardContent className="py-3 px-4 text-xs text-amber-900 dark:text-amber-200">
            <strong>Tips:</strong> ODP dengan banyak tiket berulang biasanya bermasalah di splitter, kabel feeder, atau ODP-nya sendiri (overheat, korosi konektor).
-          Dispatch senior teknisi untuk inspeksi fisik — jangan setiap kali assign teknisi berbeda yang akhirnya cuma reset modem.
+          Dispatch senior teknisi untuk inspeksi fisik - jangan setiap kali assign teknisi berbeda yang akhirnya cuma reset modem.
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,4 @@
-# Spec — MP1: Universal Pipeline Metrics (core)
+# Spec - MP1: Universal Pipeline Metrics (core)
 
 > Date: 2026-06-10 · Mitra-scoped · Sub-project 1 of the Pipeline Metrics epic. Build on `dev`.
 > Decomposition: MP1 core → MP2 time filters → MP3 formula builder → MP4 future data sources.
@@ -18,7 +18,7 @@ collection SP5 dashboard to every pipeline. Number / currency / percentage card 
    all pipelines; the existing collection "Metrik" dialog is untouched.
 4. Time filters (MP2) and formula/ratio types (MP3) are out of MP1.
 
-## 1. Schema — `shared/schema.ts` + migration
+## 1. Schema - `shared/schema.ts` + migration
 
 ```ts
 export const pipelineMetrics = mysqlTable("pipeline_metrics", {
@@ -47,7 +47,7 @@ export type PipelineMetric = typeof pipelineMetrics.$inferSelect;
 ```
 Migration: `CREATE TABLE IF NOT EXISTS` in the startup block (mirrors the other pipeline tables).
 
-## 2. Pure module — `shared/pipelineMetrics.ts` (tested)
+## 2. Pure module - `shared/pipelineMetrics.ts` (tested)
 
 ```ts
 export type MetricSource = "card_count" | "stage_count" | "field_agg";
@@ -69,7 +69,7 @@ export function formatMetricValue(value: number, opts: { type: MetricType; prefi
 ```
 Tests: `aggregate` (sum/avg/min/max numeric incl. non-numeric skipped; count non-empty; distinct); `formatMetricValue` (currency/percentage/number, prefix/suffix, decimals).
 
-## 3. Server engine — `server/pipeline-metrics-engine.ts`
+## 3. Server engine - `server/pipeline-metrics-engine.ts`
 
 ```ts
 export interface MetricResult { id: number; name: string; description: string | null; icon: string | null; color: string; type: string; value: number; formatted: string; }
@@ -77,7 +77,7 @@ export async function computeAllPipelineMetrics(req, pipelineId): Promise<Metric
 ```
 - Load metric defs (visible, ordered by position) for the pipeline (mitra-scoped).
 - Load the **permission-filtered** card set: all pipeline cards passed through the requester's row-level
-  `cardPassesFilter` (via `getCardFilterForRequest`) — so hidden cards never count (#14). Load card values.
+  `cardPassesFilter` (via `getCardFilterForRequest`) - so hidden cards never count (#14). Load card values.
 - Per metric: `cards` filtered by `stageIds` scope (if set) + `conditions` via `evaluateConditionGroups`
   (field-source; pass the card's value map; no snapshot → billing conditions evaluate false, documented).
   Then by `source`: `card_count`/`stage_count` → matching-card count; `field_agg` → collect each matching
@@ -85,24 +85,24 @@ export async function computeAllPipelineMetrics(req, pipelineId): Promise<Metric
 - A per-metric try/catch → a broken metric yields value 0, never breaks the strip.
 
 ## 4. Endpoints (`server/routes.ts`)
-- `GET /api/pipelines/:id/metrics` — `requirePermission("pipelines")` + `requirePipelineView`; returns
+- `GET /api/pipelines/:id/metrics` - `requirePermission("pipelines")` + `requirePipelineView`; returns
   `computeAllPipelineMetrics(req, pid)`.
-- `GET /api/pipelines/:id/metric-defs` — same gate; returns raw defs (for the config dialog).
-- `POST /api/pipelines/:id/metric-defs` — `manage`-gated; validate (enums; `fieldId` belongs to pipeline
+- `GET /api/pipelines/:id/metric-defs` - same gate; returns raw defs (for the config dialog).
+- `POST /api/pipelines/:id/metric-defs` - `manage`-gated; validate (enums; `fieldId` belongs to pipeline
   when field_agg; `stageIds` belong to pipeline; `conditions` via the existing `validateConditions`); insert.
-- `PATCH /api/pipelines/:id/metric-defs/:metricId` — same validation; update.
-- `DELETE /api/pipelines/:id/metric-defs/:metricId` — `manage`-gated; delete.
+- `PATCH /api/pipelines/:id/metric-defs/:metricId` - same validation; update.
+- `DELETE /api/pipelines/:id/metric-defs/:metricId` - `manage`-gated; delete.
 
 ## 5. Client
 - Hooks (`usePipelines.ts`): `usePipelineMetrics(pid)` (compute, for the strip), `useMetricDefs(pid)` +
   `useCreateMetricDef/useUpdateMetricDef/useDeleteMetricDef`.
-- `client/components/pipelines/MetricsStrip.tsx` — board strip (between description & `BoardFilters`).
+- `client/components/pipelines/MetricsStrip.tsx` - board strip (between description & `BoardFilters`).
   Renders visible computed metrics as `StatTile`s (icon resolved from a lucide map, `accent` = color,
   value = `formatted`, description). Responsive grid (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`), mobile-first.
   Hidden entirely if there are no visible metrics AND the user lacks `manage`. When the user has `manage`, a
   small gear/"Kelola metrik" affordance at the strip end (or a "+ Tambah metrik" prompt when empty) opens the
   config dialog. (Does NOT collide with the collection SP5 "Metrik" button.)
-- `client/components/pipelines/MetricsConfigDialog.tsx` — list + add/edit/delete; per-metric form:
+- `client/components/pipelines/MetricsConfigDialog.tsx` - list + add/edit/delete; per-metric form:
   name, description, **icon picker** (METRIC_ICONS grid), **color picker** (METRIC_COLORS swatches), type,
   source, aggregation (shown for field_agg), field `Combobox` (field_agg), stage multi-select (scope),
   `ConditionsBuilder` (WHERE), prefix/suffix/decimals, position (reorder), visibility toggle. Mobile-first.
@@ -129,4 +129,4 @@ typecheck + build + manual on dev.
 
 ## 9. Out of scope (→ MP2/MP3/MP4)
 Time filters + dynamic time context (MP2). Formula builder + ratio/formula card types (MP3). Non-card data
-sources — activities/billing/customers/etc. (MP4). Assignee/billing condition sources for metric WHERE-rules.
+sources - activities/billing/customers/etc. (MP4). Assignee/billing condition sources for metric WHERE-rules.

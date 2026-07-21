@@ -161,7 +161,7 @@ export function MapToolbar({
             onClick={onCancelDraw}
             className="px-3 py-1.5 rounded-lg text-destructive text-xs font-medium hover:bg-destructive/10 transition-colors"
           >
-            ✕ Batal
+             Batal
           </button>
         </div>
       )}

@@ -181,9 +181,9 @@ client.on("message", async (msg) => {
                 {[
                   ["lat", "✓", "-7.2195"],
                   ["lng", "✓", "107.9047"],
-                  ["radius", "—", "1000 (50–20000)"],
-                  ["limit", "—", "5 (1–20)"],
-                  ["threshold", "—", "250 (50–2000)"],
+                  ["radius", "-", "1000 (50-20000)"],
+                  ["limit", "-", "5 (1-20)"],
+                  ["threshold", "-", "250 (50-2000)"],
                 ].map(([name, req, desc]) => (
                   <div key={name} className="flex gap-1.5">
                     <code className="font-mono font-bold" style={{ color: T.accent }}>{name}</code>

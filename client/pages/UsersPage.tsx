@@ -48,7 +48,7 @@ interface RoleItem {
   userCount?: number; createdAt: string | null;
 }
 
-// ─────────────────────────────────────────────────────────────
+// -------------------------------------------------------------
 const ROLE_COLORS: Record<string, string> = {
   admin:     "from-rose-500 to-red-600",
   marketing: "from-violet-500 to-purple-600",
@@ -82,13 +82,13 @@ function fmtRelative(iso: string | null): string {
 }
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // MAIN PAGE
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const qc = useQueryClient();
@@ -104,7 +104,7 @@ export default function UsersPage() {
   const [resetPwFor, setResetPwFor] = useState<SafeUser | null>(null);
   const [bulkAction, setBulkAction] = useState<{ type: string; payload?: any } | null>(null);
 
-  // Toggle lintas mitra — hanya JABNET System-Admin di mitra aktif 1. Default: JABNET saja.
+  // Toggle lintas mitra - hanya JABNET System-Admin di mitra aktif 1. Default: JABNET saja.
   const canCrossScope = !!currentUser?.isSystemAdmin && currentUser?.activeMitraId === 1;
   const [crossScope, setCrossScope] = useState(() => localStorage.getItem("users:crossScope") === "1");
   const scope = canCrossScope && crossScope ? "cross" : "own";
@@ -398,9 +398,9 @@ export default function UsersPage() {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // USER ROW
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: any) {
   const isActive = user.isActive === 1;
   return (
@@ -480,7 +480,7 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
 
       {/* Position (desktop) */}
       <div className="hidden md:block w-32 shrink-0 min-w-0">
-        <div className="text-xs truncate">{user.position || "—"}</div>
+        <div className="text-xs truncate">{user.position || "-"}</div>
         {user.department && <div className="text-[10px] text-muted-foreground truncate">{user.department}</div>}
       </div>
 
@@ -510,9 +510,9 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // USER DETAIL DRAWER (right-side panel-style dialog)
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 type DetailTab = "overview" | "activity" | "productivity" | "permissions";
 
 function UserDetailDrawer({ user, role, roles, onClose, onEdit, onResetPassword, onDeleted, currentUserId }: any) {
@@ -628,7 +628,7 @@ function UserDetailDrawer({ user, role, roles, onClose, onEdit, onResetPassword,
   );
 }
 
-// ─── Detail Tabs ───
+// --- Detail Tabs ---
 function OverviewTab({ user, role, stats }: any) {
   return (
     <div className="space-y-4">
@@ -814,9 +814,9 @@ function PermissionsTab({ role }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // FORM DIALOGS
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function UserFormDialog({ open, onClose, initial, roles, onSaved }: any) {
   const isEdit = !!initial;
   const [form, setForm] = useState<any>({});
@@ -1013,9 +1013,9 @@ function BulkRoleDialog({ open, onClose, roles, onApply, count }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // SHARED COMPONENTS
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function KpiTile({ icon, label, value, iconBg }: any) {
   return (
     <Card>
@@ -1070,7 +1070,7 @@ function DetailRow({ icon, label, value, mono }: any) {
       <div className="flex-1 min-w-0 grid grid-cols-3 gap-2">
         <div className="text-[11px] text-muted-foreground">{label}</div>
         <div className={`col-span-2 text-sm break-words ${mono ? "font-mono" : ""} ${value ? "" : "text-muted-foreground italic"}`}>
-          {value || "—"}
+          {value || "-"}
         </div>
       </div>
     </div>

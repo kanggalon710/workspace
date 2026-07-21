@@ -21,8 +21,8 @@ import {
 } from "lucide-react";
 
 const LEVEL_LABELS: Record<string, string> = {
-  new: "Pelanggan", perunggu: "Perunggu 🥉", perak: "Perak 🥈",
-  emas: "Emas 🥇", platinum: "Platinum 💎", berlian: "Berlian 👑", ambassador: "Ambassador 🌟",
+  new: "Pelanggan", perunggu: "Perunggu", perak: "Perak",
+  emas: "Emas", platinum: "Platinum", berlian: "Berlian", ambassador: "Ambassador",
 };
 
 const REWARD_PRESETS: Array<{
@@ -33,15 +33,15 @@ const REWARD_PRESETS: Array<{
   description: string;
   icon: string;
 }> = [
-  { key: "voucher_50k",   label: "Voucher Indomaret 50K", discountType: "voucher_indomaret", discountValue: 50000,   description: "Voucher Indomaret Rp 50.000", icon: "🎁" },
-  { key: "voucher_100k",  label: "Voucher Indomaret 100K", discountType: "voucher_indomaret", discountValue: 100000,  description: "Voucher Indomaret Rp 100.000", icon: "🎁" },
-  { key: "voucher_200k",  label: "Voucher Indomaret 200K", discountType: "voucher_indomaret", discountValue: 200000,  description: "Voucher Indomaret Rp 200.000 — milestone", icon: "🏆" },
-  { key: "free_30d",      label: "GRATIS 1 bulan",         discountType: "free_days",         discountValue: 30,       description: "Internet gratis 30 hari",         icon: "🌐" },
-  { key: "free_90d",      label: "GRATIS 3 bulan",         discountType: "free_days",         discountValue: 90,       description: "Internet gratis 90 hari",         icon: "🌐" },
-  { key: "free_365d",     label: "GRATIS 12 bulan",        discountType: "free_days",         discountValue: 365,      description: "Internet GRATIS 12 bulan — milestone Perak", icon: "🥈" },
-  { key: "speed_5",       label: "Speed Boost +5 Mbps",    discountType: "speed_upgrade",      discountValue: 5,        description: "Upgrade speed +5 Mbps", icon: "⚡" },
-  { key: "speed_10",      label: "Speed Boost +10 Mbps",   discountType: "speed_upgrade",      discountValue: 10,       description: "Upgrade speed +10 Mbps", icon: "⚡" },
-  { key: "cash_2jt",      label: "Cash Bonus Rp 2jt",      discountType: "cash_bonus",         discountValue: 2000000,  description: "Cash bonus Rp 2.000.000 — Platinum reward", icon: "💰" },
+  { key: "voucher_50k",   label: "Voucher Indomaret 50K", discountType: "voucher_indomaret", discountValue: 50000,   description: "Voucher Indomaret Rp 50.000", icon: "" },
+  { key: "voucher_100k",  label: "Voucher Indomaret 100K", discountType: "voucher_indomaret", discountValue: 100000,  description: "Voucher Indomaret Rp 100.000", icon: "" },
+  { key: "voucher_200k",  label: "Voucher Indomaret 200K", discountType: "voucher_indomaret", discountValue: 200000,  description: "Voucher Indomaret Rp 200.000 - milestone", icon: "" },
+  { key: "free_30d",      label: "GRATIS 1 bulan",         discountType: "free_days",         discountValue: 30,       description: "Internet gratis 30 hari",         icon: "" },
+  { key: "free_90d",      label: "GRATIS 3 bulan",         discountType: "free_days",         discountValue: 90,       description: "Internet gratis 90 hari",         icon: "" },
+  { key: "free_365d",     label: "GRATIS 12 bulan",        discountType: "free_days",         discountValue: 365,      description: "Internet GRATIS 12 bulan - milestone Perak", icon: "" },
+  { key: "speed_5",       label: "Speed Boost +5 Mbps",    discountType: "speed_upgrade",      discountValue: 5,        description: "Upgrade speed +5 Mbps", icon: "" },
+  { key: "speed_10",      label: "Speed Boost +10 Mbps",   discountType: "speed_upgrade",      discountValue: 10,       description: "Upgrade speed +10 Mbps", icon: "" },
+  { key: "cash_2jt",      label: "Cash Bonus Rp 2jt",      discountType: "cash_bonus",         discountValue: 2000000,  description: "Cash bonus Rp 2.000.000 - Platinum reward", icon: "" },
   { key: "percent_10",    label: "Diskon 10% sebulan",     discountType: "percent",            discountValue: 10,       description: "Diskon 10% untuk 1 periode tagihan", icon: "%" },
   { key: "percent_25",    label: "Diskon 25% sebulan",     discountType: "percent",            discountValue: 25,       description: "Diskon 25% untuk 1 periode tagihan", icon: "%" },
 ];
@@ -54,10 +54,10 @@ interface SahabatDetailDrawerProps {
 }
 
 function fmtRp(n: number | null | undefined) {
-  return n ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+  return n ? `Rp ${n.toLocaleString("id-ID")}` : "-";
 }
 function fmtDate(iso: string | null | undefined) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -76,7 +76,7 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
 
   const [tierDialog, setTierDialog] = useState(false);
 
-  // ─── Admin Actions state ─────────────────────────────────────
+  // --- Admin Actions state -------------------------------------
   const [pointsDelta, setPointsDelta] = useState(0);
   const [pointsReason, setPointsReason] = useState("");
 
@@ -153,14 +153,14 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
             <DialogHeader className="px-5 pt-5 pb-4 border-b bg-gradient-to-br from-rose-500 to-pink-600 text-white">
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center text-2xl shrink-0">
-                  {LEVEL_LABELS[detail.loyalty?.sahabatLevel ?? "new"]?.split(" ").slice(-1)[0] ?? "👤"}
+                  {(LEVEL_LABELS[detail.loyalty?.sahabatLevel ?? "new"] ?? "?").charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <DialogTitle className="text-white text-lg">{detail.customer.name}</DialogTitle>
                   <div className="flex items-center gap-2 text-xs text-white/90 mt-1 flex-wrap">
                     <span className="font-mono">#{detail.customer.customerId}</span>
                     <span>·</span>
-                    <span className="font-mono font-semibold">{detail.loyalty?.sahabatCode ?? detail.loyalty?.referralCode ?? "—"}</span>
+                    <span className="font-mono font-semibold">{detail.loyalty?.sahabatCode ?? detail.loyalty?.referralCode ?? "-"}</span>
                     <Badge className="bg-white/20 text-white border-white/30">
                       {LEVEL_LABELS[detail.loyalty?.sahabatLevel ?? "new"] ?? "Pelanggan"}
                     </Badge>
@@ -176,7 +176,7 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
                   <span>
                     {detail.levelProgress?.next
                       ? <><strong>{detail.levelProgress.remainingRefs}</strong> lagi ke {LEVEL_LABELS[detail.levelProgress.next]}</>
-                      : "Level maksimal 👑"}
+                      : "Level maksimal"}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
@@ -230,8 +230,8 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
               {activeTab === "overview" && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    <Stat icon={<Phone className="h-3.5 w-3.5" />} label="Nomor HP" value={detail.customer.phone ?? "—"} mono />
-                    <Stat icon={<MapPin className="h-3.5 w-3.5" />} label="Alamat" value={detail.customer.district ?? detail.customer.address ?? "—"} />
+                    <Stat icon={<Phone className="h-3.5 w-3.5" />} label="Nomor HP" value={detail.customer.phone ?? "-"} mono />
+                    <Stat icon={<MapPin className="h-3.5 w-3.5" />} label="Alamat" value={detail.customer.district ?? detail.customer.address ?? "-"} />
                     <Stat icon={<Wallet className="h-3.5 w-3.5" />} label="Tagihan Bulanan" value={fmtRp(detail.customer.billingPrice)} />
                     <Stat icon={<Flame className="h-3.5 w-3.5" />} label="Payment Streak" value={`${detail.loyalty?.onTimeStreak ?? 0} bulan`} />
                     <Stat icon={<Award className="h-3.5 w-3.5" />} label="Tenure" value={`${detail.loyalty?.tenureMonths ?? 0} bulan`} />
@@ -340,7 +340,7 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
                           <Textarea placeholder="Alasan (min 3 huruf)" value={pointsReason}
                             onChange={(e) => setPointsReason(e.target.value)} className="mb-2" />
                           {Math.abs(pointsDelta) > 10000 && (
-                            <div className="text-xs text-warning mb-2">⚠ Adjustment besar (&gt; 10.000 poin)</div>
+                            <div className="text-xs text-warning mb-2"> Adjustment besar (&gt; 10.000 poin)</div>
                           )}
                           <Button size="sm" className="w-full"
                             disabled={pointsDelta === 0 || pointsReason.trim().length < 3}
@@ -413,7 +413,7 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
                           </h4>
                           <div className="text-xs text-muted-foreground mb-2">
                             {detail?.loyalty?.isFrozen === 1
-                              ? "Aktifkan kembali — referral reward akan kembali jalan normal."
+                              ? "Aktifkan kembali - referral reward akan kembali jalan normal."
                               : "Stop reward issuance untuk akun ini (referral inbound tetap di-record tapi tidak generate voucher)."}
                           </div>
                           {detail?.loyalty?.isFrozen !== 1 && (
@@ -491,7 +491,7 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge className={`${color} border-0 text-[10px]`}>{status}</Badge>;
 }
 
-// ── Issue Reward Dialog (manual, with presets) ─────────────────
+// -- Issue Reward Dialog (manual, with presets) -----------------
 
 interface IssueRewardDialogProps {
   open: boolean;
@@ -638,7 +638,7 @@ function IssueRewardDialog({ open, onOpenChange, customerId, customerName, onSuc
                   placeholder="Goodwill customer keluhan, event hadiah, dsb..."
                   className="mt-1"
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">Wajib — untuk audit trail.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Wajib - untuk audit trail.</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -680,7 +680,7 @@ function IssueRewardDialog({ open, onOpenChange, customerId, customerName, onSuc
   );
 }
 
-// ── Tier Upgrade Dialog ──────────────────────────────────────────
+// -- Tier Upgrade Dialog ------------------------------------------
 interface TierUpgradeDialogProps {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -730,7 +730,7 @@ function TierUpgradeDialog({ open, onOpenChange, customerId, customerName, curre
             <Label className="text-xs font-semibold mb-2 block">Pilih Tier</Label>
             <div className="grid gap-2">
               {[
-                { key: "pelanggan", label: "Pelanggan (T1)", desc: "Default — auto-enroll semua customer. Voucher 50K per referral." },
+                { key: "pelanggan", label: "Pelanggan (T1)", desc: "Default - auto-enroll semua customer. Voucher 50K per referral." },
                 { key: "rtrw",      label: "Sahabat RT/RW (T2)", desc: "Kontrak mitra resmi. Biasanya otomatis saat capai Perunggu (5 ref)." },
                 { key: "desa",      label: "Sahabat Desa (T3)", desc: "Kemitraan BUMDes. Kantor desa gratis + revenue share." },
               ].map(t => (

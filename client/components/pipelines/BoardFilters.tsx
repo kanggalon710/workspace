@@ -65,14 +65,14 @@ export function BoardFilters({
   const advancedActiveCount =
     (preset !== "all" ? 1 : 0) + (assigneeId != null ? 1 : 0) + (filterField ? 1 : 0) + (sortActive ? 1 : 0);
 
-  // Arah sort selalu tersedia: kalau field kustom dipilih → A–Z/Z–A; kalau tidak, arah
+  // Arah sort selalu tersedia: kalau field kustom dipilih → A-Z/Z-A; kalau tidak, arah
   // berlaku untuk sort tanggal (Dibuat/Update terakhir) → Baru→Lama / Lama→Baru.
   // asc = terbaru dulu untuk tanggal (lihat compareByDate di boardCardMeta).
   const asc = sortDir === "asc";
   const dirToggle = sortActive
     ? { icon: asc ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />,
-        label: asc ? "A–Z" : "Z–A",
-        aria: asc ? "Ganti ke urut turun (Z–A)" : "Ganti ke urut naik (A–Z)" }
+        label: asc ? "A-Z" : "Z-A",
+        aria: asc ? "Ganti ke urut turun (Z-A)" : "Ganti ke urut naik (A-Z)" }
     : { icon: asc ? <ArrowDown className="size-3.5" /> : <ArrowUp className="size-3.5" />,
         label: asc ? "Baru → Lama" : "Lama → Baru",
         aria: asc ? "Ganti ke terlama dulu" : "Ganti ke terbaru dulu" };
@@ -83,7 +83,7 @@ export function BoardFilters({
     // neatly. On desktop everything sits inline in a balanced, content-sized row.
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Search — shares the first row with the mobile filter toggle, compact on desktop */}
+        {/* Search - shares the first row with the mobile filter toggle, compact on desktop */}
         <div className="flex-1 min-w-0 sm:flex-none sm:w-56">
           <Input
             inputSize="sm"
@@ -125,9 +125,9 @@ export function BoardFilters({
         </button>
       </div>
 
-      {/* Filter lanjutan — mobile dilipat (toggle di atas), ≥sm selalu tampil */}
+      {/* Filter lanjutan - mobile dilipat (toggle di atas), ≥sm selalu tampil */}
       <div className={`${expanded ? "flex" : "hidden"} sm:flex flex-wrap items-center gap-2`}>
-        {/* Urut by tanggal (Dibuat / Update terakhir) + arah — selalu aktif, jadi mengganti
+        {/* Urut by tanggal (Dibuat / Update terakhir) + arah - selalu aktif, jadi mengganti
             pilihan ini langsung mengubah urutan kartu di tiap kolom. */}
         <div className="flex items-center gap-1.5">
           <div className="w-32 sm:w-36">
@@ -207,8 +207,8 @@ export function BoardFilters({
             )}
           </>
         )}
-        {/* Sort by field kustom — opsional, meng-override sort tanggal di atas. Arahnya
-            dipakai bersama tombol arah di grup tanggal (label berubah jadi A–Z/Z–A). */}
+        {/* Sort by field kustom - opsional, meng-override sort tanggal di atas. Arahnya
+            dipakai bersama tombol arah di grup tanggal (label berubah jadi A-Z/Z-A). */}
         {sortable.length > 0 && onSortField && (
           <div className="w-36 sm:w-40">
             <Combobox
@@ -231,7 +231,7 @@ export function BoardFilters({
               onChange={(e) => onRange({ from: e.target.value, to: custom.to })}
               className="w-36"
             />
-            <span className="text-muted-foreground text-xs">–</span>
+            <span className="text-muted-foreground text-xs">-</span>
             <Input
               inputSize="sm"
               type="date"

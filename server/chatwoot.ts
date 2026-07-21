@@ -24,7 +24,7 @@
 import crypto from "crypto";
 import { storage } from "./storage.js";
 
-// ── Type definitions ──────────────────────────────────────────────────────
+// -- Type definitions ------------------------------------------------------
 
 interface ChatwootContact {
   id: number;
@@ -59,7 +59,7 @@ export interface ChatwootWebhookEvent {
   [key: string]: any;
 }
 
-// ── HMAC verification (optional, recommended) ─────────────────────────────
+// -- HMAC verification (optional, recommended) -----------------------------
 
 /**
  * Verify webhook signature dari Chatwoot.
@@ -77,7 +77,7 @@ export function verifyWebhookSignature(rawBody: string, signature: string | unde
   }
 }
 
-// ── Outbound API client ───────────────────────────────────────────────────
+// -- Outbound API client ---------------------------------------------------
 
 async function chatwootRequest(path: string, options: { method?: string; body?: any } = {}): Promise<any> {
   const config = await storage.getChatwootConfig();
@@ -102,7 +102,7 @@ async function chatwootRequest(path: string, options: { method?: string; body?: 
 
 /**
  * Update custom attributes pada Chatwoot conversation.
- * Dipakai untuk link ke JABNET ticket — agent CS bisa klik link langsung dari Chatwoot.
+ * Dipakai untuk link ke JABNET ticket - agent CS bisa klik link langsung dari Chatwoot.
  */
 export async function setConversationCustomAttributes(conversationId: string | number, attributes: Record<string, any>): Promise<void> {
   await chatwootRequest(`/conversations/${conversationId}/custom_attributes`, {
@@ -128,7 +128,7 @@ export async function sendChatwootMessage(
 }
 
 /**
- * Test koneksi — coba GET account info.
+ * Test koneksi - coba GET account info.
  */
 export async function testChatwootConnection(): Promise<{ success: boolean; account?: any; error?: string }> {
   try {
@@ -139,7 +139,7 @@ export async function testChatwootConnection(): Promise<{ success: boolean; acco
   }
 }
 
-// ── Read APIs for the Communications view (Batch 2a) ───────────────────────
+// -- Read APIs for the Communications view (Batch 2a) -----------------------
 
 /** List inboxes for the active mitra's account. */
 export async function listInboxes(): Promise<any[]> {
@@ -186,7 +186,7 @@ export async function listContactConversations(contactId: number | string): Prom
   return Array.isArray(res?.payload) ? res.payload : (Array.isArray(res) ? res : []);
 }
 
-// ── Contact sync (Batch 2b) ────────────────────────────────────────────────
+// -- Contact sync (Batch 2b) ------------------------------------------------
 
 /** Find an existing contact by identifier (customerId) first, else by normalized phone. */
 export async function findChatwootContact(customerId: string, phone: string | null | undefined, normalize: (p: string) => string): Promise<any | null> {
@@ -233,7 +233,7 @@ export async function upsertChatwootContact(
   return { contactId, action };
 }
 
-// ── Inbound webhook handler ────────────────────────────────────────────────
+// -- Inbound webhook handler ------------------------------------------------
 
 /**
  * Handle conversation_created event.
@@ -250,7 +250,7 @@ export async function handleConversationCreated(event: ChatwootWebhookEvent): Pr
   const conversationId = String(conv.id ?? event.id);
   const contact = conv.contact ?? conv.meta?.sender ?? event.contact;
 
-  // Cek kalau sudah ada link (idempotent — webhook bisa double-fire)
+  // Cek kalau sudah ada link (idempotent - webhook bisa double-fire)
   const existing = await storage.getChatwootLinkByConversation(conversationId);
   if (existing) return { ticketId: existing.ticketId, reason: "already linked" };
 
@@ -288,7 +288,7 @@ export async function handleConversationCreated(event: ChatwootWebhookEvent): Pr
   const title = (fullText || `Chat dari ${contact?.name ?? "customer"}`).slice(0, 80).trim();
   const description = fullText.slice(0, 500);
 
-  // Create ticket — pakai admin user (ID 1) sebagai createdBy
+  // Create ticket - pakai admin user (ID 1) sebagai createdBy
   const adminUser = await storage.getUserByUsername?.("admin");
   const createdBy = (adminUser as any)?.id ?? 1;
 
@@ -331,7 +331,7 @@ export async function handleConversationCreated(event: ChatwootWebhookEvent): Pr
 
 /**
  * Handle message_created event.
- * Cuma update existing ticket — append message ke notes/activity (kalau conversation sudah linked).
+ * Cuma update existing ticket - append message ke notes/activity (kalau conversation sudah linked).
  */
 export async function handleMessageCreated(event: ChatwootWebhookEvent): Promise<{ ticketId?: number; reason: string }> {
   const config = await storage.getChatwootConfig();
@@ -407,9 +407,9 @@ export async function notifyChatwootCheckpoint(ticketId: number, action: string,
 
   // Hanya notify untuk action penting yang customer-facing
   const importantActions: Record<string, string> = {
-    depart:   "🚗 Teknisi sedang otw ke lokasi",
-    arrive:   "📍 Teknisi sudah sampai di lokasi",
-    complete: "✅ Pengerjaan selesai",
+    depart:   " Teknisi sedang otw ke lokasi",
+    arrive:   " Teknisi sudah sampai di lokasi",
+    complete: " Pengerjaan selesai",
   };
   if (!importantActions[action]) return;
 
@@ -418,7 +418,7 @@ export async function notifyChatwootCheckpoint(ticketId: number, action: string,
 
   try {
     const msg = `${importantActions[action]} (Tiket #${ticket.ticketNumber}${byUserName ? ` · ${byUserName}` : ""})`;
-    // Private note — biar CS yang relay ke customer (atau setting: kirim langsung ke customer)
+    // Private note - biar CS yang relay ke customer (atau setting: kirim langsung ke customer)
     await sendChatwootMessage(link.conversationId, msg, "outgoing", true);
   } catch (e: any) {
     console.warn(`[Chatwoot] notify ${action} failed:`, e.message);
@@ -450,7 +450,7 @@ export async function sendChatwootMessageMultipart(
   for (const f of files) {
     fd.append("attachments[]", new Blob([new Uint8Array(f.buffer)], { type: f.contentType }), f.filename);
   }
-  // Jangan set Content-Type manual — biar fetch menetapkan boundary multipart.
+  // Jangan set Content-Type manual - biar fetch menetapkan boundary multipart.
   const res = await fetch(url, { method: "POST", headers: { api_access_token: config.apiAccessToken }, body: fd });
   if (!res.ok) {
     const text = await res.text().catch(() => "");

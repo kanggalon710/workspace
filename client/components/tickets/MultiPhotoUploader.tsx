@@ -119,7 +119,7 @@ export function MultiPhotoUploader({
     let gps: { lat: number; lng: number } | null = null;
     if (requireGPS) {
       gps = await getGps();
-      if (!gps) toast.warning("GPS tidak tersedia — foto tetap diupload tanpa lokasi");
+      if (!gps) toast.warning("GPS tidak tersedia - foto tetap diupload tanpa lokasi");
     }
     const capturedAt = new Date().toISOString();
     let preview = "";

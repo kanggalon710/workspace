@@ -39,17 +39,17 @@ import {
   Camera, MapPin, StickyNote, PenLine, Flag,
 } from "lucide-react";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 // Types dipindah ke ./components/tickets/shared (di-import di atas).
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 // Helpers & config dipindah ke ./components/tickets/shared (di-import di atas).
 
 const PAGE_SIZE = 15;
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+// -- Main Page --------------------------------------------------------------
 
 export default function TicketingPage() {
   const qc = useQueryClient();
@@ -81,7 +81,7 @@ export default function TicketingPage() {
     return () => clearTimeout(id);
   }, [search]);
 
-  // ── Queries ────────────────────────────────────────────────────────────
+  // -- Queries ------------------------------------------------------------
 
   const { data: stats, isLoading: statsLoading } = useQuery<TicketStats>({
     queryKey: ["ticket-stats"],
@@ -115,7 +115,7 @@ export default function TicketingPage() {
   });
 
   // customers/users hanya dibutuhkan dialog (create/edit/wizard/detail) untuk dropdown +
-  // resolve nama — lazy, supaya halaman list tidak menarik seluruh tabel.
+  // resolve nama - lazy, supaya halaman list tidak menarik seluruh tabel.
   const dialogNeedsLists = createOpen || wizardOpen || editTicket !== null || detailId !== null;
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["customers-list"],
@@ -148,7 +148,7 @@ export default function TicketingPage() {
     return m;
   }, [users]);
 
-  // ── Paginated tickets (filter + paginasi sudah di server) ──────────────
+  // -- Paginated tickets (filter + paginasi sudah di server) --------------
 
   const totalPages = Math.max(1, Math.ceil(total / ticketsPageSize));
   const paginated = tickets;
@@ -159,7 +159,7 @@ export default function TicketingPage() {
     setPage(1);
   };
 
-  // ── Delete ticket mutation ─────────────────────────────────────────────
+  // -- Delete ticket mutation ---------------------------------------------
 
   const deleteTicketMut = useMutation({
     mutationFn: (id: number) => api.delete(`/tickets/${id}`),
@@ -186,13 +186,13 @@ export default function TicketingPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  // -- Render -------------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* ── Header ─────────────────────────────────────────────────── */}
+        {/* -- Header --------------------------------------------------- */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-100">
@@ -204,7 +204,7 @@ export default function TicketingPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild title="ODP Repeat Issues — heatmap & investigasi">
+            <Button variant="outline" size="sm" asChild title="ODP Repeat Issues - heatmap & investigasi">
               <Link href="/tickets/heatmap">
                 <AlertCircle className="w-4 h-4 mr-1" /> Heatmap ODP
               </Link>
@@ -223,7 +223,7 @@ export default function TicketingPage() {
           </div>
         </div>
 
-        {/* ── Stats Row — clickable filters (v4.2.18 F.2) ──────────── */}
+        {/* -- Stats Row - clickable filters (v4.2.18 F.2) ------------ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatsCard
             label="Baru / Open"
@@ -262,10 +262,10 @@ export default function TicketingPage() {
         {/* v4.2.18 (C.4): SLA Performance Widget */}
         <SlaWidget />
 
-        {/* v4.2.16: Workload per Teknisi — laporan distribusi tiket */}
+        {/* v4.2.16: Workload per Teknisi - laporan distribusi tiket */}
         <TechnicianWorkloadPanel />
 
-        {/* ── Filter Bar ─────────────────────────────────────────────── */}
+        {/* -- Filter Bar ----------------------------------------------- */}
         <Card>
           <CardContent className="py-3 px-4">
             <div className="flex flex-col md:flex-row gap-3">
@@ -353,7 +353,7 @@ export default function TicketingPage() {
           )}
         </div>
 
-        {/* ── Ticket Table ───────────────────────────────────────────── */}
+        {/* -- Ticket Table --------------------------------------------- */}
         <Card>
           <CardContent className="p-0">
             {ticketsLoading ? (
@@ -568,7 +568,7 @@ export default function TicketingPage() {
         </Card>
       </div>
 
-      {/* ── Dialogs ──────────────────────────────────────────────────── */}
+      {/* -- Dialogs ---------------------------------------------------- */}
 
       <CreateEditDialog
         open={createOpen || editTicket !== null}
@@ -647,11 +647,11 @@ export default function TicketingPage() {
   );
 }
 
-// ── Stats Card ─────────────────────────────────────────────────────────────
+// -- Stats Card -------------------------------------------------------------
 
 // StatsCard dipindah ke ./components/tickets/StatsCard (di-import di atas).
 
-// ── Create / Edit Dialog ───────────────────────────────────────────────────
+// -- Create / Edit Dialog ---------------------------------------------------
 
 function CreateEditDialog({ open, onClose, ticket, categories, customers, users }: {
   open: boolean;
@@ -953,7 +953,7 @@ function getInitialForm(ticket: Ticket | null) {
   };
 }
 
-// ── Detail Dialog ──────────────────────────────────────────────────────────
+// -- Detail Dialog ----------------------------------------------------------
 
 function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onEdit, onDelete }: {
   ticketId: number | null;
@@ -999,7 +999,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
     onError: (e: any) => toast.error(e.message),
   });
 
-  // v4.2.16: Team — multi-technician (lead + helpers untuk kerja barengan di lapangan)
+  // v4.2.16: Team - multi-technician (lead + helpers untuk kerja barengan di lapangan)
   const { data: teamMembers = [] } = useQuery<Array<{ id: number; userId: number; role: string; userName: string; userRole: string; checkInAt: string | null; checkOutAt: string | null }>>({
     queryKey: ["ticket-team", ticketId],
     queryFn: () => api.get(`/tickets/${ticketId}/team`),
@@ -1105,7 +1105,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
             {/* v4.2.4: Workflow stages timeline */}
             <WorkflowSection ticketId={t.id} />
 
-            {/* v4.2.16: Foto Bukti — upload + gallery */}
+            {/* v4.2.16: Foto Bukti - upload + gallery */}
             <EvidencePanel
               evidence={evidence}
               onUpload={(data) => evidenceMut.mutate(data)}
@@ -1137,7 +1137,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
             <div className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t">
               <span className="text-sm font-medium text-gray-500 mr-1">Aksi:</span>
 
-              {/* v4.2.16: Tim Tugas — buka kapan aja, bukan cuma open/assigned */}
+              {/* v4.2.16: Tim Tugas - buka kapan aja, bukan cuma open/assigned */}
               <Button size="sm" variant="outline" onClick={() => setShowAssignForm(!showAssignForm)}>
                 <UserPlus className="w-3.5 h-3.5 mr-1" />
                 Tim Tugas
@@ -1186,7 +1186,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
               </Button>
             </div>
 
-            {/* v4.2.16: Tim Tugas — multi-teknisi (lead + helpers untuk kerja barengan) */}
+            {/* v4.2.16: Tim Tugas - multi-teknisi (lead + helpers untuk kerja barengan) */}
             {showAssignForm && (
               <TeamPanel
                 teamMembers={teamMembers}
@@ -1283,7 +1283,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// v4.2.4: Workflow section di Detail Dialog admin — vertical stage timeline + per-stage durasi
+// v4.2.4: Workflow section di Detail Dialog admin - vertical stage timeline + per-stage durasi
 function WorkflowSection({ ticketId }: { ticketId: number }) {
   const { data: workflow } = useQuery<{
     currentStage: string | null;
@@ -1383,9 +1383,9 @@ function parseActivityContent(act: TicketActivity): string {
   return act.content;
 }
 
-// ── Category Management Dialog ─────────────────────────────────────────────
+// -- Category Management Dialog ---------------------------------------------
 
-// v4.2.4: Workflow presets — sinkron dengan backend WORKFLOW_PRESETS di shared/schema.ts
+// v4.2.4: Workflow presets - sinkron dengan backend WORKFLOW_PRESETS di shared/schema.ts
 const FRONTEND_WORKFLOW_PRESETS: Record<string, { label: string; description: string; stages: Array<{ key: string; label: string; color: string; sortOrder: number; slaMinutes?: number; isFinal?: boolean; requiresPhoto?: boolean; requiresGps?: boolean; requiresNote?: boolean; requiresSignature?: boolean; description?: string; icon?: string }> }> = {
   gangguan: {
     label: "Gangguan",
@@ -1651,7 +1651,7 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
                   <SelectContent>
                     {Object.entries(FRONTEND_WORKFLOW_PRESETS).map(([key, p]) => (
                       <SelectItem key={key} value={key} className="text-xs">
-                        {p.label} — {p.stages.length} stage
+                        {p.label} - {p.stages.length} stage
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1681,9 +1681,9 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// v4.2.16: TeamPanel — multi-teknisi (lead + helpers untuk kerja barengan di lapangan)
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// v4.2.16: TeamPanel - multi-teknisi (lead + helpers untuk kerja barengan di lapangan)
+// -------------------------------------------------------------------------
 
 function TeamPanel({
   teamMembers, userMap, onAdd, onRemove, onClose, isAdding,
@@ -1779,9 +1779,9 @@ function TeamPanel({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// v4.2.16: EvidencePanel — upload foto bukti (sebelum/proses/sesudah)
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// v4.2.16: EvidencePanel - upload foto bukti (sebelum/proses/sesudah)
+// -------------------------------------------------------------------------
 
 const EVIDENCE_TYPE_LABELS: Record<string, string> = {
   before: "Sebelum",
@@ -1897,9 +1897,9 @@ function EvidencePanel({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// v4.2.16: TechnicianWorkloadPanel — laporan distribusi tiket per teknisi
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// v4.2.16: TechnicianWorkloadPanel - laporan distribusi tiket per teknisi
+// -------------------------------------------------------------------------
 
 interface TechnicianWorkload {
   userId: number;
@@ -2017,7 +2017,7 @@ function TechnicianWorkloadPanel() {
                     })()}
                   </div>
                 </div>
-                {/* Mini bar — proporsi status */}
+                {/* Mini bar - proporsi status */}
                 {activeTotal > 0 && (
                   <div className="hidden md:flex items-center gap-0.5 shrink-0">
                     {w.open > 0 && (
@@ -2040,5 +2040,5 @@ function TechnicianWorkloadPanel() {
   );
 }
 
-// ── v4.2.18 (F.1): Kanban View ────────────────────────────────────────────
+// -- v4.2.18 (F.1): Kanban View --------------------------------------------
 // KanbanView dipindah ke ./components/tickets/KanbanView (di-import di atas).

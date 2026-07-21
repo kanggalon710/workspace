@@ -1,4 +1,4 @@
-/** Pure helper for pipeline-level RBAC — no DB. */
+/** Pure helper for pipeline-level RBAC - no DB. */
 export type PipelineLevel = "none" | "view" | "edit";
 
 export function resolvePipelineLevel(args: {

@@ -1,4 +1,4 @@
-/** Struktur workspace berbasis DIVISI (restrukturisasi v5.1 — feedback user).
+/** Struktur workspace berbasis DIVISI (restrukturisasi v5.1 - feedback user).
  *  Satu sumber kebenaran untuk: Sidebar, Beranda (pemilih divisi), dan
  *  DivisionHubPage (dashboard per divisi). Menambah/memindah modul cukup di sini. */
 import {
@@ -135,7 +135,7 @@ export const DIVISIONS: Division[] = [
   },
 ];
 
-/** Divisi utama per role default — user langsung diarahkan ke hub divisinya dari Beranda. */
+/** Divisi utama per role default - user langsung diarahkan ke hub divisinya dari Beranda. */
 export const ROLE_HOME_DIVISION: Record<string, string> = {
   marketing: "marketing",
   marketing_spv: "marketing",

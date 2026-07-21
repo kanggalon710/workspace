@@ -46,7 +46,7 @@ export interface WifiInterface {
 export interface ParsedDevice {
   deviceId: string;
   serialNumber: string;       // Factory serial dari _deviceId._SerialNumber (TR-069)
-  ponSerialNumber: string;    // PON Serial format (vendor prefix + 8 hex MAC) — yang OLT pakai
+  ponSerialNumber: string;    // PON Serial format (vendor prefix + 8 hex MAC) - yang OLT pakai
   ponMac: string;             // MAC PON port (sumber derive ponSerialNumber)
   manufacturer: string;
   oui: string;
@@ -74,7 +74,7 @@ export interface ParsedDevice {
   _raw?: any;
 }
 
-// ── Helper: safe deep get from TR-069 nested structure ──
+// -- Helper: safe deep get from TR-069 nested structure --
 function deepGet(obj: any, path: string): any {
   const parts = path.split(".");
   let cur = obj;
@@ -89,12 +89,12 @@ function val(obj: any, path: string): any {
   const node = deepGet(obj, path);
   if (node === undefined || node === null) return undefined;
   if (typeof node === "object" && "_value" in node) return node._value;
-  // If it's still an object (no _value), it's a container node, not a leaf — return undefined
+  // If it's still an object (no _value), it's a container node, not a leaf - return undefined
   if (typeof node === "object") return undefined;
   return node;
 }
 
-// ── Core fetch helper ──
+// -- Core fetch helper --
 async function genieFetch(
   config: GenieAcsConfig,
   method: string,
@@ -141,7 +141,7 @@ async function genieFetch(
   }
 }
 
-// ── PON Serial Number deriver ──
+// -- PON Serial Number deriver --
 // OLT register ONT pakai PON Serial Number, bukan factory hardware serial.
 // Format: [VENDOR_PREFIX 4 chars ASCII] + [8 hex dari last 4 bytes MAC PON port]
 // Contoh ZTE: PonMac=08:a5:ae:e7:f7:2f → "ZXIC" + "AEE7F72F" = "ZXICAEE7F72F"
@@ -167,7 +167,7 @@ function derivePonSerial(manufacturer: string, ponMac: string, productClass?: st
   return `${prefix}${last4Bytes}`;
 }
 
-// ── Device parser: TR-069 raw → simple flat object ──
+// -- Device parser: TR-069 raw → simple flat object --
 export function parseDevice(raw: any): ParsedDevice {
   const deviceId = raw._id || "";
   const devId = raw._deviceId || {};
@@ -188,7 +188,7 @@ export function parseDevice(raw: any): ParsedDevice {
       : "";
   }
 
-  // v4.2.10: PON Serial Number — yang OLT register-kan
+  // v4.2.10: PON Serial Number - yang OLT register-kan
   const ponMac = String(val(raw, "VirtualParameters.PonMac") || "").trim();
   const ponSerialNumber = derivePonSerial(manufacturer, ponMac, productClass);
 
@@ -227,7 +227,7 @@ export function parseDevice(raw: any): ParsedDevice {
   // Uptime
   const uptime = Number(val(raw, "InternetGatewayDevice.DeviceInfo.UpTime")) || 0;
 
-  // PPPoE username — v4.2.11: prioritas VirtualParameters.pppoeUsername (paling reliable),
+  // PPPoE username - v4.2.11: prioritas VirtualParameters.pppoeUsername (paling reliable),
   // lalu scan WANConnectionDevice 1-8 × WANPPPConnection 1-4 (ZTE F660 pakai WANPPPConnection.2 bukan .1)
   let pppoeUsername = "";
   const vpPppoe = val(raw, "VirtualParameters.pppoeUsername");
@@ -258,7 +258,7 @@ export function parseDevice(raw: any): ParsedDevice {
     }
   }
 
-  // TX Power (optical) — same decode rule as RX (value > 100 → (n/100) - 40 dBm)
+  // TX Power (optical) - same decode rule as RX (value > 100 → (n/100) - 40 dBm)
   let txPower = "";
   const txRaw = val(raw, "VirtualParameters.TXPower")
     || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.TXPower");
@@ -305,7 +305,7 @@ export function parseDevice(raw: any): ParsedDevice {
   }
 
   // WAN Connections (PPPoE + IP)
-  // v4.2.12: nested 8×4 — ZTE F660 register PPPoE di WANPPPConnection.2 (slot .1 dipakai DHCP TR-069)
+  // v4.2.12: nested 8×4 - ZTE F660 register PPPoE di WANPPPConnection.2 (slot .1 dipakai DHCP TR-069)
   const wanConnections: WanConnection[] = [];
   for (let i = 1; i <= 8; i++) {
     for (let j = 1; j <= 4; j++) {
@@ -324,14 +324,14 @@ export function parseDevice(raw: any): ParsedDevice {
           type: "PPPoE",
           name: String(pppName || `WAN_PPP_${i}_${j}`),
           status: String(pppStatus || "Unknown"),
-          externalIp: String(pppIp || "—"),
-          gateway: String(val(raw, `${pppBase}.RemoteIPAddress`) || val(raw, `${pppBase}.DefaultGateway`) || "—"),
-          dns: String(val(raw, `${pppBase}.DNSServers`) || "—"),
-          username: String(pppUser || "—"),
-          uptime: String(val(raw, `${pppBase}.Uptime`) || "—"),
-          macAddress: String(val(raw, `${pppBase}.MACAddress`) || "—"),
-          binding: String(val(raw, `${pppBase}.X_CT-COM_LanInterface`) || "—"),
-          lastError: String(val(raw, `${pppBase}.LastConnectionError`) || "—"),
+          externalIp: String(pppIp || "-"),
+          gateway: String(val(raw, `${pppBase}.RemoteIPAddress`) || val(raw, `${pppBase}.DefaultGateway`) || "-"),
+          dns: String(val(raw, `${pppBase}.DNSServers`) || "-"),
+          username: String(pppUser || "-"),
+          uptime: String(val(raw, `${pppBase}.Uptime`) || "-"),
+          macAddress: String(val(raw, `${pppBase}.MACAddress`) || "-"),
+          binding: String(val(raw, `${pppBase}.X_CT-COM_LanInterface`) || "-"),
+          lastError: String(val(raw, `${pppBase}.LastConnectionError`) || "-"),
         });
       }
       // IP connections
@@ -348,14 +348,14 @@ export function parseDevice(raw: any): ParsedDevice {
           type: "IP",
           name: String(ipName || `WAN_IP_${i}_${j}`),
           status: String(ipStatus || "Unknown"),
-          externalIp: String(ipAddr || "—"),
-          gateway: String(val(raw, `${ipBase}.DefaultGateway`) || "—"),
-          dns: String(val(raw, `${ipBase}.DNSServers`) || "—"),
-          username: "—",
-          uptime: String(val(raw, `${ipBase}.Uptime`) || "—"),
-          macAddress: String(val(raw, `${ipBase}.MACAddress`) || "—"),
-          binding: String(val(raw, `${ipBase}.X_CT-COM_LanInterface`) || "—"),
-          lastError: "—",
+          externalIp: String(ipAddr || "-"),
+          gateway: String(val(raw, `${ipBase}.DefaultGateway`) || "-"),
+          dns: String(val(raw, `${ipBase}.DNSServers`) || "-"),
+          username: "-",
+          uptime: String(val(raw, `${ipBase}.Uptime`) || "-"),
+          macAddress: String(val(raw, `${ipBase}.MACAddress`) || "-"),
+          binding: String(val(raw, `${ipBase}.X_CT-COM_LanInterface`) || "-"),
+          lastError: "-",
         });
       }
     }
@@ -372,8 +372,8 @@ export function parseDevice(raw: any): ParsedDevice {
       const hmac = h?.MACAddress?._value;
       if (hip || hmac) {
         connectedHosts.push({
-          ipAddress: hip || "—",
-          macAddress: hmac || "—",
+          ipAddress: hip || "-",
+          macAddress: hmac || "-",
           hostName: h?.HostName?._value || "",
           interfaceType: h?.InterfaceType?._value || "Unknown",
           active: h?.Active?._value !== false,
@@ -397,12 +397,12 @@ export function parseDevice(raw: any): ParsedDevice {
   };
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  PUBLIC API METHODS
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 /** Test connection to GenieACS NBI.
- *  Jujur: HTTP 200 saja TIDAK cukup — endpoint UI GenieACS / reverse-proxy juga balas 200
+ *  Jujur: HTTP 200 saja TIDAK cukup - endpoint UI GenieACS / reverse-proxy juga balas 200
  *  dengan HTML. NBI asli WAJIB mengembalikan array device. Plus laporkan jumlah device riil
  *  supaya "terhubung tapi 0 device" langsung kelihatan, bukan false-positive hijau. */
 export async function testConnection(config: GenieAcsConfig) {
@@ -410,14 +410,14 @@ export async function testConnection(config: GenieAcsConfig) {
   if (status === 401) throw new Error("GenieACS auth gagal: username/password salah");
   if (status >= 400) throw new Error(`GenieACS error: HTTP ${status}`);
   if (!Array.isArray(data)) {
-    throw new Error("Endpoint merespon tapi bukan NBI GenieACS (tidak mengembalikan array device). Cek host/port — NBI default port 7557, bukan port UI GenieACS.");
+    throw new Error("Endpoint merespon tapi bukan NBI GenieACS (tidak mengembalikan array device). Cek host/port - NBI default port 7557, bukan port UI GenieACS.");
   }
   // Hitung jumlah device sebenarnya (bukan cuma "1+") agar status mencerminkan kondisi riil.
   const stats = await getDeviceStats(config);
   return { connected: true, deviceCount: stats.total, online: stats.online, offline: stats.offline };
 }
 
-/** Light parser for list view — skips heavy WAN/WiFi/hosts parsing */
+/** Light parser for list view - skips heavy WAN/WiFi/hosts parsing */
 export function parseDeviceLight(raw: any): ParsedDevice {
   const deviceId = raw._id || "";
   const devId = raw._deviceId || {};
@@ -426,7 +426,7 @@ export function parseDeviceLight(raw: any): ParsedDevice {
   const oui = devId._OUI || "";
   const productClass = devId._ProductClass || "";
   const macAddress = devId._MACAddress || "";
-  // v4.2.10: PON serial — derive dari PonMac
+  // v4.2.10: PON serial - derive dari PonMac
   const ponMac = String(val(raw, "VirtualParameters.PonMac") || "").trim();
   const ponSerialNumber = derivePonSerial(manufacturer, ponMac, productClass);
   const hardwareVersion = val(raw, "InternetGatewayDevice.DeviceInfo.HardwareVersion") || "";
@@ -477,7 +477,7 @@ export function parseDeviceLight(raw: any): ParsedDevice {
     if (!isNaN(num)) rxPower = num > 100 ? ((num / 100) - 40).toFixed(2) : String(num);
   }
 
-  // TX Power — same decode rule as RX
+  // TX Power - same decode rule as RX
   let txPower = "";
   const txRaw = val(raw, "VirtualParameters.TXPower") || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.TXPower");
   if (txRaw !== undefined && txRaw !== null && txRaw !== "") {
@@ -509,7 +509,7 @@ export function parseDeviceLight(raw: any): ParsedDevice {
   };
 }
 
-/** Get devices with optional query, pagination — uses LIGHT parser for speed */
+/** Get devices with optional query, pagination - uses LIGHT parser for speed */
 export async function getDevices(config: GenieAcsConfig, query: any = {}, limit = 50, skip = 0) {
   const params = new URLSearchParams();
   if (Object.keys(query).length > 0) params.set("query", JSON.stringify(query));
@@ -521,14 +521,14 @@ export async function getDevices(config: GenieAcsConfig, query: any = {}, limit 
   if (!Array.isArray(data)) {
     // Bukan array = bukan NBI GenieACS (mis. salah ke port UI). Lempar agar UI tampilkan
     // sebab sebenarnya, bukan "list kosong" yang menyesatkan.
-    throw new Error("Respon GenieACS bukan array device — cek host/port (NBI default 7557, bukan port UI GenieACS).");
+    throw new Error("Respon GenieACS bukan array device - cek host/port (NBI default 7557, bukan port UI GenieACS).");
   }
   return data.map((d: any) => parseDeviceLight(d));
 }
 
 /** Targeted fetch: HANYA device milik sekumpulan pelanggan (mis. satu ODP) via query NBI,
  *  bukan fetch SEMUA device (~10k) tiap klik ODP. Payload kecil → cepat. LIGHT parser.
- *  Match PON-serial (derived) tidak ter-cover di sini (butuh full list) — lihat buildIdentifierQuery. */
+ *  Match PON-serial (derived) tidak ter-cover di sini (butuh full list) - lihat buildIdentifierQuery. */
 export async function getDevicesByIdentifiers(
   config: GenieAcsConfig,
   ids: { serials?: (string | null | undefined)[]; pppoeUsernames?: (string | null | undefined)[] },
@@ -561,16 +561,16 @@ export async function getDevice(config: GenieAcsConfig, deviceId: string) {
   return parsed;
 }
 
-/** Get device count stats — lightweight, only fetches _id and _lastInform */
+/** Get device count stats - lightweight, only fetches _id and _lastInform */
 export async function getDeviceStats(config: GenieAcsConfig) {
-  // Use projection to only get _lastInform — much faster for 700+ devices
+  // Use projection to only get _lastInform - much faster for 700+ devices
   const { status, data } = await genieFetch(config, "GET",
     "/devices/?projection=_lastInform&limit=10000", undefined, 30000);
   if (status >= 400) throw new Error(`GenieACS error: HTTP ${status}`);
   if (!Array.isArray(data)) {
-    // Jujur: non-array berarti bukan NBI GenieACS — lempar supaya badge "Terhubung"
+    // Jujur: non-array berarti bukan NBI GenieACS - lempar supaya badge "Terhubung"
     // tidak false-positive hijau saat host/port salah (mis. mengarah ke UI/proxy HTML).
-    throw new Error("Respon GenieACS bukan array device — cek host/port (NBI default 7557, bukan port UI GenieACS).");
+    throw new Error("Respon GenieACS bukan array device - cek host/port (NBI default 7557, bukan port UI GenieACS).");
   }
 
   const now = Date.now();

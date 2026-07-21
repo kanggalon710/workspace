@@ -173,7 +173,7 @@ function OdpForm({
       </div>
       {item && (
         <div className="pt-2 border-t border-border">
-          {/* Baris foto identik dengan panel /map (geser horizontal) — sumber data sama */}
+          {/* Baris foto identik dengan panel /map (geser horizontal) - sumber data sama */}
           <AssetPhotosGallery assetType="odp" assetId={item.id} layout="scroll" />
         </div>
       )}
@@ -205,7 +205,7 @@ export default function OdpsPage() {
   const columns: ColumnDef<Odp>[] = [
     { key: "code", label: "Kode" },
     { key: "name", label: "Nama" },
-    { key: "district" as any, label: "Kecamatan", render: (item) => (item as any).district || <span className="text-muted-foreground text-xs">—</span> },
+    { key: "district" as any, label: "Kecamatan", render: (item) => (item as any).district || <span className="text-muted-foreground text-xs">-</span> },
     { key: "splitterType", label: "Splitter" },
     {
       key: "capacity", label: "Port Usage",
@@ -220,7 +220,7 @@ export default function OdpsPage() {
   return (
     <AssetTable<Odp>
       title="ODP"
-      description="Optical Distribution Point — titik distribusi terdekat ke pelanggan"
+      description="Optical Distribution Point - titik distribusi terdekat ke pelanggan"
       data={data}
       isLoading={isLoading}
       columns={columns}

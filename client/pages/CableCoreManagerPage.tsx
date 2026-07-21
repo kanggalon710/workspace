@@ -147,7 +147,7 @@ export default function CableCoreManagerPage() {
               <SelectContent>
                 {cables?.map((cable: Cable) => (
                   <SelectItem key={cable.id} value={cable.id.toString()}>
-                    {cable.code} — {cable.name} ({cable.totalCore ?? 0} core, {cable.totalTube ?? 0} tube)
+                    {cable.code} - {cable.name} ({cable.totalCore ?? 0} core, {cable.totalTube ?? 0} tube)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -253,7 +253,7 @@ export default function CableCoreManagerPage() {
                                 ? "2px solid #D1D5DB"
                                 : "2px solid transparent",
                         }}
-                        title={`Core ${core.globalCoreNumber} (${core.coreColor}) — ${core.status}`}
+                        title={`Core ${core.globalCoreNumber} (${core.coreColor}) - ${core.status}`}
                       >
                         {/* Core number label */}
                         <span
@@ -277,7 +277,7 @@ export default function CableCoreManagerPage() {
                         {/* Broken X overlay */}
                         {isBroken && (
                           <span className="absolute inset-0 flex items-center justify-center text-red-200 text-lg font-bold drop-shadow">
-                            ✕
+
                           </span>
                         )}
                       </button>

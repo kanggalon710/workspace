@@ -1,4 +1,4 @@
-// Pure form-state helpers for the pipeline rule dialog — no React.
+// Pure form-state helpers for the pipeline rule dialog - no React.
 // SoC: hydration (ruleToDraft) + validation/body (draftToPayload) live here so
 // the same logic drives BOTH create and edit, and can be reasoned about in isolation.
 import type { PipelineRuleActionType, SetFieldConfig, MoveStageConfig, AssignConfig } from "@shared/schema";
@@ -8,7 +8,7 @@ import type { RuleRecurrence } from "@shared/ruleRecurrence";
 import { parseRecurrence } from "@shared/ruleRecurrence";
 import { notifyConfigToDraft, notifyDraftToConfig, emptyNotifyDraft, type NotifyDraft } from "@shared/notifyConfig";
 
-// ── condition serialization helper ───────────────────────────────────────────
+// -- condition serialization helper -------------------------------------------
 function buildConditionGroups(conditions: DraftCondition[][]) {
   return conditions
     .map((g) =>
@@ -21,7 +21,7 @@ function buildConditionGroups(conditions: DraftCondition[][]) {
     .filter((g) => g.length > 0);
 }
 
-// ── billing_sync field-map row ───────────────────────────────────────────────
+// -- billing_sync field-map row -----------------------------------------------
 export type BillingFieldMapRow = {
   _key: string;
   attr: string;         // key from BILLING_ATTRS
@@ -33,7 +33,7 @@ export function emptyBillingRow(): BillingFieldMapRow {
   return { _key: `bfm${_billingRowSeq++}`, attr: "", targetFieldId: "" };
 }
 
-// ── lead_* field-map row ─────────────────────────────────────────────────────
+// -- lead_* field-map row -----------------------------------------------------
 export type LeadFieldMapRow = {
   _key: string;
   attr: string;         // key from LEAD_ATTRS

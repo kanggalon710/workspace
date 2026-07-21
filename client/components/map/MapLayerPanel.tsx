@@ -25,7 +25,7 @@ const layerItems = [
   { key: "cable", label: "Kabel", color: ASSET_COLORS.cable.primary },
 ];
 
-/** Baris toggle checkbox (DRY — dipakai Label Nama, Garis Hirarki, Detail ODP). */
+/** Baris toggle checkbox (DRY - dipakai Label Nama, Garis Hirarki, Detail ODP). */
 function CheckRow({ checked, label, hint, onToggle }: { checked: boolean; label: string; hint?: string; onToggle: () => void }) {
   return (
     <button

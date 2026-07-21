@@ -30,7 +30,7 @@ export async function computeAllPipelineMetrics(
   const valuesByCard = await storage.getCardValuesForPipeline(pipelineId);
   const nowMs = Date.now();
 
-  // Permission row-level filter — only cards the requester may see.
+  // Permission row-level filter - only cards the requester may see.
   // cardPassesFilter expects FieldRuleCtx.values as Map<number, string>, so convert from Record.
   const visibleCards = cards.filter((c) => {
     const rec = valuesByCard.get(c.id) ?? {};

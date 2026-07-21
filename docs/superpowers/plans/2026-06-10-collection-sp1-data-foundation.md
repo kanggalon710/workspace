@@ -1,11 +1,11 @@
-# SP1 — Collection Data Foundation Implementation Plan
+# SP1 - Collection Data Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO git worktrees, NO branch switches. Verify `git branch --show-current` is `dev` before committing.**
 
 **Goal:** Make the pipeline automation engine able to read live billing-derived values (`days_overdue`, `outstanding_amount`, `invoice_due_date`, `last_payment_date`, `billing_status`) for any collection card (via `pipeline_cards.source_customer_id`) and use them in rule conditions through a new `"billing"` condition source.
 
-**Architecture:** A pure metrics module computes a `CollectionSnapshot` from a customer row. A storage accessor resolves the snapshot per card. The existing condition evaluator gains an optional snapshot parameter and a `billing` branch; the parsers/validator/UI gain `source: "billing"` + `attr`. No new triggers — billing conditions ride the existing stage_enter/event (`runRulesForCard`) and time-trigger evaluation paths. The billing_sync periodic card-scan is SP3.
+**Architecture:** A pure metrics module computes a `CollectionSnapshot` from a customer row. A storage accessor resolves the snapshot per card. The existing condition evaluator gains an optional snapshot parameter and a `billing` branch; the parsers/validator/UI gain `source: "billing"` + `attr`. No new triggers - billing conditions ride the existing stage_enter/event (`runRulesForCard`) and time-trigger evaluation paths. The billing_sync periodic card-scan is SP3.
 
 **Tech Stack:** TypeScript ESM (server + shared), Drizzle/mysql2, React 18 + Tailwind. Pure-module tests via `npx tsx --test`. Local imports use `.js` extensions.
 
@@ -13,14 +13,14 @@
 
 ## File Structure
 
-- **Create** `shared/collectionMetrics.ts` — pure metrics: `COLLECTION_ATTRS`, `computeDaysOverdue`, `buildCollectionSnapshot`, `attrValue`, `compareAttr`, `isPaidStatus`, types.
-- **Create** `shared/collectionMetrics.test.ts` — unit tests.
-- **Modify** `shared/schema.ts` — extend `RuleCondition` with `source`/`attr`, make `fieldId` optional.
-- **Modify** `server/pipeline-automation-helpers.ts` — billing-aware parse + evaluate; add `conditionsUseBilling`.
-- **Modify** `server/storage.ts` — `getCardCollectionSnapshot(cardId)`.
-- **Modify** `server/pipeline-automation.ts` — fetch + pass snapshot at the two eval sites.
-- **Modify** `server/routes.ts` — `validateConditions` accepts billing rows.
-- **Modify** `client/components/pipelines/ConditionsBuilder.tsx` + `client/components/pipelines/ruleFormState.ts` — Billing source + attr dropdown + (de)serialise.
+- **Create** `shared/collectionMetrics.ts` - pure metrics: `COLLECTION_ATTRS`, `computeDaysOverdue`, `buildCollectionSnapshot`, `attrValue`, `compareAttr`, `isPaidStatus`, types.
+- **Create** `shared/collectionMetrics.test.ts` - unit tests.
+- **Modify** `shared/schema.ts` - extend `RuleCondition` with `source`/`attr`, make `fieldId` optional.
+- **Modify** `server/pipeline-automation-helpers.ts` - billing-aware parse + evaluate; add `conditionsUseBilling`.
+- **Modify** `server/storage.ts` - `getCardCollectionSnapshot(cardId)`.
+- **Modify** `server/pipeline-automation.ts` - fetch + pass snapshot at the two eval sites.
+- **Modify** `server/routes.ts` - `validateConditions` accepts billing rows.
+- **Modify** `client/components/pipelines/ConditionsBuilder.tsx` + `client/components/pipelines/ruleFormState.ts` - Billing source + attr dropdown + (de)serialise.
 
 ---
 
@@ -107,13 +107,13 @@ test("compareAttr: unknown attr or unknown op → false", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/collectionMetrics.test.ts`
-Expected: FAIL — module/functions not found.
+Expected: FAIL - module/functions not found.
 
 - [ ] **Step 3: Write the module**
 
 Create `shared/collectionMetrics.ts`:
 ```ts
-/** Pure collection metrics — no I/O. Derives billing values used by the pipeline automation engine. */
+/** Pure collection metrics - no I/O. Derives billing values used by the pipeline automation engine. */
 import type { RuleConditionOp } from "./schema.js";
 
 export type CollectionAttrKey =
@@ -268,7 +268,7 @@ export type RuleCondition = {
 - [ ] **Step 2: Verify it compiles**
 
 Run: `npx tsc --noEmit`
-Expected: it may surface errors at `c.fieldId` usages in `server/pipeline-automation-helpers.ts` (fixed in Task 3). If the ONLY errors are there, that's expected — proceed. If errors appear elsewhere, note them; they are likely also `fieldId` reads to guard. Do not fix server eval here (Task 3 owns it).
+Expected: it may surface errors at `c.fieldId` usages in `server/pipeline-automation-helpers.ts` (fixed in Task 3). If the ONLY errors are there, that's expected - proceed. If errors appear elsewhere, note them; they are likely also `fieldId` reads to guard. Do not fix server eval here (Task 3 owns it).
 
 - [ ] **Step 3: Commit**
 
@@ -349,7 +349,7 @@ with
 - [ ] **Step 5: Add a `conditionsUseBilling` helper (end of file)**
 
 ```ts
-/** True if any condition group references a billing attr — gate the snapshot lookup. */
+/** True if any condition group references a billing attr - gate the snapshot lookup. */
 export function conditionsUseBilling(groups: RuleCondition[][]): boolean {
   return groups.some((g) => g.some((c) => c.source === "billing"));
 }
@@ -415,7 +415,7 @@ Near the other `../shared/*.js` imports at the top of `server/storage.ts`, add:
 ```ts
 import { buildCollectionSnapshot, type CollectionSnapshot } from "../shared/collectionMetrics.js";
 ```
-(`customers`, `and`, `eq`, and `getMitraId()` are already imported/used throughout this file — confirm with a quick grep before adding; do NOT duplicate.)
+(`customers`, `and`, `eq`, and `getMitraId()` are already imported/used throughout this file - confirm with a quick grep before adding; do NOT duplicate.)
 
 - [ ] **Step 2: Add the method to the `DatabaseStorage` class**
 
@@ -460,7 +460,7 @@ git commit -m "feat(collection): storage.getCardCollectionSnapshot (customer-der
 
 Add `conditionsUseBilling` to the existing import from `./pipeline-automation-helpers.js` (the import block at the top that already lists `parseConditionGroups, evaluateConditionGroups`).
 
-- [ ] **Step 2: `runRulesForCard` (~line 231) — fetch + pass snapshot**
+- [ ] **Step 2: `runRulesForCard` (~line 231) - fetch + pass snapshot**
 
 Replace the conditions block:
 ```ts
@@ -486,7 +486,7 @@ with:
     }
 ```
 
-- [ ] **Step 3: Time-trigger path (~line 318) — fetch + pass snapshot**
+- [ ] **Step 3: Time-trigger path (~line 318) - fetch + pass snapshot**
 
 Replace:
 ```ts
@@ -512,7 +512,7 @@ git commit -m "feat(collection): pass collection snapshot to condition eval (sta
 
 ---
 
-## Task 6: `validateConditions` accepts billing rows — `server/routes.ts`
+## Task 6: `validateConditions` accepts billing rows - `server/routes.ts`
 
 **Files:**
 - Modify: `server/routes.ts` (`validateConditions`, ~line 4368)
@@ -569,7 +569,7 @@ git commit -m "feat(collection): validateConditions accepts billing-source condi
 
 ---
 
-## Task 7: UI — Billing source in `ConditionsBuilder` + `ruleFormState`
+## Task 7: UI - Billing source in `ConditionsBuilder` + `ruleFormState`
 
 **Files:**
 - Modify: `client/components/pipelines/ConditionsBuilder.tsx`
@@ -590,7 +590,7 @@ export type DraftCondition = { source?: "field" | "stage" | "billing"; fieldId: 
 
 In `ConditionsBuilder`, the source selector currently renders only when `hasStages`. Replace the `{hasStages && (<div className="w-24 shrink-0"><Combobox options={[field,stage]} .../></div>)}` block so the selector always renders and includes Billing:
 ```tsx
-                  {/* Source selector — Field / Billing always; Stage only when stages provided */}
+                  {/* Source selector - Field / Billing always; Stage only when stages provided */}
                   <div className="w-24 shrink-0">
                     <Combobox
                       options={[
@@ -634,13 +634,13 @@ Add `const isBillingRow = row.source === "billing";` near `isStageRow`, change t
                     </div>
                   )}
 ```
-The operator `<Combobox>` and the value `<Input>` blocks already render for non-stage rows — they apply to billing rows too (billing is not a stage row), so leave them. (`opsForRow` should be the full `OPS` for billing — since `isStageRow` is false for billing, `opsForRow = OPS` already.)
+The operator `<Combobox>` and the value `<Input>` blocks already render for non-stage rows - they apply to billing rows too (billing is not a stage row), so leave them. (`opsForRow` should be the full `OPS` for billing - since `isStageRow` is false for billing, `opsForRow = OPS` already.)
 
 - [ ] **Step 4: (De)serialise source/attr in `ruleFormState.ts`**
 
 There are exactly **three** spots to change.
 
-(a) **Read-back — two identical blocks** at ~line 158 and ~line 247 (both inside `ruleToDraft`). Each is:
+(a) **Read-back - two identical blocks** at ~line 158 and ~line 247 (both inside `ruleToDraft`). Each is:
 ```ts
     d.conditions = (r.conditions?.groups ?? []).map((g) =>
       g.map((c) => ({ fieldId: c.fieldId, op: c.op, value: c.value ?? "" })),
@@ -653,7 +653,7 @@ Replace BOTH occurrences with:
     );
 ```
 
-(b) **Serialise** — `draftToPayload`'s `conditionGroups` (~line 299), currently:
+(b) **Serialise** - `draftToPayload`'s `conditionGroups` (~line 299), currently:
 ```ts
   const conditionGroups = d.conditions
     .map((g) =>
@@ -663,7 +663,7 @@ Replace BOTH occurrences with:
     )
     .filter((g) => g.length > 0);
 ```
-Replace with (keeps billing rows — which have `fieldId === ""` — and emits source/attr):
+Replace with (keeps billing rows - which have `fieldId === ""` - and emits source/attr):
 ```ts
   const conditionGroups = d.conditions
     .map((g) =>
@@ -718,9 +718,9 @@ git add -A && git commit -m "chore(collection): SP1 final verification" || echo 
 
 1. Pipeline 7 → Otomasi → new rule: trigger **Waktu (time)**, anchor `card_created`, repeat every 1 day; condition **Billing → Hari Overdue (`days_overdue`) > 30**; action e.g. notify / move stage.
 2. On the worker tick, the rule fires only for cards whose linked customer (`source_customer_id`) is >30 days overdue; cards without a linked customer don't fire (snapshot null).
-3. Add a second condition **Billing → Tagihan Outstanding (`outstanding_amount`) > 0** — paid customers (outstanding 0) are excluded.
+3. Add a second condition **Billing → Tagihan Outstanding (`outstanding_amount`) > 0** - paid customers (outstanding 0) are excluded.
 4. A `stage_enter` rule with a `days_overdue > 7` billing condition fires only for overdue cards when a card enters the trigger stage.
 
 ## Notes for the implementer
-- Tenant isolation: `getCardCollectionSnapshot` scopes the customer lookup to `getMitraId()` — a card can never read another mitra's customer.
+- Tenant isolation: `getCardCollectionSnapshot` scopes the customer lookup to `getMitraId()` - a card can never read another mitra's customer.
 - Back-compat: legacy conditions (`{fieldId, op, value}`, no `source`) parse + evaluate exactly as before; `conditionsUseBilling` returns false so no extra customer lookup happens for non-collection rules.

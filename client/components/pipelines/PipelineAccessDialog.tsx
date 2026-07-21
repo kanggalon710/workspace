@@ -159,7 +159,7 @@ export function PipelineAccessDialog({
                               </span>
                             </div>
                             <p className="text-[10px] text-muted-foreground mt-1">
-                              Role bawaan — selalu punya semua izin pipeline dan tidak bisa dikurangi.
+                              Role bawaan - selalu punya semua izin pipeline dan tidak bisa dikurangi.
                             </p>
                           </div>
                         );
@@ -189,7 +189,7 @@ export function PipelineAccessDialog({
                             })}
                           </fieldset>
 
-                          {/* Filter Kartu — only shown when role has at least one capability */}
+                          {/* Filter Kartu - only shown when role has at least one capability */}
                           {hasAnyCap && (
                             <div className="mt-2.5 border-t border-border/40 pt-2">
                               <button

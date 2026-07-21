@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Base Skeleton — shimmer effect via CSS class `.skeleton` (defined in index.css).
+ * Base Skeleton - shimmer effect via CSS class `.skeleton` (defined in index.css).
  * Use className to set dimensions (h-4, w-24, rounded-md, etc.).
  */
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -9,7 +9,7 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 }
 
 /**
- * SkeletonText — single line of text placeholder.
+ * SkeletonText - single line of text placeholder.
  * Default width 100%, height matches body text (h-4).
  */
 export function SkeletonText({ className, lines = 1 }: { className?: string; lines?: number }) {
@@ -29,7 +29,7 @@ export function SkeletonText({ className, lines = 1 }: { className?: string; lin
 }
 
 /**
- * SkeletonCard — card placeholder with title + 2 lines + optional footer.
+ * SkeletonCard - card placeholder with title + 2 lines + optional footer.
  * Matches typical KPI tile and content card layout.
  */
 export function SkeletonCard({
@@ -63,7 +63,7 @@ export function SkeletonCard({
 }
 
 /**
- * SkeletonTable — table placeholder with N rows × M columns.
+ * SkeletonTable - table placeholder with N rows × M columns.
  * Includes header row + data rows.
  */
 export function SkeletonTable({
@@ -111,7 +111,7 @@ export function SkeletonTable({
 }
 
 /**
- * SkeletonKPIGrid — grid of N KPI tile placeholders.
+ * SkeletonKPIGrid - grid of N KPI tile placeholders.
  * Default 4 tiles responsive (2 cols mobile, 4 cols desktop).
  */
 export function SkeletonKPIGrid({
@@ -135,7 +135,7 @@ export function SkeletonKPIGrid({
 }
 
 /**
- * SkeletonChart — chart area placeholder with optional title.
+ * SkeletonChart - chart area placeholder with optional title.
  */
 export function SkeletonChart({
   className,
@@ -160,7 +160,7 @@ export function SkeletonChart({
 }
 
 /**
- * SkeletonList — list of items (avatar + 2 lines).
+ * SkeletonList - list of items (avatar + 2 lines).
  * Good for notification lists, activity feeds, user lists.
  */
 export function SkeletonList({

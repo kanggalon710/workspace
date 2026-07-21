@@ -105,7 +105,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
   const canMoveStage = writable && (caps.length === 0 || caps.includes("cards"));
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Teamspace board (pipeline.teamId != null): sembunyikan radio JABNET/Lintas mitra (BUG-005)
-  // & hard-delete (BUG-003 — pakai Arsipkan). Pipeline ops (lead/collection) tak berubah.
+  // & hard-delete (BUG-003 - pakai Arsipkan). Pipeline ops (lead/collection) tak berubah.
   const isTeamBoard = (pipeline as any)?.teamId != null;
   const [wide, setWide] = useState(() => { try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; } });
 
@@ -168,15 +168,15 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
               </div>
             </div>
 
-            {/* Body (scrolls). BUG-008: md+ = 2 kolom — kiri konten (deskripsi/checklist/
+            {/* Body (scrolls). BUG-008: md+ = 2 kolom - kiri konten (deskripsi/checklist/
                 komentar), kanan panel aksi STICKY (stage/prioritas/assignee/label/aksi)
                 supaya aksi sering dipakai tidak butuh scroll panjang (pola Cicle). */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <div className="md:grid md:grid-cols-[minmax(0,1fr)_16.5rem] md:items-start md:gap-6">
               {/* Panel aksi diberi latar berbeda (bg-muted) supaya kontrol tidak samar
-                  dengan latar konten — feedback user. */}
+                  dengan latar konten - feedback user. */}
               <aside className="mt-4 space-y-4 rounded-xl border bg-muted/40 p-3 md:order-2 md:mt-0 md:sticky md:top-0 md:max-h-[calc(85vh-7rem)] md:overflow-y-auto">
-              {/* Pindah Stage — click-based, mobile-friendly chips (no drag needed). The move
+              {/* Pindah Stage - click-based, mobile-friendly chips (no drag needed). The move
                   endpoint runs automation + timeline + audit server-side, same as drag. */}
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pindah Stage</span>
@@ -255,10 +255,10 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 </div>
               )}
 
-              {/* Teamspace: cover + selesai/tenggat + ulangi + label + aksi — panel aksi */}
+              {/* Teamspace: cover + selesai/tenggat + ulangi + label + aksi - panel aksi */}
               <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} section="side" />
 
-              {/* Lead link — show linked lead or "Buat Lead" button */}
+              {/* Lead link - show linked lead or "Buat Lead" button */}
               <div className="flex items-center gap-2 pt-1">
                 {leadLink?.link ? (
                   <a href="/leads" className="inline-flex items-center gap-1 text-xs text-primary underline">
@@ -272,7 +272,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
               </div>
               </aside>
 
-              {/* ── Kolom konten (kiri di md+) ── */}
+              {/* -- Kolom konten (kiri di md+) -- */}
               <div className="mt-4 min-w-0 space-y-4 md:order-1 md:mt-0">
               {/* BUG-002: deskripsi mendukung markdown (bold/italic/list/heading/link) + preview */}
               <div>
@@ -284,10 +284,10 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 />
               </div>
 
-              {/* Teamspace: checklist — konten utama */}
+              {/* Teamspace: checklist - konten utama */}
               <CardTeamExtras cardId={cardId} pipelineId={pipelineId} card={card} writable={writable} onClose={onClose} section="main" />
 
-              {/* Custom fields — inputs here; the Simpan Field button lives in the pinned footer. */}
+              {/* Custom fields - inputs here; the Simpan Field button lives in the pinned footer. */}
               {cf.visibleFields.length > 0 && (
                 <section>
                   <h4 className="mb-2 text-xs font-semibold text-muted-foreground">Field Kustom</h4>
@@ -346,8 +346,8 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
               </div>
             </div>
 
-            {/* Pinned footer — primary actions grouped together, always reachable (mobile-first).
-                BUG-003: di board tim, hard-delete DISEMBUNYIKAN — pakai "Arsipkan" (reversible,
+            {/* Pinned footer - primary actions grouped together, always reachable (mobile-first).
+                BUG-003: di board tim, hard-delete DISEMBUNYIKAN - pakai "Arsipkan" (reversible,
                 di bagian Aksi). Pipeline ops (lead/collection) tetap punya Hapus Kartu. */}
             {writable && (!isTeamBoard || cf.hasEditable) && (
               <div className="shrink-0 flex items-center justify-between gap-3 border-t bg-background px-5 py-3">

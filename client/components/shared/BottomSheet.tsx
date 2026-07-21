@@ -109,7 +109,7 @@ export function BottomSheet({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Handle — visual cue for drag */}
+        {/* Handle - visual cue for drag */}
         <div className="bottom-sheet-handle" />
 
         {/* Header */}

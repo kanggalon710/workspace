@@ -45,7 +45,7 @@ const sizeMap = {
 };
 
 /**
- * SystemStatusDot — pulsing indicator for backend/service health.
+ * SystemStatusDot - pulsing indicator for backend/service health.
  * Use in headers, sidebars, dashboards to show system status at-a-glance.
  *
  * @example

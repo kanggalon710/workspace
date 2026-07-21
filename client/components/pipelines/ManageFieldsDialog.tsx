@@ -35,12 +35,12 @@ function toRuleGroups(draft: DraftCondition[][]): FieldRuleCondition[][] {
     const grp: FieldRuleCondition[] = [];
     for (const row of group) {
       if (row.source === "stage") {
-        if (!row.value) continue; // no stage selected — skip
+        if (!row.value) continue; // no stage selected - skip
         grp.push({ source: "stage", op: row.op, value: row.value });
       } else {
-        if (row.fieldId === "") continue; // no field selected — skip
+        if (row.fieldId === "") continue; // no field selected - skip
         const needsVal = row.op !== "empty" && row.op !== "not_empty";
-        if (needsVal && !row.value) continue; // op needs a value but none given — skip
+        if (needsVal && !row.value) continue; // op needs a value but none given - skip
         grp.push({ source: "field", fieldId: Number(row.fieldId), op: row.op, value: row.value });
       }
     }
@@ -66,7 +66,7 @@ export function ManageFieldsDialog({
 
   const stages = (pipeline?.stages ?? []).map((s) => ({ id: s.id, label: s.label }));
 
-  // ── form state (shared by create + edit) ────────────────────────────────────
+  // -- form state (shared by create + edit) ------------------------------------
   const [editingId, setEditingId] = useState<number | null>(null);
   const [label, setLabel] = useState("");
   const [type, setType] = useState<PipelineFieldType>("text");
@@ -76,13 +76,13 @@ export function ManageFieldsDialog({
   const [assigneeMultiple, setAssigneeMultiple] = useState(false);
   const [dragId, setDragId] = useState<number | null>(null);
 
-  // ── rule sections state ──────────────────────────────────────────────────────
+  // -- rule sections state ------------------------------------------------------
   const [visibleWhen, setVisibleWhen] = useState<DraftCondition[][]>([]);
   const [requiredWhen, setRequiredWhen] = useState<DraftCondition[][]>([]);
   const [showVisibility, setShowVisibility] = useState(false);
   const [showRequired, setShowRequired] = useState(false);
 
-  // ── per-role access state ────────────────────────────────────────────────────
+  // -- per-role access state ----------------------------------------------------
   const [fieldPerms, setFieldPerms] = useState<Record<number, FieldAccessLevel>>({});
   const [showFieldPerms, setShowFieldPerms] = useState(false);
 
@@ -155,7 +155,7 @@ export function ManageFieldsDialog({
 
     const keys = Object.keys(base);
     // Return null (not undefined) so an edit that clears all rules actually persists the cleared
-    // config — updateField skips `config: undefined` but writes `config: null`.
+    // config - updateField skips `config: undefined` but writes `config: null`.
     if (keys.length === 0) return null;
     return JSON.stringify(base);
   };
@@ -510,7 +510,7 @@ export function ManageFieldsDialog({
                 </label>
               </div>
 
-              {/* ── Visibility rule section ─────────────────────────────────── */}
+              {/* -- Visibility rule section ----------------------------------- */}
               <div className="rounded-lg border border-border/50 overflow-hidden">
                 <button
                   type="button"
@@ -543,7 +543,7 @@ export function ManageFieldsDialog({
                 )}
               </div>
 
-              {/* ── Required rule section ───────────────────────────────────── */}
+              {/* -- Required rule section ------------------------------------- */}
               <div className="rounded-lg border border-border/50 overflow-hidden">
                 <button
                   type="button"
@@ -576,7 +576,7 @@ export function ManageFieldsDialog({
                 )}
               </div>
 
-              {/* ── Per-role access section ─────────────────────────────────── */}
+              {/* -- Per-role access section ----------------------------------- */}
               <div className="rounded-lg border border-border/50 overflow-hidden">
                 <button
                   type="button"

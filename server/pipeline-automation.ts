@@ -42,13 +42,13 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
   if (action.actionType === "create_card") {
     const targetStages = await storage.listStages(action.targetPipelineId!);
     if (!targetStages.some((s) => s.id === action.targetStageId)) {
-      console.warn(`[automation] action ${action.id}: target stage ${action.targetStageId} no longer exists — skipped`);
+      console.warn(`[automation] action ${action.id}: target stage ${action.targetStageId} no longer exists - skipped`);
       return false;
     }
     const assigneeId = (action.copyAssignee && card.assigneeId && await storage.canUserAccessPipeline(card.assigneeId, action.targetPipelineId!))
       ? card.assigneeId : null;
     if (action.copyAssignee && card.assigneeId && assigneeId === null) {
-      console.warn(`[automation] action ${action.id}: assignee ${card.assigneeId} lacks access to pipeline ${action.targetPipelineId} — created unassigned`);
+      console.warn(`[automation] action ${action.id}: assignee ${card.assigneeId} lacks access to pipeline ${action.targetPipelineId} - created unassigned`);
     }
 
     // SP3a: opt-in lineage. With reuseExisting, bind to an existing sibling instead of duplicating.
@@ -85,18 +85,18 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
   }
   if (action.actionType === "move_linked") {
     if (!action.targetPipelineId || !action.targetStageId) {
-      console.warn(`[automation] action ${action.id}: move_linked needs target pipeline + stage — skipped`);
+      console.warn(`[automation] action ${action.id}: move_linked needs target pipeline + stage - skipped`);
       return false;
     }
     const masterId = masterForSpawn(card.masterCardId, card.id);
     const sibling = await storage.getSiblingCardInPipeline(masterId, action.targetPipelineId, card.id);
     if (!sibling) {
-      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     const stages = await storage.listStages(action.targetPipelineId);
     if (!stages.some((s) => s.id === action.targetStageId)) {
-      console.warn(`[automation] action ${action.id}: move_linked target stage missing — skipped`);
+      console.warn(`[automation] action ${action.id}: move_linked target stage missing - skipped`);
       return false;
     }
     if (sibling.stageId === action.targetStageId) return false; // already there → no-op
@@ -105,13 +105,13 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
   }
   if (action.actionType === "set_field_linked") {
     if (!action.targetPipelineId) {
-      console.warn(`[automation] action ${action.id}: set_field_linked needs target pipeline — skipped`);
+      console.warn(`[automation] action ${action.id}: set_field_linked needs target pipeline - skipped`);
       return false;
     }
     const masterId = masterForSpawn(card.masterCardId, card.id);
     const sibling = await storage.getSiblingCardInPipeline(masterId, action.targetPipelineId, card.id);
     if (!sibling) {
-      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     const maps = await storage.getActionFieldMaps(action.id);
@@ -125,18 +125,18 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
   }
   if (action.actionType === "assign_linked") {
     if (!action.targetPipelineId) {
-      console.warn(`[automation] action ${action.id}: assign_linked needs target pipeline — skipped`);
+      console.warn(`[automation] action ${action.id}: assign_linked needs target pipeline - skipped`);
       return false;
     }
     const masterId = masterForSpawn(card.masterCardId, card.id);
     const sibling = await storage.getSiblingCardInPipeline(masterId, action.targetPipelineId, card.id);
     if (!sibling) {
-      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     const newAssignee = card.assigneeId ?? null;
     if (newAssignee != null && !(await storage.canUserAccessPipeline(newAssignee, action.targetPipelineId))) {
-      console.warn(`[automation] action ${action.id}: assignee ${newAssignee} lacks access to pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: assignee ${newAssignee} lacks access to pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     if (sibling.assigneeId === newAssignee) return false; // no-op
@@ -150,7 +150,7 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
       await storage.setCardValues(card.id, [{ fieldId: cfg.fieldId, value: cfg.value }]);
       return true;
     }
-    console.warn(`[automation] action ${action.id}: set_field config invalid or field missing — skipped`);
+    console.warn(`[automation] action ${action.id}: set_field config invalid or field missing - skipped`);
     return false;
   }
   if (action.actionType === "move_stage") {
@@ -160,14 +160,14 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
       await storage.moveCard(card.id, cfg.stageId, undefined, actorId);
       return true;
     }
-    console.warn(`[automation] action ${action.id}: move_stage config invalid, stage missing, or no-op — skipped`);
+    console.warn(`[automation] action ${action.id}: move_stage config invalid, stage missing, or no-op - skipped`);
     return false;
   }
   if (action.actionType === "assign") {
     const cfg = parseActionConfig("assign", action.actionConfig) as { assigneeId: number | null } | null;
-    if (!cfg) { console.warn(`[automation] action ${action.id}: assign config invalid — skipped`); return false; }
+    if (!cfg) { console.warn(`[automation] action ${action.id}: assign config invalid - skipped`); return false; }
     if (cfg.assigneeId != null && !(await storage.canUserAccessPipeline(cfg.assigneeId, card.pipelineId))) {
-      console.warn(`[automation] action ${action.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} - skipped`);
       return false;
     }
     await storage.updateCard(card.id, { assigneeId: cfg.assigneeId }, actorId);
@@ -175,7 +175,7 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
   }
   if (action.actionType === "notify") {
     const cfg = parseActionConfig("notify", action.actionConfig) as NotifyConfig | null;
-    if (!cfg) { console.warn(`[automation] notify action ${action.id}: config invalid — skipped`); return false; }
+    if (!cfg) { console.warn(`[automation] notify action ${action.id}: config invalid - skipped`); return false; }
     let acted = false;
     if (cfg.channels.includes("bell")) {
       const userId = cfg.bellTarget === "user" ? cfg.bellUserId
@@ -190,7 +190,7 @@ export async function applyAction(action: PipelineRuleAction, rule: PipelineRule
         });
         acted = true;
       } else {
-        console.warn(`[automation] notify action ${action.id}: bell target has no recipient — skipped bell`);
+        console.warn(`[automation] notify action ${action.id}: bell target has no recipient - skipped bell`);
       }
     }
     if (cfg.channels.includes("webhook") && cfg.webhookUrl) {
@@ -304,8 +304,8 @@ export async function runTimeTriggers(): Promise<{ evaluated: number; fired: num
           if (!cfg) continue;
           const groups = parseConditionGroups(rule.conditions);
           const cards = await storage.listCards(rule.pipelineId);
-          // Batch the per-card reads once per rule (anti-N+1): fires keyed by cardId, and — only when
-          // conditions/field_date need them — all card values for the pipeline in one query.
+          // Batch the per-card reads once per rule (anti-N+1): fires keyed by cardId, and - only when
+          // conditions/field_date need them - all card values for the pipeline in one query.
           const fires = await storage.getRuleFiresForRule(rule.id);
           const valuesByCard = (groups.length || cfg.anchor === "field_date")
             ? await storage.getAllCardValuesForPipeline(rule.pipelineId)

@@ -57,7 +57,7 @@ function formatBytes(bytes: string | number | undefined): string {
 }
 
 function formatUptime(uptime: string | undefined): string {
-  if (!uptime) return "—";
+  if (!uptime) return "-";
   return uptime
     .replace(/(\d+)w/g, "$1w ")
     .replace(/(\d+)d/g, "$1d ")
@@ -280,15 +280,15 @@ export default function ActiveSessionsPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-foreground truncate">{s.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono md:hidden">{s.address || "—"}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono md:hidden">{s.address || "-"}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-4 hidden md:table-cell">
-                      <span className="text-xs font-mono">{s.address || "—"}</span>
+                      <span className="text-xs font-mono">{s.address || "-"}</span>
                     </td>
                     <td className="py-2.5 px-4 hidden lg:table-cell">
-                      <span className="text-xs font-mono text-muted-foreground">{s.callerId || s["caller-id"] || "—"}</span>
+                      <span className="text-xs font-mono text-muted-foreground">{s.callerId || s["caller-id"] || "-"}</span>
                     </td>
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-1.5">

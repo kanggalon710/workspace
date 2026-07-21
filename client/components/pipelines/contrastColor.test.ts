@@ -8,7 +8,7 @@ test("hexToRgb: parses #rrggbb, #rgb, hash opsional; tolak invalid", () => {
   assert.deepEqual(hexToRgb("#f00"), { r: 255, g: 0, b: 0 });
   assert.equal(hexToRgb("nope"), null);
   assert.equal(hexToRgb(""), null);
-  // @ts-expect-error — guard runtime non-string
+  // @ts-expect-error - guard runtime non-string
   assert.equal(hexToRgb(null), null);
 });
 

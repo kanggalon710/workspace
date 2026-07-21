@@ -65,7 +65,7 @@ test("evaluateConditionGroups: ANY group passing → true; none → false", () =
 - [ ] **Step 3: Run tests, verify FAIL**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: FAIL — `parseConditionGroups`/`evaluateConditionGroups` not exported.
+Expected: FAIL - `parseConditionGroups`/`evaluateConditionGroups` not exported.
 
 - [ ] **Step 4: Implement**
 
@@ -104,19 +104,19 @@ Expected: all pass (prior + 4 new). Run `npm run typecheck` → 0.
 
 ```bash
 git add shared/schema.ts server/pipeline-automation-helpers.ts server/pipeline-automation-helpers.test.ts
-git commit -m "feat(pipelines): condition groups — RuleConditionGroup type + parseConditionGroups/evaluateConditionGroups (P4d-3)"
+git commit -m "feat(pipelines): condition groups - RuleConditionGroup type + parseConditionGroups/evaluateConditionGroups (P4d-3)"
 ```
 
 ---
 
-### Task 2: Engine — swap to group evaluation
+### Task 2: Engine - swap to group evaluation
 
 **Files:**
 - Modify: `server/pipeline-automation.ts`
 
 - [ ] **Step 1: Update imports + both runners**
 
-In the import from `"./pipeline-automation-helpers.js"`, replace `parseConditions` with `parseConditionGroups` and `evaluateConditions` with `evaluateConditionGroups` (if `parseConditions`/`evaluateConditions` are not used elsewhere in this file — grep to confirm; they are only used in the two condition gates).
+In the import from `"./pipeline-automation-helpers.js"`, replace `parseConditions` with `parseConditionGroups` and `evaluateConditions` with `evaluateConditionGroups` (if `parseConditions`/`evaluateConditions` are not used elsewhere in this file - grep to confirm; they are only used in the two condition gates).
 
 In `runStageEnterAutomations`, the condition gate currently:
 ```ts
@@ -165,7 +165,7 @@ git commit -m "feat(pipelines): engine evaluates condition groups (ANY-of-groups
 
 ---
 
-### Task 3: Routes — validateConditions (both shapes) + GET grouped enrichment
+### Task 3: Routes - validateConditions (both shapes) + GET grouped enrichment
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -215,18 +215,18 @@ becomes:
         }))),
       };
 ```
-(The returned object's `conditions` key now holds `{ groups }`. POST/PATCH `conditions: b.conditions ?? null` / `conditions: b.conditions` lines are unchanged — they pass through whatever the client sends, which is now `{ groups }` or null.)
+(The returned object's `conditions` key now holds `{ groups }`. POST/PATCH `conditions: b.conditions ?? null` / `conditions: b.conditions` lines are unchanged - they pass through whatever the client sends, which is now `{ groups }` or null.)
 
 - [ ] **Step 4: Typecheck + build**
 
 Run: `npm run typecheck && npm run build`
-Expected: routes.ts = 0 errors. Residuals appear in client (`usePipelines.ts`/`ruleFormState.ts`/`PipelineRulesDialog.tsx`) only after Task 4 changes the hook type — at THIS point client still compiles (it reads `r.conditions` as an array, and the server type isn't statically linked to the client). Report whatever residuals (likely none yet). If `parseConditions` is now an unused import in routes.ts, remove it from the import.
+Expected: routes.ts = 0 errors. Residuals appear in client (`usePipelines.ts`/`ruleFormState.ts`/`PipelineRulesDialog.tsx`) only after Task 4 changes the hook type - at THIS point client still compiles (it reads `r.conditions` as an array, and the server type isn't statically linked to the client). Report whatever residuals (likely none yet). If `parseConditions` is now an unused import in routes.ts, remove it from the import.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add server/routes.ts
-git commit -m "feat(pipelines): rule routes — validateConditions accepts groups + GET grouped enrichment (P4d-3)"
+git commit -m "feat(pipelines): rule routes - validateConditions accepts groups + GET grouped enrichment (P4d-3)"
 ```
 
 ---
@@ -244,7 +244,7 @@ In `client/hooks/usePipelines.ts`, change `RuleWithMaps.conditions` from `RuleCo
 ```
 (`RuleConditionWithLabel` stays as-is.)
 
-- [ ] **Step 2: ruleFormState — `RuleDraft.conditions` → groups**
+- [ ] **Step 2: ruleFormState - `RuleDraft.conditions` → groups**
 
 In `client/components/pipelines/ruleFormState.ts`:
 - Change `RuleDraft.conditions` from `DraftCondition[]` to `DraftCondition[][]`.
@@ -277,12 +277,12 @@ In `client/components/pipelines/ruleFormState.ts`:
   ```ts
   conditions: conditionGroups.length ? { groups: conditionGroups } : null,
   ```
-  (The payload object is `{ ...triggerPart, conditions: ..., actions }` — keep `actions` as-is from P4d-1.)
+  (The payload object is `{ ...triggerPart, conditions: ..., actions }` - keep `actions` as-is from P4d-1.)
 
 - [ ] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
-Expected: ruleFormState.ts = 0 errors. NEW residuals now in `PipelineRulesDialog.tsx` (its `conditions` state is `DraftCondition[]`, the `<ConditionsBuilder>` value type mismatch, and the read-side reads `r.conditions.length`/`.map`) — fixed in Tasks 5-6. Report the residual list (should be confined to PipelineRulesDialog.tsx + possibly ConditionsBuilder.tsx usage).
+Expected: ruleFormState.ts = 0 errors. NEW residuals now in `PipelineRulesDialog.tsx` (its `conditions` state is `DraftCondition[]`, the `<ConditionsBuilder>` value type mismatch, and the read-side reads `r.conditions.length`/`.map`) - fixed in Tasks 5-6. Report the residual list (should be confined to PipelineRulesDialog.tsx + possibly ConditionsBuilder.tsx usage).
 
 - [ ] **Step 4: Commit**
 
@@ -293,7 +293,7 @@ git commit -m "feat(pipelines): RuleWithMaps.conditions grouped + ruleFormState 
 
 ---
 
-### Task 5: `ConditionsBuilder` — grouped UI
+### Task 5: `ConditionsBuilder` - grouped UI
 
 **Files:**
 - Modify: `client/components/pipelines/ConditionsBuilder.tsx`
@@ -327,14 +327,14 @@ export function ConditionsBuilder({
   return (
     <div className="space-y-2">
       <div className="text-xs font-semibold text-muted-foreground">
-        Syarat (opsional) — cocok jika SALAH SATU grup terpenuhi
+        Syarat (opsional) - cocok jika SALAH SATU grup terpenuhi
       </div>
       {value.map((group, gi) => (
         <div key={gi}>
           {gi > 0 && <div className="text-[10px] font-semibold text-muted-foreground/70 my-1 text-center">ATAU</div>}
           <fieldset className="rounded-lg border border-border/60 p-2 space-y-1.5 m-0">
             <legend className="text-[10px] uppercase tracking-wide text-muted-foreground/70 px-1">
-              Grup #{gi + 1} — semua harus terpenuhi (DAN)
+              Grup #{gi + 1} - semua harus terpenuhi (DAN)
             </legend>
             {group.map((row, ri) => (
               <div key={ri} className="flex items-center gap-1">
@@ -391,7 +391,7 @@ git commit -m "feat(pipelines): ConditionsBuilder grouped UI (AND within, OR bet
 
 ---
 
-### Task 6: Dialog — grouped state + read-side
+### Task 6: Dialog - grouped state + read-side
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -404,7 +404,7 @@ Change the conditions state from `const [conditions, setConditions] = useState<D
 ```
 `applyDraft`'s `setConditions(d.conditions)` and `currentDraft`'s `conditions` reference need no change (the type now flows as `DraftCondition[][]`). The `<ConditionsBuilder fields={sourceFields} value={conditions} onChange={setConditions} />` call is unchanged (types now align with Task 5). Verify those compile.
 
-- [ ] **Step 2: Read-side — collapsed badge**
+- [ ] **Step 2: Read-side - collapsed badge**
 
 The collapsed-row badge (~line 244):
 ```tsx
@@ -419,7 +419,7 @@ becomes:
                             )}
 ```
 
-- [ ] **Step 3: Read-side — detail panel groups**
+- [ ] **Step 3: Read-side - detail panel groups**
 
 The detail "Syarat" block (~lines 295-307):
 ```tsx
@@ -436,7 +436,7 @@ becomes (groups: DAN within, ATAU between):
 ```tsx
                           {(r.conditions?.groups?.length ?? 0) > 0 && (
                             <div>
-                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-1">Syarat — cocok jika salah satu grup terpenuhi</div>
+                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-1">Syarat - cocok jika salah satu grup terpenuhi</div>
                               <div className="space-y-1.5">
                                 {r.conditions!.groups.map((group, gi) => (
                                   <div key={gi}>
@@ -485,5 +485,5 @@ git commit -m "feat(pipelines): rule dialog grouped conditions state + read-side
 - **Spec coverage:** §1 schema type → T1; §2 helpers → T1; §3 engine → T2; §4 routes (validate + GET) → T3; §5 frontend (hook → T4, ruleFormState → T4, ConditionsBuilder → T5, dialog read-side → T6); §6 edge cases (legacy flat → one group in parser/ruleToDraft/validate; empty group dropped in parser + draftToPayload + builder removeRow; no groups → always run) covered across T1/T4/T5; §7 testing → T1 unit + T6 manual.
 - **Type consistency:** stored `{groups: RuleCondition[][]}`; GET + hook `{groups: RuleConditionWithLabel[][]}`; client `RuleDraft.conditions: DraftCondition[][]`; `parseConditionGroups`/`evaluateConditionGroups` signatures consistent T1→T2→T3. `DraftCondition` unchanged.
 - **DRY/SoC:** `evaluateConditionGroups` reuses `evaluateConditions`; pure helpers TDD'd; `<fieldset>/<legend>` per group + aria-labels (standards).
-- **No migration:** conditions is opaque JSON; legacy flat arrays auto-handled by `parseConditionGroups` (server) — confirmed, no DB step.
+- **No migration:** conditions is opaque JSON; legacy flat arrays auto-handled by `parseConditionGroups` (server) - confirmed, no DB step.
 - **Residual tracking:** T4 (hook type) breaks the dialog; T5 fixes the builder; T6 clears the dialog → typecheck 0.

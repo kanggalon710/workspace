@@ -1,4 +1,4 @@
-// Galeri foto aset generik — dipakai oleh ODP/ODC/Tiang di halaman aset (grid) & panel /map (scroll).
+// Galeri foto aset generik - dipakai oleh ODP/ODC/Tiang di halaman aset (grid) & panel /map (scroll).
 // Backend: GET/POST/DELETE /api/asset-photos/:type/:id (+ /cover). Penyimpanan filesystem via server/uploads.ts.
 // Sumber data tunggal tabel asset_photos (odp_photos lama sudah dimigrasi).
 import { useRef, useState } from "react";
@@ -25,7 +25,7 @@ interface AssetPhotoMeta {
 const FEATURE_BY_KIND: Record<AssetPhotoKind, string> = { odp: "odps", odc: "odcs", pole: "poles" };
 
 /** layout:
- *  - "grid"   → 3 kolom (default, dipakai di halaman aset; aksi muncul saat hover — konteks desktop).
+ *  - "grid"   → 3 kolom (default, dipakai di halaman aset; aksi muncul saat hover - konteks desktop).
  *  - "scroll" → satu baris geser horizontal (dipakai di panel /map yang sempit & mobile-heavy;
  *               aksi selalu tampil agar bisa ditekan di layar sentuh). */
 export function AssetPhotosGallery({

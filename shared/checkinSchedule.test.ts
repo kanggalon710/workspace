@@ -40,7 +40,7 @@ test("shouldSendNow: kirim saat hari cocok + waktu >= sendTime + belum terkirim"
   assert.ok(shouldSendNow(baseQ, new Date(2026, 6, 13, 14, 30)));   // catch-up setelah downtime
 });
 
-test("shouldSendNow: tidak kirim — sebelum jam / hari salah / nonaktif / sudah terkirim", () => {
+test("shouldSendNow: tidak kirim - sebelum jam / hari salah / nonaktif / sudah terkirim", () => {
   assert.ok(!shouldSendNow(baseQ, senin0859));
   assert.ok(!shouldSendNow(baseQ, minggu));
   assert.ok(!shouldSendNow({ ...baseQ, isActive: 0 }, senin0900));

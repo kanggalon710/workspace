@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-// Standard "teardrop" pin SVG path — anchored at the bottom tip (0,0).
+// Standard "teardrop" pin SVG path - anchored at the bottom tip (0,0).
 // Renders as a Google-Maps style location pin.
 const PIN_SVG_PATH =
   "M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z";
@@ -96,7 +96,7 @@ export default function CoverageCheckPage() {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  // ── Lead capture form state ──
+  // -- Lead capture form state --
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [regAddress, setRegAddress] = useState("");
@@ -104,7 +104,7 @@ export default function CoverageCheckPage() {
   const [regSubmitting, setRegSubmitting] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
 
-  // ── Set lokasi target & jalankan cek coverage ──
+  // -- Set lokasi target & jalankan cek coverage --
   const checkCoverage = useCallback(async (lat: number, lng: number) => {
     setCoords({ lat, lng });
     setLatInput(lat.toFixed(6));
@@ -137,13 +137,13 @@ export default function CoverageCheckPage() {
     }
   }, []);
 
-  // ── Map click handler ──
+  // -- Map click handler --
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     if (!e.latLng) return;
     checkCoverage(e.latLng.lat(), e.latLng.lng());
   }, [checkCoverage]);
 
-  // ── GPS handler ──
+  // -- GPS handler --
   const handleGPS = useCallback(() => {
     if (!("geolocation" in navigator)) {
       toast.error("Browser tidak mendukung GPS");
@@ -168,7 +168,7 @@ export default function CoverageCheckPage() {
     );
   }, [checkCoverage]);
 
-  // ── Manual lat/lng submit ──
+  // -- Manual lat/lng submit --
   const handleManualSubmit = useCallback(() => {
     const lat = parseFloat(latInput);
     const lng = parseFloat(lngInput);
@@ -183,7 +183,7 @@ export default function CoverageCheckPage() {
     checkCoverage(lat, lng);
   }, [latInput, lngInput, checkCoverage]);
 
-  // ── Places autocomplete handler ──
+  // -- Places autocomplete handler --
   const handlePlaceChanged = useCallback(() => {
     const place = autocompleteRef.current?.getPlace();
     if (!place?.geometry?.location) {
@@ -193,7 +193,7 @@ export default function CoverageCheckPage() {
     checkCoverage(place.geometry.location.lat(), place.geometry.location.lng());
   }, [checkCoverage]);
 
-  // ── Lead capture submit ──
+  // -- Lead capture submit --
   const handleRegister = async () => {
     if (!regName.trim() || !regPhone.trim()) {
       toast.error("Nama dan nomor WhatsApp wajib diisi");
@@ -243,7 +243,7 @@ export default function CoverageCheckPage() {
           <h1 className="text-2xl font-bold text-foreground">Cek Lokasi Coverage</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Cek apakah suatu lokasi tercover oleh jaringan FTTH JABNET dan ODP terdekat mana yang dapat dipakai. Akses publik — tidak perlu login.
+          Cek apakah suatu lokasi tercover oleh jaringan FTTH JABNET dan ODP terdekat mana yang dapat dipakai. Akses publik - tidak perlu login.
         </p>
       </div>
 
@@ -419,7 +419,7 @@ export default function CoverageCheckPage() {
 
           {result && !isChecking && (
             <>
-              {/* Empty state — no ODPs in database */}
+              {/* Empty state - no ODPs in database */}
               {result.nearestOdps.length === 0 && (
                 <Card className="bg-muted/30 border-dashed">
                   <CardContent className="p-4">
@@ -494,11 +494,11 @@ export default function CoverageCheckPage() {
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase">Splitter</p>
-                        <p className="text-sm font-semibold">{result.recommended.splitterType || "—"}</p>
+                        <p className="text-sm font-semibold">{result.recommended.splitterType || "-"}</p>
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase">Status ODP</p>
-                        <p className="text-sm font-semibold capitalize">{result.recommended.status || "—"}</p>
+                        <p className="text-sm font-semibold capitalize">{result.recommended.status || "-"}</p>
                       </div>
                     </div>
 
@@ -586,7 +586,7 @@ export default function CoverageCheckPage() {
               </Card>
               )}
 
-              {/* ── Lead Capture Form ── */}
+              {/* -- Lead Capture Form -- */}
               {(result.verdict === "covered" || result.verdict === "covered_full" || result.verdict === "marginal") && (
                 <Card className="border-green-500/30 bg-green-500/5">
                   <CardHeader className="pb-3">
@@ -717,7 +717,7 @@ export default function CoverageCheckPage() {
   );
 }
 
-// ── Public layout wrapper (used outside the authenticated Layout) ──
+// -- Public layout wrapper (used outside the authenticated Layout) --
 function PublicShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">

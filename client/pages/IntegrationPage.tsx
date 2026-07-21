@@ -574,7 +574,7 @@ export default function IntegrationPage() {
   const [metaAccessToken, setMetaAccessToken] = useState("");
   const [metaInited, setMetaInited] = useState(false);
 
-  // ── MPWA (WhatsApp Gateway) ──
+  // -- MPWA (WhatsApp Gateway) --
   const [mpwaEnabled, setMpwaEnabled] = useState(false);
   const [mpwaUrl, setMpwaUrl] = useState("https://mpwa.jabnet.id");
   const [mpwaToken, setMpwaToken] = useState("");
@@ -595,7 +595,7 @@ export default function IntegrationPage() {
     retry: false,
   });
 
-  // ── Telegram Bot ──
+  // -- Telegram Bot --
   const [tgEnabled, setTgEnabled] = useState(false);
   const [tgToken, setTgToken] = useState("");
   const [tgShowToken, setTgShowToken] = useState(false);
@@ -642,7 +642,7 @@ export default function IntegrationPage() {
     }
   }, [allSettings, genieInited, metaInited, mpwaInited]);
 
-  // ── Billing Sync (billing.jabnet.id) ──
+  // -- Billing Sync (billing.jabnet.id) --
   const [billEnabled, setBillEnabled] = useState(true);
   const [billPeakSec, setBillPeakSec] = useState("60");
   const [billOffSec, setBillOffSec] = useState("600");
@@ -704,7 +704,7 @@ export default function IntegrationPage() {
     try {
       const result: any = await api.post("/billing/sync", {});
       toast.success(
-        `Sync selesai — ${result?.updated ?? 0} updated, ${result?.created ?? 0} created`,
+        `Sync selesai - ${result?.updated ?? 0} updated, ${result?.created ?? 0} created`,
         { description: `Total ${result?.total ?? 0} pelanggan · error: ${result?.errors ?? 0}` }
       );
       refetchBillStatus();
@@ -775,7 +775,7 @@ export default function IntegrationPage() {
     try {
       const result: any = await api.post(`/billing/mitras/${selBillingMitra}/test`, { billingId: selBillingId.trim() });
       setBillMitraTestResult(result);
-      if (result?.ok) toast.success(`Berhasil — ${result.totalFound} pelanggan ditemukan`);
+      if (result?.ok) toast.success(`Berhasil - ${result.totalFound} pelanggan ditemukan`);
       else toast.warning("Reseller ID ini tidak mengembalikan pelanggan");
     } catch (err: any) { toast.error(err.message ?? "Test gagal"); }
     finally { setBillMitraTesting(false); }
@@ -786,7 +786,7 @@ export default function IntegrationPage() {
     setBillMitraSyncing(true);
     try {
       const result: any = await api.post(`/billing/mitras/${selBillingMitra}/sync`, {});
-      toast.success(`Sync selesai — ${result?.updated ?? 0} updated, ${result?.created ?? 0} created`, {
+      toast.success(`Sync selesai - ${result?.updated ?? 0} updated, ${result?.created ?? 0} created`, {
         description: `Total ${result?.total ?? 0} · error ${result?.errors ?? 0}`,
       });
       refetchBillingMitras();
@@ -892,7 +892,7 @@ export default function IntegrationPage() {
   // Render
   // ---------------------------------------------------------------------------
 
-  // ── A2: ringkasan System Health — gabungan sinyal live yang sudah dihitung di halaman ini ──
+  // -- A2: ringkasan System Health - gabungan sinyal live yang sudah dihitung di halaman ini --
   const healthItems: Array<{ label: string; status: "ok" | "warn" | "down" | "off"; detail: string }> = [
     {
       label: "GenieACS",
@@ -916,7 +916,7 @@ export default function IntegrationPage() {
     {
       label: "Billing Sync",
       status: !billHealth ? "off" : (billHealth.drift ?? 0) > 0 ? "warn" : "ok",
-      detail: !billHealth ? "—" : `drift ${billHealth.drift ?? 0} · stale ${billHealth.staleSyncCount ?? 0}`,
+      detail: !billHealth ? "-" : `drift ${billHealth.drift ?? 0} · stale ${billHealth.staleSyncCount ?? 0}`,
     },
   ];
   const healthTone: Record<"ok" | "warn" | "down" | "off", { dot: string; text: string }> = {
@@ -947,7 +947,7 @@ export default function IntegrationPage() {
       </div>
 
       {/* ================================================================= */}
-      {/* A2 — System Health (ringkasan status semua integrasi inti)        */}
+      {/* A2 - System Health (ringkasan status semua integrasi inti)        */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-4 space-y-3">
@@ -986,7 +986,7 @@ export default function IntegrationPage() {
       <DevDbSyncCard />
 
       {/* ================================================================= */}
-      {/* Card 1 — Google Maps Platform                                     */}
+      {/* Card 1 - Google Maps Platform                                     */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -1118,7 +1118,7 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card 2 — MikroTik RouterOS                                        */}
+      {/* Card 2 - MikroTik RouterOS                                        */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -1334,7 +1334,7 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card 2b — GenieACS TR-069                                         */}
+      {/* Card 2b - GenieACS TR-069                                         */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -1362,7 +1362,7 @@ export default function IntegrationPage() {
 
           <p className="text-sm text-muted-foreground">Manajemen perangkat CPE/ONT via protokol TR-069. Bridge ke billing via PPPoE username.</p>
 
-          {/* Sebab disconnect ditampilkan apa adanya (mis. salah port / auth) — bukan badge merah tanpa info. */}
+          {/* Sebab disconnect ditampilkan apa adanya (mis. salah port / auth) - bukan badge merah tanpa info. */}
           {!genieLiveStatus?.connected && genieLiveStatus?.configured && genieLiveStatus?.error && (
             <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 p-3 text-xs text-red-700 dark:text-red-400">
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
@@ -1469,7 +1469,7 @@ export default function IntegrationPage() {
                 if (!genieHost) { toast.error("Host wajib diisi"); return; }
                 try {
                   const r: any = await api.post("/genieacs/test", { host: genieHost, port: Number(geniePort) || 7557, username: genieUser, password: geniePass });
-                  toast.success(`Koneksi GenieACS berhasil — ${r?.deviceCount ?? 0} perangkat (${r?.online ?? 0} online).`);
+                  toast.success(`Koneksi GenieACS berhasil - ${r?.deviceCount ?? 0} perangkat (${r?.online ?? 0} online).`);
                   queryClient.invalidateQueries({ queryKey: ["/api/genieacs/live-check"] });
                 } catch (e: any) { toast.error(e.message || "Koneksi gagal"); }
               }}
@@ -1484,7 +1484,7 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card — Billing Sync (billing.jabnet.id) — JABNET-root only        */}
+      {/* Card - Billing Sync (billing.jabnet.id) - JABNET-root only        */}
       {/* ================================================================= */}
       {isSystemAdmin && (
       <Card>
@@ -1528,15 +1528,15 @@ export default function IntegrationPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div className="rounded-lg border bg-muted/30 p-3">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Pelanggan</div>
-              <div className="text-lg font-bold tabular-nums mt-0.5">{billHealth?.customersTotal ?? "—"}</div>
+              <div className="text-lg font-bold tabular-nums mt-0.5">{billHealth?.customersTotal ?? "-"}</div>
             </div>
             <div className="rounded-lg border bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/60 dark:border-amber-900/60 p-3">
               <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">Isolir</div>
-              <div className="text-lg font-bold tabular-nums text-amber-700 dark:text-amber-300 mt-0.5">{billHealth?.isolirCount ?? "—"}</div>
+              <div className="text-lg font-bold tabular-nums text-amber-700 dark:text-amber-300 mt-0.5">{billHealth?.isolirCount ?? "-"}</div>
             </div>
             <div className="rounded-lg border bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/60 dark:border-rose-900/60 p-3">
               <div className="text-[10px] uppercase tracking-wider text-rose-700 dark:text-rose-400 font-semibold">Open Collection</div>
-              <div className="text-lg font-bold tabular-nums text-rose-700 dark:text-rose-300 mt-0.5">{billHealth?.openCollectionsCount ?? "—"}</div>
+              <div className="text-lg font-bold tabular-nums text-rose-700 dark:text-rose-300 mt-0.5">{billHealth?.openCollectionsCount ?? "-"}</div>
             </div>
             <div className={`rounded-lg border p-3 ${
               (billHealth?.drift ?? 0) > 0
@@ -1548,7 +1548,7 @@ export default function IntegrationPage() {
               }`}>Drift</div>
               <div className={`text-lg font-bold tabular-nums mt-0.5 ${
                 (billHealth?.drift ?? 0) > 0 ? "text-red-700 dark:text-red-300" : "text-green-700 dark:text-green-300"
-              }`}>{billHealth?.drift ?? "—"}</div>
+              }`}>{billHealth?.drift ?? "-"}</div>
             </div>
           </div>
 
@@ -1578,7 +1578,7 @@ export default function IntegrationPage() {
             </div>
           )}
 
-          {/* ── Billing config: JABNET-root manages every mitra's billing_id ── */}
+          {/* -- Billing config: JABNET-root manages every mitra's billing_id -- */}
           {!isSystemAdmin ? null : (
           <section id="billing-mitra-admin" className="rounded-lg border bg-gradient-to-br from-sky-50/60 to-blue-50/40 dark:from-sky-950/20 dark:to-blue-950/10 border-sky-200/60 dark:border-sky-900/40 p-4 space-y-3">
             <header className="flex items-center gap-2.5">
@@ -1586,7 +1586,7 @@ export default function IntegrationPage() {
                 <Building2 className="h-4 w-4 text-sky-600 dark:text-sky-400" />
               </span>
               <div>
-                <h3 className="text-sm font-semibold">Billing Sync — Kelola per Mitra</h3>
+                <h3 className="text-sm font-semibold">Billing Sync - Kelola per Mitra</h3>
                 <p className="text-[11px] text-muted-foreground leading-snug">
                   Pilih mitra lalu atur Billing ID (reseller_id) billing.jabnet.id. Hanya JABNET yang bisa mengatur ini.
                 </p>
@@ -1599,7 +1599,7 @@ export default function IntegrationPage() {
                 options={billingMitraList.map((m) => ({
                   value: String(m.mitraId),
                   label: `${m.name}${m.isJabnet ? " (root)" : ""}`,
-                  description: m.isJabnet ? "Billing root · reseller_id 12" : `Billing ID: ${m.billingId || "—"} · ${m.customerCount} pelanggan`,
+                  description: m.isJabnet ? "Billing root · reseller_id 12" : `Billing ID: ${m.billingId || "-"} · ${m.customerCount} pelanggan`,
                 }))}
                 value={selBillingMitra}
                 onChange={setSelBillingMitra}
@@ -1609,7 +1609,7 @@ export default function IntegrationPage() {
 
             {selBillingMitra && billingMitraList.find((x) => String(x.mitraId) === selBillingMitra)?.isJabnet ? (
               <div className="rounded-lg border border-info/30 bg-info/5 p-3 text-[11px] text-muted-foreground">
-                JABNET adalah billing provider root — memakai <strong>reseller_id = 12</strong> dengan token dari server <code className="font-mono">.env</code>. Tidak ada yang perlu diatur di sini.
+                JABNET adalah billing provider root - memakai <strong>reseller_id = 12</strong> dengan token dari server <code className="font-mono">.env</code>. Tidak ada yang perlu diatur di sini.
               </div>
             ) : selBillingMitra ? (
               <>
@@ -1768,7 +1768,7 @@ export default function IntegrationPage() {
       )}
 
       {/* ================================================================= */}
-      {/* Card — Migrasi Collections ke Pipeline                            */}
+      {/* Card - Migrasi Collections ke Pipeline                            */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -1849,7 +1849,7 @@ export default function IntegrationPage() {
                 penagihan otomatis berjalan.
               </li>
               <li>Mode Pipeline mengalihkan halaman <code className="font-mono">/collections</code> ke board pipeline tujuan.</li>
-              <li><strong>Rollback:</strong> cukup pilih kembali <strong>Legacy</strong> — auto-open & reconcile lama langsung aktif lagi.</li>
+              <li><strong>Rollback:</strong> cukup pilih kembali <strong>Legacy</strong> - auto-open & reconcile lama langsung aktif lagi.</li>
             </ul>
           </div>
 
@@ -1871,7 +1871,7 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card — MPWA (WhatsApp Gateway)                                    */}
+      {/* Card - MPWA (WhatsApp Gateway)                                    */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -1949,7 +1949,7 @@ export default function IntegrationPage() {
                 </button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Token otentikasi untuk hit API MPWA. Rahasia — jangan share.
+                Token otentikasi untuk hit API MPWA. Rahasia - jangan share.
               </p>
             </div>
 
@@ -1976,7 +1976,7 @@ export default function IntegrationPage() {
                 className="font-mono text-xs"
               />
               <div className="text-[11px] text-muted-foreground leading-snug">
-                <strong>Default (kosong):</strong> sistem pakai <code className="font-mono bg-muted px-1 rounded">/public/send-button</code> — endpoint resmi MPWA Jabnet.<br />
+                <strong>Default (kosong):</strong> sistem pakai <code className="font-mono bg-muted px-1 rounded">/public/send-button</code> - endpoint resmi MPWA Jabnet.<br />
                 Cara kerja: <strong>kalau template punya image attachment, button dikirim sebagai native interactive button di WhatsApp</strong>. Kalau enggak ada image, fallback ke text format.<br />
                 <em>Override:</em> isi path lain kalau MPWA Anda pakai endpoint custom (mis. <code className="font-mono">/send-message-button</code>).
               </div>
@@ -2104,7 +2104,7 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card — Telegram Bot                                                */}
+      {/* Card - Telegram Bot                                                */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -2173,7 +2173,7 @@ export default function IntegrationPage() {
               <Bot className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
               <span>
                 Bot: <code className="font-mono font-semibold text-foreground">@{tgConfig.botUsername}</code>
-                {" — staff bisa connect dari halaman "}
+                {" - staff bisa connect dari halaman "}
                 <a href="/profile" className="text-sky-600 hover:underline">Profile</a>
               </span>
             </div>
@@ -2282,12 +2282,12 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card — Omnichannel Integration (v4.2.5)                               */}
+      {/* Card - Omnichannel Integration (v4.2.5)                               */}
       {/* ================================================================= */}
       <OmnichannelIntegrationCard />
 
       {/* ================================================================= */}
-      {/* Card — Meta Conversions API (CAPI)                                 */}
+      {/* Card - Meta Conversions API (CAPI)                                 */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -2356,7 +2356,7 @@ export default function IntegrationPage() {
       </Card>
 
       {/* ================================================================= */}
-      {/* Card — Export / Import Data                                        */}
+      {/* Card - Export / Import Data                                        */}
       {/* ================================================================= */}
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -2543,9 +2543,9 @@ export default function IntegrationPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Omnichannel Integration Card (v4.2.5) — auto-create ticket dari conversation
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// Omnichannel Integration Card (v4.2.5) - auto-create ticket dari conversation
+// -------------------------------------------------------------------------
 
 interface OmnichannelConfigData {
   id: number;
@@ -2592,7 +2592,7 @@ function OmnichannelIntegrationCard() {
   const rules = data?.rules ?? [];
   const isConfigured = !!(config?.baseUrl && config.accountId && data?.hasToken);
 
-  // Form state — local until save
+  // Form state - local until save
   const [enabled, setEnabled] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -2950,7 +2950,7 @@ function OmnichannelIntegrationCard() {
                   <GuideStep step={4} text="Subscribe events: conversation_created, message_created (minimum)" />
                   <GuideStep step={5} text="Copy webhook secret yang Omnichannel generate, paste di field di atas" />
                   <GuideStep step={6} text="Save di JABNET, klik 'Test' untuk verify koneksi" />
-                  <GuideStep step={7} text="Configure keyword rules — saat customer chat ada keyword 'gangguan' otomatis bikin tiket kategori Gangguan" />
+                  <GuideStep step={7} text="Configure keyword rules - saat customer chat ada keyword 'gangguan' otomatis bikin tiket kategori Gangguan" />
                 </div>
               )}
             </div>

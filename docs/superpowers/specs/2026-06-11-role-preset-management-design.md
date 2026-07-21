@@ -1,4 +1,4 @@
-# Spec — Role Preset Management
+# Spec - Role Preset Management
 
 > Date: 2026-06-11 · Mitra-scoped · Build on `dev`. Follows the two `/roles` bug fixes
 > (Quick Presets matrix + tenant user creation) already merged on `dev`.
@@ -7,7 +7,7 @@
 
 Turn the 5 hardcoded role presets into **DB-managed, website-editable** presets, with a
 `global` vs `tenant` scope, so System-Admin JABNET manages shared/global presets and each tenant
-admin manages their own — without breaking tenant isolation. The role-create form keeps applying a
+admin manages their own - without breaking tenant isolation. The role-create form keeps applying a
 preset to the permission matrix exactly as today (now bug-free), sourcing presets from the DB.
 
 ## Decisions (confirmed with user)
@@ -23,9 +23,9 @@ preset to the permission matrix exactly as today (now bug-free), sourcing preset
 4. **Default preset pre-applies** to the matrix on the new-role form (editable after). ≤1 default per
    scope; tenant default wins over global default.
 5. **Extract a shared `<PermissionMatrixEditor>`** used by both the role dialog and the preset dialog.
-6. **Server is authoritative** for all scope/ownership/visibility — never trust the frontend.
+6. **Server is authoritative** for all scope/ownership/visibility - never trust the frontend.
 
-## 1. Schema — new table `role_presets`
+## 1. Schema - new table `role_presets`
 
 Created via `CREATE TABLE IF NOT EXISTS` in the startup block in `server/storage.ts` (same pattern as
 `pipeline_metrics`). Columns:
@@ -60,13 +60,13 @@ default). Icon/color: pick sensible defaults per preset (e.g. admin→shield/pri
 
 Add helpers in storage (tenant-aware) + gate in routes:
 
-- **Apply list** — `getApplicablePresets(mitraId)`: rows where
+- **Apply list** - `getApplicablePresets(mitraId)`: rows where
   `(scope='global' AND is_active=1) OR (scope='tenant' AND mitra_id=mitraId AND is_active=1)`,
   ordered (global first, then tenant; default first within each). Used by the role form.
-- **Manage list** — `getManageablePresets(req)`:
+- **Manage list** - `getManageablePresets(req)`:
   - System-Admin JABNET → `scope='global'` ∪ `scope='tenant' AND mitra_id=1` (JABNET's own).
   - Tenant admin → `scope='tenant' AND mitra_id=activeMitraId` only. (Globals are visible in the
-    apply list but NOT in their manage list — read-only to them.)
+    apply list but NOT in their manage list - read-only to them.)
 - **Mutation authorization** (`assertCanManagePreset(req, preset, {scopeForCreate?})`):
   - Create: `scope='global'` requires `isSystemAdmin(req)`; `scope='tenant'` writes `mitra_id=activeMitraId`.
   - Update/Delete: load the row; if `scope='global'` or `mitra_id!==activeMitraId` → require
@@ -108,7 +108,7 @@ values ∈ none/read/write). Mounted near the existing `/api/roles` handlers in 
 ## 6. Client (`client/pages/RolesPage.tsx` + new components)
 
 - **`<PermissionMatrixEditor>`** (new, `client/components/roles/PermissionMatrixEditor.tsx`): the
-  permission grid extracted from `RoleFormDialog` — props `value: Record<string,PermissionLevel>`,
+  permission grid extracted from `RoleFormDialog` - props `value: Record<string,PermissionLevel>`,
   `onChange`, `disabled?`, group bulk-set, preset apply-buttons optional. Used by BOTH dialogs.
 - **`/roles` page**: a `Role | Preset` segmented control (semantic, admin-only) switching between the
   existing roles list and a new **presets list**. Preset cards show icon/color/name/scope badge
@@ -119,7 +119,7 @@ values ∈ none/read/write). Mounted near the existing `/api/roles` handlers in 
 - **Role-create form**: the existing preset buttons are replaced by a preset picker fed by
   `GET /api/role-presets`; selecting one loads `preset.permissions` into the matrix. The resolved
   default preset is pre-applied on open. `buildPermissionMatrixFromPreset` is no longer called from
-  the form (it's now only the seed source) — applying = load the stored matrix JSON.
+  the form (it's now only the seed source) - applying = load the stored matrix JSON.
 - Hooks: `useRolePresets()` (apply), `useManageRolePresets()` + CRUD mutations.
 
 ## 7. Semantic HTML / responsive / standards

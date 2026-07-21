@@ -1,4 +1,4 @@
-/** Teamspace v5.0 Fase 1 — hooks untuk tim, Semua Tugas, checklist, label, dan aksi kartu.
+/** Teamspace v5.0 Fase 1 - hooks untuk tim, Semua Tugas, checklist, label, dan aksi kartu.
  *  Pola identik dengan usePipelines.ts (TanStack Query + api helper). */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -105,7 +105,7 @@ export function useTeamMutations() {
   };
 }
 
-// ── Checklist (FR-406) ──
+// -- Checklist (FR-406) --
 
 export type ChecklistWithItems = CardChecklist & { items: CardChecklistItem[] };
 
@@ -135,7 +135,7 @@ export function useChecklistMutations(cardId: number) {
   };
 }
 
-// ── Label berwarna (FR-413) ──
+// -- Label berwarna (FR-413) --
 
 export function usePipelineLabels(pipelineId: number | null) {
   return useQuery({
@@ -160,7 +160,7 @@ export function useLabelMutations(pipelineId: number) {
   };
 }
 
-// ── Aksi kartu: selesai / rahasia / arsip / salin ──
+// -- Aksi kartu: selesai / rahasia / arsip / salin --
 
 export function useCardActions(cardId: number) {
   const qc = useQueryClient();
@@ -189,12 +189,12 @@ export function useCardActions(cardId: number) {
   };
 }
 
-// ══════════════ FASE 2 ══════════════
+// ============== FASE 2 ==============
 
 import { getAuthHeaders } from "@/lib/api";
 import type { TeamChatMessage, TeamEvent, TeamFolder, TeamDocument, TeamFile } from "@shared/schema";
 
-// ── Chat Grup (FR-5xx) ──
+// -- Chat Grup (FR-5xx) --
 
 export function useTeamChat(teamId: number | null, active: boolean) {
   return useQuery({
@@ -256,7 +256,7 @@ export function useChatMutations(teamId: number) {
   };
 }
 
-// ── Jadwal (FR-7xx) ──
+// -- Jadwal (FR-7xx) --
 
 export type TeamEventRow = TeamEvent & { participantIds: number[] };
 
@@ -292,7 +292,7 @@ export function useEventMutations(teamId: number) {
   };
 }
 
-// ── Check-in (FR-8xx) ──
+// -- Check-in (FR-8xx) --
 
 export interface CheckinQuestionRow {
   id: number; teamId: number; questionText: string; sendDays: number[]; sendTime: string;
@@ -352,7 +352,7 @@ export function useCheckinMutations(teamId: number) {
   };
 }
 
-// ── Dokumen & File (FR-9xx) ──
+// -- Dokumen & File (FR-9xx) --
 
 export interface TeamDocsResponse {
   folders: TeamFolder[];
@@ -422,7 +422,7 @@ export function useDocsMutations(teamId: number) {
   };
 }
 
-// ── Pengumuman per-tim (BUG-004 / FR-6xx) ──
+// -- Pengumuman per-tim (BUG-004 / FR-6xx) --
 
 export interface TeamAnnouncementRow {
   id: number; teamId: number; title: string; content: string;
@@ -459,7 +459,7 @@ export function useTeamAnnouncementMutations(teamId: number) {
   };
 }
 
-// ── Fase 3: Laporan Kinerja + Cheers ──
+// -- Fase 3: Laporan Kinerja + Cheers --
 
 export interface PerfUserRow {
   userId: number;

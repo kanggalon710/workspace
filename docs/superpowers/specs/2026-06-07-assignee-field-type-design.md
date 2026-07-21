@@ -1,7 +1,7 @@
-# Spec — Assignee Field Type (Slice B)
+# Spec - Assignee Field Type (Slice B)
 
 > Date: 2026-06-07 · Status: **Approved (pending user spec review)** · Target: dev branch + `jabnet_fiber_dev`
-> Part of the Pipelines Engine program — see [[project-pipelines-engine]]. **Slice B** of the Pipeline/Kanban
+> Part of the Pipelines Engine program - see [[project-pipelines-engine]]. **Slice B** of the Pipeline/Kanban
 > Enhancement PRD (PRD item **#1**). Builds on Slice A's field-type registry
 > (`docs/superpowers/specs/2026-06-07-pipeline-field-registry-board-controls-design.md`).
 
@@ -18,10 +18,10 @@ Two facts from the code drive this design:
 1. **`GET /api/users` is admin-only** (`requireAdmin`, `server/routes.ts:1540`), yet the pipeline board
    (`PipelineBoardPage.tsx:30`), the `user`-field input (`FieldValueInput.tsx:200`), and the rules dialog
    (`PipelineRulesDialog.tsx:57`) all call it. So **non-admin pipeline users cannot load assignee options
-   at all today** — the existing assignee filter, `user` field, and assign-action picker are broken for
+   at all today** - the existing assignee filter, `user` field, and assign-action picker are broken for
    them. Slice B fixes this with a tenant-scoped, non-admin endpoint.
 2. **Board chips don't resolve user IDs to names** (`BoardCard.fieldText`, `BoardCard.tsx:20` returns the
-   raw value) — a `user` field chip shows a numeric ID today. Slice B fixes this via the `usersById` map
+   raw value) - a `user` field chip shows a numeric ID today. Slice B fixes this via the `usersById` map
    `BoardCard` already holds.
 
 This codebase has no per-user visibility ACL beyond mitra membership; **mitra membership is the visibility
@@ -37,12 +37,12 @@ boundary** for #1. Finer per-role user visibility is a future extension point.
 4. Filter the board by assignee for both single and multi (membership).
 
 **Non-goals (deferred)**
-- Changing Single↔Multi after a field is created (would orphan assignees) — **immutable** after creation.
-- Syncing the Assignee field with the board's primary `card.assigneeId` — they stay independent.
+- Changing Single↔Multi after a field is created (would orphan assignees) - **immutable** after creation.
+- Syncing the Assignee field with the board's primary `card.assigneeId` - they stay independent.
 - Notifications when an Assignee-field value changes (the board assignee already notifies; field-level
   assignment notifications are out of scope).
 - Finer-than-mitra per-user visibility rules.
-- Searching assignees by name (values store IDs) — filter-by-user covers the real need.
+- Searching assignees by name (values store IDs) - filter-by-user covers the real need.
 
 ## Coding standards
 Per [[feedback-coding-standards]]: semantic HTML5 (`<fieldset>`/`<legend>`/`<label htmlFor>`/`<input type=radio>`/
@@ -55,25 +55,25 @@ components), pure testable helpers. Reuse design-system primitives (`Combobox`, 
 
 - **New `config` column on `pipeline_fields`:** `config TEXT` (nullable, JSON). Added at startup via an
   info_schema COUNT guard + plain `ALTER TABLE pipeline_fields ADD COLUMN config TEXT` (the DB rejects
-  `ADD COLUMN IF NOT EXISTS` — see [[reference-startup-add-column]]). Holds small per-field settings; for
+  `ADD COLUMN IF NOT EXISTS` - see [[reference-startup-add-column]]). Holds small per-field settings; for
   Assignee it is `{"multiple": true|false}`. Reusable for later field types (e.g. Coordinate). All existing
   fields → `null`.
 - **Assignee = the existing `user` type, enhanced.** The registry relabels `user` → **"Assignee"**. The
   Single/Multi choice is `config.multiple`, set at creation and **immutable** afterward.
 - **Card value storage** (in `pipeline_card_values.value`, unchanged table):
-  - **Single** → one userId string, e.g. `"42"` — identical to today's `user` field (back-compatible;
+  - **Single** → one userId string, e.g. `"42"` - identical to today's `user` field (back-compatible;
     existing single-user fields keep working with `config = null`).
-  - **Multi** → JSON array of userId strings, e.g. `'["42","43"]'` — mirrors `multiselect`.
+  - **Multi** → JSON array of userId strings, e.g. `'["42","43"]'` - mirrors `multiselect`.
 - **Independent of `card.assigneeId`.** The Assignee field is a normal custom field; `card.assigneeId`
   remains the board/automation/filter primary assignee. No syncing.
 
 ### 2. Assignable-users endpoint + RBAC (delivers #1)
 
-- **`GET /api/pipelines/assignable-users`** — gated by `requirePermission(req,res,"pipelines")` (read),
+- **`GET /api/pipelines/assignable-users`** - gated by `requirePermission(req,res,"pipelines")` (read),
   NOT admin. Returns active-tenant members: `storage.getAssignableUsers()` =
   `getAllUsers()` filtered by `getUserIdsInMitra(activeMitraId)` (system-admin sees all), mapped to safe
   fields `{ id, name, username, role, isActive }` (no password/token). A user outside the active mitra
-  never appears — the tenant-isolation + RBAC guarantee in #1.
+  never appears - the tenant-isolation + RBAC guarantee in #1.
 - **Client hook `useAssignableUsers()`** (in `client/hooks/usePipelines.ts`) → `AssignableUser[]`.
 - **Switch pipeline consumers off `/api/users`:** `FieldValueInput` (assignee input), `PipelineBoardPage`
   (assignee filter + chip name map), `PipelineRulesDialog` (assign-action picker). Fixes the non-admin
@@ -89,10 +89,10 @@ components), pure testable helpers. Reuse design-system primitives (`Combobox`, 
   - **Multi** → new `UserMultiSelect`: selected users shown as removable chips (names) + a `Combobox` to add
     one; stores a JSON array of userId strings (same idiom as the existing `MultiSelect`, user-typed).
 - **Display name resolution:** the board chip path (`BoardCard`) and the detail drawer resolve `user`/Assignee
-  values to **names** via the `usersById` map `BoardCard` already holds — single → name; multi → joined names
+  values to **names** via the `usersById` map `BoardCard` already holds - single → name; multi → joined names
   with a `+N` overflow. `fieldText` stays pure; name resolution is injected by the caller (a resolver
   function or inline in the chip map), not baked into the pure helper.
-- **Filter value control:** Slice A's `FieldFilterValue` already renders a user picker for `user` fields —
+- **Filter value control:** Slice A's `FieldFilterValue` already renders a user picker for `user` fields -
   unchanged; it now sources options from `useAssignableUsers` and works for single and multi (membership).
 
 ### 4. Shared helpers + validation
@@ -104,7 +104,7 @@ components), pure testable helpers. Reuse design-system primitives (`Combobox`, 
   equality. `compareCardsByField` is unaffected (assignee is not sortable).
 - **Schema/API:** `PipelineField` gains `config: string | null`. `storage.createField` accepts and stores
   `config` (JSON-stringified); the create-field route passes `config` through. (Edit does not change
-  `config` — immutable.)
+  `config` - immutable.)
 - **Validation (`server/pipeline-field-helpers.ts`):** `validateFieldValue` gains an optional `multiple`
   flag. Multi-assignee validates as a JSON array of digit strings; single stays `/^\d+$/`. The card-values
   route passes the field's `multiple` flag when validating a `user` field.
@@ -147,11 +147,11 @@ existing `requirePermission`/`requireWritePermission` + `requirePipelineView`/`r
 
 ## Risks
 
-1. **`config` migration** — info_schema COUNT guard + plain `ALTER` (no `IF NOT EXISTS`); idempotent.
-2. **Consumer switch** — 3 components move off `/api/users`; each only needs `{id,name,username,role}`
+1. **`config` migration** - info_schema COUNT guard + plain `ALTER` (no `IF NOT EXISTS`); idempotent.
+2. **Consumer switch** - 3 components move off `/api/users`; each only needs `{id,name,username,role}`
    (verified). Admin pages keep `/api/users`.
-3. **Multi-assignee not name-searchable** (stores IDs) — filter-by-user covers the real need; noted.
-4. **Single↔Multi immutability** — documented; the create UX makes the choice once.
+3. **Multi-assignee not name-searchable** (stores IDs) - filter-by-user covers the real need; noted.
+4. **Single↔Multi immutability** - documented; the create UX makes the choice once.
 
 ## Acceptance criteria
 

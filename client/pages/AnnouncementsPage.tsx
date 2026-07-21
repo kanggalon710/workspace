@@ -63,7 +63,7 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden bg-slate-50/40 dark:bg-slate-950/40 -m-4 md:-m-6 -mt-4 md:-mt-6 pb-20 md:pb-0">
-      {/* Header — sticky di mobile */}
+      {/* Header - sticky di mobile */}
       <div className="sticky top-0 z-10 px-4 md:px-6 pt-4 md:pt-6 pb-4 space-y-4 shrink-0 bg-background border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3 md:gap-4 min-w-0 flex-1">
@@ -87,7 +87,7 @@ export default function AnnouncementsPage() {
           )}
         </div>
 
-        {/* Filter bar — horizontal scroll di mobile */}
+        {/* Filter bar - horizontal scroll di mobile */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0 flex-1 min-w-0">
             <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit">
@@ -159,7 +159,7 @@ export default function AnnouncementsPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 function FilterPill({ active, onClick, label, icon: Ic }: any) {
   return (
     <button
@@ -245,7 +245,7 @@ function AnnouncementCard({ a, isAdmin, onEdit, onDelete }: any) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 function EditDialog({ open, onClose, initial, onSaved }: any) {
   const isEdit = !!initial;
   const [title, setTitle] = useState("");
@@ -350,7 +350,7 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Judul *</label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh: JABNET Sahabat v1.2 — Voucher Rp 50K Live!" maxLength={200} className="mt-1" />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh: JABNET Sahabat v1.2 - Voucher Rp 50K Live!" maxLength={200} className="mt-1" />
           </div>
 
           <div>
@@ -389,7 +389,7 @@ function EditDialog({ open, onClose, initial, onSaved }: any) {
               <input type="checkbox" checked={isConfidential} onChange={(e) => setIsConfidential(e.target.checked)} className="mt-0.5" />
               <div>
                 <div className="font-semibold text-sm"> Rahasia</div>
-                <div className="text-[11px] text-muted-foreground">Hanya penerima terpilih yang bisa melihat — staff lain tidak melihat sama sekali.</div>
+                <div className="text-[11px] text-muted-foreground">Hanya penerima terpilih yang bisa melihat - staff lain tidak melihat sama sekali.</div>
               </div>
             </label>
             <div>

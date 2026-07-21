@@ -7,7 +7,7 @@ import type { PipelineField } from "@shared/schema";
 import { Upload, FileSpreadsheet, X, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
-// CSV parser – handles quoted fields (adapted from ExportImportPage)
+// CSV parser - handles quoted fields (adapted from ExportImportPage)
 // ---------------------------------------------------------------------------
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
@@ -258,7 +258,7 @@ export function CardImportDialog({ pipelineId, fields, open, onClose }: Props) {
               {!parsed ? (
                 <div
                   role="button"
-                  aria-label="Unggah file CSV — seret ke sini atau klik untuk memilih"
+                  aria-label="Unggah file CSV - seret ke sini atau klik untuk memilih"
                   className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/30"}`}
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
@@ -282,7 +282,7 @@ export function CardImportDialog({ pipelineId, fields, open, onClose }: Props) {
                 </div>
               ) : (
                 <>
-                  {/* File loaded — show mapping UI */}
+                  {/* File loaded - show mapping UI */}
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm text-muted-foreground">
                       <strong>{parsed.rows.length}</strong> baris ditemukan · {parsed.headers.length} kolom

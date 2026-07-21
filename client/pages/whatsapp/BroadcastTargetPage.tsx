@@ -313,9 +313,9 @@ function BroadcastList({ target, onCreate, onOpenDetail }: Props & { onCreate: (
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // Form Broadcast Baru
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
   const qc = useQueryClient();
   const targetLabel = target === "pelanggan" ? "Pelanggan" : "Reseller";
@@ -565,7 +565,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
       }
 
       const res: any = await api.post("/broadcast/campaigns", {
-        name: name || `${selectedTemplate?.name ?? "Broadcast"} — ${new Date().toLocaleString("id-ID")}`,
+        name: name || `${selectedTemplate?.name ?? "Broadcast"} - ${new Date().toLocaleString("id-ID")}`,
         templateId,
         // v4.2.20: pass directRecipients langsung (bypass audience filter)
         directRecipients,
@@ -625,7 +625,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
             onChange={(e) => setDeviceId(e.target.value ? Number(e.target.value) : null)}
             className="w-full mt-1 px-3 py-2 rounded-md border bg-background text-sm"
           >
-            <option value="">— Pilih device pengirim —</option>
+            <option value="">- Pilih device pengirim -</option>
             {devices.map(d => (
               <option key={d.id} value={d.id}>{d.name} ({d.phone}) · {d.provider}</option>
             ))}
@@ -644,15 +644,15 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
               onChange={(e) => { setTemplateId(e.target.value ? Number(e.target.value) : null); setSelectedTargetIds(new Set()); }}
               className="w-full mt-1 px-3 py-2 rounded-md border bg-background text-sm"
             >
-              <option value="">— Pilih template —</option>
+              <option value="">- Pilih template -</option>
               {filteredTemplates.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
             {selectedTemplate && (
               <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground flex-wrap">
-                {selectedTemplate.mediaUrl && <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">🖼️ Image</span>}
-                {selectedTemplate.buttons && <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">🔘 Button</span>}
+                {selectedTemplate.mediaUrl && <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-700"> Image</span>}
+                {selectedTemplate.buttons && <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700"> Button</span>}
                 {selectedTemplate.compatMode === "text-link" && <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Text+Link</span>}
                 {selectedTemplate.compatMode !== "text-link" && selectedTemplate.buttons && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Native</span>}
                 {selectedTemplate.customerFilter === "unpaid" && target === "pelanggan" && <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">Filter: Belum Bayar</span>}
@@ -660,7 +660,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
             )}
           </div>
 
-          {/* Live preview WA bubble — muncul saat template dipilih */}
+          {/* Live preview WA bubble - muncul saat template dipilih */}
           {selectedTemplate && (
             <TemplatePreview template={selectedTemplate} target={target} manualText={manualText} manualDate={manualDate} />
           )}
@@ -740,7 +740,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                   onChange={(e) => { setSelectedPhonebookId(e.target.value ? Number(e.target.value) : null); setSelectedContactIds(new Set()); }}
                   className="w-full mt-1 px-3 py-2 rounded-md border bg-background text-sm"
                 >
-                  <option value="">— Pilih phonebook —</option>
+                  <option value="">- Pilih phonebook -</option>
                   {phonebooks.map(pb => (
                     <option key={pb.id} value={pb.id}>{pb.name} ({pb.contactCount} kontak)</option>
                   ))}
@@ -797,7 +797,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
           </div>
         )}
 
-        {/* Pilih Target — v4.2.24 dengan quick filter + group-by (HANYA kalau source=customers/reseller, bukan phonebook) */}
+        {/* Pilih Target - v4.2.24 dengan quick filter + group-by (HANYA kalau source=customers/reseller, bukan phonebook) */}
         {templateId && (target === "reseller" || audienceSource === "customers") && (
           <div>
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -822,7 +822,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
               <div className="rounded-md border bg-muted/20 p-2.5 mb-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    🎯 Quick Filter
+                     Quick Filter
                     {activeFilterCount > 0 && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-200 text-violet-800 font-bold">{activeFilterCount} aktif</span>
                     )}
@@ -874,7 +874,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                 {distinctPackages.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      📦 Paket {filterPackages.size > 0 && <span className="text-violet-700">({filterPackages.size} dipilih)</span>}
+                       Paket {filterPackages.size > 0 && <span className="text-violet-700">({filterPackages.size} dipilih)</span>}
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {distinctPackages.map(pkg => {
@@ -903,7 +903,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                 {distinctDistricts.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      🗺️ Kecamatan {filterDistricts.size > 0 && <span className="text-violet-700">({filterDistricts.size} dipilih)</span>}
+                       Kecamatan {filterDistricts.size > 0 && <span className="text-violet-700">({filterDistricts.size} dipilih)</span>}
                     </div>
                     <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto">
                       {distinctDistricts.map(d => {
@@ -930,7 +930,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                 {distinctOdps.length > 0 && (
                   <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      🔌 ODP {filterOdpIds.size > 0 && <span className="text-violet-700">({filterOdpIds.size} dipilih)</span>}
+                       ODP {filterOdpIds.size > 0 && <span className="text-violet-700">({filterOdpIds.size} dipilih)</span>}
                     </div>
                     <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto">
                       {distinctOdps.map(o => {
@@ -989,7 +989,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
               </div>
             )}
 
-            {/* Reseller — simpler search + district filter */}
+            {/* Reseller - simpler search + district filter */}
             {target === "reseller" && (
               <div className="rounded-md border bg-muted/20 p-2.5 mb-2">
                 <div className="relative mb-2">
@@ -1030,7 +1030,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
               </div>
             )}
 
-            {/* Target list — grouped atau flat */}
+            {/* Target list - grouped atau flat */}
             <div className="rounded-md border max-h-[360px] overflow-y-auto bg-background">
               {targetListFull.length === 0 ? (
                 <div className="px-3 py-8 text-center text-xs text-muted-foreground italic">
@@ -1091,7 +1091,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold truncate">{t.name}</div>
                                   <div className="text-[10px] text-muted-foreground">
-                                    #{t.customerId} · {t.phone ?? "—"}
+                                    #{t.customerId} · {t.phone ?? "-"}
                                     {t.package && groupBy !== "package" && <span> · {t.package}</span>}
                                     {t.district && groupBy !== "district" && <span> · {t.district}</span>}
                                   </div>
@@ -1100,7 +1100,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                             ))}
                             {g.items.length > 200 && (
                               <div className="px-4 py-1.5 text-[10px] text-muted-foreground italic text-center">
-                                +{g.items.length - 200} lainnya — refine filter untuk lihat semua
+                                +{g.items.length - 200} lainnya - refine filter untuk lihat semua
                               </div>
                             )}
                           </div>
@@ -1131,7 +1131,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                         <div className="font-semibold truncate">{t.name}</div>
                         <div className="text-[10px] text-muted-foreground">
                           {target === "pelanggan"
-                            ? <>#{t.customerId} · {t.phone ?? "—"}{t.package && <> · 📦 {t.package}</>}{t.district && <> · 🗺️ {t.district}</>}{t.odpId && odpMap.get(t.odpId) && <> · 🔌 {odpMap.get(t.odpId)!.name}</>}</>
+                            ? <>#{t.customerId} · {t.phone ?? "-"}{t.package && <> ·  {t.package}</>}{t.district && <> ·  {t.district}</>}{t.odpId && odpMap.get(t.odpId) && <> ·  {odpMap.get(t.odpId)!.name}</>}</>
                             : t.phone}
                         </div>
                       </div>
@@ -1167,9 +1167,9 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// v4.2.24: Template Preview — WhatsApp bubble dengan sample data
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
+// v4.2.24: Template Preview - WhatsApp bubble dengan sample data
+// -----------------------------------------------------------------
 function TemplatePreview({ template, target, manualText, manualDate }: {
   template: Template;
   target: "pelanggan" | "reseller";
@@ -1258,7 +1258,7 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
   return (
     <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/40 p-3 lg:sticky lg:top-4">
       <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-2">
-        💬 Preview Pesan WhatsApp
+         Preview Pesan WhatsApp
       </div>
       <div className="rounded-lg p-3 max-w-full" style={{
         background: "#e5ddd5",
@@ -1283,9 +1283,9 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
             {/* Text fallback buttons (kalau mode=text-link) */}
             {isTextLink && buttons.length > 0 && (
               <div className="mt-2 pt-2 border-t border-dashed text-xs font-mono">
-                <div className="opacity-50">━━━━━━━━━━━━━━━</div>
+                <div className="opacity-50">---------------</div>
                 {buttons.map((b, i) => {
-                  const icon = b.type === "url" ? "🔗" : b.type === "call" ? "📞" : b.type === "copy" ? "📋" : "▶️";
+                  const icon = b.type === "url" ? "" : b.type === "call" ? "" : b.type === "copy" ? "" : "▶";
                   let action = "";
                   if (b.type === "url" && b.url) action = `\n   ${b.url}`;
                   else if (b.type === "call" && b.phoneNumber) action = `\n   https://wa.me/${b.phoneNumber.replace(/\D/g, "")}`;
@@ -1296,7 +1296,7 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
                     </div>
                   );
                 })}
-                <div className="opacity-50">━━━━━━━━━━━━━━━</div>
+                <div className="opacity-50">---------------</div>
               </div>
             )}
 
@@ -1330,9 +1330,9 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// v4.2.26: Broadcast Detail — campaign info + recipients table
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
+// v4.2.26: Broadcast Detail - campaign info + recipients table
+// -----------------------------------------------------------------
 function BroadcastDetail({ campaignId, target, onBack }: {
   campaignId: number;
   target: "pelanggan" | "reseller";
@@ -1481,7 +1481,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
           <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">✓ Terkirim</div>
           <div className="text-2xl font-black tabular-nums text-emerald-900">{counts.sent}</div>
           <div className="text-[10px] text-emerald-700 mt-0.5">
-            {campaign?.audienceCount ? `${Math.round((counts.sent / campaign.audienceCount) * 100)}%` : "—"}
+            {campaign?.audienceCount ? `${Math.round((counts.sent / campaign.audienceCount) * 100)}%` : "-"}
           </div>
         </div>
         <div className="rounded-lg border bg-rose-50/40 border-rose-200 p-3">
@@ -1512,7 +1512,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
               <MessageCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="text-muted-foreground">Device:</span>
               <span className="font-semibold">
-                {campaign.device ? <>{campaign.device.name} <span className="text-muted-foreground font-mono font-normal">({campaign.device.phone})</span></> : "—"}
+                {campaign.device ? <>{campaign.device.name} <span className="text-muted-foreground font-mono font-normal">({campaign.device.phone})</span></> : "-"}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -1601,7 +1601,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                 return (
                   <tr key={r.id} className="hover:bg-muted/30 transition">
                     <td className="px-3 py-2 text-muted-foreground tabular-nums">{i + 1}</td>
-                    <td className="px-3 py-2 font-semibold">{r.customerName ?? "—"}</td>
+                    <td className="px-3 py-2 font-semibold">{r.customerName ?? "-"}</td>
                     <td className="px-3 py-2 font-mono text-xs">{r.phone}</td>
                     <td className="px-3 py-2">
                       <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider", cfg.cls)}>
@@ -1612,7 +1612,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                     <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums">
                       {r.sentAt
                         ? new Date(r.sentAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" })
-                        : "—"}
+                        : "-"}
                     </td>
                     <td className="px-3 py-2 text-xs">
                       {r.errorMessage ? (
@@ -1623,7 +1623,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                           catch { return "OK"; }
                         })()}</span>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -1639,7 +1639,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
         )}
         <div className="px-4 py-2 border-t bg-muted/10 text-[11px] text-muted-foreground">
           Menampilkan {filteredRecipients.length} dari {recipients.length} recipient
-          {recipients.length === 500 && " (limit 500 — refine search untuk lihat data spesifik)"}
+          {recipients.length === 500 && " (limit 500 - refine search untuk lihat data spesifik)"}
         </div>
       </div>
 
@@ -1656,7 +1656,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                 <div className="text-muted-foreground">Status:</div>
                 <div className="col-span-2 font-bold">{selectedRecipient.status}</div>
                 <div className="text-muted-foreground">Sent at:</div>
-                <div className="col-span-2 font-mono">{selectedRecipient.sentAt ?? "—"}</div>
+                <div className="col-span-2 font-mono">{selectedRecipient.sentAt ?? "-"}</div>
                 <div className="text-muted-foreground">Retry:</div>
                 <div className="col-span-2 font-mono">{selectedRecipient.retryCount}</div>
                 {selectedRecipient.customerId && (

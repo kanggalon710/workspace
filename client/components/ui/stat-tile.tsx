@@ -6,7 +6,7 @@ interface TrendIndicator {
   label?: string;
   /** Direction override. Auto-detected from value sign if omitted. */
   direction?: "up" | "down" | "flat";
-  /** Invert colors — up = bad (e.g., error count goes up = red). Default: false. */
+  /** Invert colors - up = bad (e.g., error count goes up = red). Default: false. */
   invertColor?: boolean;
 }
 
@@ -20,9 +20,9 @@ interface StatTileProps {
   trend?: TrendIndicator;
   /** Visual accent. Default: primary. */
   accent?: "primary" | "success" | "warning" | "danger" | "info" | "violet" | "neutral";
-  /** Clickable — calls onClick when the tile is clicked. */
+  /** Clickable - calls onClick when the tile is clicked. */
   onClick?: () => void;
-  /** Loading state — show skeleton instead of values. */
+  /** Loading state - show skeleton instead of values. */
   loading?: boolean;
   className?: string;
   /** Compact variant with smaller paddings & text. */
@@ -68,7 +68,7 @@ const accentMap = {
 };
 
 /**
- * StatTile — KPI card with icon, label, value, optional description + trend.
+ * StatTile - KPI card with icon, label, value, optional description + trend.
  * Replaces the manual KPI tile construction in Dashboard and other pages.
  *
  * @example

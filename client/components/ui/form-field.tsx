@@ -19,7 +19,7 @@ interface FormFieldProps {
 }
 
 /**
- * FormField — wraps an input with label, required indicator, error, and hint.
+ * FormField - wraps an input with label, required indicator, error, and hint.
  * Designed to work with react-hook-form + zod schemas.
  *
  * @example
@@ -87,7 +87,7 @@ interface FormRowProps {
 }
 
 /**
- * FormRow — horizontal layout for 2-4 fields side-by-side on desktop, stacked on mobile.
+ * FormRow - horizontal layout for 2-4 fields side-by-side on desktop, stacked on mobile.
  */
 export function FormRow({ children, cols = 2, className }: FormRowProps) {
   const gridCols = {
@@ -109,7 +109,7 @@ interface FormSectionProps {
 }
 
 /**
- * FormSection — groups related fields under a heading. Good for multi-section forms.
+ * FormSection - groups related fields under a heading. Good for multi-section forms.
  */
 export function FormSection({ title, description, children, className }: FormSectionProps) {
   return (

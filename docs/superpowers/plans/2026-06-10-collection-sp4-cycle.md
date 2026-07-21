@@ -1,11 +1,11 @@
-# SP4 — Collection Cycle + Reopen Mode Implementation Plan
+# SP4 - Collection Cycle + Reopen Mode Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. Steps use `- [ ]`.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO worktrees, NO branch switches. Verify `git branch --show-current` is `dev`.**
 
 **Goal:** Label collection cards with a `collection_cycle` number and implement the `reopen` entry mode (reactivate the last terminal card instead of creating a new one).
 
-**Architecture:** Additive `collection_cycle` column on pipeline_cards; pure `decideEntry` gains a `reopen` branch + `reopenExisting` result + `nextCycleNumber`; the engine sets/bumps the cycle and reactivates terminal cards. Re-overdue already produces separate cards (SP3a) — this numbers them.
+**Architecture:** Additive `collection_cycle` column on pipeline_cards; pure `decideEntry` gains a `reopen` branch + `reopenExisting` result + `nextCycleNumber`; the engine sets/bumps the cycle and reactivates terminal cards. Re-overdue already produces separate cards (SP3a) - this numbers them.
 
 **Tech Stack:** Drizzle/mysql2, the SP3a engine, React. Pure tests via `npx tsx --test`. `.js` imports.
 
@@ -23,7 +23,7 @@
 ```ts
       { table: "pipeline_cards", column: "collection_cycle", ddl: "INT" },
 ```
-(The existing loop runs an info_schema COUNT check then `ALTER TABLE ... ADD COLUMN ... <ddl>` — idempotent.)
+(The existing loop runs an info_schema COUNT check then `ALTER TABLE ... ADD COLUMN ... <ddl>` - idempotent.)
 - [ ] **Step 3:** `npx tsc --noEmit` → 0 errors.
 - [ ] **Step 4:** Commit:
 ```bash
@@ -33,11 +33,11 @@ git commit -m "feat(collection): add collection_cycle column to pipeline_cards"
 
 ---
 
-## Task 2: Pure — reopen + nextCycleNumber
+## Task 2: Pure - reopen + nextCycleNumber
 
 **Files:** `shared/collectionEngine.ts`, `shared/collectionEngine.test.ts`.
 
-- [ ] **Step 1: Update the test** — replace the TWO existing `decideEntry` tests (`"decideEntry: below threshold / paid / disabled -> no-op"` and `"decideEntry: modes (10 days overdue)"`) with these (note every expected object now includes `reopenExisting`), and add a reopen test + nextCycleNumber test:
+- [ ] **Step 1: Update the test** - replace the TWO existing `decideEntry` tests (`"decideEntry: below threshold / paid / disabled -> no-op"` and `"decideEntry: modes (10 days overdue)"`) with these (note every expected object now includes `reopenExisting`), and add a reopen test + nextCycleNumber test:
 ```ts
 test("decideEntry: below threshold / paid / disabled -> no-op", () => {
   assert.deepEqual(decideEntry(snap({ due: "2026-01-28" }), cfg, false), { create: false, moveExistingToEntry: false, reopenExisting: false });
@@ -72,9 +72,9 @@ test("nextCycleNumber", () => {
 ```
 Add `nextCycleNumber` to the import line from `./collectionEngine.js`.
 
-- [ ] **Step 2: Run → fail** — `npx tsx --test shared/collectionEngine.test.ts` → FAIL (reopenExisting key + nextCycleNumber missing).
+- [ ] **Step 2: Run → fail** - `npx tsx --test shared/collectionEngine.test.ts` → FAIL (reopenExisting key + nextCycleNumber missing).
 
-- [ ] **Step 3: Edit `shared/collectionEngine.ts`** — replace the `EntryDecision` type + `decideEntry` with:
+- [ ] **Step 3: Edit `shared/collectionEngine.ts`** - replace the `EntryDecision` type + `decideEntry` with:
 ```ts
 export type EntryDecision = { create: boolean; moveExistingToEntry: boolean; reopenExisting: boolean };
 
@@ -107,7 +107,7 @@ export function nextCycleNumber(priorCardCount: number): number {
 ```
 (Leave `decideCardLifecycle` unchanged.)
 
-- [ ] **Step 4: Run → pass** — `npx tsx --test shared/collectionEngine.test.ts` → PASS. `npx tsc --noEmit` → 0.
+- [ ] **Step 4: Run → pass** - `npx tsx --test shared/collectionEngine.test.ts` → PASS. `npx tsc --noEmit` → 0.
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -117,7 +117,7 @@ git commit -m "feat(collection): reopen entry mode + nextCycleNumber (decideEntr
 
 ---
 
-## Task 3: Storage — createCard cycle + setCardCycle
+## Task 3: Storage - createCard cycle + setCardCycle
 
 **Files:** `server/storage.ts`.
 
@@ -144,14 +144,14 @@ git commit -m "feat(collection): createCard accepts collectionCycle + setCardCyc
 
 ---
 
-## Task 4: Engine — cycle on entry + reopen branch
+## Task 4: Engine - cycle on entry + reopen branch
 
 **Files:** `server/collection-engine.ts`.
 
 - [ ] **Step 1:** Add `nextCycleNumber` to the import from `../shared/collectionEngine.js`.
 - [ ] **Step 2:** Replace the entry pass (the `// (b) Entry pass` block). The current block computes `decideEntry(snap, cfg, activeByCustomer.has(c.id))` and handles create/move. Replace its body with:
 ```ts
-      // (b) Entry pass — overdue customers per entry mode
+      // (b) Entry pass - overdue customers per entry mode
       if (cfg.entryStageId != null) {
         for (const c of customers as any[]) {
           const snap = snapByCustomer.get(c.id);
@@ -206,7 +206,7 @@ git commit -m "feat(collection): engine sets cycle on entry + reopen reactivates
 
 ---
 
-## Task 5: UI — show cycle in card detail
+## Task 5: UI - show cycle in card detail
 
 **Files:** `client/hooks/usePipelines.ts` (if `CardDetail` lacks the field), `client/components/pipelines/CardDetailModal.tsx`.
 

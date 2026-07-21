@@ -1,4 +1,4 @@
-# JABNET Mitra Selector on /map — Implementation Plan
+# JABNET Mitra Selector on /map - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`) syntax.
 
@@ -48,7 +48,7 @@ test("JABNET root selecting own mitra -> own", () => {
 
 Run: `npx tsx --test server/map-helpers.test.ts` → expect FAIL (module not found).
 
-- [ ] **Step 2: Run test to confirm failure** — `npx tsx --test server/map-helpers.test.ts`.
+- [ ] **Step 2: Run test to confirm failure** - `npx tsx --test server/map-helpers.test.ts`.
 
 - [ ] **Step 3: Implement `server/map-helpers.ts`**
 
@@ -56,7 +56,7 @@ Run: `npx tsx --test server/map-helpers.test.ts` → expect FAIL (module not fou
 /**
  * Decide which mitra's map data to serve. The cross-tenant override (?mitra) is
  * honored ONLY for JABNET-root; everyone else always gets their own active mitra.
- * Pure — unit-tested in map-helpers.test.ts.
+ * Pure - unit-tested in map-helpers.test.ts.
  */
 export function resolveMapMitraId(args: {
   isJabnetRoot: boolean;
@@ -80,11 +80,11 @@ git commit -m "feat(map): pure resolveMapMitraId gate for JABNET cross-mitra vie
 
 ---
 
-## Task 2: Backend — per-mitra map endpoints + cache fix
+## Task 2: Backend - per-mitra map endpoints + cache fix
 
 **Files:**
 - Modify: `server/route-cache.ts` (add prefix invalidation)
-- Modify: `server/routes.ts` (import, cache-bust middleware ~line 50, the two map-data endpoints ~2188–2223)
+- Modify: `server/routes.ts` (import, cache-bust middleware ~line 50, the two map-data endpoints ~2188-2223)
 
 - [ ] **Step 1: Add `invalidateCachedPrefix` to `server/route-cache.ts`**
 
@@ -118,7 +118,7 @@ Near the top imports of `server/routes.ts`, add:
 import { resolveMapMitraId } from "./map-helpers.js";
 ```
 
-- [ ] **Step 4: Rewrite `GET /api/map-data/infra` (currently ~2188–2199)**
+- [ ] **Step 4: Rewrite `GET /api/map-data/infra` (currently ~2188-2199)**
 
 Replace the whole handler with:
 ```ts
@@ -147,7 +147,7 @@ router.get("/api/map-data/infra", async (req: Request, res: Response) => {
 });
 ```
 
-- [ ] **Step 5: Rewrite `GET /api/map-data/customers` (currently ~2201–2223)**
+- [ ] **Step 5: Rewrite `GET /api/map-data/customers` (currently ~2201-2223)**
 
 Replace the whole handler with:
 ```ts
@@ -196,10 +196,10 @@ git commit -m "feat(map): per-mitra map-data endpoints (JABNET ?mitra override) 
 
 ---
 
-## Task 3: Frontend hooks — thread optional mitraId
+## Task 3: Frontend hooks - thread optional mitraId
 
 **Files:**
-- Modify: `client/hooks/useAssets.ts` (`useMapInfra` ~41–50, `useMapCustomers` ~51–66)
+- Modify: `client/hooks/useAssets.ts` (`useMapInfra` ~41-50, `useMapCustomers` ~51-66)
 
 - [ ] **Step 1: Replace `useMapInfra`**
 
@@ -245,7 +245,7 @@ git commit -m "feat(map): map hooks accept optional mitraId (query param + cache
 
 ---
 
-## Task 4: MapPage — JABNET selector + read-only mode
+## Task 4: MapPage - JABNET selector + read-only mode
 
 **Files:**
 - Modify: `client/pages/MapPage.tsx`
@@ -261,7 +261,7 @@ import { Combobox } from "@/components/ui/combobox";
 
 - [ ] **Step 2: Add state + read-only flag, and pass mitraId to the hooks**
 
-Replace lines 470–475 (from `const { user } = useAuth();` through the `useMapCustomers` call) with:
+Replace lines 470-475 (from `const { user } = useAuth();` through the `useMapCustomers` call) with:
 ```ts
   const { user } = useAuth();
   const isMarketing = user?.role === "marketing";
@@ -287,7 +287,7 @@ Replace lines 470–475 (from `const { user } = useAuth();` through the `useMapC
 ```
 > NOTE: `GET /api/mitras` returns the array directly (its handler does `sendSuccess(res, list)` and `api.get` unwraps `.data`), so `mitraListResp` is the array. Verify with `grep -n 'router.get("/api/mitras"' server/routes.ts` and the `sendSuccess` shape; if it returns `{ mitras: [...] }`, map over `mitraListResp.mitras` instead.
 
-- [ ] **Step 3: Hard read-only guards (safety net — prevents wrong-tenant writes)**
+- [ ] **Step 3: Hard read-only guards (safety net - prevents wrong-tenant writes)**
 
 In `handleMapClick` (~line 648), change:
 ```ts
@@ -297,7 +297,7 @@ to:
 ```ts
     if (readOnly) return; // marketing OR viewing another mitra: view-only, no drawing
 ```
-(`handleMapClick` is a `useCallback`; add `readOnly` to its dependency array — find the `], [` deps line at the end of that callback and include `readOnly`.)
+(`handleMapClick` is a `useCallback`; add `readOnly` to its dependency array - find the `], [` deps line at the end of that callback and include `readOnly`.)
 
 In `handleAssetSubmit` (~line 688), add as the FIRST line inside the function body:
 ```ts
@@ -310,13 +310,13 @@ Change the desktop toolbar guard (~line 1124) from `{!isMarketing && (` to `{!re
 Change the mobile FAB guard (~line 1175) from `{!isMarketing && (` to `{!readOnly && (`.
 In the InfoPanel props (~lines 1078, 1086, 1093) change each `!isMarketing &&` to `!readOnly &&`.
 For the second InfoPanel render (~lines 1275, 1284) which currently has NO marketing guard, prefix each handler with the read-only check, e.g. change `onAddCustomerDrop={selectedInfo.type === "odp" ? () => {` to `onAddCustomerDrop={!readOnly && selectedInfo.type === "odp" ? () => {` and the same for `onAddAssetAtCable={!readOnly && selectedInfo.type === "cable" ? (t) => {`.
-(Use grep to confirm you caught all edit entry points: `grep -nE "onAddCustomerDrop|onAddAssetAtCable|onEdit=" client/pages/MapPage.tsx` — every one that creates/edits must be behind `!readOnly`.)
+(Use grep to confirm you caught all edit entry points: `grep -nE "onAddCustomerDrop|onAddAssetAtCable|onEdit=" client/pages/MapPage.tsx` - every one that creates/edits must be behind `!readOnly`.)
 
 - [ ] **Step 5: Render the JABNET-only selector + read-only badge**
 
 Immediately after the loading indicator block (right after the `{customersLoading && bbox && (...)}` block that ends ~line 1121), insert:
 ```tsx
-        {/* ════════════════ JABNET MITRA SELECTOR (owner only) ════════════════ */}
+        {/* ================ JABNET MITRA SELECTOR (owner only) ================ */}
         {isJabnetRoot && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 bg-card/95 backdrop-blur rounded-lg shadow-elev-md px-2 py-1.5">
             <span className="text-[11px] font-semibold text-muted-foreground pl-1">Data mitra:</span>
@@ -355,10 +355,10 @@ git commit -m "feat(map): JABNET-only mitra selector + read-only mode when viewi
 
 ## Task 5: Full verification
 
-- [ ] **Step 1: Tests** — `npx tsx --test server/map-helpers.test.ts server/feature-gate.test.ts server/billing-admin-helpers.test.ts server/reporting-helpers.test.ts` → all pass.
-- [ ] **Step 2: Typecheck** — `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — `npm run build` → success.
-- [ ] **Step 4: Commit remainder** — `git add -A && git commit -m "chore(map): finalize mitra selector" || echo "nothing to commit"`.
+- [ ] **Step 1: Tests** - `npx tsx --test server/map-helpers.test.ts server/feature-gate.test.ts server/billing-admin-helpers.test.ts server/reporting-helpers.test.ts` → all pass.
+- [ ] **Step 2: Typecheck** - `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - `npm run build` → success.
+- [ ] **Step 4: Commit remainder** - `git add -A && git commit -m "chore(map): finalize mitra selector" || echo "nothing to commit"`.
 
 ---
 

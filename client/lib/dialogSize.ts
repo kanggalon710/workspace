@@ -1,4 +1,4 @@
-/** Reusable dialog width presets — mobile-first. Pure logic, unit-tested. */
+/** Reusable dialog width presets - mobile-first. Pure logic, unit-tested. */
 
 export type DialogSize = "normal" | "wide" | "full";
 export const DIALOG_SIZES: DialogSize[] = ["normal", "wide", "full"];

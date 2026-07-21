@@ -8,7 +8,7 @@ const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOStrin
 test("cardAgeLabel: today vs N days", () => {
   assert.equal(cardAgeLabel(daysAgo(0), now), "Hari ini");
   assert.equal(cardAgeLabel(daysAgo(3), now), "3h lalu");
-  assert.equal(cardAgeLabel(null as any, now), "—");
+  assert.equal(cardAgeLabel(null as any, now), "-");
 });
 
 test("lastUpdateTone: 1/7/14 day boundaries (uses updatedAt else createdAt)", () => {

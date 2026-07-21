@@ -1,4 +1,4 @@
-/** ESS Absen (PRD-HR FR-HR-1101/1102): semua staff absen Masuk/Keluar dari HP —
+/** ESS Absen (PRD-HR FR-HR-1101/1102): semua staff absen Masuk/Keluar dari HP -
  *  GPS + selfie kamera. Di luar radius kantor → masuk antrean Approval Presensi. */
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -66,8 +66,8 @@ function VisitCard() {
       return api.post<any>(`/hr/visits`, { clientId: Number(clientId), lat: pos.coords.latitude, lng: pos.coords.longitude, note });
     },
     onSuccess: (v: any) => {
-      v.valid ? toast.success("Kunjungan tercatat — dalam radius klien ✓")
-        : toast.error("Tercatat TAPI di luar radius klien — ditandai untuk HR");
+      v.valid ? toast.success("Kunjungan tercatat - dalam radius klien ✓")
+        : toast.error("Tercatat TAPI di luar radius klien - ditandai untuk HR");
       setNote(""); qc.invalidateQueries({ queryKey: ["/api/hr/visits"] });
     },
     onError: (e: any) => toast.error(e?.message || "Gagal check-in"),
@@ -102,7 +102,7 @@ const stBadge = (s: string) => (
     label={s === "approved" ? "Disetujui" : s === "paid" ? "Dibayar" : s === "settled" ? "Lunas" : s === "rejected" ? "Ditolak" : "Menunggu"} />
 );
 
-/** Kasbon (plafon + cicilan auto-potong slip) & Reimburse — self-service. */
+/** Kasbon (plafon + cicilan auto-potong slip) & Reimburse - self-service. */
 function MoneyCard() {
   const qc = useQueryClient();
   const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
@@ -112,7 +112,7 @@ function MoneyCard() {
   const { data: reimburse } = useQuery({ queryKey: ["/api/hr/reimburse", "mine"], queryFn: () => api.get<any[]>(`/hr/reimburse?mine=1`) });
   const submitKb = useMutation({
     mutationFn: () => api.post(`/hr/kasbon`, { amount: Number(kb.amount), months: Number(kb.months), reason: kb.reason }),
-    onSuccess: () => { toast.success("Kasbon diajukan — cicilan otomatis dipotong dari gaji setelah disetujui"); qc.invalidateQueries({ queryKey: ["/api/hr/kasbon"] }); },
+    onSuccess: () => { toast.success("Kasbon diajukan - cicilan otomatis dipotong dari gaji setelah disetujui"); qc.invalidateQueries({ queryKey: ["/api/hr/kasbon"] }); },
     onError: (e: any) => toast.error(e?.message || "Gagal"),
   });
   const submitRb = useMutation({
@@ -174,7 +174,7 @@ function OvertimeCard() {
   });
   const submit = useMutation({
     mutationFn: () => api.post(`/hr/overtime`, { ...form, hours: Number(form.hours) }),
-    onSuccess: () => { toast.success("Lembur diajukan — menunggu persetujuan HR"); qc.invalidateQueries({ queryKey: ["/api/hr/overtime"] }); },
+    onSuccess: () => { toast.success("Lembur diajukan - menunggu persetujuan HR"); qc.invalidateQueries({ queryKey: ["/api/hr/overtime"] }); },
     onError: (e: any) => toast.error(e?.message || "Gagal mengajukan lembur"),
   });
   return (
@@ -232,7 +232,7 @@ export default function EssAbsenPage() {
     },
     onSuccess: (d) => {
       toast.success(d.needsApproval
-        ? "Absen terekam DI LUAR radius kantor — menunggu persetujuan HR"
+        ? "Absen terekam DI LUAR radius kantor - menunggu persetujuan HR"
         : `Absen ${d.kind === "in" ? "masuk" : "keluar"} tercatat ✓`);
       setSelfie(null); if (fileRef.current) fileRef.current.value = "";
       qc.invalidateQueries({ queryKey: ["/api/hr/my/today"] });
@@ -243,15 +243,15 @@ export default function EssAbsenPage() {
 
   const att = today?.attendance;
   // FR-HR-901/904: auto-ping lokasi tiap 5 menit SELAMA jam kerja (clock-in tanpa
-  // clock-out) & halaman terbuka — transparan lewat indikator di bawah.
+  // clock-out) & halaman terbuka - transparan lewat indikator di bawah.
   const working = !!att?.checkIn && !att?.checkOut;
   useEffect(() => {
     if (!working || !navigator.geolocation) return;
     const send = () => {
       if (document.visibilityState !== "visible") return;
       navigator.geolocation.getCurrentPosition(
-        (p) => { api.post(`/hr/ping`, { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }).catch(() => { /* offline — coba lagi tick berikutnya */ }); },
-        () => { /* izin ditolak — tidak dilacak */ }, { enableHighAccuracy: false, timeout: 8000 });
+        (p) => { api.post(`/hr/ping`, { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }).catch(() => { /* offline - coba lagi tick berikutnya */ }); },
+        () => { /* izin ditolak - tidak dilacak */ }, { enableHighAccuracy: false, timeout: 8000 });
     };
     send();
     const t = setInterval(send, 5 * 60_000);
@@ -261,17 +261,17 @@ export default function EssAbsenPage() {
 
   return (
     <PageContainer>
-      <PageHeader icon={CalendarCheck2} title="Absen" description="Presensi harian — GPS + selfie, langsung tercatat di HRD" accent="violet" />
+      <PageHeader icon={CalendarCheck2} title="Absen" description="Presensi harian - GPS + selfie, langsung tercatat di HRD" accent="violet" />
 
       <Card padding="md" className="text-center">
         <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hari Ini · {today?.date ?? "…"}</p>
         <div className="mt-1 flex items-center justify-center gap-3 text-sm">
-          <span>Masuk: <b className="tabular-nums">{att?.checkIn ?? "–"}</b></span>
-          <span>Keluar: <b className="tabular-nums">{att?.checkOut ?? "–"}</b></span>
+          <span>Masuk: <b className="tabular-nums">{att?.checkIn ?? "-"}</b></span>
+          <span>Keluar: <b className="tabular-nums">{att?.checkOut ?? "-"}</b></span>
           {att?.note && <StatusBadge size="sm" variant="warning" label={att.note} />}
         </div>
         {today?.shift && (
-          <p className="mt-1 text-xs text-muted-foreground">Shift {today.shift.name}: {today.shift.startTime}–{today.shift.endTime} (toleransi {today.shift.lateToleranceMin} mnt)</p>
+          <p className="mt-1 text-xs text-muted-foreground">Shift {today.shift.name}: {today.shift.startTime}-{today.shift.endTime} (toleransi {today.shift.lateToleranceMin} mnt)</p>
         )}
 
         {/* Selfie opsional (kamera depan di HP) */}
@@ -319,13 +319,13 @@ export default function EssAbsenPage() {
         </Card>
       )}
 
-      {/* Slip gaji saya (FR-HR-1104) — hanya yang sudah dibayar */}
+      {/* Slip gaji saya (FR-HR-1104) - hanya yang sudah dibayar */}
       <PayslipCard />
 
       {/* Ajukan lembur (FR-HR-207) */}
       <OvertimeCard />
 
-      {/* Kunjungan klien (FR-HR-903) — check-in sah hanya dalam radius klien */}
+      {/* Kunjungan klien (FR-HR-903) - check-in sah hanya dalam radius klien */}
       <VisitCard />
 
       {/* Kasbon + Reimburse (FR-HR-701/702) */}

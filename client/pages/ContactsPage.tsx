@@ -24,7 +24,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 
-// ── Category config (theme-aware) ──────────────────────────────────────────
+// -- Category config (theme-aware) ------------------------------------------
 const CAT_CONFIG: Record<string, {
   icon: any; iconCls: string; bgCls: string; avatarBg: string;
 }> = {
@@ -90,7 +90,7 @@ function fmtDateTime(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-// ── Contact Detail Drawer ──────────────────────────────────────────────────
+// -- Contact Detail Drawer --------------------------------------------------
 function ContactDetail({ lead, onClose }: { lead: ContactLead; onClose: () => void }) {
   const qc = useQueryClient();
   const [newNote, setNewNote] = useState("");
@@ -325,7 +325,7 @@ function ContactDetail({ lead, onClose }: { lead: ContactLead; onClose: () => vo
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+// -- Main Page --------------------------------------------------------------
 export default function ContactsPage() {
   const { user } = useAuth();
   const isSupervisor = user?.role === "System-Admin"
@@ -419,7 +419,7 @@ export default function ContactsPage() {
         }
       />
 
-      {/* ═══ Filter & Search Bar ═══ */}
+      {/* === Filter & Search Bar === */}
       <Card padding="md" className="sticky top-14 md:top-16 z-20 bg-background/90 backdrop-blur-md">
         <div className="space-y-3">
           {/* Search */}
@@ -506,7 +506,7 @@ export default function ContactsPage() {
         </div>
       </Card>
 
-      {/* ═══ Contact List ═══ */}
+      {/* === Contact List === */}
       {isLoading ? (
         <SkeletonList count={8} />
       ) : filtered.length === 0 ? (

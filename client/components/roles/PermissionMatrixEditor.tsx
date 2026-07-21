@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Ban, Eye, Pencil } from "lucide-react";
 
 export const LEVEL_CFG: Record<PermissionLevel, { label: string; color: string; bg: string; icon: any }> = {
-  none:  { label: "—",    color: "text-muted-foreground",                       bg: "bg-muted/30",                                  icon: Ban },
+  none:  { label: "-",    color: "text-muted-foreground",                       bg: "bg-muted/30",                                  icon: Ban },
   read:  { label: "READ", color: "text-sky-700 dark:text-sky-300",              bg: "bg-sky-100 dark:bg-sky-950/40",                icon: Eye },
   write: { label: "FULL", color: "text-emerald-700 dark:text-emerald-300",      bg: "bg-emerald-100 dark:bg-emerald-950/40",        icon: Pencil },
 };

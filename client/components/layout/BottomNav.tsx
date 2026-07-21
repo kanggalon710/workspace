@@ -28,7 +28,7 @@ const MARKETING_NAV_ITEMS = [
   { key: "tools", icon: Wrench, label: "Tools", path: null },
 ];
 
-// Static class strings — Tailwind JIT requires full class names visible to scanner
+// Static class strings - Tailwind JIT requires full class names visible to scanner
 const ASSET_SUBMENU = [
   { icon: Radio, label: "POP", path: "/pops", iconCls: "text-asset-pop", bgCls: "bg-asset-pop/10 ring-asset-pop/15 group-hover:ring-asset-pop/30" },
   { icon: Box, label: "ODC", path: "/odcs", iconCls: "text-asset-odc", bgCls: "bg-asset-odc/10 ring-asset-odc/15 group-hover:ring-asset-odc/30" },

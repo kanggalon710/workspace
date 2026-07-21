@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
-// CSV parser – handles quoted fields
+// CSV parser - handles quoted fields
 // ---------------------------------------------------------------------------
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
@@ -84,7 +84,7 @@ const ENTITIES: EntityConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Hooks helper – get record counts
+// Hooks helper - get record counts
 // ---------------------------------------------------------------------------
 
 function useRecordCounts(): Record<string, number | undefined> {

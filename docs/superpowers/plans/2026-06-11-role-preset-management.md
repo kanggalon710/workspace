@@ -19,7 +19,7 @@
 - Create: `shared/rolePresets.ts` (preset shape + `resolveDefaultPreset`)
 - Create: `shared/rolePresets.test.ts`
 
-- [ ] **Step 1: Write the failing test** — `shared/rolePresets.test.ts`
+- [ ] **Step 1: Write the failing test** - `shared/rolePresets.test.ts`
 
 ```ts
 import { test } from "node:test";
@@ -170,7 +170,7 @@ git commit -m "feat(role-presets): schema table + cleanse/default pure helpers (
 
 ---
 
-### Task 2: Storage — table create, seed, CRUD
+### Task 2: Storage - table create, seed, CRUD
 
 **Files:**
 - Modify: `server/storage.ts` (IStorage interface + DatabaseStorage methods + startup wiring)
@@ -190,11 +190,11 @@ Near the role signatures (e.g. after `seedAdminRoleForMitra`), add:
   setDefaultRolePreset(id: number): Promise<void>;
 ```
 
-Ensure `rolePresets`, `RolePreset`, `InsertRolePreset` are imported from `@shared/schema` (the file already imports `roles` etc. — add to that import). Also import `buildPermissionMatrixFromPreset`, `PERMISSION_PRESETS` if not present.
+Ensure `rolePresets`, `RolePreset`, `InsertRolePreset` are imported from `@shared/schema` (the file already imports `roles` etc. - add to that import). Also import `buildPermissionMatrixFromPreset`, `PERMISSION_PRESETS` if not present.
 
 - [ ] **Step 2: Implement the methods in `DatabaseStorage`**
 
-Add near the role methods (after `deleteRole`). Uses the established MySQL patterns (insert→reselect; `sql` raw for the CREATE TABLE; `and/eq/or` from drizzle — already imported).
+Add near the role methods (after `deleteRole`). Uses the established MySQL patterns (insert→reselect; `sql` raw for the CREATE TABLE; `and/eq/or` from drizzle - already imported).
 
 ```ts
   async seedRolePresetsIfNeeded(): Promise<void> {
@@ -336,14 +336,14 @@ git commit -m "feat(role-presets): table create + idempotent built-in seed + CRU
 
 ---
 
-### Task 3: Routes — API + scope/ownership gate
+### Task 3: Routes - API + scope/ownership gate
 
 **Files:**
 - Modify: `server/routes.ts` (auth helper + 5 endpoints; reuse `cleansePermissionMatrix`)
 
 - [ ] **Step 1: Import the cleanse helper**
 
-In the `@shared/schema` import in `server/routes.ts`, add `cleansePermissionMatrix` (and ensure `PermissionLevel`/`ALL_PERMISSION_KEYS` already imported). Refactor the existing `POST /api/roles` cleanse loop (≈ lines 1989-1997) to `const cleanPerms = cleansePermissionMatrix(permissions);` (DRY — remove the inline loop). Do the same in `PUT /api/roles/:id` if it has an equivalent loop.
+In the `@shared/schema` import in `server/routes.ts`, add `cleansePermissionMatrix` (and ensure `PermissionLevel`/`ALL_PERMISSION_KEYS` already imported). Refactor the existing `POST /api/roles` cleanse loop (≈ lines 1989-1997) to `const cleanPerms = cleansePermissionMatrix(permissions);` (DRY - remove the inline loop). Do the same in `PUT /api/roles/:id` if it has an equivalent loop.
 
 - [ ] **Step 2: Add the authorization helper**
 
@@ -374,7 +374,7 @@ function authorizePresetMutation(
 Place near the `/api/roles` routes:
 
 ```ts
-// GET /api/role-presets — apply set (active globals + own active tenant presets).
+// GET /api/role-presets - apply set (active globals + own active tenant presets).
 // ?manage=1 → manageable set (incl. inactive), gated to admins.
 router.get("/api/role-presets", async (req: Request, res: Response) => {
   const manage = req.query.manage === "1";
@@ -476,7 +476,7 @@ git commit -m "feat(role-presets): CRUD API + scope/ownership gate; DRY role cle
 
 ---
 
-### Task 4: Client — extract `<PermissionMatrixEditor>`
+### Task 4: Client - extract `<PermissionMatrixEditor>`
 
 **Files:**
 - Create: `client/components/roles/PermissionMatrixEditor.tsx`
@@ -484,7 +484,7 @@ git commit -m "feat(role-presets): CRUD API + scope/ownership gate; DRY role cle
 
 - [ ] **Step 1: Create the component**
 
-Extract the matrix UI currently inline in `RoleFormDialog` (RolesPage.tsx lines ~509-562: the "Bulk actions" bar + the per-group matrix with `PermissionRow`). Move `PermissionRow` and `LEVEL_CFG` into this file (or export them from RolesPage and import — prefer moving `PermissionRow` here and importing it back into RolesPage if RolesPage still needs it for the read-only preview at line ~357).
+Extract the matrix UI currently inline in `RoleFormDialog` (RolesPage.tsx lines ~509-562: the "Bulk actions" bar + the per-group matrix with `PermissionRow`). Move `PermissionRow` and `LEVEL_CFG` into this file (or export them from RolesPage and import - prefer moving `PermissionRow` here and importing it back into RolesPage if RolesPage still needs it for the read-only preview at line ~357).
 
 ```tsx
 import { ALL_PERMISSIONS, ALL_PERMISSION_KEYS, type PermissionLevel } from "@shared/schema";
@@ -496,7 +496,7 @@ interface Props {
   value: Record<string, PermissionLevel>;
   onChange: (next: Record<string, PermissionLevel>) => void;
   disabled?: boolean;
-  showBulk?: boolean; // the All None/Read/Full bar — default true
+  showBulk?: boolean; // the All None/Read/Full bar - default true
 }
 
 export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = true }: Props) {
@@ -558,7 +558,7 @@ In `RolesPage.tsx`, replace the inline bulk-bar + per-group matrix (lines ~509-5
             disabled={isSystem && (initial?.name === "System-Admin" || initial?.name === "Admin")}
           />
 ```
-Keep the quick-presets block + the "stats" summary line as-is. Remove the now-dead local `setAllInGroup`/`setAllPermissions` if no longer referenced (keep `setLevel`/`setPermissions`). Import `PermissionMatrixEditor` (and `PermissionRow` if still used at line ~357 for the read-only preview — import it from the new file).
+Keep the quick-presets block + the "stats" summary line as-is. Remove the now-dead local `setAllInGroup`/`setAllPermissions` if no longer referenced (keep `setLevel`/`setPermissions`). Import `PermissionMatrixEditor` (and `PermissionRow` if still used at line ~357 for the read-only preview - import it from the new file).
 
 - [ ] **Step 3: Verify**
 
@@ -574,7 +574,7 @@ git commit -m "refactor(roles): extract reusable PermissionMatrixEditor"
 
 ---
 
-### Task 5: Client — preset hooks, dialog, and Preset tab
+### Task 5: Client - preset hooks, dialog, and Preset tab
 
 **Files:**
 - Create: `client/hooks/useRolePresets.ts`
@@ -617,7 +617,7 @@ export function useRolePresetMutations() {
 
 A `<form>`-based dialog (follow the project dialog convention: `max-w-3xl w-[calc(100vw-2rem)] max-h-[92vh] overflow-hidden flex flex-col p-0`). Fields:
 - Name (`<Input>`, disabled when editing an `isSystem` preset), Description (`<Textarea>`).
-- Icon + color picker: reuse the pattern from `client/components/pipelines/MetricsConfigDialog.tsx` (color chips via `METRIC_COLORS`/`COLOR_BG`; for icon, a small set — reuse `metricIcons` map or a short lucide list).
+- Icon + color picker: reuse the pattern from `client/components/pipelines/MetricsConfigDialog.tsx` (color chips via `METRIC_COLORS`/`COLOR_BG`; for icon, a small set - reuse `metricIcons` map or a short lucide list).
 - Scope select: options `tenant` always; `global` ONLY when `auth.user.isSystemAdmin && auth.user.activeMitraId === 1` (else hide/lock to tenant). Disabled when editing (scope immutable).
 - Active toggle (`<input type="checkbox">` + label). Default toggle (checkbox; on save, if checked call `setDefault` mutation after create/update).
 - `<PermissionMatrixEditor value={permissions} onChange={setPermissions} disabled={isSystem && !auth.user.isSystemAdmin} />`.
@@ -646,7 +646,7 @@ git commit -m "feat(role-presets): manage tab + preset dialog + hooks in /roles"
 
 ---
 
-### Task 6: Client — role-create form sources presets from the API
+### Task 6: Client - role-create form sources presets from the API
 
 **Files:**
 - Modify: `client/pages/RolesPage.tsx` (RoleFormDialog quick-presets block + default pre-apply)
@@ -695,7 +695,7 @@ git commit -m "feat(role-presets): role form uses DB presets + pre-applies defau
 
 **Files:** none.
 
-- [ ] **Step 1: Authoritative gate** — `npx tsc --noEmit && npm run build && npx tsx --test shared/rolePresets.test.ts shared/permissionPresets.test.ts` → 0 errors, build ok, all tests pass.
+- [ ] **Step 1: Authoritative gate** - `npx tsc --noEmit && npm run build && npx tsx --test shared/rolePresets.test.ts shared/permissionPresets.test.ts` → 0 errors, build ok, all tests pass.
 
 - [ ] **Step 2: Manual on dev** (spec §9). Requires a Node restart after deploy (new table created on startup).
   1. **Startup seed:** restart → `/roles` Preset tab (as System-Admin JABNET) shows the 5 built-ins as Global, `admin` marked default, all locked (no delete).

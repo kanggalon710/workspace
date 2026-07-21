@@ -3,7 +3,7 @@
  *
  * Foto disimpan di luar webroot di $JABNET_UPLOAD_ROOT (default: $JABNET_PRIVATE_ROOT/uploads
  * atau ./uploads sebagai fallback dev). DB hanya simpan relative path
- * (mis. "jabnet/canvassing/2026/05/142-7a3b1c9d.jpg") — bukan absolute path.
+ * (mis. "jabnet/canvassing/2026/05/142-7a3b1c9d.jpg") - bukan absolute path.
  *
  * Per-mitra isolation: <root>/<mitra-slug>/<feature>/YYYY/MM/<idHint>-<8hex>.<ext>
  */
@@ -134,7 +134,7 @@ function resolveSafe(relativePath: string): string {
 }
 
 /**
- * Hapus file. Best-effort — kalau file tidak ada, no-op (idempotent).
+ * Hapus file. Best-effort - kalau file tidak ada, no-op (idempotent).
  */
 export async function deletePhoto(relativePath: string | null | undefined): Promise<void> {
   if (!relativePath) return;
@@ -149,8 +149,8 @@ export async function deletePhoto(relativePath: string | null | undefined): Prom
   } catch (e: any) {
     if (e?.code === "ENOENT") return; // already gone, OK
     if (e?.message?.includes("traversal") || e?.message?.includes("Absolute")) {
-      // Refuse to delete unsafe path silently — log but don't throw
-      console.warn(`[uploads] refuse deletePhoto: ${relativePath} — ${e.message}`);
+      // Refuse to delete unsafe path silently - log but don't throw
+      console.warn(`[uploads] refuse deletePhoto: ${relativePath} - ${e.message}`);
       return;
     }
     throw e;

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let automation spawn a card in another pipeline linked via SP2 lineage (`create_card` + relation), and move a linked card in another pipeline (`move_linked`) — running the Finance Collections↔Delegation flow.
+**Goal:** Let automation spawn a card in another pipeline linked via SP2 lineage (`create_card` + relation), and move a linked card in another pipeline (`move_linked`) - running the Finance Collections↔Delegation flow.
 
 **Architecture:** A pure config parser (`shared/linkedCardActions.ts`) + a sibling-finder in storage + two automation branches in `pipeline-automation.ts` (extend `create_card`, add `move_linked`) + server/client action plumbing (`validateActions`, `ruleFormState`, `RuleActionEditor`). No new tables. All cross-pipeline mutations are storage-direct (no re-dispatch) → loop-safe.
 
@@ -12,7 +12,7 @@
 - Tests: `npx tsx --test <file>` (NO `npm test`). Import extensions `.js`.
 - Tenant-scoped via `getMitraId()`. Drizzle MySQL: no `.returning()`.
 - `createCard(pipelineId, data, userId)` already accepts `masterCardId?/originCardId?/relationType?` (SP2).
-- Loop-safety invariant (pipeline-automation.ts:166): automation mutations call storage **directly** and never re-dispatch. Preserve this — `move_linked` uses `storage.moveCard`, which does NOT run automation.
+- Loop-safety invariant (pipeline-automation.ts:166): automation mutations call storage **directly** and never re-dispatch. Preserve this - `move_linked` uses `storage.moveCard`, which does NOT run automation.
 
 ---
 
@@ -58,14 +58,14 @@ test("masterForSpawn: root → own id, spawned → source master", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/linkedCardActions.test.ts`
-Expected: FAIL — `ERR_MODULE_NOT_FOUND`.
+Expected: FAIL - `ERR_MODULE_NOT_FOUND`.
 
 - [ ] **Step 3: Write minimal implementation**
 
 Create `shared/linkedCardActions.ts`:
 
 ```ts
-/** Pure helpers for cross-pipeline linked-card actions — no I/O, unit-testable. */
+/** Pure helpers for cross-pipeline linked-card actions - no I/O, unit-testable. */
 import { isValidRelationType, type CardRelationType } from "./cardIdentity.js";
 
 export interface SpawnLineageConfig { relationType: CardRelationType; reuseExisting: boolean }
@@ -88,7 +88,7 @@ export function masterForSpawn(sourceMasterId: number | null | undefined, source
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/linkedCardActions.test.ts`
-Expected: PASS — 3/3.
+Expected: PASS - 3/3.
 
 - [ ] **Step 5: Commit**
 
@@ -126,7 +126,7 @@ git commit -m "feat(cross-pipeline): add move_linked to action-type union"
 
 ---
 
-### Task 3: Storage — `getSiblingCardInPipeline`
+### Task 3: Storage - `getSiblingCardInPipeline`
 
 **Files:**
 - Modify: `server/storage.ts` (add near `getRelatedCards` ~line 1958)
@@ -151,7 +151,7 @@ async getSiblingCardInPipeline(masterId: number, pipelineId: number, excludeCard
 }
 ```
 
-(`ne`, `desc`, `and`, `eq` are already imported — added in SP2 / pre-existing.)
+(`ne`, `desc`, `and`, `eq` are already imported - added in SP2 / pre-existing.)
 
 - [ ] **Step 2: Verify typecheck + build**
 
@@ -167,7 +167,7 @@ git commit -m "feat(cross-pipeline): getSiblingCardInPipeline finder"
 
 ---
 
-### Task 4: Automation — extend `create_card`, add `move_linked`
+### Task 4: Automation - extend `create_card`, add `move_linked`
 
 **Files:**
 - Modify: `server/pipeline-automation.ts` (the `create_card` branch ~40-66; add a `move_linked` branch; extend the imports at the top)
@@ -190,13 +190,13 @@ Replace the entire `if (action.actionType === "create_card") { ... }` block (lin
   if (action.actionType === "create_card") {
     const targetStages = await storage.listStages(action.targetPipelineId!);
     if (!targetStages.some((s) => s.id === action.targetStageId)) {
-      console.warn(`[automation] action ${action.id}: target stage ${action.targetStageId} no longer exists — skipped`);
+      console.warn(`[automation] action ${action.id}: target stage ${action.targetStageId} no longer exists - skipped`);
       return false;
     }
     const assigneeId = (action.copyAssignee && card.assigneeId && await storage.canUserAccessPipeline(card.assigneeId, action.targetPipelineId!))
       ? card.assigneeId : null;
     if (action.copyAssignee && card.assigneeId && assigneeId === null) {
-      console.warn(`[automation] action ${action.id}: assignee ${card.assigneeId} lacks access to pipeline ${action.targetPipelineId} — created unassigned`);
+      console.warn(`[automation] action ${action.id}: assignee ${card.assigneeId} lacks access to pipeline ${action.targetPipelineId} - created unassigned`);
     }
 
     // SP3a: opt-in lineage. With reuseExisting, bind to an existing sibling instead of duplicating.
@@ -242,18 +242,18 @@ Immediately AFTER the `create_card` branch (before the `set_field` branch), add:
 ```ts
   if (action.actionType === "move_linked") {
     if (!action.targetPipelineId || !action.targetStageId) {
-      console.warn(`[automation] action ${action.id}: move_linked needs target pipeline + stage — skipped`);
+      console.warn(`[automation] action ${action.id}: move_linked needs target pipeline + stage - skipped`);
       return false;
     }
     const masterId = masterForSpawn(card.masterCardId, card.id);
     const sibling = await storage.getSiblingCardInPipeline(masterId, action.targetPipelineId, card.id);
     if (!sibling) {
-      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     const stages = await storage.listStages(action.targetPipelineId);
     if (!stages.some((s) => s.id === action.targetStageId)) {
-      console.warn(`[automation] action ${action.id}: move_linked target stage missing — skipped`);
+      console.warn(`[automation] action ${action.id}: move_linked target stage missing - skipped`);
       return false;
     }
     if (sibling.stageId === action.targetStageId) return false; // already there → no-op
@@ -276,7 +276,7 @@ git commit -m "feat(cross-pipeline): create_card lineage + reuse, move_linked ac
 
 ---
 
-### Task 5: Server validation — accept `move_linked`
+### Task 5: Server validation - accept `move_linked`
 
 **Files:**
 - Modify: `server/routes.ts` (`validateActions` ~line 4443)
@@ -313,7 +313,7 @@ git commit -m "feat(cross-pipeline): validateActions accepts move_linked"
 
 ---
 
-### Task 6: Client form state — `ruleFormState.ts`
+### Task 6: Client form state - `ruleFormState.ts`
 
 **Files:**
 - Modify: `client/components/pipelines/ruleFormState.ts` (`ActionDraft` type ~20; `emptyAction` ~42; BOTH `create_card` hydrate blocks ~110 and ~185; `draftToPayload` `create_card` block ~278; add `move_linked` to hydrate + payload)
@@ -375,7 +375,7 @@ In the `create_card` payload block (~278), add `actionConfig` when a relation is
     } else if (a.actionType === "set_field") {
 ```
 
-(Keep the rest of the chain — `set_field`/`move_stage`/`assign`/`notify` — unchanged; the snippet above just inserts the `move_linked` branch before `set_field`.)
+(Keep the rest of the chain - `set_field`/`move_stage`/`assign`/`notify` - unchanged; the snippet above just inserts the `move_linked` branch before `set_field`.)
 
 - [ ] **Step 4: Verify typecheck + build**
 
@@ -391,7 +391,7 @@ git commit -m "feat(cross-pipeline): ruleFormState lineage + move_linked seriali
 
 ---
 
-### Task 7: Client editor — `RuleActionEditor.tsx`
+### Task 7: Client editor - `RuleActionEditor.tsx`
 
 **Files:**
 - Modify: `client/components/pipelines/RuleActionEditor.tsx` (action-type Combobox ~70; the `create_card` editor section; add a `move_linked` section)
@@ -415,7 +415,7 @@ In the `create_card` block (where `value.actionType === "create_card"`), after t
             hint="Kosong = kartu independen. Pilih relasi agar kartu baru tertaut ke entitas yang sama (muncul di 'Kartu Terkait').">
             <Combobox
               options={[
-                { value: "", label: "— Tidak tertaut —" },
+                { value: "", label: "- Tidak tertaut -" },
                 { value: "mirror", label: "Mirror" },
                 { value: "duplicate", label: "Duplikat" },
                 { value: "linked", label: "Tertaut" },
@@ -423,7 +423,7 @@ In the `create_card` block (where `value.actionType === "create_card"`), after t
               ]}
               value={value.relationType}
               onChange={(v) => patch({ relationType: v })}
-              placeholder="— Tidak tertaut —"
+              placeholder="- Tidak tertaut -"
             />
           </FormField>
           {value.relationType && (
@@ -471,7 +471,7 @@ After the `create_card` block closes, add:
       )}
 ```
 
-(`targetPipe` is the per-action target-pipeline fetch already declared at the top of this component — reused from the `create_card` machinery. `allPipelines` is a prop.)
+(`targetPipe` is the per-action target-pipeline fetch already declared at the top of this component - reused from the `create_card` machinery. `allPipelines` is a prop.)
 
 - [ ] **Step 4: Verify typecheck + build**
 

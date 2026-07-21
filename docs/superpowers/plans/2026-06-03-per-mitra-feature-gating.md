@@ -1,8 +1,8 @@
-# Per-Mitra Feature Gating — Implementation Plan
+# Per-Mitra Feature Gating - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** Make per-mitra feature toggles (`mitras.features`) actually enforce access by stripping a disabled feature's permissions at per-mitra permission resolution — the single chokepoint that all client menus/routes and server endpoints already respect.
+**Goal:** Make per-mitra feature toggles (`mitras.features`) actually enforce access by stripping a disabled feature's permissions at per-mitra permission resolution - the single chokepoint that all client menus/routes and server endpoints already respect.
 
 **Architecture:** A pure `gatePermissionsByFeatures()` helper applies a `FEATURE_PERMISSIONS` mapping. `getUserEffectivePermissionsAtMitra` gates the resolved perms before caching. JABNET (mitra 1) is never gated. The mitra-update endpoint busts the per-mitra perm cache so toggles take effect immediately.
 
@@ -96,7 +96,7 @@ test("does not mutate input object", () => {
 
 Run: `npx tsx --test server/feature-gate.test.ts` → expect FAIL (module not found).
 
-- [ ] **Step 3: Run test to confirm it fails** — `npx tsx --test server/feature-gate.test.ts`.
+- [ ] **Step 3: Run test to confirm it fails** - `npx tsx --test server/feature-gate.test.ts`.
 
 - [ ] **Step 4: Implement `server/feature-gate.ts`**
 
@@ -109,7 +109,7 @@ type Level = "none" | "read" | "write";
 
 /**
  * Strip the permissions of any disabled feature for a mitra.
- * Pure — no I/O. JABNET (mitra 1) is the owner and is never gated.
+ * Pure - no I/O. JABNET (mitra 1) is the owner and is never gated.
  * A feature absent from `featuresJson` is treated as enabled; only explicit `false` disables.
  * Malformed/empty JSON leaves perms unchanged (fail-open to avoid lockout).
  */
@@ -177,11 +177,11 @@ to:
     mitraId: number
   ): Promise<{ perms: Record<string, PermissionLevel>; canSeeAllData: boolean; roleName: string | null; isSystem: boolean }> {
 ```
-(i.e. rename to `_resolvePermsAtMitra`, make it `private`, and DELETE the `const cacheKey` + `const cached` + `if (cached) return cached;` lines — caching moves to the wrapper.)
+(i.e. rename to `_resolvePermsAtMitra`, make it `private`, and DELETE the `const cacheKey` + `const cached` + `if (cached) return cached;` lines - caching moves to the wrapper.)
 
 - [ ] **Step 3: Remove the 4 internal cache writes**
 
-Inside `_resolvePermsAtMitra`, there are four `setCachedPermsAtMitra(cacheKey, X);` calls (each immediately before a `return X;`). DELETE each `setCachedPermsAtMitra(cacheKey, ...)` line, leaving the `return` statements. After this, `cacheKey` is no longer referenced in the method (good — it was removed in Step 2). The method now just resolves and returns, never caches.
+Inside `_resolvePermsAtMitra`, there are four `setCachedPermsAtMitra(cacheKey, X);` calls (each immediately before a `return X;`). DELETE each `setCachedPermsAtMitra(cacheKey, ...)` line, leaving the `return` statements. After this, `cacheKey` is no longer referenced in the method (good - it was removed in Step 2). The method now just resolves and returns, never caches.
 
 - [ ] **Step 4: Add the public wrapper that gates + caches**
 
@@ -247,14 +247,14 @@ In `PUT /api/mitras/:id`, after the `await pool.execute(\`UPDATE mitras SET ...\
 
 ```ts
     if (b.features && typeof b.features === "object") {
-      // Feature toggle changes effective permissions for this mitra's users — drop cached perms.
+      // Feature toggle changes effective permissions for this mitra's users - drop cached perms.
       invalidatePermCacheAtMitra();
     }
 ```
 
-(`invalidatePermCacheAtMitra()` with no args clears all per-mitra entries — coarse but correct; feature toggles are rare.)
+(`invalidatePermCacheAtMitra()` with no args clears all per-mitra entries - coarse but correct; feature toggles are rare.)
 
-- [ ] **Step 3: Verify** — `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Verify** - `npm run typecheck` → 0 errors.
 
 - [ ] **Step 4: Commit**
 
@@ -267,10 +267,10 @@ git commit -m "fix(feature-gating): bust per-mitra perm cache when mitra feature
 
 ## Task 4: Full verification
 
-- [ ] **Step 1: Tests** — `npx tsx --test server/feature-gate.test.ts server/billing-admin-helpers.test.ts server/reporting-helpers.test.ts` → all pass.
-- [ ] **Step 2: Typecheck** — `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — `npm run build` → success.
-- [ ] **Step 4: Commit any remainder** — `git add -A && git commit -m "chore(feature-gating): finalize" || echo "nothing to commit"`.
+- [ ] **Step 1: Tests** - `npx tsx --test server/feature-gate.test.ts server/billing-admin-helpers.test.ts server/reporting-helpers.test.ts` → all pass.
+- [ ] **Step 2: Typecheck** - `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - `npm run build` → success.
+- [ ] **Step 4: Commit any remainder** - `git add -A && git commit -m "chore(feature-gating): finalize" || echo "nothing to commit"`.
 
 ---
 
@@ -279,14 +279,14 @@ git commit -m "fix(feature-gating): bust per-mitra perm cache when mitra feature
 **Why:** the final whole-implementation review found that the gate (which works via `permLevels`)
 is bypassed by a pre-existing legacy shortcut `role === "admin" && !roleId` that sits *in front
 of* `permLevels`. The default mitra admin (created by `POST /api/mitras` with `role='admin'`,
-global `role_id=NULL`) hits it — exactly the bug actor (confirmed: dev user 37 `diar_suherli_admin`,
+global `role_id=NULL`) hits it - exactly the bug actor (confirmed: dev user 37 `diar_suherli_admin`,
 mitra 7). Seeded JABNET admins are **System-Admin** (`isSystemAdmin=true`), so tightening the
 shortcut to JABNET-only does not lock them out.
 
 **Files:**
-- Modify: `server/routes.ts` — lines ~223 (`hasPermission`), ~231 (`hasWritePermission`),
+- Modify: `server/routes.ts` - lines ~223 (`hasPermission`), ~231 (`hasWritePermission`),
   ~322 (`globalWriteGuard`), ~339 (`isSystemAdmin` helper).
-- Modify: `client/context/AuthContext.tsx` — `canRead` (~165) and `canWrite` (~177).
+- Modify: `client/context/AuthContext.tsx` - `canRead` (~165) and `canWrite` (~177).
 
 - [ ] **Server:** to each of the four lines that read
   `if (req.authUser.role === "admin" && !req.authUser.roleId) return true;` (or `return next();`
@@ -303,12 +303,12 @@ shortcut to JABNET-only does not lock them out.
 - [ ] Commit: `git commit -m "fix(security): legacy admin-text bypass defers to per-mitra permLevels (JABNET-only)"`
 
 **Out of scope:** the many other page-level `role === "admin"` checks (edit/delete buttons in
-LeadPipeline, Contacts, etc.) — user chose chokepoint-only. They are server-enforced already.
+LeadPipeline, Contacts, etc.) - user chose chokepoint-only. They are server-enforced already.
 
 ## Self-Review (coverage vs spec)
 - Mapping + pure helper + tests → Task 1. ✓
 - Enforcement at resolution (JABNET-exempt, gate before cache) → Task 2. ✓
 - Immediate effect via cache bust on toggle → Task 3. ✓
 - Verify → Task 4. ✓
-- Manual dev re-test (Diar Suherli loyalty/marketing_ads hidden + 403) is a post-deploy step for the user — not automatable here (no mitra-admin creds).
+- Manual dev re-test (Diar Suherli loyalty/marketing_ads hidden + 403) is a post-deploy step for the user - not automatable here (no mitra-admin creds).
 - `chatwoot` maps to `[]` (no-op) by design.

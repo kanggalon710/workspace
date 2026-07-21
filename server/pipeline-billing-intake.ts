@@ -49,7 +49,7 @@ export async function runBillingIntakeRules(): Promise<{ created: number; resolv
   const rules = await storage.listBillingSyncRules();
   if (rules.length === 0) return result;
 
-  // System actor for auto-created cards — createdBy is an audit field only (platform owner).
+  // System actor for auto-created cards - createdBy is an audit field only (platform owner).
   const systemUserId = 1;
   const nowMs = Date.now(); // basis hitung "hari overdue" untuk filter.minDaysOverdue
   const customers = (await storage.getCustomers()).map(toIntakeCustomer);

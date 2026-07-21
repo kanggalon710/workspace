@@ -7,16 +7,16 @@ const LEVEL_CLS: Record<string, string> = {
   unknown: "bg-muted text-muted-foreground",
 };
 
-/** Badge dBm dengan indikator warna hijau/kuning/merah — threshold dari server (configurable). */
+/** Badge dBm dengan indikator warna hijau/kuning/merah - threshold dari server (configurable). */
 export function OpticalPowerBadge({ value, kind, thresholds = DEFAULT_OPTICAL_THRESHOLDS }: {
   value: string | number | null | undefined;
   kind: "RX" | "TX";
   thresholds?: OpticalThresholds;
 }) {
-  // TX tidak diklasifikasikan seperti RX — tampil netral kalau ada.
+  // TX tidak diklasifikasikan seperti RX - tampil netral kalau ada.
   const level = kind === "RX" ? classifyOpticalPower(value, thresholds) : (value ? "good" : "unknown");
   const cls = kind === "RX" ? LEVEL_CLS[level] : "bg-muted text-foreground/80";
-  const text = value !== null && value !== undefined && value !== "" ? `${value} dBm` : "—";
+  const text = value !== null && value !== undefined && value !== "" ? `${value} dBm` : "-";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${cls}`}

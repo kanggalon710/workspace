@@ -9,7 +9,7 @@ import { CapacityIndicator } from "./CapacityIndicator";
 import { OdpCustomerList } from "./OdpCustomerList";
 import { AssetPhotosGallery } from "@/components/shared/AssetPhotosGallery";
 
-/** Shell panel detail aset map — responsive (BottomSheet di mobile, Dialog di desktop).
+/** Shell panel detail aset map - responsive (BottomSheet di mobile, Dialog di desktop).
  *  Generik: aset lain (ODC/OLT/FAT) tinggal pakai shell yang sama tanpa redesign. */
 export function MapAssetPanel({ open, onClose, isMobile, title, subtitle, children }: {
   open: boolean; onClose: () => void; isMobile: boolean;
@@ -88,7 +88,7 @@ export function OdpDetailPanel({ odpId, isMobile, onClose, onOpenCustomer, onEdi
             ))}
           </section>
 
-          {/* Foto ODP — preview + upload, geser horizontal bila banyak */}
+          {/* Foto ODP - preview + upload, geser horizontal bila banyak */}
           <section aria-label="Foto ODP">
             <AssetPhotosGallery assetType="odp" assetId={odpId} layout="scroll" />
           </section>

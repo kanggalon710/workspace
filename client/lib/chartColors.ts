@@ -1,6 +1,6 @@
 // ==================== CHART COLORS (Theme-aware) ====================
 // Single source of truth for Recharts colors. Values are HSL wrappers around
-// CSS variables defined in client/index.css — so they auto-adapt to light/dark mode.
+// CSS variables defined in client/index.css - so they auto-adapt to light/dark mode.
 //
 // Usage:
 //   import { CHART_COLORS, CHART_PALETTE } from "@/lib/chartColors";
@@ -38,7 +38,7 @@ export const CHART_PALETTE = [
 ] as const;
 
 /**
- * Usage pie/donut pair — used vs. available (e.g. port utilization).
+ * Usage pie/donut pair - used vs. available (e.g. port utilization).
  */
 export const USAGE_COLORS = {
   used: CHART_COLORS.primary,
@@ -46,7 +46,7 @@ export const USAGE_COLORS = {
 } as const;
 
 /**
- * Cable type colors — feeder / distribution / drop. Matches asset-cable semantic
+ * Cable type colors - feeder / distribution / drop. Matches asset-cable semantic
  * across the app.
  */
 export const CABLE_CHART_COLORS = {
@@ -56,7 +56,7 @@ export const CABLE_CHART_COLORS = {
 } as const;
 
 /**
- * Status colors — success / warning / danger — for alert banners, status badges
+ * Status colors - success / warning / danger - for alert banners, status badges
  * in charts, and health score segments.
  */
 export const STATUS_COLORS = {

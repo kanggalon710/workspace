@@ -1,15 +1,15 @@
-# Spec — SP2: Collection Parameters Config + Stage Mapping
+# Spec - SP2: Collection Parameters Config + Stage Mapping
 
 > Date: 2026-06-10 · Mitra-scoped · Second sub-project of the "Collection Parameters in Pipeline Engine"
 > epic. Build on `dev`. Hybrid architecture. Depends on SP1 (merged).
-> Target: pipeline 7 "Penagihan (Collections)" for JABNET — built generically for all tenants.
+> Target: pipeline 7 "Penagihan (Collections)" for JABNET - built generically for all tenants.
 
 ## Goal
 
 Store and edit, per pipeline, the collection parameters that the SP3 engine will execute: the overdue
 threshold for entering collection, the entry mode, the auto-write-off threshold + action, the entry/paid/
 write-off stage references, and a configurable overdue-range → stage mapping table. **SP2 is config + UI
-only — no automation runs yet** (that is SP3).
+only - no automation runs yet** (that is SP3).
 
 ## Decisions (confirmed in brainstorming)
 
@@ -26,7 +26,7 @@ only — no automation runs yet** (that is SP3).
 5. **Entry threshold and stage mapping are separate concepts**: the threshold gates *entry* into collection;
    the map positions a card by *aging*. SP3 reconciles them.
 
-## 1. Schema — `shared/schema.ts` + startup migrations
+## 1. Schema - `shared/schema.ts` + startup migrations
 
 ```ts
 export const collectionConfig = mysqlTable("collection_config", {
@@ -60,9 +60,9 @@ export const collectionStageMap = mysqlTable("collection_stage_map", {
 export type CollectionConfig = typeof collectionConfig.$inferSelect;
 export type CollectionStageMapRow = typeof collectionStageMap.$inferSelect;
 ```
-Migrations: add `CREATE TABLE IF NOT EXISTS` for both in `seedAdminIfNeeded()` (the startup migration block), mirroring the other pipeline tables. No backfill — absence of a row = collection mode off.
+Migrations: add `CREATE TABLE IF NOT EXISTS` for both in `seedAdminIfNeeded()` (the startup migration block), mirroring the other pipeline tables. No backfill - absence of a row = collection mode off.
 
-## 2. Pure module — `shared/collectionConfig.ts` (no I/O, unit-tested)
+## 2. Pure module - `shared/collectionConfig.ts` (no I/O, unit-tested)
 
 ```ts
 export type CollectionEntryMode = "create" | "move" | "create_if_not_exists" | "reopen";
@@ -94,7 +94,7 @@ export interface CollectionConfigInput {
 /** Enum + numeric sanity: thresholds non-negative ints; writeoffThreshold (if set) >= entryThreshold;
  *  entryMode ∈ ENTRY_MODES; writeoffAction ∈ WRITEOFF_ACTIONS; if writeoffAction=move_stage and a write-off
  *  threshold is set, writeoffStageId required. Returns null or an error string. (Stage-id existence is
- *  checked at the route against the pipeline's stages — not here, since this module has no DB.) */
+ *  checked at the route against the pipeline's stages - not here, since this module has no DB.) */
 export function validateCollectionConfig(cfg: CollectionConfigInput): string | null;
 ```
 
@@ -103,7 +103,7 @@ max<min → error; open-ended last row ok), `stageForOverdue` (in-range pick; mo
 ranges; open-ended match; none → null), `validateCollectionConfig` (good; bad enum; negative threshold;
 writeoff<entry; move_stage without writeoffStageId when threshold set → error).
 
-## 3. Storage — `server/storage.ts`
+## 3. Storage - `server/storage.ts`
 
 ```ts
 getCollectionConfig(pipelineId: number): Promise<{ config: CollectionConfig | null; stageMap: CollectionStageMapRow[] }>;
@@ -111,13 +111,13 @@ upsertCollectionConfig(pipelineId: number, cfg: CollectionConfigInput, mapRows: 
 ```
 - `getCollectionConfig`: select config row (by pipeline + `getMitraId()`), select map rows ordered by
   position. Config null when no row.
-- `upsertCollectionConfig`: in a transaction — upsert the config row (insert or update by pipelineId),
+- `upsertCollectionConfig`: in a transaction - upsert the config row (insert or update by pipelineId),
   then `DELETE` existing map rows for the pipeline and insert the new ones (replace-all). Mitra-scoped.
 
-## 4. API — `server/routes.ts`
+## 4. API - `server/routes.ts`
 
-- `GET /api/pipelines/:id/collection-config` — `requireWritePermission("pipelines")` + `requirePipelineCapability(manage)`; returns `sendSuccess(res, { config, stageMap })`. Config null → client shows defaults (disabled).
-- `PUT /api/pipelines/:id/collection-config` — same gates. Body `{ config: CollectionConfigInput, stageMap: StageMapRow[] }`.
+- `GET /api/pipelines/:id/collection-config` - `requireWritePermission("pipelines")` + `requirePipelineCapability(manage)`; returns `sendSuccess(res, { config, stageMap })`. Config null → client shows defaults (disabled).
+- `PUT /api/pipelines/:id/collection-config` - same gates. Body `{ config: CollectionConfigInput, stageMap: StageMapRow[] }`.
   1. `validateCollectionConfig(config)` → 400 on error.
   2. `validateStageMap(stageMap)` → 400 on error.
   3. Stage-id existence: every referenced stage id (`entryStageId`, `paidStageId`, `writeoffStageId`, each
@@ -125,7 +125,7 @@ upsertCollectionConfig(pipelineId: number, cfg: CollectionConfigInput, mapRows: 
   4. If `writeoffAction === "custom_rule"` and `writeoffRuleId` set, the rule must belong to this pipeline.
   5. `storage.upsertCollectionConfig(...)` → `sendSuccess(res, { ok: true })`.
 
-## 5. Client — hook + dialog
+## 5. Client - hook + dialog
 
 - `client/hooks/usePipelines.ts`: `useCollectionConfig(pipelineId)` (GET) + `useSaveCollectionConfig(pipelineId)` (PUT, invalidates the config query).
 - `client/components/pipelines/CollectionParametersDialog.tsx` (new, mobile-first):
@@ -135,7 +135,7 @@ upsertCollectionConfig(pipelineId: number, cfg: CollectionConfigInput, mapRows: 
   - When enabled: **Masuk Collection** `[N] Hari Overdue` (number) + entry-mode radio (4 modes w/ hints) +
     entry-stage & paid-stage `Combobox`es (pipeline stages). **Auto Write-Off** `[N] Hari Overdue` (number,
     blank = off) + action radio (Pindah ke stage → stage `Combobox` | Jalankan rule → rule `Combobox`).
-  - **Stage Mapping** table: rows `[min] – [max] Hari → [stage Combobox]`, "+ Tambah baris", remove, reorder
+  - **Stage Mapping** table: rows `[min] - [max] Hari → [stage Combobox]`, "+ Tambah baris", remove, reorder
     (up/down). Last row may leave max blank (open-ended ">"). Inline validation message on overlap/invalid.
   - Save button → `useSaveCollectionConfig`; on success toast "Parameter collection disimpan". Reuse the
     `dialog-size-toggle` pattern for width if helpful.
@@ -144,7 +144,7 @@ upsertCollectionConfig(pipelineId: number, cfg: CollectionConfigInput, mapRows: 
 
 ## 6. Testing
 
-- `shared/collectionConfig.test.ts` — the pure module (run `npx tsx --test`).
+- `shared/collectionConfig.test.ts` - the pure module (run `npx tsx --test`).
 - Storage upsert/get, endpoints (validation 400s, stage-ownership), dialog: typecheck + build + manual on dev.
 
 ## 7. Manual acceptance (on dev, pipeline 7 / JABNET)
@@ -152,9 +152,9 @@ upsertCollectionConfig(pipelineId: number, cfg: CollectionConfigInput, mapRows: 
 1. Pipeline 7 → settings menu → **Collection Parameters** dialog opens.
 2. Enable; set "Masuk Collection Setelah 7 Hari", mode = Create-if-not-exists, entry stage = Follow Up 1,
    paid stage = LUNAS; "Auto Write-Off Setelah 180 Hari" → Pindah ke stage Write Off.
-3. Build the mapping table: 1–7 → Follow Up 1, 8–14 → Follow Up 2, 15–30 → Follow Up 3, 31–60 → Visit,
-   61–90 → Isolir, >180 → Write Off. Save → persists; reopen shows the same values.
-4. Overlapping ranges (e.g. 1–7 and 5–10) → inline error, save blocked.
+3. Build the mapping table: 1-7 → Follow Up 1, 8-14 → Follow Up 2, 15-30 → Follow Up 3, 31-60 → Visit,
+   61-90 → Isolir, >180 → Write Off. Save → persists; reopen shows the same values.
+4. Overlapping ranges (e.g. 1-7 and 5-10) → inline error, save blocked.
 5. Referencing a stage from another pipeline (impossible via UI, but) → API returns 400.
 6. A non-`manage` role doesn't see the menu entry; the PUT endpoint 403s for them.
 

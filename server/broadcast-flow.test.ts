@@ -19,9 +19,9 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { buildAudienceWhere, validateAudienceFilter } from "./broadcast-audience.js";
 
-// ──────────────────────────────────────────────────────────────────
-// Test 1: bug — filter `customerId IN` ngga match integer autoincrement
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 1: bug - filter `customerId IN` ngga match integer autoincrement
+// ------------------------------------------------------------------
 test("BUG: customerId filter mengharapkan TEXT (058500015), bukan integer id", () => {
   // Customer di DB punya:
   //   id=5 (autoincrement INT, primary key)
@@ -46,9 +46,9 @@ test("BUG: customerId filter mengharapkan TEXT (058500015), bukan integer id", (
   // tapi customer_id sebenarnya format 9-digit text. Bug confirmed.
 });
 
-// ──────────────────────────────────────────────────────────────────
-// Test 2: bug — tidak ada field `id` di whitelist untuk filter by PK
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 2: bug - tidak ada field `id` di whitelist untuk filter by PK
+// ------------------------------------------------------------------
 test("BUG: tidak bisa filter customer by internal id (PK autoincrement)", () => {
   const filter = {
     combine: "all" as const,
@@ -58,16 +58,16 @@ test("BUG: tidak bisa filter customer by internal id (PK autoincrement)", () => 
   assert.equal(validateAudienceFilter(filter), false, "field 'id' ditolak validator");
 });
 
-// ──────────────────────────────────────────────────────────────────
-// Test 3: bug — reseller broadcast pakai filter phone IN integer-id, ngga match
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 3: bug - reseller broadcast pakai filter phone IN integer-id, ngga match
+// ------------------------------------------------------------------
 test("BUG: reseller broadcast filter phone IN integerIDs ngga akan match", () => {
   // Form kirim selectedTargetIds = Set<number> = {3, 5} (reseller.id)
   // Build filter:
   //   { field: 'phone', op: 'in', value: ['3','5'] }
   // SQL: WHERE phone IN ('3','5')
   // Match 0 reseller karena phone format-nya '6281234567'.
-  // Plus: audience engine query `customers`, bukan `resellers` — double broken.
+  // Plus: audience engine query `customers`, bukan `resellers` - double broken.
   const filter = {
     combine: "all" as const,
     rules: [{ field: "phone", op: "in" as const, value: ["3", "5"] }],
@@ -77,9 +77,9 @@ test("BUG: reseller broadcast filter phone IN integerIDs ngga akan match", () =>
   assert.match(built!.sql, /phone IN \(/);
 });
 
-// ──────────────────────────────────────────────────────────────────
-// Test 4: bug — placeholder regex untuk template
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 4: bug - placeholder regex untuk template
+// ------------------------------------------------------------------
 test("BUG: substitusi placeholder pakai single brace, template PRD pakai double", () => {
   // existing broadcast-worker.ts substitute() pattern:
   //   template.replace(/\{(\w+)\}/g, ...)
@@ -94,7 +94,7 @@ test("BUG: substitusi placeholder pakai single brace, template PRD pakai double"
   // tapi karena {{...}} adalah `{{nama_pelanggan}}`, inner-nya literal `{nama_pelanggan}`
   // yang punya `{` lagi di depan. Regex `\{(\w+)\}` butuh `\w+` BUKAN `{` lagi.
   // Test: literal "{{nama_pelanggan}}" match (\w+) → "nama_pelanggan" tapi ada
-  // sisa { di luar — regex masih match. Coba run.
+  // sisa { di luar - regex masih match. Coba run.
 
   const matches = [...doubleBraceContent.matchAll(singleBraceRegex)];
   // Pattern engine: cari `{` lalu `\w+` lalu `}`. Untuk `{{nama_pelanggan}}` it WILL match
@@ -104,9 +104,9 @@ test("BUG: substitusi placeholder pakai single brace, template PRD pakai double"
   // Fix yang benar: regex \{\{(\w+)\}\} untuk double brace
 });
 
-// ──────────────────────────────────────────────────────────────────
-// Test 5: solusi — direct recipients harus diterima tanpa filter eval
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 5: solusi - direct recipients harus diterima tanpa filter eval
+// ------------------------------------------------------------------
 test("FIX: directRecipients dipass langsung tanpa audience filter eval", () => {
   // Setelah fix: backend accept body { directRecipients: [...] }
   // Worker enrol langsung dari array, ngga eval filter customers/resellers table.
@@ -123,9 +123,9 @@ test("FIX: directRecipients dipass langsung tanpa audience filter eval", () => {
   assert.equal(directRecipients.length, 2);
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Test 6: render template double-brace
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("FIX: renderTemplate harus support double brace {{key}}", () => {
   const content = "Halo {{nama_pelanggan}}, paket {{paket_layanan}}";
   const vars = { nama_pelanggan: "Budi", paket_layanan: "20 Mbps" };
@@ -134,9 +134,9 @@ test("FIX: renderTemplate harus support double brace {{key}}", () => {
   assert.equal(rendered, "Halo Budi, paket 20 Mbps");
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Test 7: substitute() handle BOTH single & double brace tanpa double-process
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("FIX: substitute() handle double + single brace tanpa konflik", () => {
   function substitute(template: string, vars: Record<string, any>): string {
     return template
@@ -170,9 +170,9 @@ test("FIX: substitute() handle double + single brace tanpa konflik", () => {
   );
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Test 8: var mapping untuk customer (sesuai 28 params PRD)
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("FIX: var mapping pelanggan harus include 28 params PRD", () => {
   // Customer DB:
   //   { id: 5, name: 'Budi', customerId: '058500015', phone: '6281', address: 'Jl A',
@@ -207,9 +207,9 @@ test("FIX: var mapping pelanggan harus include 28 params PRD", () => {
   assert.equal(vars.customer_id, "058500015");
 });
 
-// ──────────────────────────────────────────────────────────────────
-// Test 9: var mapping reseller — subset 11 params PRD
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 9: var mapping reseller - subset 11 params PRD
+// ------------------------------------------------------------------
 test("FIX: var mapping reseller harus include nama_reseller, saldo_reseller, dst", () => {
   const reseller = {
     name: "Asep Reseller Cilawu",
@@ -234,12 +234,12 @@ test("FIX: var mapping reseller harus include nama_reseller, saldo_reseller, dst
   assert.equal(vars.commission_rate, "7.5%");
 });
 
-// ──────────────────────────────────────────────────────────────────
-// Test 10: end-to-end render template — full PRD flow
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
+// Test 10: end-to-end render template - full PRD flow
+// ------------------------------------------------------------------
 test("FIX: end-to-end render template invoice reminder pakai 28 params", () => {
   // Template realistic dari PRD
-  const template = `*JABNET FTTH — Pengingat Tagihan*
+  const template = `*JABNET FTTH - Pengingat Tagihan*
 Halo {{nama_pelanggan}},
 Customer ID: *{{customer_id}}*
 Paket: {{paket_layanan}}
@@ -273,9 +273,9 @@ WA CS: {{url_wa_cs}}`;
   assert.ok(rendered.includes("15/05/2026"), "tgl_jatuh_tempo replaced");
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Test 11/12 v4.2.22: parseButtons handle MPWA spec format
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("FIX v4.2.22: parseButtons handle MPWA spec format (displayText, phoneNumber, url, copyText)", () => {
   // Spec MPWA: { type, displayText, phoneNumber/url/copyText }
   // Legacy:    { type, label, payload }
@@ -388,9 +388,9 @@ test("FIX v4.2.22: sanitizeButton helper di TemplateEditor convert ke MPWA spec"
   );
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Test 13: validate directRecipients payload shape
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("FIX: directRecipients payload shape sesuai backend contract", () => {
   // Form pelanggan harus kirim shape ini:
   type RecipientPelanggan = { id: number; phone: string; name: string; customerId: string };

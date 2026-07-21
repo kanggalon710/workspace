@@ -21,7 +21,7 @@ test("resolveTeamPipelineCapabilities: admin & creator full", () => {
   assert.equal(creator.size, ALL_PIPELINE_CAPABILITIES.length);
 });
 
-test("resolveTeamPipelineCapabilities: non-anggota nol — walau keyLevel write", () => {
+test("resolveTeamPipelineCapabilities: non-anggota nol - walau keyLevel write", () => {
   const caps = resolveTeamPipelineCapabilities({ isAdmin: false, isCreator: false, teamRole: null, keyLevel: "write" });
   assert.equal(caps.size, 0);
 });
@@ -51,7 +51,7 @@ test("resolveTeamPipelineCapabilities: member read → view saja; none → nol",
   assert.equal(none.size, 0);
 });
 
-test("canManageTeam: admin / teams:write / manager — member tidak", () => {
+test("canManageTeam: admin / teams:write / manager - member tidak", () => {
   assert.ok(canManageTeam({ isAdmin: true, teamsKeyLevel: "none", teamRole: null }));
   assert.ok(canManageTeam({ isAdmin: false, teamsKeyLevel: "write", teamRole: null }));
   assert.ok(canManageTeam({ isAdmin: false, teamsKeyLevel: "none", teamRole: "manager" }));
@@ -65,7 +65,7 @@ test("canCreateTeam: hanya admin / teams:write", () => {
   assert.ok(!canCreateTeam({ isAdmin: false, teamsKeyLevel: "read" }));
 });
 
-test("canSeePrivateCard: creator/assignee/follower/admin ya — lainnya tidak", () => {
+test("canSeePrivateCard: creator/assignee/follower/admin ya - lainnya tidak", () => {
   const base = { isAdmin: false, createdBy: 1, assigneeIds: [2, 3], followerIds: [4] };
   assert.ok(canSeePrivateCard({ ...base, userId: 1 }));       // creator
   assert.ok(canSeePrivateCard({ ...base, userId: 2 }));       // assignee

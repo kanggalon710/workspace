@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 /**
- * Portal Pelanggan — Login Screen (Premium Mobile-First)
+ * Portal Pelanggan - Login Screen (Premium Mobile-First)
  * Telco-grade hero dengan gradient mesh, trust signals, dan UX terfokus.
  */
 export default function PortalLoginPage() {
@@ -60,7 +60,7 @@ export default function PortalLoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
-      {/* ─── LEFT / TOP: Hero (mobile: top gradient band · desktop: full left pane) ─── */}
+      {/* --- LEFT / TOP: Hero (mobile: top gradient band · desktop: full left pane) --- */}
       <aside className="relative overflow-hidden text-white lg:w-1/2 lg:min-h-screen bg-mesh">
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 bg-grid-pattern opacity-30" />
@@ -68,7 +68,7 @@ export default function PortalLoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-sidebar/95 via-sidebar/80 to-transparent" />
 
         <div className="relative z-10 flex flex-col justify-between px-6 pt-8 pb-6 lg:p-12 xl:p-16 min-h-[320px] lg:min-h-screen">
-          {/* Top — Brand */}
+          {/* Top - Brand */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-elev-lg ring-1 ring-white/20">
               <Radio className="h-5 w-5 text-white" strokeWidth={2.5} />
@@ -81,7 +81,7 @@ export default function PortalLoginPage() {
             </div>
           </div>
 
-          {/* Middle — Hero message */}
+          {/* Middle - Hero message */}
           <div className="py-8 lg:py-0 max-w-lg">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-5">
               <Sparkles className="h-3 w-3 text-sky-200" />
@@ -99,7 +99,7 @@ export default function PortalLoginPage() {
               <span className="text-sky-200 font-semibold"> Program Sahabat JABNET</span>.
             </p>
 
-            {/* Feature pills — desktop only */}
+            {/* Feature pills - desktop only */}
             <div className="hidden lg:grid grid-cols-2 gap-3 mt-8 max-w-md">
               <FeaturePill icon={Zap} label="Live Traffic 24/7" />
               <FeaturePill icon={Wifi} label="Kelola WiFi Sendiri" />
@@ -108,7 +108,7 @@ export default function PortalLoginPage() {
             </div>
           </div>
 
-          {/* Bottom — Trust & company (desktop only) */}
+          {/* Bottom - Trust & company (desktop only) */}
           <div className="hidden lg:block">
             <div className="grid grid-cols-3 gap-6 pb-6 border-b border-white/10">
               <TrustStat value="10,000+" label="Pelanggan Aktif" />
@@ -128,7 +128,7 @@ export default function PortalLoginPage() {
         <div className="lg:hidden absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-background pointer-events-none" />
       </aside>
 
-      {/* ─── RIGHT / BOTTOM: Form ─── */}
+      {/* --- RIGHT / BOTTOM: Form --- */}
       <main className="relative flex-1 flex items-start lg:items-center justify-center p-6 pt-4 lg:p-12 -mt-8 lg:mt-0">
         <div className="w-full max-w-sm relative z-10">
           {/* Mobile elevated card */}
@@ -186,7 +186,7 @@ export default function PortalLoginPage() {
   );
 }
 
-// ─── Subcomponents ───
+// --- Subcomponents ---
 
 function LoginForm({
   customerId,

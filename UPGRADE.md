@@ -1,4 +1,4 @@
-# JABNET FTTH Asset Manager — v2.6.0 Upgrade Guide
+# JABNET FTTH Asset Manager - v2.6.0 Upgrade Guide
 
 ## Cara Update dari Versi Sebelumnya
 
@@ -27,7 +27,7 @@ rsync -av --exclude='data.db*' --exclude='node_modules' --exclude='.env' \
 cd /path/ke/jabnet-ftth-lama
 npm install
 
-# 7. Jalankan server — auto migration akan menambahkan kolom baru
+# 7. Jalankan server - auto migration akan menambahkan kolom baru
 npm run dev    # development
 # ATAU
 npm run build && npm start    # production

@@ -1,4 +1,4 @@
-# LP4 — Create Lead dari Kartu Pipeline — Design
+# LP4 - Create Lead dari Kartu Pipeline - Design
 
 > Tanggal: 2026-06-14 · Status: spec disetujui (brainstorm), siap → writing-plans
 > Epik: **Leads ↔ Pipeline Automation** ([[project-leads-pipeline-integration]]). Slice reverse setelah LP1+LP2 (DONE on dev).
@@ -12,7 +12,7 @@ LP1/LP2 = lead → card (forward). LP4 = arah balik: dari board `/pipelines`, us
 - **Card→Lead** = dialog konfirmasi **pre-filled + auto-detect** (nama=judul; phone/lat-lng terdeteksi dari field kartu by tipe; user edit lalu simpan).
 - **Template/preset pipeline lead (#13) DIPECAH → LP4b** (fitur konvenien terpisah).
 - **1 lead per kartu**: kartu yang sudah tertaut menampilkan badge "Tertaut ke Lead", tak bisa buat lagi.
-- **Permission**: akses **edit pipeline** kartu (bukan butuh permission `marketing`) — user yang mengelola kartu boleh membuat lead tertaut.
+- **Permission**: akses **edit pipeline** kartu (bukan butuh permission `marketing`) - user yang mengelola kartu boleh membuat lead tertaut.
 
 ## Arsitektur & alur
 
@@ -35,7 +35,7 @@ CardDetailModal (kartu BELUM tertaut lead)
 
 **Loop-safety (kritis):** path ini **tidak** memanggil `emitLeadEvent`. Kalau memanggil, lead_created akan memicu intake LP1 → bisa membuat kartu KEDUA di pipeline yang punya rule lead_created. Karena kartu sudah eksis dan langsung di-`lead_card_links`, tak perlu intake. Ini menutup risiko loop utama (saat create).
 
-**Catatan dedup pada update berikutnya (keterbatasan diketahui):** LP4 menulis link dengan `ruleId: null`. Dedup `lead_id` di intake LP1 mencocokkan link by `ruleId === rule.id`, jadi link LP4 **tak terlihat** oleh rule `lead_updated`. Akibatnya, JIKA ada rule `lead_updated` dgn `dedupBy:"lead_id"` yang menarget pipeline yang sama dgn kartu LP4, meng-edit lead via `/leads` BISA membuat kartu duplikat. Risiko rendah (butuh konfigurasi rule `lead_updated` spesifik). **Refinement masa depan (bukan bagian LP4):** ubah dedup `lead_id` agar pipeline-scoped — cari link yang kartunya berada di pipeline target rule (apa pun asal/ruleId-nya), bukan match by `ruleId`. Ditunda agar tak mengubah semantik dedup LP1 di luar scope ini.
+**Catatan dedup pada update berikutnya (keterbatasan diketahui):** LP4 menulis link dengan `ruleId: null`. Dedup `lead_id` di intake LP1 mencocokkan link by `ruleId === rule.id`, jadi link LP4 **tak terlihat** oleh rule `lead_updated`. Akibatnya, JIKA ada rule `lead_updated` dgn `dedupBy:"lead_id"` yang menarget pipeline yang sama dgn kartu LP4, meng-edit lead via `/leads` BISA membuat kartu duplikat. Risiko rendah (butuh konfigurasi rule `lead_updated` spesifik). **Refinement masa depan (bukan bagian LP4):** ubah dedup `lead_id` agar pipeline-scoped - cari link yang kartunya berada di pipeline target rule (apa pun asal/ruleId-nya), bukan match by `ruleId`. Ditunda agar tak mengubah semantik dedup LP1 di luar scope ini.
 
 ## Data model
 
@@ -44,7 +44,7 @@ CardDetailModal (kartu BELUM tertaut lead)
 ## Backend
 
 ### Storage (`server/storage.ts`)
-- `getLeadCardLinkByCard(cardId: number): Promise<LeadCardLink | null>` — tenant-scoped (`mitra_id` + `card_id`), ambil 1 (untuk cek tautan + badge).
+- `getLeadCardLinkByCard(cardId: number): Promise<LeadCardLink | null>` - tenant-scoped (`mitra_id` + `card_id`), ambil 1 (untuk cek tautan + badge).
 - Reuse: `createLead` (sudah return row), `createLeadCardLink` (LP1), `getCardById`/`getCard` (cek kartu + pipelineId), `createAuditLog`.
 
 ### Endpoints (`server/routes.ts`, di area pipeline cards)
@@ -71,7 +71,7 @@ CardDetailModal (kartu BELUM tertaut lead)
   - Hanya field yang punya nilai yang dipakai; sisanya undefined (user isi manual).
   - Input `cardValues: Record<fieldId,string>` + `fieldMetas: { id, type }[]` (klien punya keduanya di modal).
 
-Dipakai **klien** untuk pre-fill dialog. Server tak perlu introspeksi field (percaya form yang dikirim) — tapi tetap memvalidasi `name`.
+Dipakai **klien** untuk pre-fill dialog. Server tak perlu introspeksi field (percaya form yang dikirim) - tapi tetap memvalidasi `name`.
 
 ## Client
 
@@ -79,7 +79,7 @@ Dipakai **klien** untuk pre-fill dialog. Server tak perlu introspeksi field (per
 - **`CardDetailModal`** (`client/components/pipelines/CardDetailModal.tsx`):
   - Query `useCardLeadLink(cardId)`.
   - Bila `link == null` + user bisa edit: tombol **"Buat Lead"** (buka dialog). Bila ada: badge **"Tertaut ke Lead #<leadId>"** (anchor ke `/leads`, semantic `<a>`).
-- **`CreateLeadFromCardDialog`** (baru): form pre-filled dari `detectLeadPrefill(card.title, cardValues, fieldMetas)` — input nama (required), telepon, alamat, kategori (select: rumahan/bisnis/perkantoran/sekolah/lainnya), kecamatan, desa, koordinat (read-only tampil bila terdeteksi). Submit → mutation. Mobile-first, `<form>`/`<FormField>`.
+- **`CreateLeadFromCardDialog`** (baru): form pre-filled dari `detectLeadPrefill(card.title, cardValues, fieldMetas)` - input nama (required), telepon, alamat, kategori (select: rumahan/bisnis/perkantoran/sekolah/lainnya), kecamatan, desa, koordinat (read-only tampil bila terdeteksi). Submit → mutation. Mobile-first, `<form>`/`<FormField>`.
 - **Hooks**: `useCardLeadLink(cardId)` (GET), `useCreateLeadFromCard()` (POST; `onSuccess` invalidate `["card-lead-link", cardId]` + `["leads"]` + toast).
 
 ## Cross-cutting
@@ -87,7 +87,7 @@ Dipakai **klien** untuk pre-fill dialog. Server tak perlu introspeksi field (per
 - **Audit:** create-lead → audit log.
 - **Loop-safe:** no event emit (lihat atas).
 - **DRY/semantic/mobile-first:** reuse FormField/Combobox/Button/Dialog; pure detection module tested.
-- **Performance:** lookup link 1 query terindeks (`mitra_id, card_id` — `lead_card_links` punya index `idx_lead_card_links_card`).
+- **Performance:** lookup link 1 query terindeks (`mitra_id, card_id` - `lead_card_links` punya index `idx_lead_card_links_card`).
 
 ## Acceptance Criteria (LP4)
 1. Modal detail kartu (tanpa lead) menampilkan tombol "Buat Lead".
@@ -100,6 +100,6 @@ Dipakai **klien** untuk pre-fill dialog. Server tak perlu introspeksi field (per
 
 ## Out of scope LP4 (sengaja)
 - Template/preset pipeline lead (#13) → **LP4b**.
-- Auto-resolve nearest ODP saat create (ada di POST /marketing/leads; LP4 skip — bisa ditambah kemudian).
+- Auto-resolve nearest ODP saat create (ada di POST /marketing/leads; LP4 skip - bisa ditambah kemudian).
 - Two-way/Mirror sync lead↔card → **dibuang** (LP5, YAGNI).
 - Bulk "buat lead" untuk banyak kartu → defer.

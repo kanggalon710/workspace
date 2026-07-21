@@ -1,12 +1,12 @@
-# Spec — MP3: Pipeline Formula Metrics
+# Spec - MP3: Pipeline Formula Metrics
 
 > Date: 2026-06-11 · Mitra-scoped · Sub-project 3 of the Pipeline Metrics epic. Build on `dev`.
 > Depends on MP1 + MP2 (both merged to `dev`). Design decided collaboratively.
 
 ## Goal
 
-Let a metric combine several inline aggregations arithmetically — `(a/b)*100`, `a*b-c`, ratios like
-paid/total — via a new `formula` source. Satisfies epic criterion: formula builder + ratio.
+Let a metric combine several inline aggregations arithmetically - `(a/b)*100`, `a*b-c`, ratios like
+paid/total - via a new `formula` source. Satisfies epic criterion: formula builder + ratio.
 
 ## Decisions (confirmed)
 1. **Inline terms**, not references to other saved metrics. A formula metric is self-contained.
@@ -18,10 +18,10 @@ paid/total — via a new `formula` source. Satisfies epic criterion: formula bui
 5. **Out of scope (defer):** per-term time windows, cross-metric references, a dedicated `x : y`
    ratio display type.
 
-## 1. Schema — add 2 columns to `pipeline_metrics`
+## 1. Schema - add 2 columns to `pipeline_metrics`
 Via the guarded `loyaltyColumnAdditions` array (info_schema COUNT check → `ALTER TABLE ADD COLUMN`):
-- `terms TEXT` — JSON array of inline terms (null for non-formula metrics).
-- `formula VARCHAR(255)` — the expression string (null for non-formula metrics).
+- `terms TEXT` - JSON array of inline terms (null for non-formula metrics).
+- `formula VARCHAR(255)` - the expression string (null for non-formula metrics).
 
 Add matching Drizzle columns to `pipelineMetrics`: `terms: text("terms")`, `formula: varchar("formula", { length: 255 })`.
 
@@ -40,13 +40,13 @@ type FormulaTerm = {
 };
 ```
 
-## 2. Pure module — `shared/metricFormula.ts` (tested)
+## 2. Pure module - `shared/metricFormula.ts` (tested)
 ```ts
 export const FORMULA_TERM_KEYS = ["a","b","c","d","e","f","g","h"];   // max 8 terms
 /** Validate an expression against the set of defined term keys. */
 export function parseFormula(expr: string, allowedKeys: string[]): { ok: true } | { ok: false; error: string };
 /** Evaluate with standard precedence + parens. Divide-by-zero → 0. Throws on parse error
- *  (caller — the engine — catches and renders a zero tile). Unknown identifier → throws. */
+ *  (caller - the engine - catches and renders a zero tile). Unknown identifier → throws. */
 export function evaluateFormula(expr: string, values: Record<string, number>): number;
 ```
 Implementation: a tokenizer (numbers incl. decimals, identifiers `[a-z]`, operators `+ - * /`,
@@ -64,7 +64,7 @@ Tests (`shared/metricFormula.test.ts`):
 - parseFormula rejects: unknown id `a+z` with ["a"]; unbalanced `(a+b`; empty ``; trailing `a+`;
   double-op `a++b`.
 
-## 3. Engine — `server/pipeline-metrics-engine.ts`
+## 3. Engine - `server/pipeline-metrics-engine.ts`
 In the per-metric loop, the existing pipeline already produces `timed` (cards after row-permission
 filter + metric stage scope + metric WHERE + **MP2 time window**). Add a branch BEFORE the current
 `field_agg`/else value computation:
@@ -103,19 +103,19 @@ if (def.source === "formula") {
 `conditions` object is re-stringified before passing. The metric-level `stageIds`/WHERE/time window
 still apply first (a formula metric MAY also have its own metric-level scope, though typically empty).
 
-## 4. Validation — `validateMetricDef` (`server/routes.ts`)
+## 4. Validation - `validateMetricDef` (`server/routes.ts`)
 `"formula"` must be accepted by the existing `METRIC_SOURCES.some(...)` check (it's added to that
 registry, so it passes automatically). Then add, when `b.source === "formula"`:
 - `b.terms` is a non-empty array; ≤ 8 terms; each `key` ∈ FORMULA_TERM_KEYS and unique.
 - per term: if `source === "field_agg"` then `fieldId` ∈ pipeline fields; `aggregation` ∈
   METRIC_AGGREGATIONS; `stageIds` (if present) ⊂ pipeline stages; `conditions` (if present) valid via
   the existing `validateConditions(pipelineId, ...)`.
-- `parseFormula(b.formula ?? "", termKeys).ok` — else 400 with the parser's error.
+- `parseFormula(b.formula ?? "", termKeys).ok` - else 400 with the parser's error.
 
-(`field_agg`-specific `fieldId` validation at the metric level is skipped for `formula` — a formula
+(`field_agg`-specific `fieldId` validation at the metric level is skipped for `formula` - a formula
 metric has no top-level `fieldId`; its inputs are the terms.)
 
-## 5. Storage — `server/storage.ts`
+## 5. Storage - `server/storage.ts`
 `createMetricDef`/`updateMetricDef` persist `terms` (JSON.stringify when array, else null) and
 `formula` (string or null). `terms` follows the same `JSON.stringify` treatment as `stageIds`.
 
@@ -125,7 +125,7 @@ metric has no top-level `fieldId`; its inputs are the terms.)
 - `MetricsConfigDialog`:
   - `Draft` gains `terms: TermDraft[]` and `formula: string`. `TermDraft = { key; source;
     aggregation; fieldId: string; stageIds: number[]; conditions: DraftCondition[][] }`.
-  - When `source === "formula"`: hide the existing single field/agg row; render a **terms editor** —
+  - When `source === "formula"`: hide the existing single field/agg row; render a **terms editor** -
     a list of term rows, each with: a read-only key badge (a,b,c…), a source select (Jumlah Kartu /
     Agregasi Field), an aggregation select + field select (when field_agg), stage chips, and a
     `ConditionsBuilder` (all reusing the existing controls). "Tambah term" appends the next key (cap

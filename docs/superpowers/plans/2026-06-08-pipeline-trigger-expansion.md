@@ -1,8 +1,8 @@
-# Pipeline Trigger Expansion (Phase 2) — Implementation Plan
+# Pipeline Trigger Expansion (Phase 2) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add card-event automation triggers — `card_updated`, `assignee_changed`, `field_updated` — that fire on every occurrence, reusing the existing conditions + actions engine.
+**Goal:** Add card-event automation triggers - `card_updated`, `assignee_changed`, `field_updated` - that fire on every occurrence, reusing the existing conditions + actions engine.
 
 **Architecture:** A shared pure predicate (`eventRuleMatches`) decides which rules a card event hits. The automation service factors a `runRulesForCard(...)` core out of `runStageEnterAutomations` and adds `dispatchCardEvent(...)`. The card update + field-value routes dispatch events (loop-safe: events come only from user routes). Routes validate the new trigger config; `PipelineRulesDialog` exposes the new triggers.
 
@@ -67,7 +67,7 @@ test("field_updated with fieldId matches only when that field changed", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/pipelineEventTriggers.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -117,7 +117,7 @@ export function eventRuleMatches(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/pipelineEventTriggers.test.ts`
-Expected: PASS — all 6 tests.
+Expected: PASS - all 6 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -128,7 +128,7 @@ git commit -m "feat(pipelines): pure event-trigger catalog + eventRuleMatches pr
 
 ---
 
-### Task 2: Schema — extend RuleTriggerType
+### Task 2: Schema - extend RuleTriggerType
 
 **Files:**
 - Modify: `shared/schema.ts`
@@ -158,7 +158,7 @@ git commit -m "feat(pipelines): RuleTriggerType gains card-event types"
 
 ---
 
-### Task 3: Engine — runRulesForCard + dispatchCardEvent
+### Task 3: Engine - runRulesForCard + dispatchCardEvent
 
 **Files:**
 - Modify: `server/pipeline-automation.ts`
@@ -247,7 +247,7 @@ git commit -m "feat(pipelines): runRulesForCard core + dispatchCardEvent (event 
 
 ---
 
-### Task 4: Route hooks — dispatch card events
+### Task 4: Route hooks - dispatch card events
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -313,7 +313,7 @@ git commit -m "feat(pipelines): dispatch card_updated/assignee_changed/field_upd
 
 ---
 
-### Task 5: Routes — validation + triggerConfig persistence
+### Task 5: Routes - validation + triggerConfig persistence
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -342,7 +342,7 @@ In `server/routes.ts`, the rule CREATE handler builds `storage.createRule(pid, {
 ```ts
       triggerConfig: (b.triggerType === "time" || b.triggerType === "billing_sync" || b.triggerType === "field_updated") ? (b.triggerConfig ?? null) : null,
 ```
-(The UPDATE handler already keeps `triggerConfig` for any non-`stage_enter` trigger — `b.triggerType === "stage_enter" ? null : b.triggerConfig` — so no change there.)
+(The UPDATE handler already keeps `triggerConfig` for any non-`stage_enter` trigger - `b.triggerType === "stage_enter" ? null : b.triggerConfig` - so no change there.)
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -358,7 +358,7 @@ git commit -m "feat(pipelines): validate card-event triggers + persist field_upd
 
 ---
 
-### Task 6: Frontend — new trigger options in PipelineRulesDialog
+### Task 6: Frontend - new trigger options in PipelineRulesDialog
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -412,17 +412,17 @@ git commit -m "feat(pipelines): card-event trigger options in PipelineRulesDialo
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/pipelineEventTriggers.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "dispatchCardEvent\|eventRuleMatches\|field_updated" server/ shared/ client/ | sort` → expect engine, routes, shared module + test, dialog.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/pipelineEventTriggers.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "dispatchCardEvent\|eventRuleMatches\|field_updated" server/ shared/ client/ | sort` → expect engine, routes, shared module + test, dialog.
 
 ---
 
 ## Self-Review
 
 - **Spec coverage:** 3 event triggers → Task 1 catalog + Task 2 union. Fire-every-occurrence + dedup core → Task 3 (`runRulesForCard` `{dedup:false}` for events, `{dedup:true}` for stage_enter). Dispatch hooks (update → card_updated/assignee_changed; values → field_updated with changedFieldIds) → Task 4. field_updated optional field filter → Task 1 predicate + Task 5 validation + Task 6 picker. Create-handler triggerConfig fix → Task 5 Step 2. Frontend → Task 6. Tests → Task 1 + Task 7. Loop-safety → events dispatched only from routes (Task 4). All covered.
-- **Placeholders:** Tasks 1–5 + 7 are complete code. Task 6 integrates into the existing large dialog with concrete payload + state guidance and instructs reading the file — appropriate for that component.
+- **Placeholders:** Tasks 1-5 + 7 are complete code. Task 6 integrates into the existing large dialog with concrete payload + state guidance and instructs reading the file - appropriate for that component.
 - **Type consistency:** `EVENT_TRIGGER_TYPES`/`isEventTriggerType`/`eventRuleMatches` (Task 1) used in Task 3 (`dispatchCardEvent` filter) and Task 6 (options). `RuleTriggerType` extended (Task 2) before routes/dialog use the new values. `runRulesForCard(rules, card, actorId, {dedup})` defined and called consistently in Task 3. `dispatchCardEvent(eventType, card, actorId, ctx?)` signature identical in Task 3 (def) and Task 4 (calls). `ctx.changedFieldIds` shape matches between Task 1 predicate, Task 3 dispatch, and Task 4 route.
 
 ## Deploy note

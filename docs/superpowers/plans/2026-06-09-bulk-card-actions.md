@@ -10,7 +10,7 @@
 
 **Conventions / reuse:**
 - Tenant via `getMitraId()`; envelope `sendSuccess`/`sendError`.
-- Server helpers (BOOLEAN forms, safe in a loop — they don't send responses): `getPipelineCapabilities(req,pid): Set<cap>`, `fieldAccessForRequest(req,pid,fields): Map<fieldId,level>`, `getCardFilterForRequest(req,pid): filter|null`, `cardPassesFilter(filter,ctx): boolean` (from `@shared/cardRowFilter`), `isPipelineAdmin(req)`, `validateFieldValue` (`server/pipeline-field-helpers` / wherever imported in routes), `runStageEnterAutomations`/`dispatchCardEvent`.
+- Server helpers (BOOLEAN forms, safe in a loop - they don't send responses): `getPipelineCapabilities(req,pid): Set<cap>`, `fieldAccessForRequest(req,pid,fields): Map<fieldId,level>`, `getCardFilterForRequest(req,pid): filter|null`, `cardPassesFilter(filter,ctx): boolean` (from `@shared/cardRowFilter`), `isPipelineAdmin(req)`, `validateFieldValue` (`server/pipeline-field-helpers` / wherever imported in routes), `runStageEnterAutomations`/`dispatchCardEvent`.
 - Storage: `getCard`, `updateCard(id,{assigneeId?|tags?},actor)` (logs `reassigned`/`edited`), `moveCard(id,stageId,undefined,actor)` (logs `moved`), `setCardValues(id,[{fieldId,value}])` (does NOT log), `deleteCard(id)`, `getCardValues(id)`, `getAllCardValuesForPipeline(pid)`, `listStages`, `listFields`.
 - Client: cards query key `["pipelines","cards",pipelineId]`; `UsersPage` bulk pattern (`selectedIds:Set`, action bar on `size>0`); `StageColumn` renders `cards.map(...)` with `writable`/`onCardClick`.
 
@@ -64,7 +64,7 @@ test("parseTags + applyTagChange", () => {
 });
 ```
 
-- [ ] **Step 2: Run — expect FAIL**
+- [ ] **Step 2: Run - expect FAIL**
 
 Run: `npx tsx --test shared/bulkCardOps.test.ts` → FAIL (module missing).
 
@@ -73,7 +73,7 @@ Run: `npx tsx --test shared/bulkCardOps.test.ts` → FAIL (module missing).
 Create `shared/bulkCardOps.ts`:
 
 ```ts
-/** Pure helpers for bulk card actions — no I/O, unit-testable. */
+/** Pure helpers for bulk card actions - no I/O, unit-testable. */
 export type BulkOp = "assign" | "move" | "set_field" | "add_tag" | "remove_tag" | "delete";
 export const BULK_OPS: BulkOp[] = ["assign", "move", "set_field", "add_tag", "remove_tag", "delete"];
 export const BULK_MAX_CARDS = 200;
@@ -124,7 +124,7 @@ export function applyTagChange(existing: string[], op: "add_tag" | "remove_tag",
 }
 ```
 
-- [ ] **Step 4: Run — expect 4/4 PASS**
+- [ ] **Step 4: Run - expect 4/4 PASS**
 
 Run: `npx tsx --test shared/bulkCardOps.test.ts`
 
@@ -196,7 +196,7 @@ router.post("/api/pipelines/:id/cards/bulk", async (req, res) => {
     return sendError(res, `Akses ditolak: butuh kapabilitas '${neededCap}'`, 403);
   }
 
-  // set_field: one field for all cards — validate field + edit-access + value once up front.
+  // set_field: one field for all cards - validate field + edit-access + value once up front.
   let field: any = null;
   let fieldOpts: string[] | undefined;
   let fieldMultiple = false;
@@ -410,7 +410,7 @@ export function BulkActionBar({ pipelineId, selectedIds, caps, stages, fields, u
 
   return (
     <div className="fixed md:sticky bottom-0 inset-x-0 z-20 bg-sky-600 text-white px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap shadow-lg">
-      <span className="text-sm font-semibold flex items-center gap-1.5"><Check className="size-4" />{ids.length} kartu dipilih{overCap && <em className="ml-2 text-amber-200">— maks {BULK_MAX_CARDS}</em>}</span>
+      <span className="text-sm font-semibold flex items-center gap-1.5"><Check className="size-4" />{ids.length} kartu dipilih{overCap && <em className="ml-2 text-amber-200">- maks {BULK_MAX_CARDS}</em>}</span>
       <div className="flex items-center gap-1.5 flex-wrap">
         <label className="flex items-center gap-1 text-xs"><Switch checked={runAutomation} onCheckedChange={setRunAutomation} /><Zap className="size-3.5" /> Otomasi</label>
         {can("assign") && <Button size="sm" variant="secondary" className="h-8" disabled={overCap || bulk.isPending} onClick={() => setSheet("assign")}><UserCog className="size-3.5 mr-1" />Assign</Button>}
@@ -430,7 +430,7 @@ export function BulkActionBar({ pipelineId, selectedIds, caps, stages, fields, u
 Add a `BulkOpForm` sub-component (same file) rendering, per `sheet`:
 - `assign`: user `Combobox` (+ "Kosongkan/unassign" option = `assigneeId: null`) → `onRun("assign", { assigneeId })`.
 - `move`: stage `Combobox` → `onRun("move", { stageId })`.
-- `set_field`: field `Combobox` (edit-accessible — pass already-filtered `fields`) + a value input (text for now; reuse `FieldValueInput` if trivial) + "timpa nilai terisi" `Switch` (default on) → `onRun("set_field", { fieldId, value }, overwrite)`.
+- `set_field`: field `Combobox` (edit-accessible - pass already-filtered `fields`) + a value input (text for now; reuse `FieldValueInput` if trivial) + "timpa nilai terisi" `Switch` (default on) → `onRun("set_field", { fieldId, value }, overwrite)`.
 - `tag`: an `Input` for the tag + Add/Remove buttons → `onRun("add_tag"|"remove_tag", { tag })`.
 - `delete`: confirm text + a destructive confirm button → `onRun("delete", undefined)`.
 Render it as a `BottomSheet` on mobile (reuse the existing `BottomSheet` component) / a small absolute popover on desktop.
@@ -451,7 +451,7 @@ Below the board, when `selectMode`:
   />
 )}
 ```
-(Use whatever the board already has for caps/stages/fields/users — adjust names to the actual locals; if `caps` isn't present on the board, derive from the pipeline query like the modal does.)
+(Use whatever the board already has for caps/stages/fields/users - adjust names to the actual locals; if `caps` isn't present on the board, derive from the pipeline query like the modal does.)
 
 - [ ] **Step 3: Typecheck + build**
 

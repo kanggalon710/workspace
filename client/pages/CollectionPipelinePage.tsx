@@ -14,7 +14,7 @@ import {
   type CollectionStageRow,
 } from "@shared/schema";
 
-// Stage value sekarang dinamis (custom per-mitra) — sekadar string key.
+// Stage value sekarang dinamis (custom per-mitra) - sekadar string key.
 type CollectionStage = string;
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ import {
   Settings, History, Info, Camera, Upload, Move, GripVertical, Plus, ListTree,
 } from "lucide-react";
 
-// ── Stage metadata context (dinamis per-mitra) ──────────────────────────────
+// -- Stage metadata context (dinamis per-mitra) ------------------------------
 interface StageHelpers {
   stages: CollectionStageRow[];
   label: (key: string) => string;
@@ -61,10 +61,10 @@ interface CollectionWithCustomer extends Collection {
 }
 
 const fmtRp = (n: number | null | undefined) =>
-  n ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+  n ? `Rp ${n.toLocaleString("id-ID")}` : "-";
 
 const fmtDate = (s: string | null | undefined) => {
-  if (!s) return "—";
+  if (!s) return "-";
   try {
     return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   } catch { return s; }
@@ -90,7 +90,7 @@ const ACTIVITY_CFG: Record<string, { label: string; icon: any; color: string }> 
 };
 
 /** division: undefined = board penuh (Keuangan/Finance). "cs"/"marketing" = view ter-scope
- * SOP delegasi — hanya menampilkan kartu di stage milik divisi tsb (cross-check delegasi). */
+ * SOP delegasi - hanya menampilkan kartu di stage milik divisi tsb (cross-check delegasi). */
 export default function CollectionPipelinePage({ division }: { division?: "cs" | "marketing" } = {}) {
   const { user, canWrite } = useAuth();
   const qc = useQueryClient();
@@ -103,15 +103,15 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
 
   // Meta divisi untuk header + judul.
   const DIV_META: Record<string, { title: string; desc: string }> = {
-    cs: { title: "Pipeline Reaktivasi — Layanan Pelanggan", desc: "Kartu delegasi dari Finance. Hubungi & tindak lanjut 7 hari sebelum eskalasi ke Marketing." },
-    marketing: { title: "Pipeline Reaktivasi — Marketing", desc: "Kartu delegasi untuk kunjungan/reaktivasi PIC sales. Tahap akhir SOP churn." },
+    cs: { title: "Pipeline Reaktivasi - Layanan Pelanggan", desc: "Kartu delegasi dari Finance. Hubungi & tindak lanjut 7 hari sebelum eskalasi ke Marketing." },
+    marketing: { title: "Pipeline Reaktivasi - Marketing", desc: "Kartu delegasi untuk kunjungan/reaktivasi PIC sales. Tahap akhir SOP churn." },
   };
 
-  // ── Collections cutover: tampilkan interstitial kalau mode = pipeline ────────
-  // CATATAN: TIDAK ada auto-redirect — escape hatch "Lihat data lama" harus tetap
+  // -- Collections cutover: tampilkan interstitial kalau mode = pipeline --------
+  // CATATAN: TIDAK ada auto-redirect - escape hatch "Lihat data lama" harus tetap
   // bisa diklik agar cutover reversible (verifikasi/rollback). Lihat early-return
   // di bawah yang menampilkan banner ketimbang board.
-  // Scoped view (cs/marketing) selalu pakai board legacy — jangan panggil engine-mode
+  // Scoped view (cs/marketing) selalu pakai board legacy - jangan panggil engine-mode
   // (user divisi tsb tak punya izin 'collections' → hindari 403).
   const { data: engineMode, isLoading: engineModeLoading } = useCollectionsEngineMode({ enabled: !division });
   const [stayLegacy, setStayLegacy] = useState(false);
@@ -122,7 +122,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [selectedStage, setSelectedStage] = useState<CollectionStage | "all">("all");
   const [detailId, setDetailId] = useState<number | null>(null);
-  // Unified stage change dialog — dipakai untuk drag-drop + tombol manual
+  // Unified stage change dialog - dipakai untuk drag-drop + tombol manual
   const [stageDialogFor, setStageDialogFor] = useState<{ id: number; fromStage: CollectionStage; targetStage: CollectionStage; targetRole: string; customerName?: string } | null>(null);
   const [stageIssueType, setStageIssueType] = useState<CollectionIssueType>("no_contact");
   const [stagePromiseDate, setStagePromiseDate] = useState("");
@@ -137,7 +137,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<CollectionStage | null>(null);
 
-  // ── Queries ──
+  // -- Queries --
   // Refetch interval hanya aktif ketika tab aktif (hemat bandwidth + server load)
   const { data: collections, isLoading, refetch, isFetching } = useQuery<CollectionWithCustomer[]>({
     queryKey: ["/api/collections", selectedStage, division ?? "all-div"],
@@ -215,7 +215,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         ...c,
         customerName: cust?.name ?? `Customer #${c.customerId}`,
         customerPhone: cust?.phone ?? null,
-        customerIdDisplay: cust?.customerId ?? "—",
+        customerIdDisplay: cust?.customerId ?? "-",
         pppoeUsername: cust?.pppoeUsername ?? null,
       };
     });
@@ -234,7 +234,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
     return map;
   }, [enriched, stages]);
 
-  // ── Mutations ──
+  // -- Mutations --
   const stageMut = useMutation({
     mutationFn: async (data: { id: number; stage: string; issueType?: string; promiseDate?: string; closeReason?: string; note?: string; photoData?: string }) => {
       // Step 1: patch stage
@@ -347,7 +347,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
     }
   };
 
-  // ── Drag-and-drop handlers ──
+  // -- Drag-and-drop handlers --
   const handleDragStart = (id: number) => (e: React.DragEvent) => {
     if (!canEdit) { e.preventDefault(); return; }
     setDraggingId(id);
@@ -411,11 +411,11 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
               {division ? DIV_META[division].title : "Collection Pipeline"}
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1 line-clamp-1 md:line-clamp-none">
-              {division ? DIV_META[division].desc : "Pelanggan isolir — auto-create saat isolir, auto-close saat bayar."}
+              {division ? DIV_META[division].desc : "Pelanggan isolir - auto-create saat isolir, auto-close saat bayar."}
             </p>
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
-            {/* Kelola pipeline & settings hanya untuk board penuh (izin collections) — bukan view scoped. */}
+            {/* Kelola pipeline & settings hanya untuk board penuh (izin collections) - bukan view scoped. */}
             {!division && canWrite("collections") && (
               <Button size="sm" variant="outline" onClick={() => setPipelineMgrOpen(true)} title="Kelola pipeline (stage)" className="h-8 gap-1.5 px-2.5">
                 <ListTree className="h-4 w-4" />
@@ -492,7 +492,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : viewMode === "kanban" ? (
-        /* ═══ KANBAN — horizontal scroll outer, vertical scroll per-column ═══ */
+        /* === KANBAN - horizontal scroll outer, vertical scroll per-column === */
         <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
           <div className="flex gap-3 h-full items-stretch w-max">
             {stages.filter(s => selectedStage === "all" || selectedStage === s.key).map((sRow) => {
@@ -538,7 +538,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           </div>
         </div>
       ) : (
-        /* ═══ LIST VIEW — full-page vertical scroll ═══ */
+        /* === LIST VIEW - full-page vertical scroll === */
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
           <div className="space-y-2 pb-2">
             {enriched.map((c) => (
@@ -564,7 +564,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         customerById={customerById}
       />
 
-      {/* Stage change confirmation dialog — untuk drag-drop + tombol manual */}
+      {/* Stage change confirmation dialog - untuk drag-drop + tombol manual */}
       <Dialog open={!!stageDialogFor} onOpenChange={(o) => !o && setStageDialogFor(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -596,7 +596,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
 
           <div className="space-y-3 max-h-[50vh] overflow-y-auto -mx-6 px-6">
             {/* Field berdasar PERAN stage tujuan (bukan key) supaya cocok dengan pipeline custom */}
-            {/* Janji Bayar + kategori kendala — opsional, untuk stage non-terminal */}
+            {/* Janji Bayar + kategori kendala - opsional, untuk stage non-terminal */}
             {stageDialogFor && stageDialogFor.targetRole !== "paid" && stageDialogFor.targetRole !== "writeoff" && (
               <>
                 <div>
@@ -730,7 +730,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   );
 }
 
-// ─── SETTINGS DIALOG ────────────────────────────────────────────────────────
+// --- SETTINGS DIALOG --------------------------------------------------------
 
 function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; onClose: () => void; isAdmin: boolean }) {
   const qc = useQueryClient();
@@ -844,7 +844,7 @@ function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; o
             <input type="checkbox" id="reminderH3" checked={reminderH3} onChange={(e) => setReminderH3(e.target.checked)} disabled={!isAdmin} />
             <label htmlFor="reminderH3" className="flex-1 text-sm cursor-pointer">
               <div className="font-medium">Kirim Reminder WA H-3 Sebelum Jatuh Tempo</div>
-              <div className="text-[11px] text-muted-foreground">Coming soon — otomatis kirim WhatsApp via MPWA pakai template "tagihan_reminder"</div>
+              <div className="text-[11px] text-muted-foreground">Coming soon - otomatis kirim WhatsApp via MPWA pakai template "tagihan_reminder"</div>
             </label>
           </div>
 
@@ -889,7 +889,7 @@ function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; o
   );
 }
 
-// ─── COMPONENTS ────────────────────────────────────────────────────────────
+// --- COMPONENTS ------------------------------------------------------------
 
 function StatCard({ label, value, color, compact }: { label: string; value: string | number; color: string; compact?: boolean }) {
   return (
@@ -1094,7 +1094,7 @@ function CollectionDetail({
             </div>
           )}
 
-          {/* Multi-assignee — semua assignee equal, siapa pun bisa edit */}
+          {/* Multi-assignee - semua assignee equal, siapa pun bisa edit */}
           {canEdit && (
             <AssigneePicker
               assignees={(detail.assignees ?? []) as Assignee[]}
@@ -1200,7 +1200,7 @@ function CollectionDetail({
                       <div className="text-muted-foreground text-[10px]">Status Billing</div>
                       <div className="font-medium">
                         <Badge variant={paymentHistory.current.billingStatus === "lunas" ? "default" : "destructive"} className="text-[9px]">
-                          {paymentHistory.current.billingStatus ?? "—"}
+                          {paymentHistory.current.billingStatus ?? "-"}
                         </Badge>
                         {paymentHistory.current.isIsolir && <Badge variant="destructive" className="text-[9px] ml-1">ISOLIR</Badge>}
                       </div>
@@ -1245,13 +1245,13 @@ function CollectionDetail({
                         </div>
                         {isOpened && (
                           <div className="text-muted-foreground text-[10px]">
-                            Tagihan: {fmtRp(ev.amount)} — due {fmtDate(ev.dueDate)} — status {ev.billingStatus ?? "—"}
+                            Tagihan: {fmtRp(ev.amount)} - due {fmtDate(ev.dueDate)} - status {ev.billingStatus ?? "-"}
                           </div>
                         )}
                         {isClosed && (
                           <div className="text-muted-foreground text-[10px]">
-                            Stage: {ev.stage} — reason: {ev.closeReason ?? "—"}
-                            {ev.lastPaymentDate && ` — bayar ${fmtDate(ev.lastPaymentDate)}`}
+                            Stage: {ev.stage} - reason: {ev.closeReason ?? "-"}
+                            {ev.lastPaymentDate && ` - bayar ${fmtDate(ev.lastPaymentDate)}`}
                           </div>
                         )}
                         {!isOpened && !isClosed && content && (
@@ -1305,10 +1305,10 @@ function AssigneePicker({
   return _AssigneePickerBody({ assignees, query, setQuery, open, setOpen, filtered, selectedIds, toggle });
 }
 
-// ─── PIPELINE MANAGER (CRUD stage per-mitra) ─────────────────────────────────
+// --- PIPELINE MANAGER (CRUD stage per-mitra) ---------------------------------
 
 const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "none", label: "— (biasa)" },
+  { value: "none", label: "- (biasa)" },
   { value: "entry", label: "Awal / Masuk" },
   { value: "paid", label: "Lunas" },
   { value: "writeoff", label: "Write-off" },
@@ -1377,7 +1377,7 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
             </DialogTitle>
             <DialogDescription className="text-xs">
               Ubah judul, warna, urutan (drag ⠿), dan peran sistem. Tambah / hapus stage.
-              Pipeline ini khusus mitra kamu — tidak memengaruhi mitra lain.
+              Pipeline ini khusus mitra kamu - tidak memengaruhi mitra lain.
             </DialogDescription>
           </DialogHeader>
 
@@ -1603,7 +1603,7 @@ function _AssigneePickerBody({ assignees, query, setQuery, open, setOpen, filter
 
       {/* Selected assignees chips */}
       {assignees.length === 0 ? (
-        <div className="text-xs text-muted-foreground italic px-1">— Belum ada yang ditugaskan —</div>
+        <div className="text-xs text-muted-foreground italic px-1">- Belum ada yang ditugaskan -</div>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {assignees.map((a) => (

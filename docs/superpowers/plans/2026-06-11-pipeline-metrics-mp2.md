@@ -22,7 +22,7 @@
 | `shared/metricTimeWindow.ts` | Pure: `TimePreset`, `TIME_PRESETS`, `resolveTimeWindow`, `dateInWindow` | Create |
 | `shared/metricTimeWindow.test.ts` | Pure tests for the above | Create |
 | `shared/schema.ts:808-830` | `pipelineMetrics` table + 4 new columns in Drizzle defs | Modify |
-| `server/storage.ts:703-716` | `loyaltyColumnAdditions` — 4 `ALTER TABLE ADD COLUMN` entries | Modify |
+| `server/storage.ts:703-716` | `loyaltyColumnAdditions` - 4 `ALTER TABLE ADD COLUMN` entries | Modify |
 | `server/storage.ts:12400-12426` | `createMetricDef`/`updateMetricDef` persist 4 new fields | Modify |
 | `server/pipeline-metrics-engine.ts` | `computeAllPipelineMetrics` gains `ctx?` + per-metric time filtering | Modify |
 | `server/routes.ts:4401-4419` | `validateMetricDef` validates `timeField`/`timePreset` | Modify |
@@ -148,14 +148,14 @@ test("dateInWindow: boundaries inclusive, invalid/empty date → false", () => {
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `npx tsx --test shared/metricTimeWindow.test.ts`
-Expected: FAIL — `Cannot find module './metricTimeWindow.js'`.
+Expected: FAIL - `Cannot find module './metricTimeWindow.js'`.
 
 - [ ] **Step 3: Write the implementation**
 
 Create `shared/metricTimeWindow.ts`:
 
 ```ts
-/** Pure time-window helpers for pipeline metrics — no I/O. nowMs is injected for testability. */
+/** Pure time-window helpers for pipeline metrics - no I/O. nowMs is injected for testability. */
 
 export type TimePreset =
   | "all" | "today" | "yesterday" | "7d" | "30d"
@@ -245,7 +245,7 @@ export function dateInWindow(dateStr: string | null | undefined, win: TimeWindow
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx tsx --test shared/metricTimeWindow.test.ts`
-Expected: PASS — all tests green.
+Expected: PASS - all tests green.
 
 - [ ] **Step 5: Commit**
 
@@ -280,7 +280,7 @@ In `shared/schema.ts`, inside `pipelineMetrics`, add the new columns right after
   position: int("position").notNull().default(0),
 ```
 
-(`PipelineMetric` type is inferred — no separate type change needed.)
+(`PipelineMetric` type is inferred - no separate type change needed.)
 
 - [ ] **Step 2: Add the migration entries**
 
@@ -512,7 +512,7 @@ In `validateMetricDef`, insert before the final `return null;` (after the condit
   }
 ```
 
-> Note: `fields` is already loaded earlier in `validateMetricDef` (`const fields = await storage.listFields(pipelineId);` at line ~4406) — reuse it; do not re-fetch.
+> Note: `fields` is already loaded earlier in `validateMetricDef` (`const fields = await storage.listFields(pipelineId);` at line ~4406) - reuse it; do not re-fetch.
 
 - [ ] **Step 4: Typecheck + build**
 
@@ -558,7 +558,7 @@ export function usePipelineMetrics(pipelineId: number, ctx?: MetricTimeCtx | nul
 }
 ```
 
-> The existing `useSaveMetricDef`'s `inv()` invalidates `["/api/pipelines", pipelineId, "metrics"]` — that prefix still matches all ctx variants, so saving a def refetches every context. No change needed there.
+> The existing `useSaveMetricDef`'s `inv()` invalidates `["/api/pipelines", pipelineId, "metrics"]` - that prefix still matches all ctx variants, so saving a def refetches every context. No change needed there.
 
 - [ ] **Step 2: Typecheck**
 
@@ -650,7 +650,7 @@ export function MetricsStrip({ pipelineId, canManage, onManage }: { pipelineId: 
 > Verify `Combobox` accepts a `className` prop before relying on it:
 >
 > Run: `grep -n "className" client/components/ui/combobox.tsx | head`
-> Expected: the component spreads/accepts `className` (it does — BoardFilters wraps it in width divs, but the trigger forwards className). If it does NOT accept `className`, wrap the `<Combobox>` in a `<div className="w-36">` instead, matching the BoardFilters pattern at `client/components/pipelines/BoardFilters.tsx`.
+> Expected: the component spreads/accepts `className` (it does - BoardFilters wraps it in width divs, but the trigger forwards className). If it does NOT accept `className`, wrap the `<Combobox>` in a `<div className="w-36">` instead, matching the BoardFilters pattern at `client/components/pipelines/BoardFilters.tsx`.
 
 - [ ] **Step 2: Typecheck + build**
 
@@ -788,7 +788,7 @@ EOF
 - [ ] **Step 1: Run the pure test suite**
 
 Run: `npx tsx --test shared/metricTimeWindow.test.ts`
-Expected: PASS — all green.
+Expected: PASS - all green.
 
 - [ ] **Step 2: Typecheck + build the whole project**
 
@@ -808,7 +808,7 @@ Expected: all behave as described.
 
 - [ ] **Step 4: Update the epic memory**
 
-Edit `/home/ygao-t580/.claude/projects/-home-ygao-t580-Works-Jabnet-Website-ftth-tools/memory/project-pipeline-metrics-epic.md` — move MP2 from "remaining" to done with a one-line summary (`shared/metricTimeWindow.ts` + 4 cols + engine ctx + strip dropdown). Leave MP3/MP4 as remaining.
+Edit `/home/ygao-t580/.claude/projects/-home-ygao-t580-Works-Jabnet-Website-ftth-tools/memory/project-pipeline-metrics-epic.md` - move MP2 from "remaining" to done with a one-line summary (`shared/metricTimeWindow.ts` + 4 cols + engine ctx + strip dropdown). Leave MP3/MP4 as remaining.
 
 - [ ] **Step 5: Final summary to user**
 

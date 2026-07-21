@@ -18,14 +18,14 @@ import { dotIcon, odpUsageColor } from "@/lib/assetColors";
 import { reverseGeocode } from "@/lib/geocode";
 import { compressImage, formatBytes } from "@/lib/imageCompress";
 
-// ── Terra Design Tokens ──────────────────────────────────────────────────
+// -- Terra Design Tokens --------------------------------------------------
 const T = {
   bg: "#faf9f8", deep: "#350800", secondary: "#755750", accent: "#ff5f2e",
   surface: "#f4f3f2", surfaceHi: "#e9e8e7", outline: "#827472",
   outlineV: "#d3c3c0", textSoft: "#504442", container: "#591300",
 };
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 interface Odp { id: number; name: string; lat?: number; lng?: number; capacity?: number; usedCapacity?: number; }
 interface Session {
   id: number; userId: number; userName?: string; userInitial?: string;
@@ -40,7 +40,7 @@ interface FieldLog {
   odpId?: number | null; severity: string; createdAt: string;
 }
 
-// ── Config ────────────────────────────────────────────────────────────────
+// -- Config ----------------------------------------------------------------
 const LOG_TYPES = [
   { key: "area_sepi", label: "Area Sepi", icon: EyeOff, color: "#6B7280", desc: "Tidak ada calon pelanggan" },
   { key: "akses_sulit", label: "Akses Sulit", icon: AlertTriangle, color: "#F59E0B", desc: "Jalan rusak, gang sempit" },
@@ -60,7 +60,7 @@ const CAT_ICONS: Record<string, any> = { rumahan: Home, bisnis: Briefcase, perka
 const CAT_COLORS: Record<string, string> = { rumahan: "#22C55E", bisnis: "#F59E0B", perkantoran: "#3B82F6", sekolah: "#8B5CF6", lainnya: "#6B7280" };
 const TEAM_COLORS = ["#3B82F6","#EF4444","#8B5CF6","#F59E0B","#EC4899","#14B8A6"];
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -86,7 +86,7 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
-// ── Custom Confirm Dialog ─────────────────────────────────────────────────
+// -- Custom Confirm Dialog -------------------------------------------------
 function ConfirmDialog({ message, onConfirm, onCancel }: {
   message: string; onConfirm: () => void; onCancel: () => void;
 }) {
@@ -111,7 +111,7 @@ function ConfirmDialog({ message, onConfirm, onCancel }: {
   );
 }
 
-// ── Terra ODP Info Card ───────────────────────────────────────────────────
+// -- Terra ODP Info Card ---------------------------------------------------
 function OdpInfoCard({ odp, onClose }: { odp: Odp; onClose: () => void }) {
   const used = odp.usedCapacity ?? 0;
   const total = odp.capacity ?? 0;
@@ -168,7 +168,7 @@ function OdpInfoCard({ odp, onClose }: { odp: Odp; onClose: () => void }) {
   );
 }
 
-// ── Add Lead Form ─────────────────────────────────────────────────────────
+// -- Add Lead Form ---------------------------------------------------------
 function AddLeadForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving }: {
   lat: number; lng: number; odps: Odp[]; sessionId: number;
   onSave: (data: any) => void; onCancel: () => void; isSaving: boolean;
@@ -203,7 +203,7 @@ function AddLeadForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving }: 
               color: isFar ? "#B45309" : "#15803D",
             }}>
             {isFar ? <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> : <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
-            {nearest.odp.name} — {nearest.distance}m
+            {nearest.odp.name} - {nearest.distance}m
           </div>
         )}
         <div className="space-y-3">
@@ -251,7 +251,7 @@ function AddLeadForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving }: 
                     village = geo.village || undefined;
                     address = geo.formatted || undefined;
                   }
-                } catch { /* diam — save tetap jalan */ }
+                } catch { /* diam - save tetap jalan */ }
                 onSave({
                   name: name.trim(), phone: phone.trim() || undefined,
                   category, notes: notes.trim() || undefined,
@@ -278,7 +278,7 @@ function AddLeadForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving }: 
   );
 }
 
-// ── Field Report Form (BI) ────────────────────────────────────────────────
+// -- Field Report Form (BI) ------------------------------------------------
 function FieldReportForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving }: {
   lat: number; lng: number; odps: Odp[]; sessionId: number;
   onSave: (data: any) => void; onCancel: () => void; isSaving: boolean;
@@ -307,7 +307,7 @@ function FieldReportForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving
       toast.error("File harus berupa gambar");
       return;
     }
-    // Auto-compress tanpa ada batasan size — user kasih foto 20MB pun oke,
+    // Auto-compress tanpa ada batasan size - user kasih foto 20MB pun oke,
     // akan otomatis di-resize ke 1280px + JPEG q=0.72 (~200KB)
     setPhotoCompressing(true);
     try {
@@ -408,7 +408,7 @@ function FieldReportForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving
             className="w-full text-sm rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:ring-2"
             style={{ background: T.surface, border: "none", color: T.textSoft }} />
 
-          {/* Photo capture — realtime camera OR pick from gallery (auto-compress) */}
+          {/* Photo capture - realtime camera OR pick from gallery (auto-compress) */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: T.outline }}>
               Bukti Foto {photoData ? "✓" : "(opsional)"}
@@ -463,7 +463,7 @@ function FieldReportForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving
                 </button>
               </div>
             )}
-            {/* Hidden inputs — camera uses capture="environment" (back camera), gallery tanpa capture */}
+            {/* Hidden inputs - camera uses capture="environment" (back camera), gallery tanpa capture */}
             <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
             <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
           </div>
@@ -498,7 +498,7 @@ function FieldReportForm({ lat, lng, odps, sessionId, onSave, onCancel, isSaving
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────
+// -- Main Page --------------------------------------------------------------
 export default function CanvassingPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -542,7 +542,7 @@ export default function CanvassingPage() {
     } catch { /* ignore quota */ }
   }, [mapCenter.lat, mapCenter.lng]);
 
-  // ─── CONTINUOUS GPS WATCH ────────────────────────────────────────────
+  // --- CONTINUOUS GPS WATCH --------------------------------------------
   // watchPosition terus aktif, update myLocation + accuracy.
   // FIRST LOCK: auto-pan map sekali ke posisi aktual user (bukan Garkot default).
   const firstGpsLockRef = useRef(false);
@@ -580,7 +580,7 @@ export default function CanvassingPage() {
     };
   }, []);
 
-  // ── Queries ──
+  // -- Queries --
   const { data: mySession, isLoading: sessionLoading } = useQuery<Session | null>({
     queryKey: ["canvassing_active"],
     queryFn: () => api.get<Session | null>("/marketing/canvassing/active"),
@@ -621,7 +621,7 @@ export default function CanvassingPage() {
   const MAX_MOBILE_MARKERS = 25; // Cap markers on mobile for performance
 
   const visibleOdps = useMemo(() => {
-    if (isOverview) return allValidOdps; // Clustered — safe even with 150+
+    if (isOverview) return allValidOdps; // Clustered - safe even with 150+
     if (!mapBounds) return allValidOdps.slice(0, isMobile ? 15 : 30);
     const pad = isMobile ? 0.002 : 0.003; // Smaller pad on mobile
     const filtered = allValidOdps.filter(o =>
@@ -631,7 +631,7 @@ export default function CanvassingPage() {
     return isMobile ? filtered.slice(0, MAX_MOBILE_MARKERS) : filtered;
   }, [allValidOdps, mapBounds, isOverview, isMobile]);
 
-  // ── Mutations ──
+  // -- Mutations --
   const startSession = useMutation({
     mutationFn: (data: any) => api.post("/marketing/canvassing/start", data),
     onSuccess: () => {
@@ -677,7 +677,7 @@ export default function CanvassingPage() {
     onError: (e: any) => toast.error(e.message ?? "Gagal simpan laporan"),
   });
 
-  // ── GPS (locateMe = manual refresh dari button "Lokasi Saya") ──
+  // -- GPS (locateMe = manual refresh dari button "Lokasi Saya") --
   const locateMe = useCallback((onSuccess?: (c: { lat: number; lng: number }) => void) => {
     if (!navigator.geolocation) { toast.error("GPS tidak didukung browser ini"); return; }
     // Kalau watch sudah ada myLocation, pakai itu instant (jangan delay UI)
@@ -697,13 +697,13 @@ export default function CanvassingPage() {
       },
       err => {
         toast.error("GPS gagal: " + (err.message ?? "Cek izin lokasi"));
-        onSuccess?.(undefined as any); // JANGAN fallback ke Garkot — biarkan caller decide
+        onSuccess?.(undefined as any); // JANGAN fallback ke Garkot - biarkan caller decide
       },
       { enableHighAccuracy: true, timeout: 3000, maximumAge: 10000 },
     );
   }, [myLocation]);
 
-  // Handle Check-in & Mulai — FAST PATH: pakai myLocation dari watch (yang sudah terus aktif)
+  // Handle Check-in & Mulai - FAST PATH: pakai myLocation dari watch (yang sudah terus aktif)
   // kalau belum ada, tunggu max 2.5s baru start tanpa coords.
   const handleStart = () => {
     const name = `Canvassing ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}`;
@@ -714,7 +714,7 @@ export default function CanvassingPage() {
       return;
     }
 
-    // Fallback: tidak ada GPS yet — try one-shot dengan timeout 2.5s, lalu start tanpa coords
+    // Fallback: tidak ada GPS yet - try one-shot dengan timeout 2.5s, lalu start tanpa coords
     let started = false;
     const doStart = (center?: { lat: number; lng: number }) => {
       if (started) return; started = true;
@@ -730,7 +730,7 @@ export default function CanvassingPage() {
         () => doStart(),
         { enableHighAccuracy: true, timeout: 2500, maximumAge: 10000 },
       );
-      // Hard fallback 3s — jangan biarin user nunggu > 3 detik
+      // Hard fallback 3s - jangan biarin user nunggu > 3 detik
       setTimeout(() => doStart(), 3000);
     } else {
       doStart();
@@ -739,7 +739,7 @@ export default function CanvassingPage() {
 
   const handleMapClick = useCallback(() => { setSelectedOdp(null); }, []);
 
-  // GPS-based action triggers — FAST PATH: langsung pakai myLocation dari watchPosition
+  // GPS-based action triggers - FAST PATH: langsung pakai myLocation dari watchPosition
   // (continuously aktif). Cuma fallback ke one-shot getCurrentPosition kalau myLocation
   // belum tersedia. Gak pakai loading state lagi kalau ada myLocation.
   const getGpsAndOpen = useCallback((setter: (c: { lat: number; lng: number }) => void, loadingSetter: (v: boolean) => void) => {
@@ -751,14 +751,14 @@ export default function CanvassingPage() {
       return;
     }
 
-    // Fallback: tidak ada GPS yet — try quick one-shot (2s) dengan cached result
+    // Fallback: tidak ada GPS yet - try quick one-shot (2s) dengan cached result
     loadingSetter(true);
     const fallback = (mySession.centerLat && mySession.centerLng)
       ? { lat: mySession.centerLat, lng: mySession.centerLng }
       : mapCenter;
     if (!navigator.geolocation) { loadingSetter(false); setter(fallback); return; }
     let done = false;
-    // Hard cap 2 detik — user tidak perlu nunggu lama
+    // Hard cap 2 detik - user tidak perlu nunggu lama
     const timer = setTimeout(() => {
       if (!done) { done = true; loadingSetter(false); setter(fallback); }
     }, 2000);
@@ -777,17 +777,17 @@ export default function CanvassingPage() {
   const handleAddProspect = useCallback(() => getGpsAndOpen(setPendingCoord, setAddLoading), [getGpsAndOpen]);
   const handleAddReport = useCallback(() => getGpsAndOpen(setPendingReportCoord, setReportLoading), [getGpsAndOpen]);
 
-  // Show all leads from this session (not just today) — session may span multiple days
+  // Show all leads from this session (not just today) - session may span multiple days
   const sessionLeads = myLeads.filter(l =>
     l.createdAt && mySession?.startedAt && l.createdAt >= mySession.startedAt
   );
   const otherSessions = teamSessions.filter(s => s.userId !== user?.id);
-  // fieldLogs already filtered by sessionId on server — show all
+  // fieldLogs already filtered by sessionId on server - show all
   const sessionLogs = fieldLogs;
 
   return (
     <div className="relative flex-1 min-h-0" style={{ height: '100%' }}>
-      {/* ════════════════ MAP ════════════════ */}
+      {/* ================ MAP ================ */}
       <div className="fixed inset-0 md:absolute md:inset-0">
         {!isLoaded ? (
           <div className="h-full flex items-center justify-center" style={{ background: T.surface }}>
@@ -816,7 +816,7 @@ export default function CanvassingPage() {
             }}
             options={{ fullscreenControl: false, streetViewControl: false, mapTypeControl: false, zoomControl: false }}
           >
-            {/* ODP markers — clustered when zoomed out, individual when zoomed in */}
+            {/* ODP markers - clustered when zoomed out, individual when zoomed in */}
             {isOverview ? (
               <MarkerClusterer options={{ maxZoom: isMobile ? 15 : 14, gridSize: isMobile ? 60 : 50 }}>
                 {(clusterer) => (
@@ -869,7 +869,7 @@ export default function CanvassingPage() {
               );
             })}
 
-            {/* Team sessions — circle coverage 150m + marker bulat 10px supaya
+            {/* Team sessions - circle coverage 150m + marker bulat 10px supaya
                 admin bisa LIHAT tim di peta + area kerja mereka */}
             {otherSessions.flatMap((s, i) => s.centerLat && s.centerLng ? [
               <Circle key={`t-c-${s.id}`}
@@ -890,7 +890,7 @@ export default function CanvassingPage() {
               />,
             ] : [])}
 
-            {/* My session — coverage circle 150m + marker (supaya admin sejawat lihat
+            {/* My session - coverage circle 150m + marker (supaya admin sejawat lihat
                 area kerja kita + supaya tim sendiri tau titik awal sesi) */}
             {mySession?.centerLat && mySession?.centerLng && (
               <>
@@ -910,7 +910,7 @@ export default function CanvassingPage() {
               </>
             )}
 
-            {/* My GPS accuracy circle — tipis, ukuran sesuai accuracy sebenarnya */}
+            {/* My GPS accuracy circle - tipis, ukuran sesuai accuracy sebenarnya */}
             {myLocation && locationAccuracy && locationAccuracy < 200 && (
               <Circle center={myLocation} radius={locationAccuracy}
                 options={{ fillColor: "#3B82F6", fillOpacity: 0.08,
@@ -919,7 +919,7 @@ export default function CanvassingPage() {
               />
             )}
 
-            {/* My GPS dot — titik real-time, lebih besar + shadow biar visible */}
+            {/* My GPS dot - titik real-time, lebih besar + shadow biar visible */}
             {myLocation && (
               <Marker position={myLocation}
                 icon={{ path: google.maps.SymbolPath.CIRCLE, scale: 11,
@@ -943,10 +943,10 @@ export default function CanvassingPage() {
         )}
       </div>
 
-      {/* ════════════════ ODP INFO CARD (Terra) ════════════════ */}
+      {/* ================ ODP INFO CARD (Terra) ================ */}
       {selectedOdp && <OdpInfoCard odp={selectedOdp} onClose={() => setSelectedOdp(null)} />}
 
-      {/* ════════════════ GPS BUTTON ════════════════ */}
+      {/* ================ GPS BUTTON ================ */}
       <button onClick={() => locateMe()}
         className="fixed bottom-36 left-3 z-30 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all md:absolute md:bottom-6 md:left-3"
         style={{ background: T.bg }}>
@@ -962,7 +962,7 @@ export default function CanvassingPage() {
         </div>
       )}
 
-      {/* ════════════════ TEAM popup (mobile) ════════════════ */}
+      {/* ================ TEAM popup (mobile) ================ */}
       {showTeam && otherSessions.length > 0 && (
         <div className="fixed bottom-36 left-0 right-0 z-40 px-3 md:hidden">
           <div className="rounded-2xl shadow-xl p-3 space-y-2" style={{ background: T.bg }}>
@@ -993,7 +993,7 @@ export default function CanvassingPage() {
         </div>
       )}
 
-      {/* ════════════════ MOBILE BOTTOM STRIP ════════════════ */}
+      {/* ================ MOBILE BOTTOM STRIP ================ */}
       <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden">
         {!mySession && !sessionLoading ? (
           <div className="px-4 py-3" style={{ background: T.bg, borderTop: `1px solid ${T.outlineV}30` }}>
@@ -1028,7 +1028,7 @@ export default function CanvassingPage() {
                 )}
               </div>
             </div>
-            {/* Action buttons — 2 main + end */}
+            {/* Action buttons - 2 main + end */}
             <div className="flex gap-2">
               <button onClick={handleAddProspect}
                 disabled={addLoading || createLead.isPending}
@@ -1063,7 +1063,7 @@ export default function CanvassingPage() {
         )}
       </div>
 
-      {/* ════════════════ DESKTOP RIGHT SIDEBAR ════════════════ */}
+      {/* ================ DESKTOP RIGHT SIDEBAR ================ */}
       <div className="hidden md:flex md:absolute md:right-0 md:top-0 md:bottom-0 md:w-80 flex-col overflow-hidden z-20"
         style={{ background: T.bg, borderLeft: `1px solid ${T.outlineV}30` }}>
         {/* Header */}
@@ -1263,7 +1263,7 @@ export default function CanvassingPage() {
         </div>
       </div>
 
-      {/* ════════════════ FORMS & DIALOGS ════════════════ */}
+      {/* ================ FORMS & DIALOGS ================ */}
       {pendingCoord && mySession && (
         <AddLeadForm
           lat={pendingCoord.lat} lng={pendingCoord.lng}

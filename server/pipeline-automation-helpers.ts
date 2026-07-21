@@ -1,4 +1,4 @@
-/** Pure helpers for pipeline automation — no DB. */
+/** Pure helpers for pipeline automation - no DB. */
 import type { PipelineRule, RuleCondition, TimeTriggerConfig, NotifyConfig } from "../shared/schema.js";
 import { compareAttr, type CollectionSnapshot, type CollectionAttrKey } from "../shared/collectionMetrics.js";
 import { applyConditionOp } from "../shared/leadConditions.js";
@@ -220,7 +220,7 @@ export function evaluateConditionGroups(
   return groups.some((g) => evaluateConditions(g, values, snapshot));
 }
 
-/** True if any condition group references a billing attr — gate the snapshot lookup. */
+/** True if any condition group references a billing attr - gate the snapshot lookup. */
 export function conditionsUseBilling(groups: RuleCondition[][]): boolean {
   return groups.some((g) => g.some((c) => c.source === "billing"));
 }

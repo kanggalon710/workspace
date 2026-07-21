@@ -15,7 +15,7 @@ import type { Pipeline } from "@shared/schema";
 import { Layers, Plus, MoreVertical, ArchiveRestore, LayoutTemplate, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 
-/** Resolved icon chip for a pipeline card — hoisted to module scope to avoid re-creation per render. */
+/** Resolved icon chip for a pipeline card - hoisted to module scope to avoid re-creation per render. */
 function CardIcon({ p }: { p: Pipeline }) {
   const Icon = resolvePipelineIcon(p.icon);
   return (
@@ -135,7 +135,7 @@ export default function PipelinesPage() {
               {showArchived ? "Aktif" : "Arsip"}
             </Button>
 
-            {/* Create from template — only in active view */}
+            {/* Create from template - only in active view */}
             {writable && !showArchived && (
               <Button
                 type="button"
@@ -147,7 +147,7 @@ export default function PipelinesPage() {
               </Button>
             )}
 
-            {/* Create blank — only in active view */}
+            {/* Create blank - only in active view */}
             {writable && !showArchived && (
               <Button
                 type="button"
@@ -221,7 +221,7 @@ export default function PipelinesPage() {
                     </span>
                   ) : null}
 
-                  {/* Kebab menu — active pipelines; for archived: Pulihkan button */}
+                  {/* Kebab menu - active pipelines; for archived: Pulihkan button */}
                   {isArchived ? (
                     <Button
                       type="button"
@@ -279,7 +279,7 @@ export default function PipelinesPage() {
         </div>
       )}
 
-      {/* ── Create dialog ── */}
+      {/* -- Create dialog -- */}
       {showCreate && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-black/40"
@@ -393,7 +393,7 @@ export default function PipelinesPage() {
         </div>
       )}
 
-      {/* ── Template picker dialog ── */}
+      {/* -- Template picker dialog -- */}
       <TemplatePickerDialog
         open={showTemplatePicker}
         onClose={() => setShowTemplatePicker(false)}
@@ -403,7 +403,7 @@ export default function PipelinesPage() {
         }}
       />
 
-      {/* ── Single PipelineSettingsDialog instance (one per card kebab) ── */}
+      {/* -- Single PipelineSettingsDialog instance (one per card kebab) -- */}
       {settingsFor && (
         <PipelineSettingsDialog
           pipeline={settingsFor}

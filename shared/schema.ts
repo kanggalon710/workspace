@@ -82,7 +82,7 @@ export const odpPhotos = mysqlTable("odp_photos", {
 
 // Galeri foto generik untuk aset jaringan (odp/odc/pole/…). Menggantikan odp_photos
 // sebagai sumber data tunggal (odp_photos di-migrasi ke sini, lihat startup migration).
-// Polymorphic by (assetType, assetId) — tidak pakai FK karena lintas tabel aset.
+// Polymorphic by (assetType, assetId) - tidak pakai FK karena lintas tabel aset.
 export const assetPhotos = mysqlTable("asset_photos", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -126,8 +126,8 @@ export const customers = mysqlTable("customers", {
   lastSyncAt: text("last_sync_at"),
   isStatic: int("is_static").default(0),
   manualOverrides: text("manual_overrides"), // JSON array of field names locked from billing sync
-  leadId: int("lead_id"), // FK to leads table — traceability: lead mana yang jadi pelanggan ini
-  // Billing whitelist fields (v4.1.2) — disync oleh BillingSyncWorker, TIDAK ditimpa field lain
+  leadId: int("lead_id"), // FK to leads table - traceability: lead mana yang jadi pelanggan ini
+  // Billing whitelist fields (v4.1.2) - disync oleh BillingSyncWorker, TIDAK ditimpa field lain
   dueDate: text("due_date"),                   // Jatuh tempo invoice aktif
   lastPaymentDate: text("last_payment_date"),  // Tanggal pembayaran terakhir
   isolirDate: text("isolir_date"),             // Kapan diisolir (kalau isIsolir=1)
@@ -169,7 +169,7 @@ export const cables = mysqlTable("cables", {
 
 // ==================== NEW TABLES: CORE MANAGEMENT ====================
 
-// OTB — Optical Termination Box (hanya di POP)
+// OTB - Optical Termination Box (hanya di POP)
 export const otbs = mysqlTable("otbs", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -180,7 +180,7 @@ export const otbs = mysqlTable("otbs", {
   notes: text("notes"),
 });
 
-// Bestray — Slot di dalam ODC
+// Bestray - Slot di dalam ODC
 export const bestrays = mysqlTable("bestrays", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -192,7 +192,7 @@ export const bestrays = mysqlTable("bestrays", {
   notes: text("notes"),
 });
 
-// Splitter — bisa di OTB, ODC, ODP, atau lapangan
+// Splitter - bisa di OTB, ODC, ODP, atau lapangan
 export const splitters = mysqlTable("splitters", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -207,7 +207,7 @@ export const splitters = mysqlTable("splitters", {
   notes: text("notes"),
 });
 
-// Cable Cores — setiap core individu dalam kabel
+// Cable Cores - setiap core individu dalam kabel
 export const cableCores = mysqlTable("cable_cores", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -221,7 +221,7 @@ export const cableCores = mysqlTable("cable_cores", {
   notes: text("notes"),
 });
 
-// Core Connections — koneksi antar perangkat per core
+// Core Connections - koneksi antar perangkat per core
 export const coreConnections = mysqlTable("core_connections", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -381,7 +381,7 @@ export const adCampaigns = mysqlTable("ad_campaigns", {
   linkUrl: text("link_url"),                         // landing page URL
   thumbnailUrl: text("thumbnail_url"),               // creative preview URL
   notes: text("notes"),
-  // Source tracking — dari API key mana pushed-nya
+  // Source tracking - dari API key mana pushed-nya
   createdByApiKeyId: int("created_by_api_key_id"),
   lastSyncedAt: text("last_synced_at"),              // terakhir di-push/update via API
   createdAt: text("created_at").notNull(),
@@ -449,7 +449,7 @@ export const collectionActivities = mysqlTable("collection_activities", {
   createdAt: text("created_at").notNull(),
 });
 
-// Per-mitra collection pipeline — admin bisa CRUD stage (label, warna, urutan, tambah/hapus).
+// Per-mitra collection pipeline - admin bisa CRUD stage (label, warna, urutan, tambah/hapus).
 // `key` adalah slug stabil yang ditunjuk oleh collections.stage (immutable setelah dibuat).
 // `role` menandai stage untuk otomasi billing: entry (target auto-open), paid (terminal sukses,
 // auto-close saat lunas), writeoff (terminal gagal, auto write-off), none (stage menengah biasa).
@@ -461,7 +461,7 @@ export const collectionStages = mysqlTable("collection_stages", {
   color: varchar("color", { length: 16 }).notNull().default("#6B7280"),
   position: int("position").notNull().default(0),        // urutan drag-drop
   role: varchar("role", { length: 16 }).notNull().default("none"), // none | entry | paid | writeoff
-  // ── SOP churn→reaktivasi (v5.3) ──────────────────────────────────────────
+  // -- SOP churn→reaktivasi (v5.3) ------------------------------------------
   // Divisi penanggung jawab stage ini (finance | cs | marketing | sistem | null).
   // Dipakai untuk view pipeline ter-scope per divisi (CS & Marketing cross-check delegasi).
   ownerDivision: varchar("owner_division", { length: 32 }),
@@ -505,7 +505,7 @@ export const collectionStageMap = mysqlTable("collection_stage_map", {
 export type CollectionConfig = typeof collectionConfig.$inferSelect;
 export type CollectionStageMapRow = typeof collectionStageMap.$inferSelect;
 
-// ===== Generic Pipelines Engine (Phase 1) — separate from leads/collections =====
+// ===== Generic Pipelines Engine (Phase 1) - separate from leads/collections =====
 export const pipelines = mysqlTable("pipelines", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -534,7 +534,7 @@ export const pipelineStages = mysqlTable("pipeline_stages", {
   color: varchar("color", { length: 16 }).notNull().default("#6B7280"),
   position: int("position").notNull().default(0),
   semanticType: varchar("semantic_type", { length: 16 }),   // Teamspace: todo|in_progress|done|cancelled|custom (untuk laporan kinerja)
-  movePermission: text("move_permission"),                  // Teamspace: JSON {userIds:[],roleIds:[]} — siapa boleh pindahkan kartu di list ini (NULL = semua)
+  movePermission: text("move_permission"),                  // Teamspace: JSON {userIds:[],roleIds:[]} - siapa boleh pindahkan kartu di list ini (NULL = semua)
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 }, (t) => ({
@@ -566,11 +566,11 @@ export const pipelineCards = mysqlTable("pipeline_cards", {
   collectionCycle: int("collection_cycle"),
   // Teamspace (v5.0 Fase 1):
   isCompleted: int("is_completed").notNull().default(0),    // checkbox selesai (FR-405)
-  completedAt: text("completed_at"),                        // timestamp selesai — dasar on-time rate
+  completedAt: text("completed_at"),                        // timestamp selesai - dasar on-time rate
   coverPath: varchar("cover_path", { length: 255 }),        // cover image relatif JABNET_UPLOAD_ROOT
-  isPrivate: int("is_private").notNull().default(0),        // "Rahasiakan" — hanya creator/assignee/follower/admin
+  isPrivate: int("is_private").notNull().default(0),        // "Rahasiakan" - hanya creator/assignee/follower/admin
   archivedAt: text("archived_at"),                          // arsip kartu (FR-409/414)
-  recurrenceRule: text("recurrence_rule"),                  // FR-408 "Ulangi": JSON {freq,interval} — instance baru saat selesai
+  recurrenceRule: text("recurrence_rule"),                  // FR-408 "Ulangi": JSON {freq,interval} - instance baru saat selesai
 }, (t) => ({
   byMitraPipelineStage: index("idx_pipeline_cards_mitra_pipeline_stage").on(t.mitraId, t.pipelineId, t.stageId, t.position),
   byMaster: index("idx_pipeline_cards_master").on(t.mitraId, t.masterCardId),
@@ -659,7 +659,7 @@ export const cardRelations = mysqlTable("card_relations", {
 
 export type CardRelation = typeof cardRelations.$inferSelect;
 
-// Pipeline Templates (Phase 5) — reusable pipeline structure snapshots.
+// Pipeline Templates (Phase 5) - reusable pipeline structure snapshots.
 export const pipelineTemplates = mysqlTable("pipeline_templates", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -723,7 +723,7 @@ export const pipelineAccess = mysqlTable("pipeline_access", {
   roleId: int("role_id").notNull(),
   level: varchar("level", { length: 8 }).notNull(), // "view" | "edit" (legacy/coarse)
   capabilities: text("capabilities"), // JSON array of PipelineCapability; null → derive from level
-  cardFilter: text("card_filter"), // JSON FieldRuleCondition[][] — restricts which cards this role sees
+  cardFilter: text("card_filter"), // JSON FieldRuleCondition[][] - restricts which cards this role sees
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 }, (t) => ({
@@ -917,7 +917,7 @@ export const kpiSnapshots = mysqlTable("kpi_snapshots", {
   collectionsOpen: int("collections_open").notNull().default(0),
   collectionsClosedToday: int("collections_closed_today").notNull().default(0),
   outstandingAmount: bigint("outstanding_amount", { mode: "number" }).notNull().default(0),
-  // Teamspace v5.0 Fase 3 (§14.4): tren harian tugas internal — upsert oleh teamspace-worker
+  // Teamspace v5.0 Fase 3 (§14.4): tren harian tugas internal - upsert oleh teamspace-worker
   teamspaceTasksTotal: int("teamspace_tasks_total").default(0),
   teamspaceTasksDone: int("teamspace_tasks_done").default(0),
   teamspaceTasksOverdue: int("teamspace_tasks_overdue").default(0),
@@ -927,7 +927,7 @@ export const kpiSnapshots = mysqlTable("kpi_snapshots", {
 
 export type KpiSnapshot = typeof kpiSnapshots.$inferSelect;
 
-// Multi-user assignment per collection — semua assignee equal (siapa pun bisa edit/update).
+// Multi-user assignment per collection - semua assignee equal (siapa pun bisa edit/update).
 // collections.assigned_to tetap di-maintain sebagai "primary" (= first/earliest assignee) untuk backwards compat.
 export const collectionAssignees = mysqlTable("collection_assignees", {
   id: int("id").autoincrement().primaryKey(),
@@ -985,19 +985,19 @@ export const trafficSnapshots = mysqlTable("traffic_snapshots", {
   sessionId: text("session_id"),
 });
 
-// ==================== LOYALTY — JABNET SAHABAT (v4.1.9) ====================
+// ==================== LOYALTY - JABNET SAHABAT (v4.1.9) ====================
 // Aligned ke program resmi "JABNET Sahabat" (3 tier + 5 level Perunggu→Berlian).
 // Reward struktur:
 //   - Tier 1 Sahabat Pelanggan (auto-enroll, semua customer):
 //       per referral sukses → Voucher Indomaret Rp 50K / Potongan Tagihan Rp 75K / kumpul 3 = +5 Mbps permanen
 //       milestone 3 ref = voucher Rp 150K, 5 = 1 bln gratis, 10 = 3 bln gratis, 20 = upgrade ke Tier 2
-//   - Tier 2 Sahabat RT/RW (kontrak legal) — 5 level by referral count:
+//   - Tier 2 Sahabat RT/RW (kontrak legal) - 5 level by referral count:
 //       Perunggu (5), Perak (10), Emas (20), Platinum (30), Berlian (50) → reward cash + internet gratis
 //       Setelah Berlian → Ambassador (15% rev share)
-//   - Tier 3 Sahabat Desa (BUMDes) — kantor gratis + 10% rev share ke BUMDes
+//   - Tier 3 Sahabat Desa (BUMDes) - kantor gratis + 10% rev share ke BUMDes
 // Streak tepat-waktu tetap tracked untuk internal insight (tidak diekspos sbg reward utama).
 
-/** Per-customer loyalty state — auto-computed via BillingSyncWorker + admin upgrade manual */
+/** Per-customer loyalty state - auto-computed via BillingSyncWorker + admin upgrade manual */
 export const customerLoyalty = mysqlTable("customer_loyalty", {
   customerId: int("customer_id").primaryKey().references(() => customers.id),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1008,7 +1008,7 @@ export const customerLoyalty = mysqlTable("customer_loyalty", {
   totalLatePayments: int("total_late_payments").default(0),
   lastPaymentEvaluatedDate: text("last_payment_evaluated_date"), // lastPaymentDate terakhir yang diproses
   // Referral
-  referralCode: varchar("referral_code", { length: 32 }).unique(), // legacy alias — simpan sama dgn sahabatCode
+  referralCode: varchar("referral_code", { length: 32 }).unique(), // legacy alias - simpan sama dgn sahabatCode
   sahabatCode: varchar("sahabat_code", { length: 32 }).unique(),   // JABNET format "SHB-TRG-001" (kecamatan 3-huruf + seq)
   referredByCustomerId: int("referred_by_customer_id"),   // FK ke customers.id, kalau customer ini masuk via referral
   referredAt: text("referred_at"),                            // ISO saat daftar via referral
@@ -1016,16 +1016,16 @@ export const customerLoyalty = mysqlTable("customer_loyalty", {
   sahabatTier: varchar("sahabat_tier", { length: 255 }).default("pelanggan"),     // pelanggan | rtrw | desa
   sahabatLevel: varchar("sahabat_level", { length: 255 }).default("new"),         // new | perunggu | perak | emas | platinum | berlian | ambassador
   totalSuccessfulReferrals: int("total_successful_referrals").default(0), // count status="rewarded"
-  contractSignedAt: text("contract_signed_at"),               // ISO — saat tanda tangan kontrak Tier 2 (naik ke RT/RW)
-  // Tenure tracking (masih berguna utk "lama berlangganan" display — legacy v4.1.8)
+  contractSignedAt: text("contract_signed_at"),               // ISO - saat tanda tangan kontrak Tier 2 (naik ke RT/RW)
+  // Tenure tracking (masih berguna utk "lama berlangganan" display - legacy v4.1.8)
   tenureBadge: varchar("tenure_badge", { length: 255 }).default("tetangga"),      // tetangga | keluarga | sahabat | abadi (display only)
   tenureMonths: int("tenure_months").default(0),
-  // v4.2.2 — Points & Speed-on-Demand
+  // v4.2.2 - Points & Speed-on-Demand
   pointsBalance: int("points_balance").default(0),                     // current redeemable points
   pointsLifetimeEarned: int("points_lifetime_earned").default(0),
   pointsLifetimeRedeemed: int("points_lifetime_redeemed").default(0),
   // Admin freeze (v4.4.0)
-  isFrozen: int("is_frozen").notNull().default(0),                 // 0/1 — block reward issuance
+  isFrozen: int("is_frozen").notNull().default(0),                 // 0/1 - block reward issuance
   frozenReason: varchar("frozen_reason", { length: 255 }),
   frozenAt: text("frozen_at"),
   frozenBy: int("frozen_by"),                                       // user_id staff
@@ -1034,7 +1034,7 @@ export const customerLoyalty = mysqlTable("customer_loyalty", {
 });
 
 /**
- * Point ledger — append-only audit trail untuk earn/redeem/adjust.
+ * Point ledger - append-only audit trail untuk earn/redeem/adjust.
  */
 export const pointTransactions = mysqlTable("point_transactions", {
   id: int("id").autoincrement().primaryKey(),
@@ -1055,7 +1055,7 @@ export type PointTransaction = typeof pointTransactions.$inferSelect;
 export type InsertPointTransaction = z.infer<typeof insertPointTransactionSchema>;
 
 /**
- * Point redemption — request + lifecycle Speed-on-Demand boost.
+ * Point redemption - request + lifecycle Speed-on-Demand boost.
  */
 export const pointRedemptions = mysqlTable("point_redemptions", {
   id: int("id").autoincrement().primaryKey(),
@@ -1079,7 +1079,7 @@ export const pointRedemptions = mysqlTable("point_redemptions", {
   // PPP profile tracking (untuk auto-revert)
   originalPppProfile: text("original_ppp_profile"),
   boostedPppProfile: text("boosted_ppp_profile"),
-  // Revert health (v4.2.3+) — track auto-revert success saat expire
+  // Revert health (v4.2.3+) - track auto-revert success saat expire
   revertedAt: text("reverted_at"),                  // null = belum di-revert
   revertError: text("revert_error"),                // pesan error terakhir kalau gagal
   revertAttempts: int("revert_attempts").default(0),
@@ -1091,7 +1091,7 @@ export const insertPointRedemptionSchema = createInsertSchema(pointRedemptions);
 export type PointRedemption = typeof pointRedemptions.$inferSelect;
 export type InsertPointRedemption = z.infer<typeof insertPointRedemptionSchema>;
 
-/** Diskon entitlement — auto-generate dari streak milestone atau referral reward.
+/** Diskon entitlement - auto-generate dari streak milestone atau referral reward.
  *  Status flow: pending → applied_to_invoice (oleh billing manual atau otomatis) → done
  *              atau pending → expired (kalau lewat 3 bulan tidak di-apply)
  */
@@ -1103,9 +1103,9 @@ export const customerDiscounts = mysqlTable("customer_discounts", {
   discountType: text("discount_type").notNull(),  // percent | free_days | voucher_indomaret | cash_bonus | speed_upgrade
   discountValue: int("discount_value").notNull(), // percent: 5/10/50 • free_days: 7/30/90/365/730/1095 • voucher: nominal Rp • cash: nominal Rp • speed: Mbps
   description: text("description"),
-  eligibleForPeriod: text("eligible_for_period"), // "YYYY-MM" — bulan target apply
+  eligibleForPeriod: text("eligible_for_period"), // "YYYY-MM" - bulan target apply
   status: varchar("status", { length: 255 }).default("pending"),      // pending | applied | expired | cancelled
-  expiresAt: text("expires_at"),                  // ISO — default 90 hari dari generate
+  expiresAt: text("expires_at"),                  // ISO - default 90 hari dari generate
   appliedAt: text("applied_at"),
   appliedByUserId: int("applied_by_user_id"), // staff yang manual apply
   invoiceRef: text("invoice_ref"),                // referensi invoice kalau ada
@@ -1113,7 +1113,7 @@ export const customerDiscounts = mysqlTable("customer_discounts", {
   createdAt: text("created_at").notNull(),
 });
 
-/** Referral tracking — customer invite tetangga */
+/** Referral tracking - customer invite tetangga */
 export const customerReferrals = mysqlTable("customer_referrals", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1141,7 +1141,7 @@ export type InsertCustomerDiscount = z.infer<typeof insertCustomerDiscountSchema
 export type CustomerReferral = typeof customerReferrals.$inferSelect;
 export type InsertCustomerReferral = z.infer<typeof insertCustomerReferralSchema>;
 
-// v4.1.3: MPWA Message Templates — reusable untuk OTP, notif tagihan, isolir, dll
+// v4.1.3: MPWA Message Templates - reusable untuk OTP, notif tagihan, isolir, dll
 // v4.2.19: Extended dengan footer + buttons + media untuk broadcast
 // v4.2.20: Extended dengan templateType (pelanggan/reseller/system), customerFilter,
 //           shareToReseller, dan content sebagai rich-text HTML
@@ -1160,7 +1160,7 @@ export const mpwaTemplates = mysqlTable("mpwa_templates", {
   buttons: text("buttons"),                         // JSON array of buttons [{type, label, payload}]
   mediaUrl: text("media_url"),                      // URL gambar / video untuk attach
   mediaType: text("media_type"),                    // "image" | "video" | "document"
-  // v4.2.20: PRD WA Feature v2 — template type + customer filter + reseller share
+  // v4.2.20: PRD WA Feature v2 - template type + customer filter + reseller share
   templateType: varchar("template_type", { length: 255 }).default("pelanggan"),    // pelanggan | reseller | system
   templateChannel: varchar("template_channel", { length: 255 }).default("unofficial"), // unofficial | official (mengikuti tab di PRD)
   customerFilter: varchar("customer_filter", { length: 255 }).default("all"),      // all | unpaid (saat broadcast pelanggan)
@@ -1173,7 +1173,7 @@ export const mpwaTemplates = mysqlTable("mpwa_templates", {
   updatedAt: text("updated_at"),
 });
 
-// v4.2.20: WhatsApp Devices — multi-device dengan 12 provider gateway support
+// v4.2.20: WhatsApp Devices - multi-device dengan 12 provider gateway support
 export const waDevices = mysqlTable("wa_devices", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1181,7 +1181,7 @@ export const waDevices = mysqlTable("wa_devices", {
   phone: text("phone").notNull(),                            // "6289630599885"
   provider: text("provider").notNull(),                      // mpwa | wablas | fonnte | starsender | watzap | wachayo | mekari_qontak | mobichat | halo_ai | pancake | kommo | bales_otomatis
   providerChannel: varchar("provider_channel", { length: 255 }).default("unofficial"), // unofficial | official
-  // Provider-specific config (JSON) — apiKey, url, token, secret, dst.
+  // Provider-specific config (JSON) - apiKey, url, token, secret, dst.
   config: text("config"),                                    // JSON: { apiKey, url, token, secret, ... }
   delaySeconds: int("delay_seconds").default(2),         // 1-30, jeda antar pesan
   isActive: int("is_active").default(1),
@@ -1218,7 +1218,7 @@ export const waInbox = mysqlTable("wa_inbox", {
   receivedAt: text("received_at").notNull(),
 });
 
-// v4.2.24: Phonebooks — group/list of contacts (custom, terpisah dari customers)
+// v4.2.24: Phonebooks - group/list of contacts (custom, terpisah dari customers)
 // Untuk broadcast ke list yang user bikin sendiri (reseller VIP, tim internal, calon pelanggan, dll)
 export const phonebooks = mysqlTable("phonebooks", {
   id: int("id").autoincrement().primaryKey(),
@@ -1233,7 +1233,7 @@ export const phonebooks = mysqlTable("phonebooks", {
   updatedAt: text("updated_at"),
 });
 
-// v4.2.24: Phonebook contacts — kontak per phonebook
+// v4.2.24: Phonebook contacts - kontak per phonebook
 export const phonebookContacts = mysqlTable("phonebook_contacts", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1243,7 +1243,7 @@ export const phonebookContacts = mysqlTable("phonebook_contacts", {
   email: text("email"),
   address: text("address"),
   notes: text("notes"),
-  // Custom fields fleksibel — JSON object untuk additional data (e.g. {paket: "20M", referer: "Bu Ani"})
+  // Custom fields fleksibel - JSON object untuk additional data (e.g. {paket: "20M", referer: "Bu Ani"})
   customFields: text("custom_fields"),             // JSON
   // Auto-link ke customer kalau ada (untuk akses 28 params pelanggan saat broadcast)
   customerId: int("customer_id"),              // FK customers.id (opsional)
@@ -1322,7 +1322,7 @@ export const WA_PROVIDERS = {
 } as const;
 export type WaProviderKey = keyof typeof WA_PROVIDERS;
 
-// v4.2.19: Broadcast Campaign — single send job ke segment audience
+// v4.2.19: Broadcast Campaign - single send job ke segment audience
 export const broadcastCampaigns = mysqlTable("broadcast_campaigns", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1339,7 +1339,7 @@ export const broadcastCampaigns = mysqlTable("broadcast_campaigns", {
   buttonsOverride: text("buttons_override"),
   // Scheduling
   status: varchar("status", { length: 255 }).notNull().default("draft"), // draft | scheduled | running | completed | cancelled | failed
-  scheduledAt: text("scheduled_at"),                // ISO — kalau dijadwalkan
+  scheduledAt: text("scheduled_at"),                // ISO - kalau dijadwalkan
   startedAt: text("started_at"),
   completedAt: text("completed_at"),
   // Rate limit (override default 2 detik)
@@ -1351,7 +1351,7 @@ export const broadcastCampaigns = mysqlTable("broadcast_campaigns", {
   // v4.2.20: PRD WA v2
   deviceId: int("device_id"),                                // FK wa_devices.id
   targetType: varchar("target_type", { length: 255 }).default("pelanggan"),          // pelanggan | reseller
-  // v4.2.20 fix: direct recipients (bypass filter) — JSON array of {phone,name,customerId?,resellerId?}
+  // v4.2.20 fix: direct recipients (bypass filter) - JSON array of {phone,name,customerId?,resellerId?}
   directRecipients: text("direct_recipients"),
   // v4.2.20 fix: manual inputs (untuk substitute {{input_manual_text}} / {{input_manual_tanggal}})
   manualText: text("manual_text"),
@@ -1362,7 +1362,7 @@ export const broadcastCampaigns = mysqlTable("broadcast_campaigns", {
   updatedAt: text("updated_at"),
 });
 
-// v4.2.19: Broadcast Recipients — per-customer per-campaign tracking
+// v4.2.19: Broadcast Recipients - per-customer per-campaign tracking
 export const broadcastRecipients = mysqlTable("broadcast_recipients", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1379,7 +1379,7 @@ export const broadcastRecipients = mysqlTable("broadcast_recipients", {
   createdAt: text("created_at").notNull(),
 });
 
-// v4.2.19: Saved Audience Segments — reusable filter sets
+// v4.2.19: Saved Audience Segments - reusable filter sets
 export const broadcastSegments = mysqlTable("broadcast_segments", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1430,7 +1430,7 @@ export const MPWA_TEMPLATE_CATEGORY_LABELS: Record<MpwaTemplateCategory, string>
 // Stage order = display order di Kanban. `suspend` = pre-isolir warning (overdue tapi belum isolir).
 // `promised` di-deprecated → di-migrate ke `contacted` (promise_date tetap di kolom collections.promise_date).
 //
-// SOP churn→reaktivasi (v5.3): ladder penagihan lintas-divisi ~1 bulan —
+// SOP churn→reaktivasi (v5.3): ladder penagihan lintas-divisi ~1 bulan -
 //   Baru Isolir (H+3, sistem) → Dihubungi (Finance +4h) → Delegasi Layanan Pelanggan (CS +7h)
 //   → Delegasi Marketing (visit/reaktivasi +7h) → Lunas/Reaktivasi ATAU Churn (write-off by age).
 export const COLLECTION_STAGES = ["suspend", "new", "contacted", "delegasi_cs", "delegasi_marketing", "dikunjungi", "issue", "paid", "written_off"] as const;
@@ -1472,7 +1472,7 @@ export const COLLECTION_SOP_META: Partial<Record<CollectionStage, { ownerDivisio
   delegasi_marketing:  { ownerDivision: "marketing", slaDays: 7, nextStageKey: null },
 };
 
-// Template default pipeline collection — dipakai untuk seed mitra 1 (JABNET) saat migrasi,
+// Template default pipeline collection - dipakai untuk seed mitra 1 (JABNET) saat migrasi,
 // lalu di-clone ke tiap mitra lain/baru. Urutan = posisi awal. Role menandai stage untuk
 // otomasi billing (entry=auto-open target, paid=auto-close, writeoff=auto write-off).
 export const DEFAULT_COLLECTION_STAGES: Array<{ key: string; label: string; color: string; role: CollectionStageRole; ownerDivision: string | null; slaDays: number | null; nextStageKey: string | null }> =
@@ -1520,13 +1520,13 @@ export const users = mysqlTable("users", {
   username: varchar("username", { length: 64 }).notNull().unique(),
   password: text("password").notNull(), // bcrypt hashed
   name: text("name").notNull(),
-  role: varchar("role", { length: 255 }).default("operator"), // Legacy text tier — masih dipakai untuk backward compat; roleId adalah source of truth
-  roleId: int("role_id"),             // FK ke roles.id — source of truth permission (v4.1.1+)
+  role: varchar("role", { length: 255 }).default("operator"), // Legacy text tier - masih dipakai untuk backward compat; roleId adalah source of truth
+  roleId: int("role_id"),             // FK ke roles.id - source of truth permission (v4.1.1+)
   isActive: int("is_active").default(1),
   token: text("token"),
   createdAt: text("created_at"),
   lastLogin: text("last_login"),
-  // Team / HR fields (all optional — filled progressively)
+  // Team / HR fields (all optional - filled progressively)
   isEmployee: int("is_employee").notNull().default(0),   // v5.1 SDM: akun ini karyawan resmi (dasar rekap HRD)
   email: text("email"),
   phone: text("phone"),
@@ -1540,7 +1540,7 @@ export const users = mysqlTable("users", {
   emergencyContact: text("emergency_contact"),  // "Nama - HP"
   notes: text("notes"),                  // Catatan internal (admin only)
   permissions: text("permissions"),       // DEPRECATED: JSON array per-user override; sekarang di roles.permissions
-  // v4.2.1 — Profile photo + Telegram integration
+  // v4.2.1 - Profile photo + Telegram integration
   photoUrl: text("photo_url"),                    // base64 data URL (256x256 square) atau null
   telegramChatId: text("telegram_chat_id"),       // Chat ID Telegram setelah pairing (string utk safe JSON)
   telegramUsername: text("telegram_username"),    // @handle Telegram (display only)
@@ -1582,13 +1582,13 @@ export const insertMitraIntegrationSchema = createInsertSchema(mitraIntegrations
 export type MitraIntegration = typeof mitraIntegrations.$inferSelect;
 export type InsertMitraIntegration = z.infer<typeof insertMitraIntegrationSchema>;
 
-// Roles — custom user-defined roles with per-feature read/write permissions (v4.1.1)
+// Roles - custom user-defined roles with per-feature read/write permissions (v4.1.1)
 export const roles = mysqlTable("roles", {
   id: int("id").autoincrement().primaryKey(),
-  mitraId: int("mitra_id").notNull().default(1),  // Tenant scope — roles isolated per mitra (v4.3.x). name unik per (mitra_id, name).
+  mitraId: int("mitra_id").notNull().default(1),  // Tenant scope - roles isolated per mitra (v4.3.x). name unik per (mitra_id, name).
   name: text("name").notNull(),                // Custom name e.g. "Teknisi Senior", "CS Koordinator"
   description: text("description"),
-  isSystem: int("is_system").default(0),   // 1 untuk role bawaan (Administrator, Read Only) — tidak bisa dihapus
+  isSystem: int("is_system").default(0),   // 1 untuk role bawaan (Administrator, Read Only) - tidak bisa dihapus
   canSeeAllData: int("can_see_all_data").default(0), // 1 = supervisor mode (lihat data semua user, bukan hanya milik sendiri)
   permissions: text("permissions").notNull(),  // JSON object: { "dashboard": "read|write|none", "customers": "write", ... }
   createdBy: int("created_by"),
@@ -1600,7 +1600,7 @@ export const insertRoleSchema = createInsertSchema(roles);
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof roles.$inferInsert;
 
-// Role Presets — DB-managed templates that pre-fill the permission matrix when creating a new role
+// Role Presets - DB-managed templates that pre-fill the permission matrix when creating a new role
 export const rolePresets = mysqlTable("role_presets", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -1632,7 +1632,7 @@ export function checkPermLevel(perms: Record<string, PermissionLevel> | undefine
   return false;
 }
 
-// ── Permission definitions ──
+// -- Permission definitions --
 export const ALL_PERMISSIONS = [
   { key: "dashboard", label: "Dashboard", group: "NOC" },
   { key: "map", label: "Peta Jaringan", group: "Teknik" },
@@ -1671,20 +1671,20 @@ export const ALL_PERMISSIONS = [
   { key: "loyalty_admin", label: "Manajemen Loyalitas Pelanggan", group: "Layanan Pelanggan" },
   { key: "mpwa", label: "MPWA WhatsApp Gateway (Legacy)", group: "Integrasi & Tools" },
   { key: "broadcast", label: "Broadcast Pelanggan (Legacy)", group: "Integrasi & Tools" },
-  // v4.2.20: WhatsApp v2 — multi-device + template + broadcast pelanggan/reseller
+  // v4.2.20: WhatsApp v2 - multi-device + template + broadcast pelanggan/reseller
   { key: "whatsapp", label: "WhatsApp (Nomor / Template / Broadcast)", group: "Layanan Pelanggan" },
-  // v4.2.24: Phonebook — custom contact list untuk broadcast
+  // v4.2.24: Phonebook - custom contact list untuk broadcast
   { key: "phonebooks", label: "Phonebook (Daftar Kontak Custom)", group: "Layanan Pelanggan" },
   { key: "resellers", label: "Manajemen Reseller", group: "Layanan Pelanggan" },
   { key: "api_keys", label: "Public API Keys (Open API)", group: "Integrasi & Tools" },
   { key: "announcements_admin", label: "Kelola Pengumuman (News)", group: "Integrasi & Tools" },
   { key: "bug_reports", label: "Bug Reports (lapor bug)", group: "Integrasi & Tools" },
   { key: "pipelines", label: "Pipelines (Kanban)", group: "Pipelines" },
-  // Phase E multi-tenant — owner-level mitra CRUD + feature toggles
+  // Phase E multi-tenant - owner-level mitra CRUD + feature toggles
   { key: "mitra_admin", label: "Kelola Mitra (Owner Only)", group: "Owner" },
   { key: "chatwoot", label: "Chatwoot", group: "Layanan Pelanggan" },
-  { key: "chatwoot_settings", label: "Chatwoot — Pengaturan", group: "Layanan Pelanggan" },
-  // v5.0 Teamspace — kolaborasi tim internal
+  { key: "chatwoot_settings", label: "Chatwoot - Pengaturan", group: "Layanan Pelanggan" },
+  // v5.0 Teamspace - kolaborasi tim internal
   { key: "teams", label: "Tim (kelola tim & anggota)", group: "Teamspace" },
   { key: "team_tasks", label: "Tugas Tim", group: "Teamspace" },
   { key: "team_chat", label: "Chat Tim", group: "Teamspace" },
@@ -1694,7 +1694,7 @@ export const ALL_PERMISSIONS = [
   { key: "team_announcements", label: "Pengumuman Tim", group: "Teamspace" },
   { key: "performance_reports", label: "Laporan Kinerja", group: "Teamspace" },
   { key: "cheers", label: "Cheers (Apresiasi)", group: "Teamspace" },
-  // v5.1 SDM/HRD — kehadiran, absensi, cuti (adaptasi SDM_Jabnet.xlsx)
+  // v5.1 SDM/HRD - kehadiran, absensi, cuti (adaptasi SDM_Jabnet.xlsx)
   { key: "hr_sdm", label: "SDM (Kehadiran, Absensi, Cuti)", group: "HRD" },
 ] as const;
 
@@ -1754,7 +1754,7 @@ export const PERMISSION_PRESETS: Record<string, { label: string; level?: Permiss
 /**
  * Build a full permission matrix (every canonical key → level) from a preset.
  * Listed keys get the preset's `level` (default "write"); all other keys are "none".
- * Pure — used by the role form to apply a preset, and reusable wherever a preset
+ * Pure - used by the role form to apply a preset, and reusable wherever a preset
  * needs to materialise into a `Record<key, level>`.
  */
 export function buildPermissionMatrixFromPreset(
@@ -1976,7 +1976,7 @@ export const appSettings = mysqlTable("app_settings", {
 export type AppSetting = typeof appSettings.$inferSelect;
 
 // ==================== PUBLIC API KEYS (v4.1.9) ====================
-// Untuk integrasi eksternal (OpenClaude / AI analyst / BI tool) — read-only endpoints
+// Untuk integrasi eksternal (OpenClaude / AI analyst / BI tool) - read-only endpoints
 // dengan scoped access + rate limit + audit trail.
 
 export const apiKeys = mysqlTable("api_keys", {
@@ -2037,7 +2037,7 @@ export const notifications = mysqlTable("notifications", {
   createdAt: text("created_at").notNull(),
 });
 
-/** Announcements/News feed — admin post, semua staff lihat */
+/** Announcements/News feed - admin post, semua staff lihat */
 export const announcements = mysqlTable("announcements", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2057,7 +2057,7 @@ export const announcements = mysqlTable("announcements", {
   updatedAt: text("updated_at"),
 });
 
-/** Bug reports — staff lapor, admin triage */
+/** Bug reports - staff lapor, admin triage */
 export const bugReports = mysqlTable("bug_reports", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2114,7 +2114,7 @@ export const ticketCategories = mysqlTable("ticket_categories", {
   checklistTemplate: text("checklist_template"), // JSON array: ["Verifikasi port ODP", "Tarik kabel drop", ...]
   slaHours: int("sla_hours"), // SLA target dalam jam (e.g. 4 = harus selesai dalam 4 jam)
   /**
-   * v4.2.4: workflow template — stages flexible per kategori.
+   * v4.2.4: workflow template - stages flexible per kategori.
    * JSON array of WorkflowStage objects: { key, label, icon, color, requiresPhoto, requiresGps, requiresNote, requiresSignature, slaMinutes, isFinal, sortOrder }
    * Kalau null, fallback ke DEFAULT_WORKFLOW (prep/travel/onsite/done).
    */
@@ -2154,7 +2154,7 @@ export const tickets = mysqlTable("tickets", {
   dispatchedAt: text("dispatched_at"), // waktu tiket di-dispatch ke teknisi
   resolution: text("resolution"),
   /**
-   * v4.2.18 (D.1): Resolution code enum — kategori penyebab/solusi.
+   * v4.2.18 (D.1): Resolution code enum - kategori penyebab/solusi.
    * Values: FIBER_REPAIR | ONT_REPLACE | CONNECTOR_REPLACE | CABLE_REROUTE | CONFIG_CHANGE | OTHER | CUSTOMER_SIDE | NO_ISSUE_FOUND
    */
   resolutionCode: text("resolution_code"),
@@ -2179,7 +2179,7 @@ export const tickets = mysqlTable("tickets", {
   /**
    * v4.2.18 (A.1): Tiket resolved/closed yang ngga melewati workflow stages lengkap.
    * True = ditutup secara manual lewat /status endpoint, bukan via advance-stage sampai final.
-   * UI tampilkan banner "Tiket lama: ditutup tanpa workflow" + counter pakai "—" instead of misleading angka.
+   * UI tampilkan banner "Tiket lama: ditutup tanpa workflow" + counter pakai "-" instead of misleading angka.
    */
   legacyResolution: int("legacy_resolution").default(0), // 0=normal, 1=legacy
   createdAt: text("created_at"),
@@ -2210,7 +2210,7 @@ export const insertTicketActivitySchema = createInsertSchema(ticketActivities).o
 export type TicketActivity = typeof ticketActivities.$inferSelect;
 export type InsertTicketActivity = z.infer<typeof insertTicketActivitySchema>;
 
-// ── Ticket Team (multi-technician per work order) ──
+// -- Ticket Team (multi-technician per work order) --
 export const ticketTeam = mysqlTable("ticket_team", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2226,7 +2226,7 @@ export const ticketTeam = mysqlTable("ticket_team", {
 });
 export type TicketTeamMember = typeof ticketTeam.$inferSelect;
 
-// ── Ticket Evidence (photos, documents) ──
+// -- Ticket Evidence (photos, documents) --
 export const ticketEvidence = mysqlTable("ticket_evidence", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2241,7 +2241,7 @@ export const ticketEvidence = mysqlTable("ticket_evidence", {
 });
 export type TicketEvidenceItem = typeof ticketEvidence.$inferSelect;
 
-// ── Ticket GPS Log (location tracking during work) ──
+// -- Ticket GPS Log (location tracking during work) --
 export const ticketGpsLogs = mysqlTable("ticket_gps_logs", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2254,7 +2254,7 @@ export const ticketGpsLogs = mysqlTable("ticket_gps_logs", {
 });
 export type TicketGpsLog = typeof ticketGpsLogs.$inferSelect;
 
-// v4.2.17: CSAT (Customer Satisfaction) response — auto-trigger 24h setelah ticket close
+// v4.2.17: CSAT (Customer Satisfaction) response - auto-trigger 24h setelah ticket close
 export const ticketCsat = mysqlTable("ticket_csat", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2272,7 +2272,7 @@ export const ticketCsat = mysqlTable("ticket_csat", {
 });
 export type TicketCsat = typeof ticketCsat.$inferSelect;
 
-// v4.2.17: SLA escalation tracker — supaya satu ticket ngga di-escalate berkali-kali
+// v4.2.17: SLA escalation tracker - supaya satu ticket ngga di-escalate berkali-kali
 export const ticketSlaEscalations = mysqlTable("ticket_sla_escalations", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2299,7 +2299,7 @@ export const ticketComments = mysqlTable("ticket_comments", {
 });
 export type TicketComment = typeof ticketComments.$inferSelect;
 
-// v4.2.18 (B.7): Hold/Pause mechanism — pause SLA timer
+// v4.2.18 (B.7): Hold/Pause mechanism - pause SLA timer
 export const ticketPauses = mysqlTable("ticket_pauses", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2313,7 +2313,7 @@ export const ticketPauses = mysqlTable("ticket_pauses", {
 });
 export type TicketPause = typeof ticketPauses.$inferSelect;
 
-// v4.2.18 (P1.4): Stage edit audit log — track every koreksi data setelah submit
+// v4.2.18 (P1.4): Stage edit audit log - track every koreksi data setelah submit
 // Tujuan: transparency + bisa lihat history kalau teknisi/admin edit field
 export const ticketStageEditLog = mysqlTable("ticket_stage_edit_log", {
   id: int("id").autoincrement().primaryKey(),
@@ -2329,7 +2329,7 @@ export const ticketStageEditLog = mysqlTable("ticket_stage_edit_log", {
 });
 export type TicketStageEditLog = typeof ticketStageEditLog.$inferSelect;
 
-// v4.2.17: Network alarm event — dari GenieACS/MikroTik, diolah jadi tickets
+// v4.2.17: Network alarm event - dari GenieACS/MikroTik, diolah jadi tickets
 export const networkAlarms = mysqlTable("network_alarms", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2347,7 +2347,7 @@ export const networkAlarms = mysqlTable("network_alarms", {
 });
 export type NetworkAlarm = typeof networkAlarms.$inferSelect;
 
-// ── Legacy stage transitions (v4.2.4) — kept for backward compat, replaced by checkpoints di v4.2.5 ──
+// -- Legacy stage transitions (v4.2.4) - kept for backward compat, replaced by checkpoints di v4.2.5 --
 export const ticketStageTransitions = mysqlTable("ticket_stage_transitions", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2363,14 +2363,14 @@ export const ticketStageTransitions = mysqlTable("ticket_stage_transitions", {
   lat: double("lat"),
   lng: double("lng"),
   /**
-   * v4.2.7: Structured field values per stage (JSON) — supaya bisa di-edit kemudian.
+   * v4.2.7: Structured field values per stage (JSON) - supaya bisa di-edit kemudian.
    * Format: { numeric, barcode, signature, speedDownload, speedUpload, speedLatency, rating, custom: { fieldKey: value, ... } }
    */
   metadata: text("metadata"),
 });
 export type TicketStageTransition = typeof ticketStageTransitions.$inferSelect;
 
-// ── Ticket Checkpoints (v4.2.5 — action-based, redesigned dari stage rigid) ──
+// -- Ticket Checkpoints (v4.2.5 - action-based, redesigned dari stage rigid) --
 // Daripada workflow stage yang rigid sequential, teknisi log "checkpoint" yang flexible.
 // 8 action types: depart | arrive | start_work | progress | pause | resume | escalate | complete
 // Time tracking auto-derive: depart→arrive = travel time, arrive→start_work = setup time, dst.
@@ -2394,15 +2394,15 @@ export type TicketCheckpoint = typeof ticketCheckpoints.$inferSelect;
 
 /** Action types yang valid untuk checkpoint */
 export const CHECKPOINT_ACTIONS = [
-  "depart",      // 🚗 Berangkat
-  "arrive",      // 📍 Sampai lokasi
-  "start_work",  // 🔧 Mulai Kerja
-  "progress",    // 📷 Foto progress
+  "depart",      //  Berangkat
+  "arrive",      //  Sampai lokasi
+  "start_work",  //  Mulai Kerja
+  "progress",    //  Foto progress
   "pause",       // ⏸ Jeda
   "resume",      // ▶ Lanjut
-  "escalate",    // 🚨 Eskalasi (perlu bantuan)
-  "complete",    // ✅ Selesai
-  "note",        // 📝 Catatan saja (no state change)
+  "escalate",    //  Eskalasi (perlu bantuan)
+  "complete",    //  Selesai
+  "note",        //  Catatan saja (no state change)
 ] as const;
 export type CheckpointAction = typeof CHECKPOINT_ACTIONS[number];
 
@@ -2432,9 +2432,9 @@ export const CHECKPOINT_ACTION_CONFIG: Record<CheckpointAction, CheckpointAction
   note:       { key: "note",       label: "Catatan",       icon: "FileText",     color: "#6B7280", description: "Tambah catatan tanpa ubah status", requiresNote: true },
 };
 
-// ──────────── CHATWOOT INTEGRATION (v4.2.5) ────────────
+// ------------ CHATWOOT INTEGRATION (v4.2.5) ------------
 
-// Konfigurasi koneksi Chatwoot — single row (id=1)
+// Konfigurasi koneksi Chatwoot - single row (id=1)
 export const chatwootConfig = mysqlTable("chatwoot_config", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2496,11 +2496,11 @@ export type ChatwootAgentLink = typeof chatwootAgentLinks.$inferSelect;
 
 /** Tim/divisi internal (NOC, Marketing, Finance, dst) atau Proyek.
  *  Setiap tim punya tepat SATU pipeline tugas (taskPipelineId) yang di-provision
- *  otomatis saat tim dibuat — board Kanban reuse engine pipelines. */
+ *  otomatis saat tim dibuat - board Kanban reuse engine pipelines. */
 export const teams = mysqlTable("teams", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
-  parentId: int("parent_id"),                              // nested tree (Fase 2) — NULL = root
+  parentId: int("parent_id"),                              // nested tree (Fase 2) - NULL = root
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   icon: varchar("icon", { length: 64 }),                   // nama ikon lucide
@@ -2529,7 +2529,7 @@ export const teamMembers = mysqlTable("team_members", {
   byUser: index("idx_team_members_user").on(t.mitraId, t.userId),
 }));
 
-/** Label berwarna scoped per pipeline/board (FR-413) — pengganti tags bebas untuk board tim. */
+/** Label berwarna scoped per pipeline/board (FR-413) - pengganti tags bebas untuk board tim. */
 export const pipelineLabels = mysqlTable("pipeline_labels", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2574,9 +2574,9 @@ export const cardChecklistItems = mysqlTable("card_checklist_items", {
   byChecklist: index("idx_card_checklist_items_checklist").on(t.checklistId),
 }));
 
-// ── Fase 2: Chat, Jadwal, Check-in, Dokumen & File ──
+// -- Fase 2: Chat, Jadwal, Check-in, Dokumen & File --
 
-/** Chat grup per tim (FR-5xx) — 1 tim = 1 room (tanpa tabel room terpisah). */
+/** Chat grup per tim (FR-5xx) - 1 tim = 1 room (tanpa tabel room terpisah). */
 export const teamChatMessages = mysqlTable("team_chat_messages", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2590,7 +2590,7 @@ export const teamChatMessages = mysqlTable("team_chat_messages", {
   replyToId: int("reply_to_id"),
   createdAt: text("created_at").notNull(),
   editedAt: text("edited_at"),
-  deletedAt: text("deleted_at"),                           // soft delete — bubble "pesan dihapus"
+  deletedAt: text("deleted_at"),                           // soft delete - bubble "pesan dihapus"
 }, (t) => ({
   byTeam: index("idx_team_chat_team").on(t.mitraId, t.teamId, t.id),
 }));
@@ -2601,11 +2601,11 @@ export const teamEvents = mysqlTable("team_events", {
   mitraId: int("mitra_id").notNull().default(1),
   teamId: int("team_id").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
-  // ISO 8601 timestamp — varchar (bukan text) supaya bisa masuk composite index di bawah
+  // ISO 8601 timestamp - varchar (bukan text) supaya bisa masuk composite index di bawah
   // (MySQL/MariaDB menolak index TEXT tanpa prefix length). Panjang 32 cukup untuk ISO+offset.
   startAt: varchar("start_at", { length: 32 }).notNull(),
   endAt: varchar("end_at", { length: 32 }).notNull(),
-  recurrence: text("recurrence"),                          // JSON {freq,interval,until} — NULL = sekali
+  recurrence: text("recurrence"),                          // JSON {freq,interval,until} - NULL = sekali
   isConfidential: int("is_confidential").notNull().default(0),
   notes: text("notes"),
   createdBy: int("created_by").notNull(),
@@ -2663,7 +2663,7 @@ export const checkinResponses = mysqlTable("checkin_responses", {
   byQuestionDate: index("idx_checkin_responses_qdate").on(t.questionId, t.responseDate),
 }));
 
-/** Folder untuk Dokumen & File (FR-903) — nested via parentFolderId. */
+/** Folder untuk Dokumen & File (FR-903) - nested via parentFolderId. */
 export const teamFolders = mysqlTable("team_folders", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2727,7 +2727,7 @@ export const cheers = mysqlTable("cheers", {
 
 export type Cheer = typeof cheers.$inferSelect;
 
-// ── v5.1 SDM / HRD (adaptasi SDM_Jabnet.xlsx Fase 1) ──────────────────────
+// -- v5.1 SDM / HRD (adaptasi SDM_Jabnet.xlsx Fase 1) ----------------------
 // Kehadiran harian per karyawan (upsert per user+tanggal) + pengajuan cuti.
 export const hrAttendance = mysqlTable("hr_attendance", {
   id: int("id").autoincrement().primaryKey(),
@@ -2766,7 +2766,7 @@ export const hrLeaves = mysqlTable("hr_leaves", {
   byStatus: index("idx_hr_leaves_status").on(t.mitraId, t.status),
 }));
 
-// FR-HR-301: jadwal SHIFT ROTASI — penugasan shift per tanggal per karyawan
+// FR-HR-301: jadwal SHIFT ROTASI - penugasan shift per tanggal per karyawan
 // (prioritas di atas jadwal tetap hr_schedule_assignments saat hitung telat).
 export const hrShiftRoster = mysqlTable("hr_shift_roster", {
   id: int("id").autoincrement().primaryKey(),
@@ -2783,7 +2783,7 @@ export const HR_ATTENDANCE_STATUSES = ["hadir", "izin", "sakit", "cuti", "alpha"
 // PRD-HR FR-HR-401: 5 jenis cuti (tahunan/khusus/sakit/izin/tidak dibayar)
 export const HR_LEAVE_TYPES = ["tahunan", "khusus", "sakit", "izin", "unpaid"] as const;
 
-// ── PRD-HR Fase HR-1: presensi ESS (GPS+selfie), lokasi kantor, shift, libur ──
+// -- PRD-HR Fase HR-1: presensi ESS (GPS+selfie), lokasi kantor, shift, libur --
 export const hrAttendanceEvents = mysqlTable("hr_attendance_events", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2835,12 +2835,12 @@ export const hrHolidays = mysqlTable("hr_holidays", {
 export type HrAttendanceEvent = typeof hrAttendanceEvents.$inferSelect;
 export type HrShift = typeof hrShifts.$inferSelect;
 
-// ── PRD-HR HR-1b: profil karyawan lengkap (wizard 3 langkah), org, jabatan, lembur ──
+// -- PRD-HR HR-1b: profil karyawan lengkap (wizard 3 langkah), org, jabatan, lembur --
 export const hrEmployeeProfiles = mysqlTable("hr_employee_profiles", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
   userId: int("user_id").notNull(),
-  // Step 1 — Personal (FR-HR-102)
+  // Step 1 - Personal (FR-HR-102)
   birthPlace: varchar("birth_place", { length: 64 }),
   maritalStatus: varchar("marital_status", { length: 16 }),   // lajang|menikah|cerai
   bloodType: varchar("blood_type", { length: 4 }),
@@ -2854,14 +2854,14 @@ export const hrEmployeeProfiles = mysqlTable("hr_employee_profiles", {
   educationLevel: varchar("education_level", { length: 24 }),
   educationInstitution: varchar("education_institution", { length: 128 }),
   educationMajor: varchar("education_major", { length: 96 }),
-  // Step 2 — Kepegawaian
+  // Step 2 - Kepegawaian
   orgUnitId: int("org_unit_id"),
   positionId: int("position_id"),
   rank: varchar("rank", { length: 48 }),
   employmentStatus: varchar("employment_status", { length: 16 }).default("tetap"),  // tetap|kontrak|probation|lepas
   supervisorId: int("supervisor_id"),
   resignDate: varchar("resign_date", { length: 10 }),
-  // Step 3 — Payroll (dasar; perhitungan di Fase HR-2)
+  // Step 3 - Payroll (dasar; perhitungan di Fase HR-2)
   bankName: varchar("bank_name", { length: 48 }),
   bankAccount: varchar("bank_account", { length: 32 }),
   npwp: varchar("npwp", { length: 25 }),
@@ -2900,7 +2900,7 @@ export const hrOvertime = mysqlTable("hr_overtime", {
 export type HrEmployeeProfile = typeof hrEmployeeProfiles.$inferSelect;
 export type HrOvertime = typeof hrOvertime.$inferSelect;
 
-// ── PRD-HR HR-2: komponen gaji + slip (FR-HR-6xx) ──
+// -- PRD-HR HR-2: komponen gaji + slip (FR-HR-6xx) --
 export const hrSalaryComponents = mysqlTable("hr_salary_components", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2934,7 +2934,7 @@ export const hrPayslips = mysqlTable("hr_payslips", {
 export type HrSalaryComponent = typeof hrSalaryComponents.$inferSelect;
 export type HrPayslip = typeof hrPayslips.$inferSelect;
 
-// ── PRD-HR FR-HR-7xx: kasbon (cicilan auto-potong payroll) + reimburse ──
+// -- PRD-HR FR-HR-7xx: kasbon (cicilan auto-potong payroll) + reimburse --
 export const hrCashAdvances = mysqlTable("hr_cash_advances", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -2965,7 +2965,7 @@ export const hrReimbursements = mysqlTable("hr_reimbursements", {
 export type HrCashAdvance = typeof hrCashAdvances.$inferSelect;
 export type HrReimbursement = typeof hrReimbursements.$inferSelect;
 
-// FR-HR-901: pelacakan lokasi teknisi lapangan — ping berkala dari ESS selama
+// FR-HR-901: pelacakan lokasi teknisi lapangan - ping berkala dari ESS selama
 // jam kerja; transparan ke karyawan (FR-HR-904), retensi dibersihkan worker.
 export const hrLocationPings = mysqlTable("hr_location_pings", {
   id: int("id").autoincrement().primaryKey(),
@@ -3022,7 +3022,7 @@ export const hrKpiAssessments = mysqlTable("hr_kpi_assessments", {
   createdAt: text("created_at").notNull(),
 }, (t) => ({ byUser: index("idx_hr_kpi_user").on(t.mitraId, t.userId, t.period) }));
 
-// FR-HR-703: petty cash — ledger per pemegang (topup / expense)
+// FR-HR-703: petty cash - ledger per pemegang (topup / expense)
 export const hrPettyCash = mysqlTable("hr_petty_cash", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -3040,7 +3040,7 @@ export type HrKpiForm = typeof hrKpiForms.$inferSelect;
 export type HrKpiAssessment = typeof hrKpiAssessments.$inferSelect;
 export type HrPettyCash = typeof hrPettyCash.$inferSelect;
 
-/** Penerima konten "Rahasia" — SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
+/** Penerima konten "Rahasia" - SATU tabel polymorphic untuk announcement/document/event/checkin (FR-1404). */
 export const contentRecipients = mysqlTable("content_recipients", {
   id: int("id").autoincrement().primaryKey(),
   ownerType: varchar("owner_type", { length: 16 }).notNull(), // announcement|document|event|checkin
@@ -3069,9 +3069,9 @@ export const insertTeamSchema = createInsertSchema(teams, {
   name: z.string().min(1, "Nama tim wajib diisi").max(255),
 }).omit({ id: true, mitraId: true, taskPipelineId: true, createdBy: true, createdAt: true, updatedAt: true, archivedAt: true });
 
-/** Default views saat tim dibuat — Fase 2 lengkap (bisa di-pin/lepas via pengaturan tim). */
+/** Default views saat tim dibuat - Fase 2 lengkap (bisa di-pin/lepas via pengaturan tim). */
 export const TEAM_DEFAULT_VIEWS = ["summary", "tasks", "chat", "schedule", "checkins", "docs", "announcements"] as const;
-/** Stage default board tugas tim — copywriting mengikuti Cicle agar zero learning curve. */
+/** Stage default board tugas tim - copywriting mengikuti Cicle agar zero learning curve. */
 export const TEAM_TASK_DEFAULT_STAGES = [
   { label: "To Do List", color: "#64748B", semanticType: "todo" },
   { label: "Dikerjakan", color: "#F59E0B", semanticType: "in_progress" },
@@ -3080,15 +3080,15 @@ export const TEAM_TASK_DEFAULT_STAGES = [
 ] as const;
 export type StageSemanticType = "todo" | "in_progress" | "done" | "cancelled" | "custom";
 
-// ── Workflow Stage Type (di-store sebagai JSON di ticket_categories.workflow_stages) ──
-// v4.2.6: re-aligned dengan design Jabnet Work Order — fields array berisi field types
+// -- Workflow Stage Type (di-store sebagai JSON di ticket_categories.workflow_stages) --
+// v4.2.6: re-aligned dengan design Jabnet Work Order - fields array berisi field types
 //   yang harus di-collect teknisi di setiap stage. Field types yang valid:
 //   "photo" | "checklist" | "notes" | "numeric" | "speedtest" | "barcode"
 //   | "signature" | "gps" | "eta" | "rating"
 export type StageFieldType = "photo" | "checklist" | "notes" | "numeric" | "speedtest" | "barcode" | "signature" | "gps" | "eta" | "rating";
 
 /**
- * v4.2.7: Custom field definition — admin bisa bikin field arbitrary per stage.
+ * v4.2.7: Custom field definition - admin bisa bikin field arbitrary per stage.
  * Built-in fields (StageFieldType) punya specialized behavior (camera, GPS API, dst);
  * custom fields generic input/textarea/select/checkbox/number.
  */
@@ -3113,7 +3113,7 @@ export interface WorkflowStage {
   description?: string;           // hint untuk teknisi
   fields?: StageFieldType[];      // v4.2.6: built-in field types
   customFields?: CustomField[];   // v4.2.7: admin-defined custom fields
-  // Legacy v4.2.4 props — kept for backward compat:
+  // Legacy v4.2.4 props - kept for backward compat:
   icon?: string;
   color?: string;
   requiresPhoto?: boolean;
@@ -3134,10 +3134,10 @@ export const DEFAULT_TICKET_WORKFLOW: WorkflowStage[] = [
   { key: "done",     label: "Selesai",          icon: "Flag",         color: "#10B981", sortOrder: 5, isFinal: true, requiresNote: true },
 ];
 
-// Workflow preset — re-aligned dengan design Jabnet Work Order (chat reference)
+// Workflow preset - re-aligned dengan design Jabnet Work Order (chat reference)
 // Setiap stage punya `fields` array yang menentukan FieldCard apa saja muncul di mobile teknisi.
 export const WORKFLOW_PRESETS: Record<string, WorkflowStage[]> = {
-  /** PSB — Pemasangan Baru (8 stages, full lifecycle) */
+  /** PSB - Pemasangan Baru (8 stages, full lifecycle) */
   psb: [
     { key: "prep",         label: "Persiapan",         description: "Cek tools & material",            fields: ["checklist", "photo"],                       sortOrder: 1, slaMinutes: 30 },
     { key: "travel",       label: "Dalam Perjalanan",  description: "Menuju lokasi pelanggan",         fields: ["gps", "eta"],                               sortOrder: 2, slaMinutes: 60 },
@@ -3148,7 +3148,7 @@ export const WORKFLOW_PRESETS: Record<string, WorkflowStage[]> = {
     { key: "activation",   label: "Aktivasi & Testing", description: "Aktivasi layanan",                fields: ["speedtest", "checklist"],                   sortOrder: 7, slaMinutes: 15 },
     { key: "completion",   label: "Penyelesaian",      description: "Tanda tangan & dokumentasi",      fields: ["signature", "photo", "rating"],             sortOrder: 8, slaMinutes: 10, isFinal: true },
   ],
-  /** Gangguan — Maintenance Corrective (6 stages, focus diagnose+repair) */
+  /** Gangguan - Maintenance Corrective (6 stages, focus diagnose+repair) */
   gangguan: [
     { key: "diagnose_remote", label: "Diagnosa Awal",     description: "Remote check dari NOC",            fields: ["notes", "numeric"],                  sortOrder: 1, slaMinutes: 15 },
     { key: "dispatch",        label: "Dispatch Teknisi",  description: "Assign & berangkat",               fields: ["gps", "eta"],                        sortOrder: 2, slaMinutes: 45 },
@@ -3166,7 +3166,7 @@ export const WORKFLOW_PRESETS: Record<string, WorkflowStage[]> = {
     { key: "tuning",       label: "Cleaning & Tuning",    description: "Pembersihan & optimasi",           fields: ["photo", "checklist"],                 sortOrder: 5, slaMinutes: 30 },
     { key: "report",       label: "Laporan",              description: "Dokumentasi & TTD",                fields: ["signature", "notes"],                 sortOrder: 6, slaMinutes: 10, isFinal: true },
   ],
-  /** Relokasi — Pindah lokasi pelanggan */
+  /** Relokasi - Pindah lokasi pelanggan */
   relokasi: [
     { key: "survey_new",   label: "Survey Lokasi Baru",   description: "Cek feasibility",                  fields: ["photo", "gps", "notes"],              sortOrder: 1, slaMinutes: 45 },
     { key: "dismantle",    label: "Dismantle Lokasi Lama", description: "Lepas perangkat lama",            fields: ["photo", "barcode"],                   sortOrder: 2, slaMinutes: 30 },
@@ -3182,14 +3182,14 @@ export const WORKFLOW_PRESETS: Record<string, WorkflowStage[]> = {
     { key: "speedtest",     label: "Speed Test",          description: "Verifikasi bandwidth baru",        fields: ["speedtest"],                          sortOrder: 3, slaMinutes: 10 },
     { key: "notify",        label: "Konfirmasi",          description: "Notifikasi ke pelanggan",          fields: ["notes"],                              sortOrder: 4, slaMinutes: 10, isFinal: true },
   ],
-  /** Dismantle — Berhenti berlangganan */
+  /** Dismantle - Berhenti berlangganan */
   dismantle: [
     { key: "visit",        label: "Kunjungan Lokasi",     description: "Tiba di pelanggan",                fields: ["gps"],                                sortOrder: 1, slaMinutes: 60 },
     { key: "remove_device", label: "Lepas Perangkat",     description: "Ambil ONT & accessories",          fields: ["photo", "barcode"],                   sortOrder: 2, slaMinutes: 30 },
     { key: "remove_cable", label: "Lepas Kabel",          description: "Cabut drop core",                  fields: ["photo"],                              sortOrder: 3, slaMinutes: 30 },
     { key: "ba",           label: "Berita Acara",         description: "TTD pelanggan",                    fields: ["signature", "photo"],                 sortOrder: 4, slaMinutes: 15, isFinal: true },
   ],
-  /** Survey only — singkat (legacy alias) */
+  /** Survey only - singkat (legacy alias) */
   survey: [
     { key: "travel",   label: "Perjalanan",       fields: ["gps", "eta"],                  sortOrder: 1, slaMinutes: 60 },
     { key: "survey",   label: "Survey Onsite",    fields: ["photo", "notes", "gps"],       sortOrder: 2, slaMinutes: 30 },
@@ -3238,7 +3238,7 @@ export interface DashboardStats {
   hariHinggaPenuh: number;
 }
 
-// Light projections for /api/map-data — drop heavy fields (pppoe creds,
+// Light projections for /api/map-data - drop heavy fields (pppoe creds,
 // manualOverrides, notes, billing sync metadata, etc.) to reduce payload ~80%.
 // Keep only fields actually read by MapPage.tsx + MapInfoWindow.tsx.
 export type MapPop = Pick<Pop, "id" | "name" | "code" | "lat" | "lng" | "status" | "address" | "totalPorts" | "usedPorts" | "district" | "village">;

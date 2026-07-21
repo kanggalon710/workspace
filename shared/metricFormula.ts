@@ -1,4 +1,4 @@
-/** Pure, safe formula parser + evaluator for pipeline metrics — NO eval(). Shunting-yard → RPN. */
+/** Pure, safe formula parser + evaluator for pipeline metrics - NO eval(). Shunting-yard → RPN. */
 
 export const FORMULA_TERM_KEYS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 

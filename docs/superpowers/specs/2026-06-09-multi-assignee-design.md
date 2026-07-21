@@ -1,4 +1,4 @@
-# Spec — Multi-Assignee (SP5 of Advanced Pipeline Automation)
+# Spec - Multi-Assignee (SP5 of Advanced Pipeline Automation)
 
 > Date: 2026-06-09 · Mitra-scoped · Fifth sub-project. SP1/SP2/SP3a/SP4 merged. Build on `dev`.
 > Adds secondary assignees alongside the existing single primary assignee + existing watchers.
@@ -11,10 +11,10 @@ the Collections card, Tomi on the Delegation card, either addable as secondary o
 
 ## Decisions (confirmed)
 
-1. **Primary = `pipeline_cards.assigneeId`** (no data migration — a single-assignee card is primary-only,
+1. **Primary = `pipeline_cards.assigneeId`** (no data migration - a single-assignee card is primary-only,
    fully backward compatible). Automation `assign` action + board assignee filter keep targeting primary.
 2. **Secondary = new table `pipeline_card_assignees`** (many per card).
-3. **Watchers = existing `pipeline_card_followers`** — unchanged.
+3. **Watchers = existing `pipeline_card_followers`** - unchanged.
 
 ## 1. Schema
 
@@ -31,10 +31,10 @@ CREATE TABLE IF NOT EXISTS pipeline_card_assignees (
 );
 ```
 Drizzle `pipelineCardAssignees` in `shared/schema.ts` (mirror `pipelineCardFollowers`). The unique key
-prevents duplicates; a user can be both primary and secondary only by accident — the UI prevents adding
+prevents duplicates; a user can be both primary and secondary only by accident - the UI prevents adding
 the current primary as secondary (see §5), and notifications dedupe by Set anyway.
 
-## 2. Pure module — `shared/cardAssignees.ts` (no I/O, unit-tested)
+## 2. Pure module - `shared/cardAssignees.ts` (no I/O, unit-tested)
 
 ```ts
 /** Distinct user ids assigned to a card (primary first, then secondary), deduped, nulls dropped. */
@@ -44,15 +44,15 @@ export function matchesAssigneeFilter(primaryId: number | null | undefined, seco
 // filterId == null → true (no filter). Else true if filterId === primary or in secondary.
 ```
 
-## 3. Storage (`server/storage.ts`) — mirror followers
+## 3. Storage (`server/storage.ts`) - mirror followers
 
 - `listCardAssignees(cardId): Promise<PipelineCardAssignee[]>` (secondary only; mitra-scoped).
-- `addCardAssignee(cardId, userId, actorId): Promise<void>` — insert (swallow dup), `logCardActivity(cardId, actorId, "assignee_added", {userId})`.
-- `removeCardAssignee(cardId, userId, actorId): Promise<void>` — delete + `logCardActivity(..., "assignee_removed", {userId})`.
-- `getSecondaryAssigneesForCards(cardIds: number[]): Promise<Map<number, number[]>>` — batched (anti-N+1)
+- `addCardAssignee(cardId, userId, actorId): Promise<void>` - insert (swallow dup), `logCardActivity(cardId, actorId, "assignee_added", {userId})`.
+- `removeCardAssignee(cardId, userId, actorId): Promise<void>` - delete + `logCardActivity(..., "assignee_removed", {userId})`.
+- `getSecondaryAssigneesForCards(cardIds: number[]): Promise<Map<number, number[]>>` - batched (anti-N+1)
   via `inArray`, for the board (cardId → secondary userIds[]).
 
-## 4. Endpoints (`server/routes.ts`) — mirror the followers routes (~5000)
+## 4. Endpoints (`server/routes.ts`) - mirror the followers routes (~5000)
 
 | Endpoint | Guard |
 |---|---|
@@ -67,9 +67,9 @@ see the pipeline). Adding a secondary assignee fires a bell notification to that
 **Notifications:** extend `notifyPipelineCardWatchers` (routes.ts:4241) to add secondary assignees to the
 `targets` Set (so they get card-event notifications like primary + watchers).
 
-## 5. Frontend — `CardDetailModal`
+## 5. Frontend - `CardDetailModal`
 
-In the card detail (near the existing primary-assignee picker, gated by the `assign` capability — the
+In the card detail (near the existing primary-assignee picker, gated by the `assign` capability - the
 modal already has `canAssign`):
 - Keep the **primary** assignee picker as-is.
 - Add a **"Penanggung jawab tambahan"** section: a multi-add control (Combobox of assignable users,
@@ -108,5 +108,5 @@ action is **out of scope** for SP5 (add later if a rule needs it).
 
 - Automation action to set/clear secondary assignees.
 - Bulk reassignment, assignee workload analytics.
-- SP3b continuous sync (e.g. mirroring assignees across linked cards) — that's the sync engine's job.
+- SP3b continuous sync (e.g. mirroring assignees across linked cards) - that's the sync engine's job.
 - Migrating the collections importer's "Tim Penagih" user-multiple custom field into this model (leave as-is).

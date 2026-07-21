@@ -156,7 +156,7 @@ export default function SlaCalendarPage() {
           <div className="mt-4 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
             <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <div>
-              <strong>Heads up:</strong> Tiket yang sudah ada tidak akan otomatis recalc — hanya tiket baru pakai aturan ini. Untuk tiket aktif, /workflow endpoint akan respect jam kerja saat compute remaining time.
+              <strong>Heads up:</strong> Tiket yang sudah ada tidak akan otomatis recalc - hanya tiket baru pakai aturan ini. Untuk tiket aktif, /workflow endpoint akan respect jam kerja saat compute remaining time.
             </div>
           </div>
         )}

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Two new automation actions — `set_field_linked` (push mapped fields to the linked sibling) and `assign_linked` (copy primary assignee to the sibling) — so field/assignee sync can be built as event-triggered rules.
+**Goal:** Two new automation actions - `set_field_linked` (push mapped fields to the linked sibling) and `assign_linked` (copy primary assignee to the sibling) - so field/assignee sync can be built as event-triggered rules.
 
-**Architecture:** Mirror SP3a's `move_linked`. Both actions resolve the master sibling (`getSiblingCardInPipeline`) and write via storage directly (no re-dispatch → loop-safe). Reuses field maps + `pickMappedValues`. Widen `action_type` to `varchar(32)` so the names fit. No new pure module — logic reuses already-tested helpers.
+**Architecture:** Mirror SP3a's `move_linked`. Both actions resolve the master sibling (`getSiblingCardInPipeline`) and write via storage directly (no re-dispatch → loop-safe). Reuses field maps + `pickMappedValues`. Widen `action_type` to `varchar(32)` so the names fit. No new pure module - logic reuses already-tested helpers.
 
 **Tech Stack:** TypeScript, Drizzle (MySQL), Express 5, React 18, `node:test`.
 
@@ -43,7 +43,7 @@ git commit -m "feat(linked-sync): widen action_type to 32 + register set_field_l
 
 ---
 
-### Task 2: Migration — widen `action_type` on both tables
+### Task 2: Migration - widen `action_type` on both tables
 
 **Files:** Modify `server/storage.ts` (add near the other guarded migrations, e.g. after the `loyaltyColumnAdditions` loop)
 
@@ -78,12 +78,12 @@ Run: `npm run typecheck && npm run build` → 0; OK.
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(linked-sync): migration — widen action_type to VARCHAR(32)"
+git commit -m "feat(linked-sync): migration - widen action_type to VARCHAR(32)"
 ```
 
 ---
 
-### Task 3: Automation — `set_field_linked` + `assign_linked` branches
+### Task 3: Automation - `set_field_linked` + `assign_linked` branches
 
 **Files:** Modify `server/pipeline-automation.ts` (add after the `move_linked` branch ~line 102)
 
@@ -94,13 +94,13 @@ Immediately AFTER the `move_linked` branch (before `set_field`), add:
 ```ts
   if (action.actionType === "set_field_linked") {
     if (!action.targetPipelineId) {
-      console.warn(`[automation] action ${action.id}: set_field_linked needs target pipeline — skipped`);
+      console.warn(`[automation] action ${action.id}: set_field_linked needs target pipeline - skipped`);
       return false;
     }
     const masterId = masterForSpawn(card.masterCardId, card.id);
     const sibling = await storage.getSiblingCardInPipeline(masterId, action.targetPipelineId, card.id);
     if (!sibling) {
-      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     const maps = await storage.getActionFieldMaps(action.id);
@@ -115,18 +115,18 @@ Immediately AFTER the `move_linked` branch (before `set_field`), add:
 
   if (action.actionType === "assign_linked") {
     if (!action.targetPipelineId) {
-      console.warn(`[automation] action ${action.id}: assign_linked needs target pipeline — skipped`);
+      console.warn(`[automation] action ${action.id}: assign_linked needs target pipeline - skipped`);
       return false;
     }
     const masterId = masterForSpawn(card.masterCardId, card.id);
     const sibling = await storage.getSiblingCardInPipeline(masterId, action.targetPipelineId, card.id);
     if (!sibling) {
-      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: no linked card in pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     const newAssignee = card.assigneeId ?? null;
     if (newAssignee != null && !(await storage.canUserAccessPipeline(newAssignee, action.targetPipelineId))) {
-      console.warn(`[automation] action ${action.id}: assignee ${newAssignee} lacks access to pipeline ${action.targetPipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: assignee ${newAssignee} lacks access to pipeline ${action.targetPipelineId} - skipped`);
       return false;
     }
     if (sibling.assigneeId === newAssignee) return false; // no-op
@@ -182,7 +182,7 @@ git commit -m "feat(linked-sync): validateActions accepts set_field_linked/assig
 
 ---
 
-### Task 5: Client form state — `ruleFormState.ts`
+### Task 5: Client form state - `ruleFormState.ts`
 
 **Files:** Modify `client/components/pipelines/ruleFormState.ts` (BOTH hydrate mappers ~116/199; `draftToPayload` ~299)
 
@@ -228,7 +228,7 @@ git commit -m "feat(linked-sync): ruleFormState hydrate/serialize for linked-syn
 
 ---
 
-### Task 6: Client editor — `RuleActionEditor.tsx`
+### Task 6: Client editor - `RuleActionEditor.tsx`
 
 **Files:** Modify `client/components/pipelines/RuleActionEditor.tsx` (action-type Combobox + new sections)
 
@@ -295,7 +295,7 @@ After the `move_linked` section, add:
         </>
       )}
 ```
-(`targetFields`, `setMapRow`, `addMapRow`, `removeMapRow`, `sourceFields`, `targetPipe` are the same helpers/values the `create_card` section already uses in this component — reuse them; `targetPipe` is keyed off `value.targetPipelineId`, so `targetFields = targetPipe?.fields ?? []` already resolves for this pipeline.)
+(`targetFields`, `setMapRow`, `addMapRow`, `removeMapRow`, `sourceFields`, `targetPipe` are the same helpers/values the `create_card` section already uses in this component - reuse them; `targetPipe` is keyed off `value.targetPipelineId`, so `targetFields = targetPipe?.fields ?? []` already resolves for this pipeline.)
 
 - [ ] **Step 3: `assign_linked` editor section**
 

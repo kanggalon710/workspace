@@ -5,7 +5,7 @@ import { chatwootAccountUrl, chatwootContactsUrl } from "@shared/chatwootLinks";
 
 /** Opens the active mitra's Chatwoot account in a new tab.
  *  Self-hides unless Chatwoot is enabled + configured (and the user has `chatwoot` read,
- *  which is enforced server-side on /status — a 403 leaves data undefined → hidden). */
+ *  which is enforced server-side on /status - a 403 leaves data undefined → hidden). */
 export function OpenInChatwootButton({ target = "dashboard", size = "sm" }: {
   target?: "dashboard" | "contacts";
   size?: "xs" | "sm" | "default";

@@ -2,7 +2,7 @@
 
 > Fast-follow for the pipelines automation program. Adds **edit** capability to
 > the rule dialog, which is currently create-only (rules can only be toggled
-> enabled/disabled or deleted). Frontend-only — the PATCH endpoint already
+> enabled/disabled or deleted). Frontend-only - the PATCH endpoint already
 > accepts the full rule payload (built in P4b-1 + P4c).
 
 **Base branch:** new branch off `dev`.
@@ -33,7 +33,7 @@ already holds every field) hydrates with that rule's values, switches to
 
 ---
 
-## 1. New pure module — `client/components/pipelines/ruleFormState.ts`
+## 1. New pure module - `client/components/pipelines/ruleFormState.ts`
 
 No React imports. Pure, deterministic, unit-testable in isolation.
 
@@ -79,7 +79,7 @@ export function draftToPayload(d: RuleDraft):
     time → from parsed `r.triggerConfig` (anchor, offsetN→String, offsetUnit,
     direction, repeat, repeatEveryN→String, `fieldId`→`anchorFieldId`) and
     `scopeStageId = String(r.triggerStageId ?? "")`.
-  - action: per `r.actionType` — create_card (target ids, titleTemplate,
+  - action: per `r.actionType` - create_card (target ids, titleTemplate,
     copyAssignee, `maps` from `r.fieldMaps`), set_field / move_stage / assign from
     `r.actionConfig`.
   - `conditions` from `r.conditions` → `{ fieldId, op, value: c.value ?? "" }`.
@@ -97,12 +97,12 @@ export function draftToPayload(d: RuleDraft):
   - `fieldMaps` is included **only** for create_card (matches today's behavior and
     the PATCH route, which rejects `fieldMaps` without a resolvable target pipeline).
 
-## 2. Dialog changes — `PipelineRulesDialog.tsx`
+## 2. Dialog changes - `PipelineRulesDialog.tsx`
 
 ### Glue helpers (the only React-aware mapping, kept tiny)
-- `applyDraft(d: RuleDraft)` — calls the 21 setters from a draft. Used by both
+- `applyDraft(d: RuleDraft)` - calls the 21 setters from a draft. Used by both
   `resetForm` and `startEdit` (DRY).
-- `currentDraft(): RuleDraft` — assembles a draft from current state. Used by
+- `currentDraft(): RuleDraft` - assembles a draft from current state. Used by
   `submit`.
 - `resetForm = () => { applyDraft(emptyDraft()); setEditingId(null); }`.
 
@@ -157,7 +157,7 @@ the existing `<Dialog onOpenChange={(o) => { if (!o) onClose(); }}>` becomes
 
 - **Action-type switched during edit** (e.g. create_card → set_field): the new
   payload omits target/fieldMaps; the old columns remain in the DB row but are
-  **inert** — the server reads only the fields relevant to the current
+  **inert** - the server reads only the fields relevant to the current
   `actionType` (same accepted "stale-but-harmless" pattern as P4c's
   `triggerConfig`). No migration, no backend change.
 - **Deleted referenced entities** (a mapped field / target stage removed after the
@@ -171,7 +171,7 @@ the existing `<Dialog onOpenChange={(o) => { if (!o) onClose(); }}>` becomes
 
 | File | Change |
 |---|---|
-| `client/components/pipelines/ruleFormState.ts` | **new** — pure `RuleDraft`, `emptyDraft`, `ruleToDraft`, `draftToPayload` |
+| `client/components/pipelines/ruleFormState.ts` | **new** - pure `RuleDraft`, `emptyDraft`, `ruleToDraft`, `draftToPayload` |
 | `client/components/pipelines/PipelineRulesDialog.tsx` | `editingId` + glue (`applyDraft`/`currentDraft`), pencil entry, `startEdit`/`cancelEdit`, `submit` via `draftToPayload`, edit indicators, `<form>` wrapper, close-resets |
 
 No backend, schema, or migration changes.
@@ -202,9 +202,9 @@ logic is reviewable in isolation.
 
 ## Consistency with memory
 
-- [[feedback-coding-standards]] — pure module (SoC/testable), shared
+- [[feedback-coding-standards]] - pure module (SoC/testable), shared
   `draftToPayload` (DRY), semantic `<form>`.
-- [[project-pipelines-engine]] — fast-follow closing the create-only gap noted
+- [[project-pipelines-engine]] - fast-follow closing the create-only gap noted
   in the P4c entry; update that note on merge.
-- [[reference-api-response-envelope]] — uses the existing `updateRule`/`createRule`
+- [[reference-api-response-envelope]] - uses the existing `updateRule`/`createRule`
   mutations (already envelope-aware via `apiFetch`).

@@ -101,7 +101,7 @@ export function RolePresetDialog({ open, onClose, initial, onSaved }: Props) {
           isActive: isActive ? 1 : 0,
           permissions,
         });
-        // PUT doesn't set default — use the dedicated endpoint when toggled on.
+        // PUT doesn't set default - use the dedicated endpoint when toggled on.
         if (isDefault && initial.isDefault !== 1) {
           await setDefault.mutateAsync(initial.id);
         }
@@ -135,7 +135,7 @@ export function RolePresetDialog({ open, onClose, initial, onSaved }: Props) {
           </DialogTitle>
           <DialogDescription>
             {isSystem
-              ? "Preset bawaan sistem — permission hanya bisa diubah oleh platform owner."
+              ? "Preset bawaan sistem - permission hanya bisa diubah oleh platform owner."
               : "Preset jadi template cepat saat membuat role baru."}
           </DialogDescription>
         </DialogHeader>

@@ -1,5 +1,5 @@
 /** Pure helpers recurrence event jadwal tim (FR-701) + builder iCal (FR-703).
- *  Recurrence disimpan sebagai JSON sederhana — RRULE penuh tidak dibutuhkan Fase 2. */
+ *  Recurrence disimpan sebagai JSON sederhana - RRULE penuh tidak dibutuhkan Fase 2. */
 
 export type EventFreq = "none" | "daily" | "weekly" | "monthly";
 
@@ -74,7 +74,7 @@ export function expandOccurrences(
       cursor = new Date(cursor.getTime() + rec.interval * 7 * 86400_000);
     } else {
       // monthly: tanggal-yang-sama tiap n bulan; bulan tanpa tanggal tsb dilewati
-      // (mis. 31 Jan → 31 Mar; Feb dilewati) — semantik "same day-of-month".
+      // (mis. 31 Jan → 31 Mar; Feb dilewati) - semantik "same day-of-month".
       // Index bulan di-anchor eksplisit supaya rollover Date (31 Feb → 3 Mar) tidak
       // menggeser bulan basis dan melompati bulan yang valid.
       const dom = start.getDate();
@@ -94,7 +94,7 @@ export function expandOccurrences(
   return out;
 }
 
-// ── iCal builder (FR-703) ──────────────────────────────────────────────────
+// -- iCal builder (FR-703) --------------------------------------------------
 
 /** Escape teks sesuai RFC 5545. */
 export function icsEscape(s: string): string {

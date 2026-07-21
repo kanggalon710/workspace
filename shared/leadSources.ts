@@ -1,5 +1,5 @@
 /** Canonical lead-source registry. Single source of truth for normalisasi + label.
- *  Tidak mengubah nilai `source` yang tersimpan — hanya dipakai saat matching rule + label UI. */
+ *  Tidak mengubah nilai `source` yang tersimpan - hanya dipakai saat matching rule + label UI. */
 
 export type CanonicalLeadSource =
   | "canvassing" | "prospect_finder" | "coverage_check"

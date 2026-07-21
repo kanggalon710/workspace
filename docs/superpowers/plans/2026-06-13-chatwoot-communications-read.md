@@ -1,8 +1,8 @@
-# Chatwoot Communications (Read) — Batch 2a Implementation Plan
+# Chatwoot Communications (Read) - Batch 2a Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Read Chatwoot conversations inside Workspace — a `/communications` page (inbox → conversations → thread) and a "Komunikasi" section in the customer-detail dialog — read-only, tenant-isolated.
+**Goal:** Read Chatwoot conversations inside Workspace - a `/communications` page (inbox → conversations → thread) and a "Komunikasi" section in the customer-detail dialog - read-only, tenant-isolated.
 
 **Architecture:** Reuse the existing per-mitra `chatwootRequest` (account-scoped token) in `server/chatwoot.ts`. Raw Chatwoot payloads are normalized by a pure, tested `shared/chatwootMappers.ts`. Four read endpoints gated by the `chatwoot` permission feed TanStack-Query hooks (polling, pause-on-blur) and reusable components shared by the page and the customer section. No new DB tables.
 
@@ -18,7 +18,7 @@
 - `@shared` alias → `./shared`.
 - Route: `<Route path="/communications">{() => <WithPerm permission="chatwoot"><CommunicationsPage /></WithPerm>}</Route>` + `const CommunicationsPage = lazy(() => import("@/pages/CommunicationsPage"))`.
 - Sidebar item shape: `{ label, path, icon, permission }` inside a group's `items`.
-- Verify UI-primitive prop names (`StatusBadge`, `Card`, `Button`, `EmptyState`, skeletons) against an existing usage before relying on them — they vary; grep and match.
+- Verify UI-primitive prop names (`StatusBadge`, `Card`, `Button`, `EmptyState`, skeletons) against an existing usage before relying on them - they vary; grep and match.
 
 ---
 
@@ -86,7 +86,7 @@ Run: `npx tsx --test shared/chatwootMappers.test.ts`  → FAIL (module not found
 
 ```ts
 // shared/chatwootMappers.ts
-/** Pure mappers: raw Chatwoot NBI payloads → stable Workspace DTOs. No I/O — testable.
+/** Pure mappers: raw Chatwoot NBI payloads → stable Workspace DTOs. No I/O - testable.
  *  Chatwoot shapes vary by version; access defensively. */
 
 export type Inbox = { id: number; name: string; channelType: string | null };
@@ -179,7 +179,7 @@ git commit -m "feat(chatwoot): pure payload→DTO mappers for communications (sh
 - [ ] **Step 1: Add functions** (append near the other exported functions, after `sendChatwootMessage`):
 
 ```ts
-// ── Read APIs for the Communications view (Batch 2a) ───────────────────────
+// -- Read APIs for the Communications view (Batch 2a) -----------------------
 
 /** List inboxes for the active mitra's account. */
 export async function listInboxes(): Promise<any[]> {
@@ -209,7 +209,7 @@ export async function searchContactByPhone(phone: string, normalize: (p: string)
   if (!target) return null;
   const res = await chatwootRequest(`/contacts/search?q=${encodeURIComponent(phone)}`);
   const hits: any[] = Array.isArray(res?.payload) ? res.payload : [];
-  // exact normalized match only — avoid showing another customer's chats
+  // exact normalized match only - avoid showing another customer's chats
   return hits.find((c) => c?.phone_number && normalize(String(c.phone_number)) === target) ?? null;
 }
 
@@ -232,20 +232,20 @@ git add server/chatwoot.ts
 git commit -m "feat(chatwoot): read client fns (inboxes, conversations, messages, contact-by-phone)"
 ```
 
-> Risk to verify at runtime: contact-conversations endpoint may return `{payload}` or a bare array — handled both ways above. Conversation list path/params confirmed during smoke (Task 8).
+> Risk to verify at runtime: contact-conversations endpoint may return `{payload}` or a bare array - handled both ways above. Conversation list path/params confirmed during smoke (Task 8).
 
 ---
 
 ## Task 3: Backend read endpoints in `server/routes.ts`
 
-**Files:** Modify `server/routes.ts` — add 4 routes near the existing chatwoot routes (after the `/status` route). All gated by `chatwoot` (read).
+**Files:** Modify `server/routes.ts` - add 4 routes near the existing chatwoot routes (after the `/status` route). All gated by `chatwoot` (read).
 
 - [ ] **Step 1: Add the routes**
 
 Find the block with `router.get("/api/integrations/chatwoot/status", ...)` and add AFTER it:
 
 ```ts
-/** Communications (read) — Batch 2a. All gated by `chatwoot` (read), tenant-scoped via account token. */
+/** Communications (read) - Batch 2a. All gated by `chatwoot` (read), tenant-scoped via account token. */
 router.get("/api/integrations/chatwoot/inboxes", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "chatwoot")) return sendError(res, "Akses ditolak", 403);
@@ -452,7 +452,7 @@ export function ConversationListItem({ c, active, onClick }: { c: ConversationSu
         <ConversationStatusBadge status={c.status} />
       </div>
       <div className="flex items-center justify-between gap-2 mt-0.5">
-        <span className="text-xs text-muted-foreground truncate">{c.lastMessage || "—"}</span>
+        <span className="text-xs text-muted-foreground truncate">{c.lastMessage || "-"}</span>
         {c.unread > 0 && <span className="text-2xs font-bold rounded-full bg-primary text-primary-foreground px-1.5 py-0.5">{c.unread}</span>}
       </div>
       {c.assigneeName && <span className="text-2xs text-muted-foreground">Agen: {c.assigneeName}</span>}
@@ -698,7 +698,7 @@ function CustomerCommunication({ customerId }: { customerId: number }) {
 }
 ```
 
-Then, in the detail dialog JSX (a sensible spot below the main customer info, gated so it only shows when Chatwoot is usable — reuse `useChatwootStatus`), render:
+Then, in the detail dialog JSX (a sensible spot below the main customer info, gated so it only shows when Chatwoot is usable - reuse `useChatwootStatus`), render:
 ```tsx
 {detailCustomer && <ChatwootCommBlock customerId={detailCustomer.id} />}
 ```
@@ -757,6 +757,6 @@ git add -A && git commit -m "fix(chatwoot): communications smoke-test adjustment
 ## Self-review notes
 
 - **Spec coverage:** §1a client fns → T2; §1b endpoints → T3; §1c mappers → T1; §2a wrappers/hooks → T4; §2b components → T5; §2c page → T6; §2d customer section → T7; §3 testing → T1,T8. All covered.
-- **Type consistency:** `ConversationSummary`/`ChatMessage`/`Inbox` defined identically in `shared/chatwootMappers.ts` (T1) and re-declared in `client/lib/chatwoot.ts` (T4) — keep fields in sync (client mirrors server DTO).
+- **Type consistency:** `ConversationSummary`/`ChatMessage`/`Inbox` defined identically in `shared/chatwootMappers.ts` (T1) and re-declared in `client/lib/chatwoot.ts` (T4) - keep fields in sync (client mirrors server DTO).
 - **Deferred:** reply-from-Workspace, contact/agent sync, websockets, assign/resolve.
 - **Verify-before-use flagged** for: `storage.getCustomer` name, UI-primitive props (StatusBadge/Card/EmptyState/Skeleton/PageHeader), Chatwoot API payload shapes (isolated to the tested mapper), `detailCustomer` id field + dialog insertion point.

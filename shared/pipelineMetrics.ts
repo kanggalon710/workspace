@@ -1,4 +1,4 @@
-/** Pure pipeline-metrics helpers — no I/O. */
+/** Pure pipeline-metrics helpers - no I/O. */
 
 export type MetricSource = "card_count" | "stage_count" | "field_agg" | "formula";
 export type MetricAggregation = "count" | "sum" | "avg" | "min" | "max" | "distinct";
@@ -27,7 +27,7 @@ export const METRIC_ICONS = ["Database", "Users", "Wallet", "Phone", "BarChart3"
 export const METRIC_COLORS = ["primary", "success", "warning", "danger", "info", "violet", "neutral"];
 
 // Contract: number/currency field values are stored MACHINE-formatted by FieldValueInput's
-// <input type="number"> — i.e. "." is the decimal separator and there are NO thousands separators
+// <input type="number"> - i.e. "." is the decimal separator and there are NO thousands separators
 // ("1000000", "1234.5"). We strip stray symbols (e.g. a "Rp " prefix / spaces) but keep "." as the
 // decimal. id-ID-formatted strings ("1.000.000") are NOT expected here; such a value parses to null
 // and is skipped from numeric aggregation (use a number/currency field for SUM/AVG, not a text field).

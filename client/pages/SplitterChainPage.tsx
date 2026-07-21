@@ -283,7 +283,7 @@ function buildChainTree(
     }
 
     // If no cascade children and not at ODP, check if there are ODPs connected through
-    // splitters at "odc" or "field" — show ODPs that have splitters referencing this one
+    // splitters at "odc" or "field" - show ODPs that have splitters referencing this one
     if (cascadeChildren.length === 0 && spl.locationType !== "odp") {
       // Show ODPs that are served by splitters cascading from this one
       // Since there are no cascades, find ODPs at this location
@@ -309,7 +309,7 @@ function buildChainTree(
     return {
       id: `splitter-${spl.id}`,
       label: spl.name,
-      sublabel: `Splitter ${spl.ratio} — Loss ${POWER_BUDGET.splitterLoss[spl.ratio] ?? "?"} dB`,
+      sublabel: `Splitter ${spl.ratio} - Loss ${POWER_BUDGET.splitterLoss[spl.ratio] ?? "?"} dB`,
       type: "splitter",
       ratio: spl.ratio,
       level,
@@ -576,7 +576,7 @@ function ChainTreeView({
               <p className="text-sm mt-1">
                 {selectedNode.children.length > 0
                   ? `${selectedNode.children.length} sub-node (${selectedNode.children.map(c => c.type.toUpperCase()).join(', ')})`
-                  : 'Tidak ada child — leaf node'}
+                  : 'Tidak ada child - leaf node'}
               </p>
             </div>
             <div>
@@ -682,10 +682,10 @@ function PowerBudgetCalculator() {
 
   const statusLabel =
     result.status === "ok"
-      ? "BAIK — Sinyal cukup kuat"
+      ? "BAIK - Sinyal cukup kuat"
       : result.status === "warning"
-        ? "PERINGATAN — Margin tipis"
-        : "GAGAL — Sinyal terlalu lemah";
+        ? "PERINGATAN - Margin tipis"
+        : "GAGAL - Sinyal terlalu lemah";
 
   return (
     <Card>
@@ -923,7 +923,7 @@ export default function SplitterChainPage() {
         <div>
           <h1 className="text-2xl font-bold">Splitter Chain Visualizer</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Rantai splitter — visualisasi alur sinyal dari POP ke pelanggan
+            Rantai splitter - visualisasi alur sinyal dari POP ke pelanggan
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="shrink-0">

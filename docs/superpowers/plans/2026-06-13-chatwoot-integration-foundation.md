@@ -1,8 +1,8 @@
-# Chatwoot Integration — Foundation (Batch 1) Implementation Plan
+# Chatwoot Integration - Foundation (Batch 1) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let each tenant connect its own Chatwoot account to Workspace — config + permissions + backend proxy + connection test + "Open in Chatwoot" — with isolation enforced by per-account tokens.
+**Goal:** Let each tenant connect its own Chatwoot account to Workspace - config + permissions + backend proxy + connection test + "Open in Chatwoot" - with isolation enforced by per-account tokens.
 
 **Architecture:** Per-mitra config lives in the existing `mitra_integrations` table (no new table). A backend proxy (`server/chatwoot.ts` + routes registered on the main authed `router`) holds the account-scoped token and talks to Chatwoot; the browser never sees the token. Two new 3-level permissions (`chatwoot`, `chatwoot_settings`) gate everything. Pure logic (config resolution, deep-link building) sits in tested `shared/` modules.
 
@@ -17,7 +17,7 @@
 ## Plan-level corrections to the spec
 
 - The spec said "sub-router mounted in `server/index.ts`". **Override:** the auth + `tenantContext` middleware lives on the main `router` (`server/routes.ts:281`). A separate `app.use()` in `index.ts` would bypass it. Instead, `server/chatwoot-routes.ts` exports `registerChatwootRoutes(router)` which is **called from `server/routes.ts`** after `authMiddleware`. This keeps the file separate (maintainable) while inheriting auth + tenant scoping.
-- Permission group label: `"Komunikasi"` (new group in the role matrix — renders automatically from `ALL_PERMISSIONS`).
+- Permission group label: `"Komunikasi"` (new group in the role matrix - renders automatically from `ALL_PERMISSIONS`).
 
 ---
 
@@ -98,13 +98,13 @@ test("masked token detection (so PUT can skip re-writing the placeholder)", () =
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/chatwootConfig.test.ts`
-Expected: FAIL — `Cannot find module './chatwootConfig.js'`.
+Expected: FAIL - `Cannot find module './chatwootConfig.js'`.
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```ts
 // shared/chatwootConfig.ts
-/** Pure config resolution for the Chatwoot integration. No I/O — testable. */
+/** Pure config resolution for the Chatwoot integration. No I/O - testable. */
 
 export const MASK = "••••••••";
 export const DEFAULT_BASE_URL = "https://omni.jabnet.id";
@@ -199,13 +199,13 @@ test("null when base or account missing", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/chatwootLinks.test.ts`
-Expected: FAIL — module not found.
+Expected: FAIL - module not found.
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```ts
 // shared/chatwootLinks.ts
-/** Pure builders for Chatwoot deep-link URLs. No I/O — testable. */
+/** Pure builders for Chatwoot deep-link URLs. No I/O - testable. */
 
 function base(baseUrl: string | null | undefined, accountId: number | null | undefined): string | null {
   if (!baseUrl || accountId == null) return null;
@@ -270,7 +270,7 @@ test("chatwoot permission keys are registered", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/chatwootPermissions.test.ts`
-Expected: FAIL — assertion: `chatwoot` not in keys.
+Expected: FAIL - assertion: `chatwoot` not in keys.
 
 - [ ] **Step 3a: Add permission keys**
 
@@ -278,7 +278,7 @@ In `shared/schema.ts`, inside the `ALL_PERMISSIONS` array, add two entries (plac
 
 ```ts
   { key: "chatwoot", label: "Chatwoot", group: "Komunikasi" },
-  { key: "chatwoot_settings", label: "Chatwoot — Pengaturan", group: "Komunikasi" },
+  { key: "chatwoot_settings", label: "Chatwoot - Pengaturan", group: "Komunikasi" },
 ```
 
 - [ ] **Step 3b: Seed per-mitra defaults**
@@ -309,7 +309,7 @@ git add shared/schema.ts server/storage.ts shared/chatwootPermissions.test.ts
 git commit -m "feat(chatwoot): register chatwoot/chatwoot_settings permissions + seed mitra defaults"
 ```
 
-> Note: on next server start, `upgradePermissionsV412()` auto-grants both keys to all roles (Admin/System-Admin forced `write`). No DDL needed — `mitra_integrations` already exists; defaults are `INSERT IGNORE` (idempotent).
+> Note: on next server start, `upgradePermissionsV412()` auto-grants both keys to all roles (Admin/System-Admin forced `write`). No DDL needed - `mitra_integrations` already exists; defaults are `INSERT IGNORE` (idempotent).
 
 ---
 
@@ -318,7 +318,7 @@ git commit -m "feat(chatwoot): register chatwoot/chatwoot_settings permissions +
 **Files:**
 - Create: `server/chatwoot.ts`
 
-No unit test (network I/O — follows the `server/genieacs.ts` precedent; verified manually in Task 10). Pure logic it depends on is already tested in Task 1.
+No unit test (network I/O - follows the `server/genieacs.ts` precedent; verified manually in Task 10). Pure logic it depends on is already tested in Task 1.
 
 - [ ] **Step 1: Write the module**
 
@@ -385,7 +385,7 @@ export async function testConnection(cfg: ChatwootRuntimeConfig): Promise<{ ok: 
   try {
     // Account-scoped token: GET the account itself.
     const { status, data } = await chatwootFetch(cfg, "GET", "", undefined, 10000);
-    if (status === 401 || status === 403) return { ok: false, error: "Token ditolak (401/403) — periksa API token & account ID" };
+    if (status === 401 || status === 403) return { ok: false, error: "Token ditolak (401/403) - periksa API token & account ID" };
     if (status >= 400) return { ok: false, error: `Chatwoot HTTP ${status}` };
     const name = (data && (data.name || data.account_name)) || undefined;
     return { ok: true, accountName: name };
@@ -421,7 +421,7 @@ git commit -m "feat(chatwoot): backend NBI client (config resolve, fetch, testCo
 
 ```ts
 // server/chatwoot-routes.ts
-/** /api/chatwoot/* — registered on the MAIN authed router (inherits auth + tenantContext).
+/** /api/chatwoot/* - registered on the MAIN authed router (inherits auth + tenantContext).
  *  All routes tenant-scoped (active mitra), permission-gated, audited. Token never leaves backend. */
 import type { Router, Request, Response } from "express";
 import { storage } from "./storage.js";
@@ -459,7 +459,7 @@ export function registerChatwootRoutes(
     return { enabled, baseUrl, accountId, token };
   }
 
-  // GET settings — token masked.
+  // GET settings - token masked.
   router.get("/api/chatwoot/settings", async (req: Request, res: Response) => {
     if (!requirePermission(req, res, "chatwoot_settings")) return;
     try {
@@ -479,7 +479,7 @@ export function registerChatwootRoutes(
     } catch (e: any) { sendError(res, e.message, 500); }
   });
 
-  // PUT settings — persist; skip token write if masked.
+  // PUT settings - persist; skip token write if masked.
   router.put("/api/chatwoot/settings", async (req: Request, res: Response) => {
     if (!requireWritePermission(req, res, "chatwoot_settings")) return;
     try {
@@ -501,7 +501,7 @@ export function registerChatwootRoutes(
     } catch (e: any) { sendError(res, e.message, 500); }
   });
 
-  // POST test-connection — server-side, rate-limited.
+  // POST test-connection - server-side, rate-limited.
   router.post("/api/chatwoot/test-connection", async (req: Request, res: Response) => {
     if (!requirePermission(req, res, "chatwoot_settings")) return;
     const mitraId = req.authUser!.activeMitraId ?? 1;
@@ -520,7 +520,7 @@ export function registerChatwootRoutes(
     } catch (e: any) { sendError(res, e.message, 500); }
   });
 
-  // GET status — for badges + Open in Chatwoot. Never returns token.
+  // GET status - for badges + Open in Chatwoot. Never returns token.
   router.get("/api/chatwoot/status", async (req: Request, res: Response) => {
     if (!requirePermission(req, res, "chatwoot")) return;
     try {
@@ -554,7 +554,7 @@ Then, after `router.use(globalWriteGuard);` (line ~399), add:
 registerChatwootRoutes(router, { requirePermission, requireWritePermission, sendSuccess, sendError });
 ```
 
-> `requirePermission`, `requireWritePermission`, `sendSuccess`, `sendError` are all defined in `routes.ts` already — pass them in (avoids circular imports).
+> `requirePermission`, `requireWritePermission`, `sendSuccess`, `sendError` are all defined in `routes.ts` already - pass them in (avoids circular imports).
 
 - [ ] **Step 3: Verify typecheck**
 
@@ -763,7 +763,7 @@ export function ChatwootSettingsForm() {
 
   const test = useMutation({
     mutationFn: () => chatwootApi.testConnection(),
-    onSuccess: (r) => setTestMsg({ ok: r.ok, text: r.ok ? `Terhubung${r.accountName ? ` — ${r.accountName}` : ""}` : (r.error || "Gagal") }),
+    onSuccess: (r) => setTestMsg({ ok: r.ok, text: r.ok ? `Terhubung${r.accountName ? ` - ${r.accountName}` : ""}` : (r.error || "Gagal") }),
     onError: (e: any) => setTestMsg({ ok: false, text: e.message || "Gagal" }),
   });
 
@@ -798,7 +798,7 @@ export function ChatwootSettingsForm() {
 }
 ```
 
-> Verify `FormField`/`FormRow`/`Input`/`Button` import paths + prop names against existing usages (`grep -rn "FormField" client/pages | head`). The toast import is `sonner` here — match whatever the repo uses (`grep -rn "import { toast }" client | head`).
+> Verify `FormField`/`FormRow`/`Input`/`Button` import paths + prop names against existing usages (`grep -rn "FormField" client/pages | head`). The toast import is `sonner` here - match whatever the repo uses (`grep -rn "import { toast }" client | head`).
 
 - [ ] **Step 2: Settings page**
 
@@ -838,11 +838,11 @@ Add a route alongside the existing protected routes (match the surrounding `<Rou
 <Route path="/integrations/chatwoot" component={ChatwootSettingsPage} />
 ```
 
-> Match the exact route registration pattern in `App.tsx` (it may wrap routes in a permission/layout guard — follow the same shape as the existing `/integrations` route, gating on `chatwoot_settings`).
+> Match the exact route registration pattern in `App.tsx` (it may wrap routes in a permission/layout guard - follow the same shape as the existing `/integrations` route, gating on `chatwoot_settings`).
 
 - [ ] **Step 4: Card on IntegrationPage**
 
-In `client/pages/IntegrationPage.tsx`, add a navigational card (use the page's existing router hook — `useLocation` from `wouter`). Place near the top of the returned card list:
+In `client/pages/IntegrationPage.tsx`, add a navigational card (use the page's existing router hook - `useLocation` from `wouter`). Place near the top of the returned card list:
 
 ```tsx
 {/* Chatwoot integration entry */}
@@ -879,7 +879,7 @@ git commit -m "feat(chatwoot): settings page + form + /integrations card + lazy 
 
 ---
 
-## Task 9: Customer detail — Open in Chatwoot
+## Task 9: Customer detail - Open in Chatwoot
 
 **Files:**
 - Modify: `client/pages/CustomersPage.tsx`
@@ -892,7 +892,7 @@ Import at the top:
 import { OpenInChatwootButton } from "@/components/chatwoot/OpenInChatwootButton";
 ```
 
-In the customer detail drawer/dialog action area (where other per-customer action buttons live — search for the customer detail header actions), drop in:
+In the customer detail drawer/dialog action area (where other per-customer action buttons live - search for the customer detail header actions), drop in:
 
 ```tsx
 <OpenInChatwootButton target="contacts" size="sm" />
@@ -925,7 +925,7 @@ Expected: 0 type errors · all tests pass (includes the 3 new chatwoot test file
 
 - [ ] **Step 2: Manual smoke (local, per [[reference-local-ui-testing]])**
 
-Start the prod bundle (`node dist/index.mjs` — NOT from source, to avoid the stale `server/public` shadow), log in as JABNET admin, then verify:
+Start the prod bundle (`node dist/index.mjs` - NOT from source, to avoid the stale `server/public` shadow), log in as JABNET admin, then verify:
 1. `/integrations` shows the **Chatwoot card** with a "Nonaktif" badge.
 2. Open `/integrations/chatwoot` → form loads (skeleton → empty fields, base URL prefilled).
 3. Enter account ID + token, enable, **Simpan** → reload → token shows masked (`••••••••`), badge → "Aktif"/"Belum lengkap".
@@ -946,4 +946,4 @@ git add -A && git commit -m "fix(chatwoot): smoke-test adjustments"
 
 - **Spec coverage:** §1 config → T3; §2 pure modules → T1,T2; §3 backend client+proxy → T4,T5; §4 permissions → T3; §5 frontend → T6,T7,T8,T9; §6 security (mask, proxy-only, rate-limit, audit) → T4,T5; §7 audit → T5; §8 testing → T1,T2,T3,T10. All covered.
 - **Deferred to Batch 2 (out of scope here):** contact/agent/conversation sync, webhook receiver, `/communications` page, customer-detail Communication section, sync toggles in settings.
-- **Verify-before-use flagged** for UI primitive prop names (`StatusBadge`, `FormField`, `PageHeader`, toast lib, wouter route guard) — these vary across the codebase; the steps tell the implementer to grep an existing usage and match.
+- **Verify-before-use flagged** for UI primitive prop names (`StatusBadge`, `FormField`, `PageHeader`, toast lib, wouter route guard) - these vary across the codebase; the steps tell the implementer to grep an existing usage and match.

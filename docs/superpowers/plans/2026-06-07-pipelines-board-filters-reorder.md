@@ -1,4 +1,4 @@
-# Pipelines Board — Filters Polish & Stage Reorder Implementation Plan
+# Pipelines Board - Filters Polish & Stage Reorder Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -29,7 +29,7 @@
 
 ---
 
-### Task 1: Pure ordering helpers (`stageReorder.ts`) — TDD
+### Task 1: Pure ordering helpers (`stageReorder.ts`) - TDD
 
 **Files:**
 - Create: `client/components/pipelines/stageReorder.ts`
@@ -170,7 +170,7 @@ Immediately after the `deleteStage` mutation (the line `deleteStage: useMutation
 
 - [ ] **Step 2: Ensure `PipelineStage` type is imported**
 
-The optimistic block annotates `(s): s is PipelineStage`. Confirm `PipelineStage` is imported in this file (grep `PipelineStage` / the `@shared/schema` import). If absent, add it to the existing `import type { ... } from "@shared/schema";` line (or wherever `PipelineWithStages` pulls its types). If `PipelineWithStages` is defined locally as `Pipeline & { stages: PipelineStage[] }`, then `PipelineStage` is already referenced — just make sure it's in scope.
+The optimistic block annotates `(s): s is PipelineStage`. Confirm `PipelineStage` is imported in this file (grep `PipelineStage` / the `@shared/schema` import). If absent, add it to the existing `import type { ... } from "@shared/schema";` line (or wherever `PipelineWithStages` pulls its types). If `PipelineWithStages` is defined locally as `Pipeline & { stages: PipelineStage[] }`, then `PipelineStage` is already referenced - just make sure it's in scope.
 
 - [ ] **Step 3: Typecheck + commit**
 
@@ -182,7 +182,7 @@ git commit -m "feat(pipelines): reorderStages mutation with optimistic cache reo
 
 ---
 
-### Task 3: BoardFilters redesign — prominent search + assignee + reset (`BoardFilters.tsx`)
+### Task 3: BoardFilters redesign - prominent search + assignee + reset (`BoardFilters.tsx`)
 
 **Files:**
 - Modify: `client/components/pipelines/BoardFilters.tsx` (full rewrite of the component below)
@@ -231,7 +231,7 @@ export function BoardFilters({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Row 1 — prominent search */}
+      {/* Row 1 - prominent search */}
       <Input
         inputSize="sm"
         placeholder="Cari kartu…"
@@ -254,7 +254,7 @@ export function BoardFilters({
         className="w-full"
       />
 
-      {/* Row 2 — filters (wrap) */}
+      {/* Row 2 - filters (wrap) */}
       <div className="flex items-center gap-2 flex-wrap">
         <Combobox
           options={[
@@ -300,7 +300,7 @@ export function BoardFilters({
               onChange={(e) => onRange({ from: e.target.value, to: custom.to })}
               className="w-36"
             />
-            <span className="text-muted-foreground text-xs">–</span>
+            <span className="text-muted-foreground text-xs">-</span>
             <Input
               inputSize="sm"
               type="date"
@@ -334,12 +334,12 @@ export function BoardFilters({
 Run: `npm run typecheck && npm run build` → 0 errors, green. (The board still passes only the original 6 props; the new optional props default safely, so the assignee combobox and reset line simply don't render yet.)
 ```bash
 git add client/components/pipelines/BoardFilters.tsx
-git commit -m "feat(pipelines): BoardFilters — prominent search (icon+clear), assignee filter, reset affordance (board-filters)"
+git commit -m "feat(pipelines): BoardFilters - prominent search (icon+clear), assignee filter, reset affordance (board-filters)"
 ```
 
 ---
 
-### Task 4: StageColumn — grip handle + mobile arrows + drop branching (`StageColumn.tsx`)
+### Task 4: StageColumn - grip handle + mobile arrows + drop branching (`StageColumn.tsx`)
 
 **Files:**
 - Modify: `client/components/pipelines/StageColumn.tsx`
@@ -409,7 +409,7 @@ The current header is:
         <span className="text-xs text-muted-foreground">{cards.length}</span>
         {stalledCount > 0 && (
           <span className="text-[10px] text-destructive" title="Stalled">
-            ⚠ {stalledCount}
+             {stalledCount}
           </span>
         )}
         {writable && (
@@ -464,7 +464,7 @@ Replace it with (adds: desktop grip before the color dot; mobile ◀ before the 
         <span className="text-xs text-muted-foreground">{cards.length}</span>
         {stalledCount > 0 && (
           <span className="text-[10px] text-destructive" title="Stalled">
-            ⚠ {stalledCount}
+             {stalledCount}
           </span>
         )}
         {writable && onMoveStage && (
@@ -499,10 +499,10 @@ Replace it with (adds: desktop grip before the color dot; mobile ◀ before the 
 
 - [ ] **Step 5: Typecheck + build + commit**
 
-Run: `npm run typecheck && npm run build` → 0 errors, green. (The board doesn't pass the new props yet, so grip/arrows don't render and drop still does card-move — no behavior change until Task 5.)
+Run: `npm run typecheck && npm run build` → 0 errors, green. (The board doesn't pass the new props yet, so grip/arrows don't render and drop still does card-move - no behavior change until Task 5.)
 ```bash
 git add client/components/pipelines/StageColumn.tsx
-git commit -m "feat(pipelines): StageColumn — desktop grip handle + mobile arrows + stage-drop branching (board-reorder)"
+git commit -m "feat(pipelines): StageColumn - desktop grip handle + mobile arrows + stage-drop branching (board-reorder)"
 ```
 
 ---
@@ -521,7 +521,7 @@ Add to the imports:
 import { reorderByDrag, moveByOffset } from "@/components/pipelines/stageReorder";
 import { toast } from "sonner";
 ```
-(`toast` is likely already imported — if so, don't duplicate. `useState` is already imported.)
+(`toast` is likely already imported - if so, don't duplicate. `useState` is already imported.)
 
 Add new state alongside the existing filter state (`search`/`dateField`/`range`):
 ```tsx
@@ -624,7 +624,7 @@ In the `stages.map((stage) => ...)` render, the callback already has `stage`. Ch
               onStageDrop={onStageDrop}
               onMoveStage={(id, dir) => applyReorder(moveByOffset(stageIds, id, dir))}
 ```
-(Add these alongside the existing `stage`, `cards`, `fields`, `usersById`, `writable`, `dragId`, `now`, `onDragStartCard`, `onDropStage`, `onCardClick`, `onAddCard`, `onUpdateStage`, `onDeleteStage` props — do not remove any existing prop.)
+(Add these alongside the existing `stage`, `cards`, `fields`, `usersById`, `writable`, `dragId`, `now`, `onDragStartCard`, `onDropStage`, `onCardClick`, `onAddCard`, `onUpdateStage`, `onDeleteStage` props - do not remove any existing prop.)
 
 - [ ] **Step 6: Clear stageDragId on aborted drag**
 
@@ -635,11 +635,11 @@ So an aborted stage drag doesn't leave later card-drops mis-routed, add an `onDr
 Run: `npm run typecheck && npm run build` → 0 errors, green.
 ```bash
 git add client/pages/PipelineBoardPage.tsx
-git commit -m "feat(pipelines): board page — assignee filter + reset + stage reorder (drag/arrows) wiring (board-reorder)"
+git commit -m "feat(pipelines): board page - assignee filter + reset + stage reorder (drag/arrows) wiring (board-reorder)"
 ```
 
 - [ ] **Step 8: Manual checklist (relay; run on dev)**
-- Search: typing filters cards; the ✕ clear button clears it; search input is prominent with the search icon.
+- Search: typing filters cards; the  clear button clears it; search input is prominent with the search icon.
 - Date filter: Dibuat/Update + 7h/30h/Custom still work; custom date inputs appear.
 - Assignee filter: selecting a user shows only that user's cards; clearing shows all.
 - Active-filter line: shows "N kartu" + Reset when any filter active; Reset clears search/range/assignee.
@@ -656,4 +656,4 @@ git commit -m "feat(pipelines): board page — assignee filter + reset + stage r
 - **Incremental compile:** all new `BoardFilters`/`StageColumn` props are optional with defaults, so typecheck/build stay green at T3 and T4 before the page wires them in T5.
 - **Type consistency:** `reorderByDrag`/`moveByOffset` (T1) consumed in T5; `reorderStages` mutation (T2) called in T5; `assigneeOptions: ComboboxOption[]` shape (T3) matches the page's builder (T5); `index`/`total`/`stageDragId`/`onStageDragStart`/`onStageDrop`/`onMoveStage` (T4) match T5's StageColumn usage; `c.assigneeId` is a real card field (`pipeline_cards.assigneeId`).
 - **No placeholders:** every code step shows full code. The only "find the exact line" instructions (T2 import check, T5 BoardFilters/StageColumn call sites) are locating existing code to edit, with the surrounding code quoted.
-- **Standards:** pure helpers (SoC/TDD); semantic HTML + aria-labels on every icon-only button (grip, ◀, ▶, clear ✕, Reset); `type="button"` throughout; semantic tokens (no hardcoded hex added — stage color tint reuses the existing `color + "14"`); DRY (reuse `Combobox`, existing `usersById`, the existing reorder endpoint).
+- **Standards:** pure helpers (SoC/TDD); semantic HTML + aria-labels on every icon-only button (grip, ◀, ▶, clear , Reset); `type="button"` throughout; semantic tokens (no hardcoded hex added - stage color tint reuses the existing `color + "14"`); DRY (reuse `Combobox`, existing `usersById`, the existing reorder endpoint).

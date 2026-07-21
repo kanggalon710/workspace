@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a configurable **time-based trigger** to pipeline automation rules — a rule fires based on elapsed time (anchored to stage-entry, card creation, or a date custom-field) rather than only on stage-enter — reusing the existing action + condition machinery, evaluated by a cron-hit tick endpoint.
+**Goal:** Add a configurable **time-based trigger** to pipeline automation rules - a rule fires based on elapsed time (anchored to stage-entry, card creation, or a date custom-field) rather than only on stage-enter - reusing the existing action + condition machinery, evaluated by a cron-hit tick endpoint.
 
 **Architecture:** Extend the flat `pipeline_rules` row (Approach A) with `trigger_type` + `trigger_config` (JSON) and relax `trigger_stage_id` to nullable; add `stage_entered_at` to `pipeline_cards`. A pure `isTimeRuleDue` helper decides due-ness; the P4b-1 action switch is extracted into a shared `applyRuleAction`; a new `runTimeTriggers()` service scans `time` rules globally and fires per-mitra inside `tenantContext.run`. A secret-guarded `POST /api/pipelines/automation/tick` runs one pass, driven by a cPanel cron.
 
@@ -31,7 +31,7 @@ In the `pipelineRules` table definition, after the `conditions: text("conditions
   triggerConfig: text("trigger_config"),
 ```
 
-And relax the trigger stage column — change:
+And relax the trigger stage column - change:
 
 ```ts
   triggerStageId: int("trigger_stage_id").notNull(),
@@ -73,13 +73,13 @@ export type TimeTriggerConfig = {
 - [ ] **Step 4: Typecheck (expect residuals)**
 
 Run: `npm run typecheck`
-Expected: errors ONLY in `server/storage.ts` (createRule/updateRule don't pass new fields — fine) and possibly none else yet. Relaxing `triggerStageId` to nullable may surface errors where code assumes non-null (`server/pipeline-automation.ts`, `client/components/pipelines/PipelineRulesDialog.tsx`). **Record the exact error list** — later tasks fix them (Task 4 storage, Task 5/6 service, Task 8 routes, Task 10/11 dialog). Do not chase errors outside this set.
+Expected: errors ONLY in `server/storage.ts` (createRule/updateRule don't pass new fields - fine) and possibly none else yet. Relaxing `triggerStageId` to nullable may surface errors where code assumes non-null (`server/pipeline-automation.ts`, `client/components/pipelines/PipelineRulesDialog.tsx`). **Record the exact error list** - later tasks fix them (Task 4 storage, Task 5/6 service, Task 8 routes, Task 10/11 dialog). Do not chase errors outside this set.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add shared/schema.ts
-git commit -m "feat(pipelines): schema for time triggers — trigger_type/config, stage_entered_at, relax trigger_stage_id (P4c)"
+git commit -m "feat(pipelines): schema for time triggers - trigger_type/config, stage_entered_at, relax trigger_stage_id (P4c)"
 ```
 
 ---
@@ -87,7 +87,7 @@ git commit -m "feat(pipelines): schema for time triggers — trigger_type/config
 ### Task 2: Startup migration
 
 **Files:**
-- Modify: `server/storage.ts` (the pipeline_rules startup migration block — find it by `grep -n "action_config" server/storage.ts`, the P4b-1 column-loop added after the `pipeline_rule_field_maps` migration)
+- Modify: `server/storage.ts` (the pipeline_rules startup migration block - find it by `grep -n "action_config" server/storage.ts`, the P4b-1 column-loop added after the `pipeline_rule_field_maps` migration)
 
 Per [[reference-startup-add-column]]: the DB **rejects** `ADD COLUMN IF NOT EXISTS`. Use an info_schema COUNT guard + plain `ALTER TABLE ADD COLUMN`, each in its own try/catch. `MODIFY` is idempotent.
 
@@ -96,7 +96,7 @@ Per [[reference-startup-add-column]]: the DB **rejects** `ADD COLUMN IF NOT EXIS
 Locate the P4b-1 loop that adds `action_config`/`conditions` (search `action_config`). Immediately AFTER that block, add:
 
 ```ts
-// P4c — time-based trigger columns
+// P4c - time-based trigger columns
 for (const { table, column, ddl } of [
   { table: "pipeline_rules", column: "trigger_type", ddl: "VARCHAR(16) NOT NULL DEFAULT 'stage_enter'" },
   { table: "pipeline_rules", column: "trigger_config", ddl: "TEXT NULL" },
@@ -216,7 +216,7 @@ test("isTimeRuleDue: every re-fires after interval, not before", () => {
 - [ ] **Step 2: Run tests, verify they fail**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: FAIL — `parseTimeTriggerConfig`/`isTimeRuleDue` are not exported.
+Expected: FAIL - `parseTimeTriggerConfig`/`isTimeRuleDue` are not exported.
 
 - [ ] **Step 3: Implement the helpers**
 
@@ -305,7 +305,7 @@ git commit -m "feat(pipelines): pure helpers parseTimeTriggerConfig + isTimeRule
 
 ---
 
-### Task 4: Storage — stage_entered_at writes, fire upsert, time-rule query, CRUD trigger fields
+### Task 4: Storage - stage_entered_at writes, fire upsert, time-rule query, CRUD trigger fields
 
 **Files:**
 - Modify: `server/storage.ts` (`createCard` ~1885, `moveCard` ~1926, after `recordRuleFire` ~2261, `createRule` ~2185, `updateRule` ~2204)
@@ -356,7 +356,7 @@ After `recordRuleFire` (ends ~2261) add:
     }
   }
 
-  /** ALL enabled time-trigger rules across every mitra (tenant-agnostic — caller scopes per row). */
+  /** ALL enabled time-trigger rules across every mitra (tenant-agnostic - caller scopes per row). */
   async listAllTimeRules(): Promise<PipelineRule[]> {
     return this.db.select().from(pipelineRules)
       .where(and(eq(pipelineRules.triggerType, "time"), eq(pipelineRules.enabled, 1)))
@@ -366,7 +366,7 @@ After `recordRuleFire` (ends ~2261) add:
 
 - [ ] **Step 3: Carry trigger fields through `createRule` / `updateRule`**
 
-In `createRule`, widen the `data` param type — add to its inline type: `triggerStageId?: number | null;` (change from `triggerStageId: number`), `triggerType?: RuleTriggerType;`, `triggerConfig?: any | null;`. Then in the `.values({...})`:
+In `createRule`, widen the `data` param type - add to its inline type: `triggerStageId?: number | null;` (change from `triggerStageId: number`), `triggerType?: RuleTriggerType;`, `triggerConfig?: any | null;`. Then in the `.values({...})`:
 - change `triggerStageId: data.triggerStageId,` → `triggerStageId: data.triggerStageId ?? null,`
 - add `triggerType: data.triggerType ?? "stage_enter",`
 - add `triggerConfig: data.triggerConfig != null ? JSON.stringify(data.triggerConfig) : null,`
@@ -389,12 +389,12 @@ Expected: storage.ts errors from Task 1 resolved. Residuals remain ONLY in `serv
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(pipelines): storage — stage_entered_at writes, rule-fire upsert, listAllTimeRules, CRUD trigger fields (P4c)"
+git commit -m "feat(pipelines): storage - stage_entered_at writes, rule-fire upsert, listAllTimeRules, CRUD trigger fields (P4c)"
 ```
 
 ---
 
-### Task 5: Service — extract `applyRuleAction` (no behavior change)
+### Task 5: Service - extract `applyRuleAction` (no behavior change)
 
 **Files:**
 - Modify: `server/pipeline-automation.ts`
@@ -412,13 +412,13 @@ export async function applyRuleAction(rule: PipelineRule, card: PipelineCard, ac
   if (rule.actionType === "create_card") {
     const targetStages = await storage.listStages(rule.targetPipelineId!);
     if (!targetStages.some((s) => s.id === rule.targetStageId)) {
-      console.warn(`[automation] rule ${rule.id}: target stage ${rule.targetStageId} no longer exists — skipped`);
+      console.warn(`[automation] rule ${rule.id}: target stage ${rule.targetStageId} no longer exists - skipped`);
       return false;
     }
     const assigneeId = (rule.copyAssignee && card.assigneeId && await storage.canUserAccessPipeline(card.assigneeId, rule.targetPipelineId!))
       ? card.assigneeId : null;
     if (rule.copyAssignee && card.assigneeId && assigneeId === null) {
-      console.warn(`[automation] rule ${rule.id}: assignee ${card.assigneeId} lacks access to pipeline ${rule.targetPipelineId} — created unassigned`);
+      console.warn(`[automation] rule ${rule.id}: assignee ${card.assigneeId} lacks access to pipeline ${rule.targetPipelineId} - created unassigned`);
     }
     const newCard = await storage.createCard(rule.targetPipelineId!, {
       stageId: rule.targetStageId!,
@@ -443,7 +443,7 @@ export async function applyRuleAction(rule: PipelineRule, card: PipelineCard, ac
       await storage.setCardValues(card.id, [{ fieldId: cfg.fieldId, value: cfg.value }]);
       return true;
     }
-    console.warn(`[automation] rule ${rule.id}: set_field config invalid or field missing — skipped`);
+    console.warn(`[automation] rule ${rule.id}: set_field config invalid or field missing - skipped`);
     return false;
   }
   if (rule.actionType === "move_stage") {
@@ -453,14 +453,14 @@ export async function applyRuleAction(rule: PipelineRule, card: PipelineCard, ac
       await storage.moveCard(card.id, cfg.stageId, undefined, actorId);
       return true;
     }
-    console.warn(`[automation] rule ${rule.id}: move_stage config invalid, stage missing, or no-op — skipped`);
+    console.warn(`[automation] rule ${rule.id}: move_stage config invalid, stage missing, or no-op - skipped`);
     return false;
   }
   if (rule.actionType === "assign") {
     const cfg = parseActionConfig("assign", rule.actionConfig) as { assigneeId: number | null } | null;
-    if (!cfg) { console.warn(`[automation] rule ${rule.id}: assign config invalid — skipped`); return false; }
+    if (!cfg) { console.warn(`[automation] rule ${rule.id}: assign config invalid - skipped`); return false; }
     if (cfg.assigneeId != null && !(await storage.canUserAccessPipeline(cfg.assigneeId, card.pipelineId))) {
-      console.warn(`[automation] rule ${rule.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} — skipped`);
+      console.warn(`[automation] rule ${rule.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} - skipped`);
       return false;
     }
     await storage.updateCard(card.id, { assigneeId: cfg.assigneeId }, actorId);
@@ -511,7 +511,7 @@ git commit -m "refactor(pipelines): extract applyRuleAction shared by stage-ente
 
 ---
 
-### Task 6: Service — `runTimeTriggers()`
+### Task 6: Service - `runTimeTriggers()`
 
 **Files:**
 - Modify: `server/pipeline-automation.ts`
@@ -689,7 +689,7 @@ git commit -m "feat(pipelines): secret-guarded POST /api/pipelines/automation/ti
 
 ---
 
-### Task 8: Routes — validateTriggerConfig + POST/PATCH/GET
+### Task 8: Routes - validateTriggerConfig + POST/PATCH/GET
 
 **Files:**
 - Modify: `server/routes.ts` (rule routes ~4627-4770; helper near `validateActionConfig`)
@@ -737,7 +737,7 @@ async function validateTriggerConfig(
 }
 ```
 
-- [ ] **Step 3: POST — dispatch on triggerType**
+- [ ] **Step 3: POST - dispatch on triggerType**
 
 In `router.post("/api/pipelines/:id/rules", ...)`, replace the early `if (!b.triggerStageId) return sendError(...)` guard with a trigger-type-aware validation. After `const condErr = await validateConditions(...)` block, insert:
 
@@ -755,9 +755,9 @@ Then in BOTH `storage.createRule(pid, {...})` calls (create_card branch and the 
       triggerConfig: triggerType === "time" ? (b.triggerConfig ?? null) : null,
 ```
 
-Remove the old line `triggerStageId: Number(b.triggerStageId),` from each (replaced by the nullable version above). Note: for `create_card` a `time` trigger is allowed — the action validations (target pipeline access, fieldMaps) still run as before.
+Remove the old line `triggerStageId: Number(b.triggerStageId),` from each (replaced by the nullable version above). Note: for `create_card` a `time` trigger is allowed - the action validations (target pipeline access, fieldMaps) still run as before.
 
-- [ ] **Step 4: PATCH — validate trigger when present**
+- [ ] **Step 4: PATCH - validate trigger when present**
 
 In `router.patch(...)`, after the existing `if (b.conditions !== undefined) {...}` block, add:
 
@@ -781,9 +781,9 @@ Then in the `storage.updateRule(...)` call object add:
         triggerConfig: b.triggerConfig,
 ```
 
-(`triggerStageId` is already passed; keep it — it now accepts null.)
+(`triggerStageId` is already passed; keep it - it now accepts null.)
 
-- [ ] **Step 5: GET — enrich trigger for display**
+- [ ] **Step 5: GET - enrich trigger for display**
 
 In `router.get("/api/pipelines/:id/rules", ...)`, inside the `rules.map(async (r) => {...})`, before the `return {...}`, add:
 
@@ -816,7 +816,7 @@ Expected: `routes.ts` errors from Task 1 resolved → routes.ts = 0 errors. Only
 
 ```bash
 git add server/routes.ts
-git commit -m "feat(pipelines): rule routes — validateTriggerConfig + POST/PATCH/GET time-trigger handling (P4c)"
+git commit -m "feat(pipelines): rule routes - validateTriggerConfig + POST/PATCH/GET time-trigger handling (P4c)"
 ```
 
 ---
@@ -853,7 +853,7 @@ git commit -m "feat(pipelines): RuleWithMaps carries time-trigger display fields
 
 ---
 
-### Task 10: Dialog — trigger selector + time-trigger form
+### Task 10: Dialog - trigger selector + time-trigger form
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -906,7 +906,7 @@ In the submit handler `add()` (~117), before the per-action branches, compute a 
     }
 ```
 
-Then in each `m.createRule.mutateAsync({...})` action branch, REMOVE the `triggerStageId: Number(triggerStageId),` line and spread `...triggerPart,` instead. (Each branch already sets `actionType` + its own action fields — keep those.) The `create_card` branch's own guard `if (!triggerStageId || ...)` must drop the `!triggerStageId` part (trigger is validated above): change it to validate only target fields.
+Then in each `m.createRule.mutateAsync({...})` action branch, REMOVE the `triggerStageId: Number(triggerStageId),` line and spread `...triggerPart,` instead. (Each branch already sets `actionType` + its own action fields - keep those.) The `create_card` branch's own guard `if (!triggerStageId || ...)` must drop the `!triggerStageId` part (trigger is validated above): change it to validate only target fields.
 
 - [ ] **Step 3: Render the "Pemicu" selector + conditional fields**
 
@@ -932,7 +932,7 @@ Add the time-trigger fields, rendered `{triggerType === "time" && (<> ... </>)}`
 - When `anchor === "field_date"`: a field Combobox built from `sourceFields.filter((f) => f.type === "date")` (the dialog already has `sourceFields` for conditions/maps), mapping to `{ value: String(f.id), label: f.label }`, bound to `anchorFieldId`.
 - **Offset row** (use `<FormRow cols={3}>` if available, else stacked): number `<Input type="number" min={0}>` bound to `offsetN`; unit Combobox `hours`→"jam"/`days`→"hari" bound to `offsetUnit`; direction Combobox `after`→"sesudah"/`before`→"sebelum" bound to `direction`.
 - **Repeat row**: Combobox `once`→"sekali"/`every`→"berulang tiap" bound to `repeat`; when `repeat === "every"`, a number Input bound to `repeatEveryN` (label "tiap N " + offsetUnit).
-- **Batasan stage (opsional)** Combobox from `selfStages`/the pipeline's stages (same source the trigger-stage picker uses), with an empty option "— semua stage —", bound to `scopeStageId`.
+- **Batasan stage (opsional)** Combobox from `selfStages`/the pipeline's stages (same source the trigger-stage picker uses), with an empty option "- semua stage -", bound to `scopeStageId`.
 
 Match the existing dialog's `<FormField>`/`<Combobox>`/`<Input>` styling used by the action fields below.
 
@@ -961,7 +961,7 @@ git commit -m "feat(pipelines): rule dialog trigger selector + time-trigger form
 
 ---
 
-### Task 11: Dialog — read-side (summary + detail render)
+### Task 11: Dialog - read-side (summary + detail render)
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -1021,7 +1021,7 @@ git commit -m "feat(pipelines): rule dialog renders time-trigger summary + detai
 Add to `.env.example`:
 
 ```
-# P4c — secret for the pipeline time-trigger cron tick (POST /api/pipelines/automation/tick).
+# P4c - secret for the pipeline time-trigger cron tick (POST /api/pipelines/automation/tick).
 # Leave unset to disable the endpoint (returns 503).
 PIPELINE_TICK_SECRET=
 ```
@@ -1044,7 +1044,7 @@ git commit -m "docs(pipelines): document PIPELINE_TICK_SECRET for time-trigger t
 
 - [ ] **Step 4: Manual dev test plan (after merge to dev + restart + cron/curl)**
 
-Relay this checklist to the user — run against `jabnet_fiber_dev` with `PIPELINE_TICK_SECRET` set:
+Relay this checklist to the user - run against `jabnet_fiber_dev` with `PIPELINE_TICK_SECRET` set:
 
 1. **set_field on time anchor:** create a rule, trigger=waktu, anchor=`masuk stage`, `0 hari sesudah`, action=set_field. Put a card in the stage. `curl -X POST -H "X-Automation-Secret: <s>" .../api/pipelines/automation/tick` → field set; response `{evaluated≥1, fired≥1}`.
 2. **once dedup:** curl tick again → same card not re-fired (`fired` doesn't recount it).
@@ -1065,7 +1065,7 @@ After manual dev verification passes, update `[[project-pipelines-engine]]` (mar
 
 ## Self-Review notes (addressed)
 
-- **Spec coverage:** every spec §1–§7 maps to a task (§1→T1/T2, §2→T1/T2/T4, §3→T4/T6, §4→T3/T5/T6, §5→T7, §6→T10/T11, §7→T8). ✓
+- **Spec coverage:** every spec §1-§7 maps to a task (§1→T1/T2, §2→T1/T2/T4, §3→T4/T6, §4→T3/T5/T6, §5→T7, §6→T10/T11, §7→T8). ✓
 - **Type consistency:** `TimeTriggerConfig` shape identical in schema (T1), helper (T3), hook (T9), routes (T8). `applyRuleAction` signature `(rule, card, actorId)→Promise<boolean>` used in T5 + T6. `recordOrTouchRuleFire`/`getRuleFire`/`listAllTimeRules` defined T4, used T6. ✓
 - **Residual-error tracking:** T1 relaxes a NOT-NULL that breaks the dialog + service + routes; those are explicitly fixed in T4/T5/T6/T8/T10/T11, and each task states which residuals are expected so implementers don't chase out-of-scope errors. ✓
 - **TDD:** the only purely-unit-testable unit (helpers) is TDD in T3; storage/service/routes/UI verified via typecheck + build + the manual dev plan, consistent with this codebase's existing test surface.

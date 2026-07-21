@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
-      {/* ─── LEFT / TOP: Hero / Branding ─────────────────────────────── */}
+      {/* --- LEFT / TOP: Hero / Branding ------------------------------- */}
       <aside className="relative overflow-hidden text-white lg:w-[55%] lg:min-h-screen bg-mesh">
         {/* Grid overlay */}
         <div className="absolute inset-0 bg-grid-pattern opacity-30 lg:opacity-40" />
@@ -40,7 +40,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-sidebar/95 via-sidebar/80 to-transparent" />
 
         <div className="relative z-10 flex flex-col justify-between px-6 pt-8 pb-6 lg:p-12 xl:p-16 min-h-[340px] lg:min-h-screen">
-          {/* Top — Brand */}
+          {/* Top - Brand */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-elev-lg ring-1 ring-white/20">
               <Radio className="h-5 w-5 text-white" strokeWidth={2.5} />
@@ -53,7 +53,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Middle — Hero message */}
+          {/* Middle - Hero message */}
           <div className="py-8 lg:py-0 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 lg:mb-6">
               <span className="relative flex h-2 w-2">
@@ -72,12 +72,12 @@ export default function LoginPage() {
               <span className="lg:hidden"> dalam satu platform</span>
             </h2>
             <p className="text-white/60 mt-3 text-sm lg:text-base xl:text-lg leading-relaxed max-w-md">
-              Workspace operasional terpadu untuk ISP —
+              Workspace operasional terpadu untuk ISP -
               dari perencanaan jaringan, CRM marketing, hingga
               monitoring pelanggan real-time.
             </p>
 
-            {/* Feature pills — desktop only */}
+            {/* Feature pills - desktop only */}
             <div className="hidden lg:grid grid-cols-2 gap-3 mt-8 max-w-md">
               {[
                 { icon: Globe, label: "Network Asset Mgmt" },
@@ -96,7 +96,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Bottom — Trust & company (desktop only) */}
+          {/* Bottom - Trust & company (desktop only) */}
           <div className="hidden lg:block">
             <div className="grid grid-cols-3 gap-6 pb-6 border-b border-white/10">
               <div>
@@ -137,7 +137,7 @@ export default function LoginPage() {
         <div className="lg:hidden absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-b from-transparent to-background pointer-events-none" />
       </aside>
 
-      {/* ─── RIGHT / BOTTOM: Login Form ─────────────────────────────── */}
+      {/* --- RIGHT / BOTTOM: Login Form ------------------------------- */}
       <main className="relative flex-1 flex items-start lg:items-center justify-center p-6 pt-4 lg:p-12 -mt-10 lg:mt-0">
         {/* Subtle dot pattern on right pane (desktop) */}
         <div className="hidden lg:block absolute inset-0 bg-dot-pattern opacity-30 pointer-events-none" />
@@ -185,7 +185,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Coverage check — public route */}
+          {/* Coverage check - public route */}
           <Link
             href="/coverage-check"
             className="group flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-accent/30 hover:shadow-elev-md transition-all"
@@ -220,7 +220,7 @@ export default function LoginPage() {
   );
 }
 
-// ─── Subcomponent: shared form ─────────────────────────────────────
+// --- Subcomponent: shared form -------------------------------------
 
 interface LoginFormProps {
   username: string;

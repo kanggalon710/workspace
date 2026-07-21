@@ -1,4 +1,4 @@
-/** Pure scoring Laporan Kinerja (FR-1002, PRD §14.3) — deterministik, AI hanya merangkum.
+/** Pure scoring Laporan Kinerja (FR-1002, PRD §14.3) - deterministik, AI hanya merangkum.
  *  Komponen bernilai null = tidak berlaku untuk user tsb (mis. tidak pernah jadi penerima
  *  check-in) → bobotnya diredistribusi proporsional ke komponen yang ada. */
 
@@ -17,7 +17,7 @@ export interface ScoreWeights { onTime: number; completion: number; checkin: num
 
 export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = { onTime: 40, completion: 25, checkin: 15, ops: 20 };
 
-/** Parse bobot dari appSettings JSON — invalid/parsial → default (kalibrasi tanpa deploy). */
+/** Parse bobot dari appSettings JSON - invalid/parsial → default (kalibrasi tanpa deploy). */
 export function parseScoreWeights(raw: string | null | undefined): ScoreWeights {
   if (!raw) return { ...DEFAULT_SCORE_WEIGHTS };
   try {

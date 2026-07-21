@@ -1,4 +1,4 @@
-/** Pure mappers: raw Chatwoot NBI payloads → stable Workspace DTOs. No I/O — testable.
+/** Pure mappers: raw Chatwoot NBI payloads → stable Workspace DTOs. No I/O - testable.
  *  Chatwoot shapes vary by version; access defensively. */
 
 export type Inbox = { id: number; name: string; channelType: string | null };

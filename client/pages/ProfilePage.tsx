@@ -94,8 +94,8 @@ async function resizeImageToDataUrl(file: File, maxSize = 256, quality = 0.85): 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: any; desc: string }> = {
   "System-Admin": { label: "System Admin",         color: "text-red-600 dark:text-red-400",      icon: ShieldCheck, desc: "Akses cross-tenant (JABNET pusat)" },
   "Admin":        { label: "Admin",                color: "text-blue-600 dark:text-blue-400",    icon: Shield,      desc: "Akses penuh di satu mitra" },
-  admin:          { label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400",     icon: ShieldCheck, desc: "Legacy admin — akan diganti System-Admin" },
-  "Administrator":{ label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400",     icon: ShieldCheck, desc: "Legacy admin — akan diganti System-Admin" },
+  admin:          { label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400",     icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
+  "Administrator":{ label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400",     icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
   operator:      { label: "Operator",              color: "text-blue-600 dark:text-blue-400",    icon: Shield,      desc: "Kelola aset jaringan FTTH" },
   marketing:     { label: "Marketing",             color: "text-purple-600 dark:text-purple-400", icon: MapPinned,  desc: "Canvassing & lead sales" },
   marketing_spv: { label: "Marketing SPV",         color: "text-pink-600 dark:text-pink-400",    icon: Star,        desc: "Supervisor marketing team" },
@@ -103,18 +103,18 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; icon: any; des
 };
 
 function formatDate(iso: string | null, withTime = false): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   try {
     const d = new Date(iso);
     return d.toLocaleString("id-ID", {
       day: "2-digit", month: "short", year: "numeric",
       ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
     });
-  } catch { return "—"; }
+  } catch { return "-"; }
 }
 
 function relativeTime(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   try {
     const diff = Date.now() - new Date(iso).getTime();
     const sec = Math.floor(diff / 1000);
@@ -126,10 +126,10 @@ function relativeTime(iso: string | null): string {
     const days = Math.floor(hrs / 24);
     if (days < 30) return `${days} hari lalu`;
     return formatDate(iso);
-  } catch { return "—"; }
+  } catch { return "-"; }
 }
 
-// ── Compact stat item used in hero strip ──
+// -- Compact stat item used in hero strip --
 function StatItem({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <div className="min-w-0">
@@ -143,11 +143,11 @@ function StatItem({ icon: Icon, label, value }: { icon: any; label: string; valu
   );
 }
 
-// ── Clean field row: icon · label · value (strict vertical rhythm) ──
+// -- Clean field row: icon · label · value (strict vertical rhythm) --
 function FieldRow({
   icon: Icon, label, value, mono = false,
 }: { icon: any; label: string; value: string | null; mono?: boolean }) {
-  const filled = !!value && value !== "—";
+  const filled = !!value && value !== "-";
   return (
     <div className="flex items-center gap-3 py-3 px-1 first:pt-1 last:pb-1">
       <div className="w-9 h-9 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
@@ -179,7 +179,7 @@ export default function ProfilePage() {
     queryFn: () => api.get<MeResponse>("/auth/me"),
   });
 
-  // ── Edit mode (whole form) ──
+  // -- Edit mode (whole form) --
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
     name: "", email: "", phone: "", address: "",
@@ -228,7 +228,7 @@ export default function ProfilePage() {
     updateMut.mutate(patch);
   };
 
-  // ── Profile completeness ──
+  // -- Profile completeness --
   const completeness = useMemo(() => {
     if (!me) return { percent: 0, done: 0, total: 6, missing: [] as string[] };
     const fields = [
@@ -248,7 +248,7 @@ export default function ProfilePage() {
     };
   }, [me]);
 
-  // ── Change password ──
+  // -- Change password --
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -278,7 +278,7 @@ export default function ProfilePage() {
     onError: (e: any) => toast.error(e.message || "Gagal mengubah password"),
   });
 
-  // ── Photo upload ──
+  // -- Photo upload --
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoMut = useMutation({
     mutationFn: (photoUrl: string | null) => api.put<{ photoUrl: string | null }>("/auth/me/photo", { photoUrl }),
@@ -303,7 +303,7 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Telegram pairing ──
+  // -- Telegram pairing --
   const [tgPairing, setTgPairing] = useState<{ code: string; botUsername: string; deepLink: string | null; expiresAt: number } | null>(null);
   const [tgBusy, setTgBusy] = useState(false);
   useEffect(() => {
@@ -313,7 +313,7 @@ export default function ProfilePage() {
     }, 1000);
     return () => clearInterval(t);
   }, [tgPairing]);
-  // Poll /auth/me setiap 3 detik saat pairing dialog aktif — deteksi chatId muncul
+  // Poll /auth/me setiap 3 detik saat pairing dialog aktif - deteksi chatId muncul
   useEffect(() => {
     if (!tgPairing || me?.telegramChatId) return;
     const t = setInterval(() => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }), 3000);
@@ -416,7 +416,7 @@ export default function ProfilePage() {
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
-      {/* ═══════════════ PAGE HEADER ═══════════════ */}
+      {/* =============== PAGE HEADER =============== */}
       <header className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -429,9 +429,9 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      {/* ═══════════════ HERO / IDENTITY CARD ═══════════════ */}
+      {/* =============== HERO / IDENTITY CARD =============== */}
       <Card className="overflow-hidden border-border/60 shadow-sm">
-        {/* Cover band — avatar floats here, no text overlap */}
+        {/* Cover band - avatar floats here, no text overlap */}
         <div className="relative h-28 md:h-32 bg-gradient-to-br from-primary via-primary/80 to-primary/40">
           {/* Decorative glows */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.18),transparent_55%)]" />
@@ -498,7 +498,7 @@ export default function ProfilePage() {
           <div className="md:pl-[7.5rem] flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="min-w-0 flex-1">
               <h2 className="text-xl md:text-2xl font-bold text-foreground truncate leading-tight">
-                {displayName || "—"}
+                {displayName || "-"}
               </h2>
               <p className="text-xs text-muted-foreground font-mono mt-1">
                 @{me?.username ?? user?.username}
@@ -540,7 +540,7 @@ export default function ProfilePage() {
           <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-4 pt-5 border-t border-border/60">
             <StatItem icon={Calendar} label="Bergabung" value={formatDate(me?.createdAt ?? null)} />
             <StatItem icon={Clock} label="Login Terakhir" value={relativeTime(me?.lastLogin ?? null)} />
-            <StatItem icon={Building2} label="Cabang" value={me?.branch || "—"} />
+            <StatItem icon={Building2} label="Cabang" value={me?.branch || "-"} />
             <div>
               <div className="flex items-center gap-1.5 text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">
                 <CircleCheck className="h-3 w-3" /> Kelengkapan
@@ -563,9 +563,9 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* ═══════════════ PERSONAL + TEAM DATA ═══════════════ */}
+      {/* =============== PERSONAL + TEAM DATA =============== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* ── Data Pribadi ── */}
+        {/* -- Data Pribadi -- */}
         <Card className="border-border/60 flex flex-col">
           <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 space-y-0">
             <div className="min-w-0">
@@ -573,7 +573,7 @@ export default function ProfilePage() {
                 <UserIcon className="h-4 w-4 text-primary" /> Data Pribadi
               </CardTitle>
               <CardDescription className="mt-1 text-xs">
-                Informasi kontak & identitas — dapat Anda ubah sendiri
+                Informasi kontak & identitas - dapat Anda ubah sendiri
               </CardDescription>
             </div>
             {!editMode && (
@@ -673,7 +673,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* ── Data Tim / Kepegawaian ── */}
+        {/* -- Data Tim / Kepegawaian -- */}
         <Card className="border-border/60 flex flex-col">
           <CardHeader className="pb-2 space-y-0">
             <CardTitle className="text-base flex items-center gap-2">
@@ -681,7 +681,7 @@ export default function ProfilePage() {
             </CardTitle>
             <CardDescription className="mt-1 text-xs flex items-center gap-1">
               <Info className="h-3 w-3" />
-              Dikelola admin — hubungi admin untuk perubahan
+              Dikelola admin - hubungi admin untuk perubahan
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-1">
@@ -697,7 +697,7 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      {/* ═══════════════ CATATAN ADMIN (jika ada) ═══════════════ */}
+      {/* =============== CATATAN ADMIN (jika ada) =============== */}
       {me?.notes && (
         <Card className="border-border/60 bg-muted/30">
           <CardHeader className="pb-2 space-y-0">
@@ -711,11 +711,11 @@ export default function ProfilePage() {
         </Card>
       )}
 
-      {/* ═══════════════ CHANGE PASSWORD ═══════════════ */}
+      {/* =============== CHANGE PASSWORD =============== */}
       <Card className="border-border/60">
         <CardHeader className="pb-2 space-y-0">
           <CardTitle className="text-base flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-primary" /> Keamanan — Ubah Password
+            <KeyRound className="h-4 w-4 text-primary" /> Keamanan - Ubah Password
           </CardTitle>
           <CardDescription className="mt-1 text-xs">
             Gunakan password yang kuat untuk melindungi akun Anda
@@ -836,7 +836,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* ═══════════════ TELEGRAM INTEGRATION ═══════════════ */}
+      {/* =============== TELEGRAM INTEGRATION =============== */}
       <Card className="border-border/60">
         <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 space-y-0">
           <div className="min-w-0">
@@ -844,7 +844,7 @@ export default function ProfilePage() {
               <Send className="h-4 w-4 text-sky-500" /> Integrasi Telegram
             </CardTitle>
             <CardDescription className="mt-1 text-xs">
-              Terima notifikasi langsung di Telegram — lead baru, canvassing, ticket, dan lainnya.
+              Terima notifikasi langsung di Telegram - lead baru, canvassing, ticket, dan lainnya.
             </CardDescription>
           </div>
           {me?.telegramChatId ? (
@@ -880,7 +880,7 @@ export default function ProfilePage() {
                   <Zap className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">Pairing aktif — kirim kode ini ke bot</p>
+                  <p className="text-sm font-semibold">Pairing aktif - kirim kode ini ke bot</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Expired dalam{" "}
                     <span className="font-mono font-semibold text-foreground">
@@ -914,7 +914,7 @@ export default function ProfilePage() {
                     )}
                   </li>
                   <li>Kirim pesan: <code className="font-mono bg-muted px-1.5 py-0.5 rounded">/start {tgPairing.code}</code></li>
-                  <li>Tunggu beberapa detik — halaman ini akan update otomatis.</li>
+                  <li>Tunggu beberapa detik - halaman ini akan update otomatis.</li>
                 </ol>
                 <div className="flex gap-2 pt-1 flex-wrap">
                   <Button

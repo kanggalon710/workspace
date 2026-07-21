@@ -1,5 +1,5 @@
-/** Teamspace Fase 2 — Chat Grup tim (FR-5xx): bubble WA-style, lampiran, panel Media.
- *  Realtime via polling 5s (pause-on-blur otomatis) — sesuai NFR-002 (cPanel, no WS). */
+/** Teamspace Fase 2 - Chat Grup tim (FR-5xx): bubble WA-style, lampiran, panel Media.
+ *  Realtime via polling 5s (pause-on-blur otomatis) - sesuai NFR-002 (cPanel, no WS). */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTeamChat, useChatMedia, useChatMutations, useChatReadStates } from "@/hooks/useTeamspace";
 import { useAssignableUsers } from "@/hooks/usePipelines";
@@ -66,7 +66,7 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
 
-  // ── Voice note (BUG-011 / FR-502) — MediaRecorder browser ──
+  // -- Voice note (BUG-011 / FR-502) - MediaRecorder browser --
   const [recording, setRecording] = useState(false);
   const [recordSec, setRecordSec] = useState(0);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -106,7 +106,7 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
       setRecording(true); setRecordSec(0);
       recordTimerRef.current = setInterval(() => setRecordSec((s) => s + 1), 1000);
     } catch {
-      toast.error("Mikrofon tidak tersedia — izinkan akses mic di browser");
+      toast.error("Mikrofon tidak tersedia - izinkan akses mic di browser");
     }
   };
 
@@ -169,7 +169,7 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className={`h-10 w-2/3 animate-pulse rounded-2xl bg-muted ${i % 2 ? "ml-auto" : ""}`} />)}</div>
         ) : (messages ?? []).length === 0 ? (
-          <EmptyState icon={MessageCircle} size="sm" title="Belum ada pesan" description="Mulai percakapan tim di sini — pesan tersimpan permanen." />
+          <EmptyState icon={MessageCircle} size="sm" title="Belum ada pesan" description="Mulai percakapan tim di sini - pesan tersimpan permanen." />
         ) : (
           (messages ?? []).map((msg, i) => {
             const prev = (messages ?? [])[i - 1];

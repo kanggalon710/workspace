@@ -1,4 +1,4 @@
-/** Pure helpers for per-pipeline collection parameters — no I/O. SP3 reuses stageForOverdue. */
+/** Pure helpers for per-pipeline collection parameters - no I/O. SP3 reuses stageForOverdue. */
 
 export type CollectionEntryMode = "create" | "move" | "create_if_not_exists" | "reopen";
 export type WriteoffAction = "move_stage" | "custom_rule";

@@ -4,7 +4,7 @@
 > up to `/leads`-grade UX **before** any leads migration. Adds: per-stage colored
 > column accents + a stage color/label editor, date-range filters (created/updated
 > toggle × all/7d/30d/custom), and richer cards (age, last-update tone, stalled
-> flag, priority badge, assignee avatar). **Frontend-only — zero backend/schema
+> flag, priority badge, assignee avatar). **Frontend-only - zero backend/schema
 > changes** (stage `color` is already supported end-to-end; assignee names come
 > from the existing `/users` endpoint).
 
@@ -40,7 +40,7 @@ future leads migration lands on a board that already matches leads' UX.
 
 ---
 
-## 1. Pure logic — `client/components/pipelines/boardCardMeta.ts` (TDD)
+## 1. Pure logic - `client/components/pipelines/boardCardMeta.ts` (TDD)
 
 No React. Pure functions over primitives/`Date`:
 ```ts
@@ -58,22 +58,22 @@ export function inDateRange(dateStr: string | null, range: DateRange, now: Date)
 - All tolerate null/empty/unparseable input → safe defaults (`inDateRange` null → `range==="all"`; tone → `old`; stalled → false).
 - Thresholds (1/7/14 days, STALLED_DAYS=14) mirror `/leads` (judgment call, approved).
 
-## 2. Filters — `client/components/pipelines/BoardFilters.tsx`
+## 2. Filters - `client/components/pipelines/BoardFilters.tsx`
 
 A toolbar (extends the existing search input, doesn't replace it):
-- Existing **text search** (card title) — keep.
-- **Date field toggle**: `Dibuat` (createdAt) | `Update terakhir` (updatedAt) — a small Combobox/segmented control. (Judgment call, approved: toggle both fields.)
+- Existing **text search** (card title) - keep.
+- **Date field toggle**: `Dibuat` (createdAt) | `Update terakhir` (updatedAt) - a small Combobox/segmented control. (Judgment call, approved: toggle both fields.)
 - **Range**: `Semua` (default) · `7 hari` · `30 hari` · `Custom`. Custom reveals two `<input type="date">` (from/to).
 - Emits `{ search, dateField: "created"|"updated", range: DateRange }` to the page.
 - Filtering is **client-side** on the already-loaded `cards` (the board loads all cards for the pipeline): a card shows if title matches search AND `inDateRange((dateField==="created"?createdAt:updatedAt), range, now)`.
 
-## 3. Stage column — `client/components/pipelines/StageColumn.tsx`
+## 3. Stage column - `client/components/pipelines/StageColumn.tsx`
 
 Extracts the per-stage column from the page. Visual upgrade:
 - **Colored accent**: a top border bar (~3px) in `stage.color` + a subtly tinted header
   (`stage.color` at low opacity), replacing the tiny dot-only header.
 - **Header**: stage label + card count; (judgment call, approved) a small secondary
-  count of stalled cards in that stage when > 0 (e.g. "⚠ 2").
+  count of stalled cards in that stage when > 0 (e.g. " 2").
 - Keeps: drag-over/drop, the add-card inline, the "+ Stage" add (unchanged; new stages
   default to grey `#6B7280`, then recolorable via the editor below).
 - Renders `<BoardCard>` per card.
@@ -88,23 +88,23 @@ present, else a positioned panel):
   `<input type="color">` for custom. Selecting updates a local draft.
 - **Simpan** → `updateStage({ stageId, label, color })`; **Hapus stage** (destructive,
   guarded by a confirm) → `deleteStage(stageId)`.
-All via the existing `usePipelineMutations` — no backend change.
+All via the existing `usePipelineMutations` - no backend change.
 
-## 4. Card — `client/components/pipelines/BoardCard.tsx`
+## 4. Card - `client/components/pipelines/BoardCard.tsx`
 
 Extracts + enriches the card. Shows (deriving via `boardCardMeta` + a users map):
-- **Title** + the opt-in `showOnCard` field chips (existing behavior — keep).
+- **Title** + the opt-in `showOnCard` field chips (existing behavior - keep).
 - **Age** badge (`cardAgeLabel`) + a **last-update tone** dot/strip (`lastUpdateTone` →
   green/neutral/amber/red).
 - **Stalled**: when `isStalled`, a red left-border + a "Stalled" tag (mirrors /leads).
-- **Priority** badge: colored by priority (low/medium/high/urgent) — uses semantic
+- **Priority** badge: colored by priority (low/medium/high/urgent) - uses semantic
   tokens (`bg-muted` / `bg-info/15` / `bg-warning/15` / `bg-destructive/15`), no hardcoded hex.
 - **Assignee**: small avatar (initials) + name, resolved from a `usersById` Map
   (a `useQuery(["/api/users"], () => api.get("/users"))` on the page, passed down);
   unassigned → a muted "Belum ditugaskan" chip.
-- Click → opens the existing card detail (`selectedCard`) — unchanged.
+- Click → opens the existing card detail (`selectedCard`) - unchanged.
 
-## 5. Page — `client/pages/PipelineBoardPage.tsx`
+## 5. Page - `client/pages/PipelineBoardPage.tsx`
 
 Becomes thin composition: load pipeline + cards + users; hold `{search, dateField, range}`
 filter state; compute `visible` cards (search + `inDateRange`); render `<BoardFilters>` +
@@ -154,14 +154,14 @@ manual:
 - Server-side filtering / pagination (client-side over loaded cards is enough at current scale).
 - Configurable stalled threshold per pipeline (hardcoded 14d).
 - Saved filter presets / per-user defaults.
-- List view (the leads list-view variant) — board only for now.
+- List view (the leads list-view variant) - board only for now.
 - Card drag reordering within a stage by date-sort (keep manual position).
 
 ## Consistency with memory
 
-- [[project-pipelines-engine]] — prerequisite UX work before P5 (leads migration);
+- [[project-pipelines-engine]] - prerequisite UX work before P5 (leads migration);
   not a migration itself. Update the P5 note on merge (board-UX parity done first).
-- [[feedback-coding-standards]] — pure `boardCardMeta` (SoC/TDD), component
+- [[feedback-coding-standards]] - pure `boardCardMeta` (SoC/TDD), component
   decomposition, semantic controls + aria-labels, semantic color tokens (no hardcoded
   hex except the fixed stage-swatch palette, which mirrors the stored stage colors).
 - No backend → [[reference-api-response-envelope]] / [[reference-startup-add-column]]

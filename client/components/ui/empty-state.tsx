@@ -16,7 +16,7 @@ interface EmptyStateProps {
   secondaryAction?: EmptyStateAction;
   size?: "sm" | "md" | "lg";
   className?: string;
-  /** Visual variant — neutral (default), info (blue), warning (amber), success (green) */
+  /** Visual variant - neutral (default), info (blue), warning (amber), success (green) */
   variant?: "neutral" | "info" | "warning" | "success";
 }
 
@@ -64,7 +64,7 @@ const variantMap = {
 };
 
 /**
- * EmptyState — consistent visual for empty/no-data states.
+ * EmptyState - consistent visual for empty/no-data states.
  * Shows an icon, title, optional description, and 1-2 CTAs.
  *
  * @example

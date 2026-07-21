@@ -1,13 +1,13 @@
-# Spec — Custom Field Drag-Reorder (Slice G)
+# Spec - Custom Field Drag-Reorder (Slice G)
 
 > Date: 2026-06-07 · Status: **Approved (pending user spec review)** · Target: dev branch
-> Part of the Pipelines Engine program — see [[project-pipelines-engine]]. Pure frontend wiring — no backend,
+> Part of the Pipelines Engine program - see [[project-pipelines-engine]]. Pure frontend wiring - no backend,
 > schema, or migration.
 
 ## Context
 
 Custom fields render in a fixed order (by `position`) in the board card chips and the card-detail modal, but
-there is no way to reorder them — the `ManageFieldsDialog` field rows show a `GripVertical` handle that is
+there is no way to reorder them - the `ManageFieldsDialog` field rows show a `GripVertical` handle that is
 **visual-only** (`ManageFieldsDialog.tsx:142` "reorder DnD is a future enhancement"). The user wants to drag a
 field to a new position (e.g. Tagihan-Status-Paket → Paket-Tagihan-Status).
 
@@ -40,7 +40,7 @@ events). Reuse existing design-system components + Lucide icons.
 
 ## Design
 
-### 1. `reorderFields` mutation — add optimistic update (`client/hooks/usePipelines.ts`)
+### 1. `reorderFields` mutation - add optimistic update (`client/hooks/usePipelines.ts`)
 
 Currently `reorderFields` is `{ mutationFn, onSuccess: invalidate }`. Upgrade it to mirror `reorderStages`:
 `onMutate(orderedIds)` cancels + snapshots the `useFields` query (`[KEY, "fields", pipelineId]`), writes the
@@ -48,7 +48,7 @@ reordered field list into that cache (reindex by the new id order), returns the 
 it; `onSettled` invalidates. This makes the dialog reorder instantly and keeps the board's
 `pipeline.fields` consistent on the subsequent refetch.
 
-### 2. `ManageFieldsDialog` — draggable rows + arrows
+### 2. `ManageFieldsDialog` - draggable rows + arrows
 
 In the existing-fields list (`ManageFieldsDialog.tsx`), each field row (`f`) gains:
 - `draggable`, `onDragStart={() => setDragId(f.id)}`, `onDragOver={(e) => e.preventDefault()}`,
@@ -76,7 +76,7 @@ Reorder uses the existing `reorderFields` endpoint (already `requireWritePermiss
 | `client/components/pipelines/ManageFieldsDialog.tsx` | Field rows: `draggable` + grip handle + ▲▼ arrows → `reorderFields.mutate(reorderByDrag/moveByOffset(...))`; `dragId` state; import `reorderByDrag`/`moveByOffset` + `ChevronUp`/`ChevronDown`. |
 
 ## Testing
-- **Pure:** `reorderByDrag`/`moveByOffset` already covered by `stageReorder.test.ts` — re-run to confirm
+- **Pure:** `reorderByDrag`/`moveByOffset` already covered by `stageReorder.test.ts` - re-run to confirm
   (`npx tsx --test client/components/pipelines/stageReorder.test.ts`). No new pure tests.
 - **Gates:** `npm run typecheck` = 0; `npm run build` green.
 - **Manual (dev):** open Kelola Field on a pipeline with ≥3 fields → drag a field to a new spot → order
@@ -84,12 +84,12 @@ Reorder uses the existing `reorderFields` endpoint (already `requireWritePermiss
   shows in the board card chips (showOnCard fields) and the card modal's Field Kustom section.
 
 ## Multi-tenant / RBAC
-Unchanged — reorder uses the existing mitra-scoped, write-permission-gated endpoint.
+Unchanged - reorder uses the existing mitra-scoped, write-permission-gated endpoint.
 
 ## Risks
-1. **Optimistic cache shape** — the `onMutate` must reindex the cached `PipelineField[]` by the new id order
+1. **Optimistic cache shape** - the `onMutate` must reindex the cached `PipelineField[]` by the new id order
    (and may set `position` to the new index for display consistency); rollback on error covers failures.
-2. **Drag in a scrollable dialog** — HTML5 DnD inside the dialog's scroll area can be fiddly; the ▲▼ arrows
+2. **Drag in a scrollable dialog** - HTML5 DnD inside the dialog's scroll area can be fiddly; the ▲▼ arrows
    are the always-reliable fallback (and the mobile/a11y path), mirroring stage reorder.
 
 ## Acceptance criteria

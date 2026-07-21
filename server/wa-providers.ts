@@ -30,7 +30,7 @@ export interface WaProviderConfig {
 }
 
 /**
- * v4.2.22: WaButton — sesuai MPWA spec format (single source of truth).
+ * v4.2.22: WaButton - sesuai MPWA spec format (single source of truth).
  * Untuk JABNET MPWA Jabnet (https://mpwa.jabnet.id/send-button):
  *   { type, displayText, [phoneNumber|url|copyText|id] }
  *
@@ -127,7 +127,7 @@ export async function sendViaDevice(device: WaDevice, toNumber: string, payload:
   }
 }
 
-// ── MPWA ── (v4.2.21: pakai MPWAClient class untuk full spec support)
+// -- MPWA -- (v4.2.21: pakai MPWAClient class untuk full spec support)
 async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: SendPayload): Promise<SendResult> {
   if (!cfg.apiKey) return { sent: false, error: "MPWA: api_key kosong" };
   const { MPWAClient } = await import("./mpwa-client.js");
@@ -138,7 +138,7 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
   });
 
   try {
-    // ── Priority routing berdasarkan payload type ──
+    // -- Priority routing berdasarkan payload type --
     // 1. Poll
     if (p.poll) {
       const r = await client.sendPoll(to, p.poll.name, p.poll.options, p.poll.countable ?? "1");
@@ -185,18 +185,18 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
 
     const hasButtons = (p.buttons?.length ?? 0) > 0;
     // v4.2.23: Kalau ada button tapi gak ada image, inject default image
-    // (MPWA /send-button WAJIB image — kalau kosong, button gak akan muncul native).
+    // (MPWA /send-button WAJIB image - kalau kosong, button gak akan muncul native).
     // Default image bisa di-override via setting `wa_default_button_image`.
     let effectiveImageUrl = p.imageUrl;
     if (hasButtons && !effectiveImageUrl) {
       const { storage } = await import("./storage.js");
       const defaultImage = await storage.getSetting("wa_default_button_image");
-      // Fallback hardcoded — imgur reliable, MPWA bisa fetch
+      // Fallback hardcoded - imgur reliable, MPWA bisa fetch
       effectiveImageUrl = defaultImage || "https://i.imgur.com/9xbmtMm.jpeg";
     }
     const hasImage = !!effectiveImageUrl;
 
-    // 6. Native button (image wajib) — pakai MPWA spec format langsung
+    // 6. Native button (image wajib) - pakai MPWA spec format langsung
     if (hasButtons && hasImage) {
       const r = await client.sendButton(to, {
         message: p.message,
@@ -221,7 +221,7 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
       return { sent: false, error: typeof r.msg === "string" ? r.msg : "Button send failed", response: r };
     }
 
-    // 7. Media (image/video/audio/document) tanpa button — pakai original imageUrl (bukan default)
+    // 7. Media (image/video/audio/document) tanpa button - pakai original imageUrl (bukan default)
     if (p.imageUrl || p.mediaType) {
       const mediaType = (p.mediaType ?? "image") as "image" | "video" | "audio" | "document";
       const r = await client.sendMedia(to, mediaType, p.imageUrl!, {
@@ -235,9 +235,9 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
     // 8. Text + text-button fallback (kalau ada button tapi tidak ada image)
     let message = p.message;
     if (hasButtons) {
-      message += "\n\n━━━━━━━━━━━━━━━";
+      message += "\n\n---------------";
       for (const b of p.buttons!.slice(0, 5)) {
-        const icon = b.type === "url" ? "🔗" : b.type === "call" ? "📞" : b.type === "copy" ? "📋" : "▶️";
+        const icon = b.type === "url" ? "" : b.type === "call" ? "" : b.type === "copy" ? "" : "▶";
         const label = b.displayText ?? b.label ?? "";
         let action = "";
         if (b.type === "url") {
@@ -252,7 +252,7 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
         }
         message += `\n${icon} *${label}*${action}`;
       }
-      message += "\n━━━━━━━━━━━━━━━";
+      message += "\n---------------";
     }
     const r = await client.sendText(to, message, { footer: p.footer });
     if (r.status) return { sent: true, response: r, mode: "text" };
@@ -262,7 +262,7 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
   }
 }
 
-// ── Fonnte ──
+// -- Fonnte --
 async function sendFonnte(cfg: WaProviderConfig, to: string, p: SendPayload): Promise<SendResult> {
   if (!cfg.token) return { sent: false, error: "Fonnte: token kosong" };
   const body: any = { target: to, message: p.message };
@@ -273,7 +273,7 @@ async function sendFonnte(cfg: WaProviderConfig, to: string, p: SendPayload): Pr
   return { sent: false, error: r.json?.reason ?? r.error ?? `HTTP ${r.status}`, response: r.json };
 }
 
-// ── Wablas ──
+// -- Wablas --
 async function sendWablas(cfg: WaProviderConfig, to: string, p: SendPayload): Promise<SendResult> {
   if (!cfg.token) return { sent: false, error: "Wablas: token kosong" };
   const baseUrl = (cfg.url || "https://console.wablas.com").replace(/\/$/, "");
@@ -289,7 +289,7 @@ async function sendWablas(cfg: WaProviderConfig, to: string, p: SendPayload): Pr
   return { sent: false, error: r.json?.message ?? r.error ?? `HTTP ${r.status}`, response: r.json };
 }
 
-// ── Starsender ──
+// -- Starsender --
 async function sendStarsender(cfg: WaProviderConfig, to: string, p: SendPayload): Promise<SendResult> {
   if (!cfg.apiKey) return { sent: false, error: "Starsender: api_key kosong" };
   const body: any = {
@@ -304,7 +304,7 @@ async function sendStarsender(cfg: WaProviderConfig, to: string, p: SendPayload)
   return { sent: false, error: r.json?.msg ?? r.json?.message ?? r.error ?? `HTTP ${r.status}`, response: r.json };
 }
 
-// ── Watzap ──
+// -- Watzap --
 async function sendWatzap(cfg: WaProviderConfig, to: string, p: SendPayload): Promise<SendResult> {
   if (!cfg.apiKey || !cfg.numberKey) return { sent: false, error: "Watzap: api_key + number_key wajib" };
   const body: any = {
@@ -321,7 +321,7 @@ async function sendWatzap(cfg: WaProviderConfig, to: string, p: SendPayload): Pr
   return { sent: false, error: r.json?.message ?? r.error ?? `HTTP ${r.status}`, response: r.json };
 }
 
-// ── WACHAYO ── (mirip MPWA pattern)
+// -- WACHAYO -- (mirip MPWA pattern)
 async function sendWachayo(cfg: WaProviderConfig, sender: string, to: string, p: SendPayload): Promise<SendResult> {
   if (!cfg.apiKey || !cfg.url) return { sent: false, error: "WACHAYO: api_key + url wajib" };
   const baseUrl = cfg.url.replace(/\/$/, "");
@@ -389,7 +389,7 @@ export const TEMPLATE_PARAMS_RESELLER = [
   { param: "{{url_wa_cs}}",                 desc: "URL WhatsApp CS perusahaan" },
 ];
 
-/** Substitusi param sederhana — replace {{key}} dengan value dari context */
+/** Substitusi param sederhana - replace {{key}} dengan value dari context */
 export function renderTemplate(content: string, vars: Record<string, any>): string {
   return content.replace(/\{\{(\w+)\}\}/g, (_, key) => {
     const v = vars[key];

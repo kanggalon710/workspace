@@ -1,5 +1,5 @@
 /**
- * Saung Jarkom — Custom brand logo
+ * Saung Jarkom - Custom brand logo
  * House (saung) + wifi signal (jarkom). Uses `currentColor` so it inherits
  * whatever text/fill color the parent sets (e.g. text-white on primary bg).
  */

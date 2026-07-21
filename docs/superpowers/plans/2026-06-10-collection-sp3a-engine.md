@@ -1,9 +1,9 @@
-# SP3a — Collection Engine (config executor) Implementation Plan
+# SP3a - Collection Engine (config executor) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO git worktrees, NO branch switches. Verify `git branch --show-current` is `dev` before committing.**
 
-**Goal:** A per-tenant billing-sync phase `runCollectionEngine()` that drives the collection card lifecycle from the SP2 config + SP1 snapshots — entry (3 modes), aging→stage via `stageForOverdue`, auto write-off, payment-close — and completes SP1's `collection_status`/`writeoff_status`.
+**Goal:** A per-tenant billing-sync phase `runCollectionEngine()` that drives the collection card lifecycle from the SP2 config + SP1 snapshots - entry (3 modes), aging→stage via `stageForOverdue`, auto write-off, payment-close - and completes SP1's `collection_status`/`writeoff_status`.
 
 **Architecture:** Pure decision functions (`decideEntry`, `decideCardLifecycle`) + a pure status resolver, glued by a worker-side engine that mutates via storage and dispatches stage-enter automations (loop-safe; once per sync). Config-owned: only pipelines with `collection_config.enabled=1` are processed.
 
@@ -12,11 +12,11 @@
 ---
 
 ## File Structure
-- **Modify** `shared/collectionMetrics.ts` (+test) — add `collection_status`/`writeoff_status` attrs + snapshot fields + `resolveCollectionStatus`.
-- **Create** `shared/collectionEngine.ts` (+test) — `EngineConfig`, `decideEntry`, `decideCardLifecycle`.
-- **Modify** `server/storage.ts` — extend `getCardCollectionSnapshot` (status), add `getCardsWithCustomer`, `listEnabledCollectionPipelineIds`.
-- **Create** `server/collection-engine.ts` — `runCollectionEngine()`.
-- **Modify** `server/billing-sync-worker.ts` — Phase 4b call.
+- **Modify** `shared/collectionMetrics.ts` (+test) - add `collection_status`/`writeoff_status` attrs + snapshot fields + `resolveCollectionStatus`.
+- **Create** `shared/collectionEngine.ts` (+test) - `EngineConfig`, `decideEntry`, `decideCardLifecycle`.
+- **Modify** `server/storage.ts` - extend `getCardCollectionSnapshot` (status), add `getCardsWithCustomer`, `listEnabledCollectionPipelineIds`.
+- **Create** `server/collection-engine.ts` - `runCollectionEngine()`.
+- **Modify** `server/billing-sync-worker.ts` - Phase 4b call.
 
 ---
 
@@ -24,7 +24,7 @@
 
 **Files:** Modify `shared/collectionMetrics.ts`, `shared/collectionMetrics.test.ts`.
 
-- [ ] **Step 1: Extend the test** — append to `shared/collectionMetrics.test.ts`:
+- [ ] **Step 1: Extend the test** - append to `shared/collectionMetrics.test.ts`:
 ```ts
 import { resolveCollectionStatus } from "./collectionMetrics.js";
 
@@ -49,7 +49,7 @@ test("buildCollectionSnapshot defaults status fields", () => {
 ```
 (Add `buildCollectionSnapshot` to the existing import line in the test if not already imported.)
 
-- [ ] **Step 2: Run to verify it fails** — `npx tsx --test shared/collectionMetrics.test.ts` → FAIL (resolveCollectionStatus missing, status fields missing).
+- [ ] **Step 2: Run to verify it fails** - `npx tsx --test shared/collectionMetrics.test.ts` → FAIL (resolveCollectionStatus missing, status fields missing).
 
 - [ ] **Step 3: Edit `shared/collectionMetrics.ts`**
 
@@ -72,7 +72,7 @@ export type CollectionAttrKey =
   { key: "writeoff_status", label: "Status Write-Off", valueType: "text" },
 ```
 
-(c) Extend the `CollectionSnapshot` interface — add two fields before the closing `}`:
+(c) Extend the `CollectionSnapshot` interface - add two fields before the closing `}`:
 ```ts
   collectionStatus: string | null;
   writeoffStatus: string | null;
@@ -84,7 +84,7 @@ export type CollectionAttrKey =
     writeoffStatus: "0",
 ```
 
-(e) Extend `attrValue`'s switch — add before `default:`:
+(e) Extend `attrValue`'s switch - add before `default:`:
 ```ts
     case "collection_status": return snap.collectionStatus;
     case "writeoff_status": return snap.writeoffStatus;
@@ -104,7 +104,7 @@ export function resolveCollectionStatus(
 }
 ```
 
-- [ ] **Step 4: Run to verify passes** — `npx tsx --test shared/collectionMetrics.test.ts` → PASS (now 11 tests). `npx tsc --noEmit` → 0 errors. (NOTE: `getCardCollectionSnapshot` in storage builds via `buildCollectionSnapshot`, which now returns the two new fields with defaults — still type-correct. Task 2 overrides them with real values.)
+- [ ] **Step 4: Run to verify passes** - `npx tsx --test shared/collectionMetrics.test.ts` → PASS (now 11 tests). `npx tsc --noEmit` → 0 errors. (NOTE: `getCardCollectionSnapshot` in storage builds via `buildCollectionSnapshot`, which now returns the two new fields with defaults - still type-correct. Task 2 overrides them with real values.)
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -114,7 +114,7 @@ git commit -m "feat(collection): collection_status + writeoff_status attrs + res
 
 ---
 
-## Task 2: Storage — snapshot status + card/pipeline queries
+## Task 2: Storage - snapshot status + card/pipeline queries
 
 **Files:** Modify `server/storage.ts`.
 
@@ -164,7 +164,7 @@ Add `resolveCollectionStatus` to the existing `from "../shared/collectionMetrics
 ```
 `pipelineCards`, `collectionConfig`, `and`, `eq`, `getMitraId` are already imported. ADD `isNotNull` to the existing drizzle-orm import (grep `from "drizzle-orm"`; if `isNotNull` isn't there, add it).
 
-- [ ] **Step 3: Verify** — `npx tsc --noEmit` → 0 errors.
+- [ ] **Step 3: Verify** - `npx tsc --noEmit` → 0 errors.
 
 - [ ] **Step 4: Commit**
 ```bash
@@ -178,7 +178,7 @@ git commit -m "feat(collection): snapshot status resolution + getCardsWithCustom
 
 **Files:** Create `shared/collectionEngine.ts`, `shared/collectionEngine.test.ts`.
 
-- [ ] **Step 1: Write the failing test** — create `shared/collectionEngine.test.ts`:
+- [ ] **Step 1: Write the failing test** - create `shared/collectionEngine.test.ts`:
 ```ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -229,11 +229,11 @@ test("decideCardLifecycle: pay > writeoff > age", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `npx tsx --test shared/collectionEngine.test.ts` → FAIL (module missing).
+- [ ] **Step 2: Run to verify it fails** - `npx tsx --test shared/collectionEngine.test.ts` → FAIL (module missing).
 
 - [ ] **Step 3: Write `shared/collectionEngine.ts`**
 ```ts
-/** Pure decision functions for the collection engine — no I/O. The worker-side engine applies these. */
+/** Pure decision functions for the collection engine - no I/O. The worker-side engine applies these. */
 import { type CollectionSnapshot, isPaidStatus } from "./collectionMetrics.js";
 import { type StageMapRow, stageForOverdue } from "./collectionConfig.js";
 
@@ -290,7 +290,7 @@ export function decideCardLifecycle(snap: CollectionSnapshot, cfg: EngineConfig,
 }
 ```
 
-- [ ] **Step 4: Run to verify passes** — `npx tsx --test shared/collectionEngine.test.ts` → PASS (3 tests). `npx tsc --noEmit` → 0 errors.
+- [ ] **Step 4: Run to verify passes** - `npx tsx --test shared/collectionEngine.test.ts` → PASS (3 tests). `npx tsc --noEmit` → 0 errors.
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -306,9 +306,9 @@ git commit -m "feat(collection): pure engine decisions (decideEntry, decideCardL
 
 - [ ] **Step 1: Write the engine**
 ```ts
-/** Collection engine — runs per billing sync (current tenant). Drives the card lifecycle from
+/** Collection engine - runs per billing sync (current tenant). Drives the card lifecycle from
  *  collection_config + SP1 snapshots. Loop-safe: mutates via storage, dispatches stage-enter automations
- *  once; never re-entered. NOT a route — called by the billing-sync worker inside withMitra. */
+ *  once; never re-entered. NOT a route - called by the billing-sync worker inside withMitra. */
 import { storage } from "./storage.js";
 import { applyRuleActions, runStageEnterAutomations } from "./pipeline-automation.js";
 import { buildCollectionSnapshot } from "../shared/collectionMetrics.js";
@@ -355,7 +355,7 @@ export async function runCollectionEngine(): Promise<{ entered: number; aged: nu
         }
       }
 
-      // (a) Lifecycle pass — all cards-with-customer
+      // (a) Lifecycle pass - all cards-with-customer
       for (const card of allCards) {
         const cid = (card as any).sourceCustomerId as number;
         const snap = snapByCustomer.get(cid);
@@ -379,7 +379,7 @@ export async function runCollectionEngine(): Promise<{ entered: number; aged: nu
         }
       }
 
-      // (b) Entry pass — overdue customers without an active card
+      // (b) Entry pass - overdue customers without an active card
       if (cfg.entryStageId != null) {
         for (const c of customers as any[]) {
           const snap = snapByCustomer.get(c.id);
@@ -416,9 +416,9 @@ export async function runCollectionEngine(): Promise<{ entered: number; aged: nu
   return result;
 }
 ```
-NOTE: confirm `storage.createCard(pipelineId, data, actorId)` returns the created card (it does — used by runBillingIntakeRules) and `storage.moveCard(cardId, toStageId, toPosition, actorId)` signature. `runStageEnterAutomations(card, actorId)` + `applyRuleActions(rule, card, actorId)` are exported from `./pipeline-automation.js` (verified).
+NOTE: confirm `storage.createCard(pipelineId, data, actorId)` returns the created card (it does - used by runBillingIntakeRules) and `storage.moveCard(cardId, toStageId, toPosition, actorId)` signature. `runStageEnterAutomations(card, actorId)` + `applyRuleActions(rule, card, actorId)` are exported from `./pipeline-automation.js` (verified).
 
-- [ ] **Step 2: Verify** — `npx tsc --noEmit` → 0 errors.
+- [ ] **Step 2: Verify** - `npx tsc --noEmit` → 0 errors.
 
 - [ ] **Step 3: Commit**
 ```bash
@@ -441,7 +441,7 @@ import { runCollectionEngine } from "./collection-engine.js";
 - [ ] **Step 2: Add Phase 4b**
 Find the Phase 4 block ending (the `try { const intake = await runBillingIntakeRules(); ... } catch (e: any) { console.error(`[BillingSyncWorker] billing-intake error:`, e.message); }`). Add immediately AFTER that catch:
 ```ts
-      // ── Phase 4b: Collection engine — config-driven lifecycle (entry/aging/writeoff/payment) ──
+      // -- Phase 4b: Collection engine - config-driven lifecycle (entry/aging/writeoff/payment) --
       try {
         const eng = await runCollectionEngine();
         (stats.transitions as any).collection_entered = eng.entered;
@@ -456,7 +456,7 @@ Find the Phase 4 block ending (the `try { const intake = await runBillingIntakeR
       }
 ```
 
-- [ ] **Step 3: Verify** — `npx tsc --noEmit && npm run build` → 0 type errors; build OK.
+- [ ] **Step 3: Verify** - `npx tsc --noEmit && npm run build` → 0 type errors; build OK.
 
 - [ ] **Step 4: Commit**
 ```bash
@@ -496,5 +496,5 @@ Pre: SP2 config enabled (entry 7d / create_if_not_exists / entry+paid stages; wr
 
 ## Notes
 - Loop-safety: engine mutates via storage then calls `runStageEnterAutomations`/`applyRuleActions` once; it is a single pass per sync, never re-entered.
-- Entry cards get title + `sourceCustomerId` (no custom field seeding in SP3a — billing rule conditions read the live customer snapshot, not card fields).
+- Entry cards get title + `sourceCustomerId` (no custom field seeding in SP3a - billing rule conditions read the live customer snapshot, not card fields).
 - Tenant isolation: engine runs inside the worker's `withMitra` context; all storage calls are mitra-scoped.

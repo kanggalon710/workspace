@@ -53,7 +53,7 @@ const sizeMap = {
 };
 
 /**
- * Combobox — searchable select. Great for ODP/router/customer pickers.
+ * Combobox - searchable select. Great for ODP/router/customer pickers.
  *
  * @example
  * const [odpId, setOdpId] = useState<string>();

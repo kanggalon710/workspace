@@ -1,4 +1,4 @@
-/** Teamspace v5.0 — Semua Tugas (FR-412): agregasi tugas lintas tim, view List + Tabel.
+/** Teamspace v5.0 - Semua Tugas (FR-412): agregasi tugas lintas tim, view List + Tabel.
  * View Kalender menyusul Fase 2. */
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
@@ -31,7 +31,7 @@ function stageOf(data: AllTasksResponse | undefined, card: TaskRow) {
   return data?.stages?.[card.pipelineId]?.find((s) => s.id === card.stageId);
 }
 
-/** Status TENGGAT (FR-410) — beda makna dgn status LIST/Kanban (BUG-009): kolom ini soal
+/** Status TENGGAT (FR-410) - beda makna dgn status LIST/Kanban (BUG-009): kolom ini soal
  * KETEPATAN WAKTU, bukan tahap. Tanpa due date → tak ada badge (LIST sudah menunjukkan tahap).
  * Selalu ikon+teks, bukan warna saja (NFR-008). */
 function dueState(card: TaskRow, doneStage: boolean): { variant: "danger" | "warning" | "neutral" | "success"; label: string } | null {
@@ -58,7 +58,7 @@ function isSoon(iso: string | null): boolean {
   return t >= Date.now() && t <= Date.now() + 3 * 24 * 3600 * 1000;
 }
 
-/** View Kalender tugas (FR-411): 2 bulan berdampingan (BUG-010 — konsisten dengan
+/** View Kalender tugas (FR-411): 2 bulan berdampingan (BUG-010 - konsisten dengan
  * Jadwal tim), kartu mini per tanggal tenggat. Menumpuk di layar sempit. */
 function TasksCalendar({ cards, teams, onOpen }: {
   cards: TaskRow[];
@@ -115,7 +115,7 @@ function TasksCalendar({ cards, teams, onOpen }: {
                       key={c.id}
                       type="button"
                       onClick={() => onOpen(c)}
-                      title={`${c.title} — ${c.teamName ?? ""}`}
+                      title={`${c.title} - ${c.teamName ?? ""}`}
                       className="flex w-full items-center gap-1 rounded bg-background px-1 py-0.5 text-left shadow-sm ring-1 ring-border transition-colors hover:bg-muted"
                     >
                       <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: colorByTeam.get(c.teamId ?? -1) ?? "#94A3B8" }} />
@@ -150,7 +150,7 @@ function TasksCalendar({ cards, teams, onOpen }: {
           <ChevronRight className="size-4" />
         </button>
       </div>
-      {/* 2 bulan berdampingan di layar lebar — konsisten dengan tab Jadwal tim (FR-702) */}
+      {/* 2 bulan berdampingan di layar lebar - konsisten dengan tab Jadwal tim (FR-702) */}
       <div className="flex flex-col gap-4 xl:flex-row">
         {renderMonth(0)}
         <div className="hidden w-px bg-border xl:block" aria-hidden="true" />
@@ -263,7 +263,7 @@ export default function AllTasksPage() {
       <PageHeader
         icon={CheckSquare}
         title="Semua Tugas"
-        description="Agregasi tugas dari seluruh tim yang Anda ikuti — satu tempat untuk prioritas hari ini"
+        description="Agregasi tugas dari seluruh tim yang Anda ikuti - satu tempat untuk prioritas hari ini"
         accent="violet"
         onRefresh={() => refetch()}
         refreshing={isRefetching}

@@ -1,4 +1,4 @@
-# MP1 — Universal Pipeline Metrics (core) Implementation Plan
+# MP1 - Universal Pipeline Metrics (core) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. Steps use `- [ ]`.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO worktrees, NO branch switches. Verify `git branch --show-current` is `dev`.**
@@ -12,10 +12,10 @@
 ---
 
 ## File Structure
-- **Create** `shared/pipelineMetrics.ts` (+test) — registries, `aggregate`, `formatMetricValue`.
-- **Modify** `shared/schema.ts` + `server/storage.ts` — `pipeline_metrics` table + migration + CRUD + `getCardValuesForPipeline`.
-- **Create** `server/pipeline-metrics-engine.ts` — `computeAllPipelineMetrics`.
-- **Modify** `server/routes.ts` — compute + CRUD endpoints.
+- **Create** `shared/pipelineMetrics.ts` (+test) - registries, `aggregate`, `formatMetricValue`.
+- **Modify** `shared/schema.ts` + `server/storage.ts` - `pipeline_metrics` table + migration + CRUD + `getCardValuesForPipeline`.
+- **Create** `server/pipeline-metrics-engine.ts` - `computeAllPipelineMetrics`.
+- **Modify** `server/routes.ts` - compute + CRUD endpoints.
 - **Create** `client/components/pipelines/metricIcons.ts`, `MetricsStrip.tsx`, `MetricsConfigDialog.tsx`; **Modify** `client/hooks/usePipelines.ts`, `client/pages/PipelineBoardPage.tsx`.
 
 ---
@@ -24,7 +24,7 @@
 
 **Files:** Create `shared/pipelineMetrics.ts`, `shared/pipelineMetrics.test.ts`.
 
-- [ ] **Step 1: Test** — create `shared/pipelineMetrics.test.ts`:
+- [ ] **Step 1: Test** - create `shared/pipelineMetrics.test.ts`:
 ```ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -56,11 +56,11 @@ test("formatMetricValue", () => {
 });
 ```
 
-- [ ] **Step 2: Run → fail** — `npx tsx --test shared/pipelineMetrics.test.ts`.
+- [ ] **Step 2: Run → fail** - `npx tsx --test shared/pipelineMetrics.test.ts`.
 
 - [ ] **Step 3: Write `shared/pipelineMetrics.ts`**
 ```ts
-/** Pure pipeline-metrics helpers — no I/O. */
+/** Pure pipeline-metrics helpers - no I/O. */
 
 export type MetricSource = "card_count" | "stage_count" | "field_agg";
 export type MetricAggregation = "count" | "sum" | "avg" | "min" | "max" | "distinct";
@@ -121,7 +121,7 @@ export function formatMetricValue(value: number, opts: { type: MetricType; prefi
 }
 ```
 
-- [ ] **Step 4: Run → pass** — `npx tsx --test shared/pipelineMetrics.test.ts` (3 tests). `npx tsc --noEmit` → 0.
+- [ ] **Step 4: Run → pass** - `npx tsx --test shared/pipelineMetrics.test.ts` (3 tests). `npx tsc --noEmit` → 0.
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -200,7 +200,7 @@ git commit -m "feat(metrics): pipeline_metrics table + migration"
 
 ---
 
-## Task 3: Storage — metric def CRUD + batch card values
+## Task 3: Storage - metric def CRUD + batch card values
 
 **Files:** `server/storage.ts`.
 
@@ -298,7 +298,7 @@ export async function computeAllPipelineMetrics(req: Request, pipelineId: number
   if (defs.length === 0) return [];
   const cards = await storage.listCards(pipelineId);
   const valuesByCard = await storage.getCardValuesForPipeline(pipelineId);
-  // Permission row-level filter — only cards the requester may see.
+  // Permission row-level filter - only cards the requester may see.
   const visibleCards = cards.filter((c) => {
     const vals = valuesByCard.get(c.id) ?? {};
     return cardPassesFilter(rowFilter, { values: vals, stageId: (c as any).stageId });
@@ -338,7 +338,7 @@ export async function computeAllPipelineMetrics(req: Request, pipelineId: number
 ```
 NOTE: `cardPassesFilter`/`resolveCardFilter` from `../shared/cardRowFilter.js` (already used in routes.ts). If `resolveCardFilter` isn't needed (the caller passes the resolved filter), drop that import. Confirm `cardPassesFilter(filter, {values, stageId})` signature against routes.ts usage.
 
-- [ ] **Step 2:** `npx tsc --noEmit` → 0. (Remove the unused `resolveCardFilter` import if tsc flags it — `noUnusedLocals` isn't on, but keep imports clean.)
+- [ ] **Step 2:** `npx tsc --noEmit` → 0. (Remove the unused `resolveCardFilter` import if tsc flags it - `noUnusedLocals` isn't on, but keep imports clean.)
 - [ ] **Step 3: Commit**
 ```bash
 git add server/pipeline-metrics-engine.ts
@@ -351,12 +351,12 @@ git commit -m "feat(metrics): computeAllPipelineMetrics engine (stage scope + co
 
 **Files:** `server/routes.ts`.
 
-- [ ] **Step 1: Imports** — add:
+- [ ] **Step 1: Imports** - add:
 ```ts
 import { computeAllPipelineMetrics } from "./pipeline-metrics-engine.js";
 import { METRIC_SOURCES, METRIC_AGGREGATIONS, METRIC_TYPES } from "../shared/pipelineMetrics.js";
 ```
-- [ ] **Step 2: Endpoints** — place near the `/api/pipelines/:id/collection-metrics` GET. Add:
+- [ ] **Step 2: Endpoints** - place near the `/api/pipelines/:id/collection-metrics` GET. Add:
 ```ts
   router.get("/api/pipelines/:id/metrics", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
@@ -404,7 +404,7 @@ import { METRIC_SOURCES, METRIC_AGGREGATIONS, METRIC_TYPES } from "../shared/pip
     return sendSuccess(res, { ok: true });
   });
 ```
-- [ ] **Step 3: Validator** — add a helper near `validateConditions`:
+- [ ] **Step 3: Validator** - add a helper near `validateConditions`:
 ```ts
 async function validateMetricDef(pipelineId: number, b: any): Promise<string | null> {
   if (!b || typeof b.name !== "string" || !b.name.trim()) return "Nama metric wajib diisi";
@@ -439,7 +439,7 @@ git commit -m "feat(metrics): compute + CRUD metric-def endpoints (validated, ga
 
 **Files:** `client/hooks/usePipelines.ts`, create `client/components/pipelines/metricIcons.ts` + `MetricsStrip.tsx`, modify `client/pages/PipelineBoardPage.tsx`.
 
-- [ ] **Step 1: Icon map** — create `client/components/pipelines/metricIcons.ts`:
+- [ ] **Step 1: Icon map** - create `client/components/pipelines/metricIcons.ts`:
 ```ts
 import { Database, Users, Wallet, Phone, BarChart3, AlertCircle, CheckCircle2, XCircle, Calendar, TrendingUp, Clock, Star, type LucideIcon } from "lucide-react";
 export const METRIC_ICON_MAP: Record<string, LucideIcon> = {
@@ -447,7 +447,7 @@ export const METRIC_ICON_MAP: Record<string, LucideIcon> = {
 };
 ```
 
-- [ ] **Step 2: Hooks** — append to `usePipelines.ts`:
+- [ ] **Step 2: Hooks** - append to `usePipelines.ts`:
 ```ts
 export interface MetricResult { id: number; name: string; description: string | null; icon: string | null; color: string; type: string; value: number; formatted: string; }
 export function usePipelineMetrics(pipelineId: number) {
@@ -467,7 +467,7 @@ export function useSaveMetricDef(pipelineId: number) {
 }
 ```
 
-- [ ] **Step 3: MetricsStrip** — create `client/components/pipelines/MetricsStrip.tsx`:
+- [ ] **Step 3: MetricsStrip** - create `client/components/pipelines/MetricsStrip.tsx`:
 ```tsx
 import { Settings2, Plus } from "lucide-react";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -503,14 +503,14 @@ export function MetricsStrip({ pipelineId, canManage, onManage }: { pipelineId: 
 }
 ```
 
-- [ ] **Step 4: Board** — in `client/pages/PipelineBoardPage.tsx`:
+- [ ] **Step 4: Board** - in `client/pages/PipelineBoardPage.tsx`:
   - Import `MetricsStrip` + `MetricsConfigDialog` (Task 7).
   - State: `const [showMetricsCfg, setShowMetricsCfg] = useState(false);`
   - Render `<MetricsStrip pipelineId={pid!} canManage={can("manage")} onManage={() => setShowMetricsCfg(true)} />` immediately BEFORE the `<div className="mt-2"><BoardFilters .../></div>` line (i.e., between the header block and the filters).
   - Mount near the other dialogs: `{showMetricsCfg && pid != null && <MetricsConfigDialog pipelineId={pid} open={showMetricsCfg} onClose={() => setShowMetricsCfg(false)} />}`
   - (`can` + `pid` already exist in the component.)
 
-- [ ] **Step 5:** `npx tsc --noEmit` (MetricsConfigDialog import will fail until Task 7 — acceptable intermediate; OR stub it). To keep this commit green, do Task 7 BEFORE building/committing Task 6, OR temporarily comment the dialog import+mount and add in Task 7. RECOMMENDED: implement Task 7's file first, then this step compiles. Adjust order if needed.
+- [ ] **Step 5:** `npx tsc --noEmit` (MetricsConfigDialog import will fail until Task 7 - acceptable intermediate; OR stub it). To keep this commit green, do Task 7 BEFORE building/committing Task 6, OR temporarily comment the dialog import+mount and add in Task 7. RECOMMENDED: implement Task 7's file first, then this step compiles. Adjust order if needed.
 
 - [ ] **Step 6: Commit** (after Task 7 exists, so the import resolves)
 ```bash
@@ -655,9 +655,9 @@ export function MetricsConfigDialog({ pipelineId, open, onClose }: { pipelineId:
   );
 }
 ```
-NOTE: `usePipeline(pid)` returns `PipelineWithStages` which includes BOTH `stages` AND `fields` (confirmed `client/hooks/usePipelines.ts:7`), so `pipeline?.fields ?? []` and `pipeline?.stages ?? []` are correct — no extra query.
+NOTE: `usePipeline(pid)` returns `PipelineWithStages` which includes BOTH `stages` AND `fields` (confirmed `client/hooks/usePipelines.ts:7`), so `pipeline?.fields ?? []` and `pipeline?.stages ?? []` are correct - no extra query.
 
-IMPORTANT (Tailwind purge): do NOT use a dynamic `bg-${c}/15` class — Tailwind's JIT won't generate it. Define an explicit map at the top of the file and use it for the swatch background:
+IMPORTANT (Tailwind purge): do NOT use a dynamic `bg-${c}/15` class - Tailwind's JIT won't generate it. Define an explicit map at the top of the file and use it for the swatch background:
 ```ts
 const COLOR_BG: Record<string, string> = {
   primary: "bg-primary/15", success: "bg-success/15", warning: "bg-warning/15",

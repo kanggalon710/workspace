@@ -1,5 +1,5 @@
 /** DRY device↔customer matching shared by /api/customers/ont-status (all customers)
- *  and /api/odps/:id/ont-status (per-ODP panel). Pure — testable without GenieACS. */
+ *  and /api/odps/:id/ont-status (per-ODP panel). Pure - testable without GenieACS. */
 import type { ParsedDevice } from "./genieacs.js";
 
 export type DeviceIndexes = {
@@ -23,7 +23,7 @@ export function buildDeviceIndexes(devices: ParsedDevice[]): DeviceIndexes {
 /** Bangun query NBI GenieACS untuk fetch HANYA device milik sekumpulan pelanggan
  *  (mis. satu ODP), bukan seluruh device (~10k). Pure → testable tanpa GenieACS.
  *  Match by factory SN (`_deviceId._SerialNumber`) + PPPoE username (VirtualParameters
- *  ATAU WANPPPConnection.1/.2 — ZTE F660 dkk simpan di WANPPPConnection.2).
+ *  ATAU WANPPPConnection.1/.2 - ZTE F660 dkk simpan di WANPPPConnection.2).
  *  CATATAN: match PON-serial (derived dari PonMac) tidak bisa di-query NBI; butuh full
  *  list (cache warm). Returns null kalau tidak ada identifier → caller skip fetch. */
 export function buildIdentifierQuery(ids: { serials?: (string | null | undefined)[]; pppoeUsernames?: (string | null | undefined)[] }): Record<string, any> | null {

@@ -1,10 +1,10 @@
 /**
- * v4.2.6: PortalTrackerPage — Customer Tracker (mobile)
+ * v4.2.6: PortalTrackerPage - Customer Tracker (mobile)
  *
  * Implementasi visual dari design "Jabnet Work Order" customer-tracker.jsx:
  * 1. Hero gradient navy → blue: brand mark + ticket ID + headline status + progress bar + ETA
  * 2. Teknisi card: avatar + name + team + rating + chat/call icons (round buttons)
- * 3. Vertical timeline dengan stages — pulse ring di stage aktif, last update card with photos
+ * 3. Vertical timeline dengan stages - pulse ring di stage aktif, last update card with photos
  * 4. Reschedule button (dashed border)
  * 5. Chat overlay dengan message bubbles
  *
@@ -20,7 +20,7 @@ import {
   Check, Send, Loader2, Image as ImageIcon, X,
 } from "lucide-react";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 interface Stage {
   key: string;
@@ -62,7 +62,7 @@ interface TrackerData {
   lead: { name: string; username: string; phone: string | null; rating: number } | null;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 function fmtTime(date: string | null | undefined): string {
   if (!date) return "";
@@ -78,7 +78,7 @@ function getInitials(name: string): string {
   return name.split(" ").slice(0, 2).map(s => s[0]).join("").toUpperCase();
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────
+// -- Page -------------------------------------------------------------------
 
 export default function PortalTrackerPage() {
   const [, params] = useRoute("/portal/track/:id");
@@ -361,7 +361,7 @@ export default function PortalTrackerPage() {
   );
 }
 
-// ── Chat overlay (placeholder UI — mock conversation) ──────────────────────
+// -- Chat overlay (placeholder UI - mock conversation) ----------------------
 
 function ChatOverlay({ technicianName, onClose }: { technicianName: string; onClose: () => void }) {
   return (
@@ -389,7 +389,7 @@ function ChatOverlay({ technicianName, onClose }: { technicianName: string; onCl
         <ChatBubble text={`Halo Pak/Bu, saya ${technicianName.split(" ")[0]} teknisi Jabnet. Saya akan menangani tiket Anda `} them />
         <ChatBubble text="Baik mas, saya tunggu" me />
         <ChatBubble text="Saya sudah sampai dan sedang memulai pengerjaan" them />
-        <div className="text-[10px] text-slate-400 text-center my-2">— Mock conversation untuk demo —</div>
+        <div className="text-[10px] text-slate-400 text-center my-2">- Mock conversation untuk demo -</div>
       </div>
 
       <div className="p-3 bg-white border-t border-[#e2e8f0] flex gap-2 items-center">

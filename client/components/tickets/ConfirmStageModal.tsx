@@ -1,5 +1,5 @@
 /**
- * v4.2.18 (B.8): ConfirmStageModal — konfirmasi sebelum "Selesaikan Stage"
+ * v4.2.18 (B.8): ConfirmStageModal - konfirmasi sebelum "Selesaikan Stage"
  * (action irreversible by Helper)
  */
 
@@ -52,7 +52,7 @@ export function ConfirmStageModal({
           </DialogTitle>
           <DialogDescription>
             {isFinalStage
-              ? `Stage final "${stageName}" — setelah ini tiket akan ditutup dan customer dapat survey kepuasan.`
+              ? `Stage final "${stageName}" - setelah ini tiket akan ditutup dan customer dapat survey kepuasan.`
               : `Stage "${stageName}" akan ditandai selesai. Lanjut ke stage berikutnya.`}
           </DialogDescription>
         </DialogHeader>
@@ -82,7 +82,7 @@ export function ConfirmStageModal({
                         <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-rose-100 text-rose-700"> KOSONG</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{f.value || "—"}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{f.value || "-"}</div>
                   </div>
                 </div>
               ))}

@@ -1,4 +1,4 @@
-# Spec — Rule Re-trigger / Recurrence (SP4 of Advanced Pipeline Automation)
+# Spec - Rule Re-trigger / Recurrence (SP4 of Advanced Pipeline Automation)
 
 > Date: 2026-06-09 · Mitra-scoped · Fourth sub-project. SP1/SP2/SP3a merged. Build on `dev`.
 > Makes the once-per-card dedup configurable so the Finance flow can re-run when a customer re-isolirs.
@@ -6,7 +6,7 @@
 ## Goal
 
 Let a `stage_enter` rule re-fire for the same card instead of only once-ever, via a per-rule recurrence
-mode, plus a manual "re-run automation" action. Default stays `once` (today's behavior) — backward
+mode, plus a manual "re-run automation" action. Default stays `once` (today's behavior) - backward
 compatible.
 
 ## Decisions (confirmed)
@@ -14,7 +14,7 @@ compatible.
 1. **Three modes** on the rule: `once` (default) | `on_reenter` | `always`. Plus a **manual retrigger**
    endpoint/button. True calendar/period-keyed recurrence is **out of scope** (mapped to the billing_sync
    new-card-per-cycle path).
-2. **Reuse-vs-fresh on re-fire** is NOT part of SP4 — it's already SP3a's `create_card` `reuseExisting`
+2. **Reuse-vs-fresh on re-fire** is NOT part of SP4 - it's already SP3a's `create_card` `reuseExisting`
    flag (reuse → updates the existing linked card; off → spawns a fresh one).
 3. **`on_reenter` clears its fire when the card leaves the trigger stage** (clear-on-leave), so re-entry
    re-fires. `always` never dedups. `once` never clears.
@@ -25,7 +25,7 @@ compatible.
 `ADD COLUMN` array (info_schema COUNT check). Existing rules → `'once'` (unchanged behavior).
 `shared/schema.ts`: add the column to `pipelineRules` + `export type RuleRecurrence = "once" | "on_reenter" | "always";`
 
-## 2. Pure module — `shared/ruleRecurrence.ts` (no I/O, unit-tested)
+## 2. Pure module - `shared/ruleRecurrence.ts` (no I/O, unit-tested)
 
 ```ts
 export type RuleRecurrence = "once" | "on_reenter" | "always";
@@ -44,7 +44,7 @@ export function dedupBeforeFire(mode: RuleRecurrence): boolean { return mode !==
 export function recordAfterFire(mode: RuleRecurrence): boolean { return mode !== "always"; }
 ```
 
-## 3. Engine — `server/pipeline-automation.ts` (`runRulesForCard` ~183)
+## 3. Engine - `server/pipeline-automation.ts` (`runRulesForCard` ~183)
 
 The blanket `opts.dedup` flag distinguishes stage_enter (dedup-capable) from events (always-fire). Keep
 that, but when `opts.dedup` is true, branch on the rule's recurrence:
@@ -57,12 +57,12 @@ if (opts.dedup && recordAfterFire(mode) && acted) await storage.recordRuleFire(r
 `always` → no skip, no record (fires every dispatch). `once`/`on_reenter` → check + record. Event triggers
 (`opts.dedup=false`) are unchanged.
 
-## 4. Clear-on-leave — move endpoint (`server/routes.ts` ~4836) + storage
+## 4. Clear-on-leave - move endpoint (`server/routes.ts` ~4836) + storage
 
 New storage method:
 ```ts
 // Delete fire records for on_reenter stage_enter rules in `pipelineId` whose trigger stage == fromStageId,
-// for this card — so the rule can fire again on re-entry. Mitra-scoped. Returns count cleared.
+// for this card - so the rule can fire again on re-entry. Mitra-scoped. Returns count cleared.
 clearReentryFires(cardId: number, fromStageId: number, pipelineId: number): Promise<number>;
 ```
 Implementation: find rules where `mitra_id=current AND pipeline_id=pipelineId AND trigger_type='stage_enter'
@@ -79,9 +79,9 @@ if (cardForGuard.stageId !== card.stageId) {
 (No-op moves clear nothing. Clearing the FROM-stage's on_reenter fires + running the TO-stage's enter
 rules act on independent stages, so order doesn't matter for correctness.)
 
-## 5. Manual retrigger — endpoint + storage + UI
+## 5. Manual retrigger - endpoint + storage + UI
 
-- Storage: `clearStageFires(cardId, stageId, pipelineId)` — delete fire rows for stage_enter rules in the
+- Storage: `clearStageFires(cardId, stageId, pipelineId)` - delete fire rows for stage_enter rules in the
   pipeline whose `trigger_stage_id = stageId`, for this card (any recurrence). Returns count.
 - Endpoint `POST /api/pipelines/cards/:cardId/retrigger`: `requireWritePermission("pipelines")` +
   `requirePipelineCapability(cards)` + `requireCardAccess`. Loads the card, `clearStageFires(card.id,
@@ -90,7 +90,7 @@ rules act on independent stages, so order doesn't matter for correctness.)
   hook `useRetriggerCard(cardId)` (invalidates the card + its related/attachments queries). A toast on
   success/failure.
 
-## 6. Rule plumbing — create/update/validate + form/editor
+## 6. Rule plumbing - create/update/validate + form/editor
 
 - `storage.createRule` / `updateRule`: accept + persist `recurrence` (default `'once'` on create).
 - `server/routes.ts` rule POST/PATCH: pass `recurrence` through; clamp to a valid mode via `parseRecurrence`
@@ -118,7 +118,7 @@ rules act on independent stages, so order doesn't matter for correctness.)
 
 ## Out of scope (→ later)
 
-- Calendar/period-keyed recurrence (same card re-fires monthly without a stage move) — covered by the
+- Calendar/period-keyed recurrence (same card re-fires monthly without a stage move) - covered by the
   billing_sync new-card path; revisit only if a non-billing recurrence need appears.
 - Recurrence for non-`stage_enter` triggers (events already fire every time; time triggers have their own
   cadence).

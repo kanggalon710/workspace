@@ -28,7 +28,7 @@
 | `client/pages/RolesPage.tsx` | Modify | `"Administrator"` sweep + System-Admin badge styling (red/danger variant) |
 | `client/pages/ProfilePage.tsx` | Modify | Role label map: tambah `system-admin` + rename label |
 | `client/pages/TicketCategoriesPage.tsx` | Modify | `"Administrator"` sweep (admin check) |
-| `client/pages/UsersPage.tsx` | Modify | Display "Role di mitra primary" — sweep "Administrator" string |
+| `client/pages/UsersPage.tsx` | Modify | Display "Role di mitra primary" - sweep "Administrator" string |
 
 ---
 
@@ -36,7 +36,7 @@
 
 **Files:**
 - Modify: `shared/schema.ts:1002-1008` (add roleId to userMitras)
-- Modify: `server/storage.ts:5248` (startup migration section) — tambah ALTER + backfill SQL
+- Modify: `server/storage.ts:5248` (startup migration section) - tambah ALTER + backfill SQL
 
 - [ ] **Step 1: Add `roleId` column ke `userMitras` schema**
 
@@ -66,7 +66,7 @@ grep -n "ALTER TABLE\|runStartupMigrations\|seedDefaultRoles" server/storage.ts 
 Tambah block baru SEBELUM `seedDefaultRolesIfNeeded()` call (line ~5248). Cari method `init()` atau startup orchestrator dan tambah:
 
 ```ts
-// Phase B+C — auth scoping migration (2026-05-27)
+// Phase B+C - auth scoping migration (2026-05-27)
 // Idempotent: re-run safe via IF NOT EXISTS dan WHERE guards.
 try {
   await this.pool.execute(`ALTER TABLE user_mitras ADD COLUMN IF NOT EXISTS role_id INT NULL`);
@@ -91,7 +91,7 @@ git add shared/schema.ts server/storage.ts
 git commit -m "$(cat <<'EOF'
 feat(schema): add user_mitras.role_id column untuk per-membership role
 
-Phase B persiapan — nullable column untuk override global users.role_id
+Phase B persiapan - nullable column untuk override global users.role_id
 saat resolve permission di context mitra tertentu. ALTER block idempotent
 via IF NOT EXISTS.
 
@@ -105,9 +105,9 @@ EOF
 ## Task 2: Seed "Admin" role + rename "Administrator" → "System-Admin"
 
 **Files:**
-- Modify: `server/storage.ts` `seedDefaultRolesIfNeeded()` (line ~5324) — extend untuk seed Admin role baru
-- Modify: `server/storage.ts` `upgradePermissionsV412()` (line ~5403) — rename Administrator → System-Admin di logic
-- Modify: `server/storage.ts` `updateRole()` guard (line ~5490) — replace string compare
+- Modify: `server/storage.ts` `seedDefaultRolesIfNeeded()` (line ~5324) - extend untuk seed Admin role baru
+- Modify: `server/storage.ts` `upgradePermissionsV412()` (line ~5403) - rename Administrator → System-Admin di logic
+- Modify: `server/storage.ts` `updateRole()` guard (line ~5490) - replace string compare
 
 - [ ] **Step 1: Extend `seedDefaultRolesIfNeeded()` untuk rename + seed Admin role**
 
@@ -116,7 +116,7 @@ Lokasi: `server/storage.ts:5324` (cari `async seedDefaultRolesIfNeeded`). Insert
 ```ts
 async seedDefaultRolesIfNeeded(): Promise<void> {
   // === Phase B+C migration (2026-05-27) ===
-  // 1. Rename Administrator → System-Admin (idempotent — if not exists yet, no-op)
+  // 1. Rename Administrator → System-Admin (idempotent - if not exists yet, no-op)
   try {
     await this.db.execute(sql`UPDATE roles SET name = 'System-Admin' WHERE name = 'Administrator'`);
   } catch (e) {
@@ -443,7 +443,7 @@ async addUserMitra(userId, mitraId, isPrimary, roleId) {
 }
 ```
 
-Untuk existing per-user cache (kalau ada `invalidatePermCache(userId)`), tetap panggil — keep both caches consistent.
+Untuk existing per-user cache (kalau ada `invalidatePermCache(userId)`), tetap panggil - keep both caches consistent.
 
 - [ ] **Step 5: Verify build**
 
@@ -646,7 +646,7 @@ npm run dev
 
 Di browser baru: login dengan default admin (username `admin`, password `Admin@1234` atau `admin123` atau `Galon@12345` per env). Inspect `localStorage.ftth_user`:
 - `isSystemAdmin: true` (kalau admin user properly seeded as System-Admin di mitra=1)
-- `roleName: "System-Admin"` atau "admin (legacy)" — kalau seed migration belum jalan, restart server
+- `roleName: "System-Admin"` atau "admin (legacy)" - kalau seed migration belum jalan, restart server
 
 Login asaka_admin (kalau ada di local dev). Expect `isSystemAdmin: false`, `roleName: "Admin"`.
 
@@ -658,7 +658,7 @@ git commit -m "$(cat <<'EOF'
 refactor(auth): per-mitra permission resolution + sweep Administrator strings
 
 authMiddleware sekarang resolve isSystemAdmin via getUserEffectivePermissionsAtMitra(user, 1)
-— cross-tenant bypass hanya untuk System-Admin role specifically AT mitra=1 (JABNET).
+- cross-tenant bypass hanya untuk System-Admin role specifically AT mitra=1 (JABNET).
 Permission eff loaded for active mitra. Helper computeAuthFlags() dedupe 4 call sites
 (authMiddleware, login, switch-mitra, /me).
 
@@ -676,8 +676,8 @@ EOF
 ## Task 5: `PATCH /api/mitras/:mitraId/members/:userId` endpoint
 
 **Files:**
-- Modify: `server/storage.ts` — add `updateMitraMemberRole(mitraId, userId, roleId)` method
-- Modify: `server/routes.ts` — add PATCH endpoint near existing `/api/mitras/:id/users` (line ~987)
+- Modify: `server/storage.ts` - add `updateMitraMemberRole(mitraId, userId, roleId)` method
+- Modify: `server/routes.ts` - add PATCH endpoint near existing `/api/mitras/:id/users` (line ~987)
 
 - [ ] **Step 1: Add storage method `updateMitraMemberRole`**
 
@@ -723,7 +723,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
   const isSelfMitra = req.authUser.activeMitraId === mitraId;
   const canManage = req.authUser.isSystemAdmin
                  || (isSelfMitra && (req.authUser.roleName === "Admin" || req.authUser.roleName === "System-Admin"));
-  if (!canManage) return sendError(res, "Forbidden — only System-Admin or Admin in this mitra can change roles", 403);
+  if (!canManage) return sendError(res, "Forbidden - only System-Admin or Admin in this mitra can change roles", 403);
 
   // Lookup target role
   const role = await storage.getRoleById(roleId);
@@ -745,7 +745,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
     if (currentRole?.name === "System-Admin" && role.name !== "System-Admin") {
       const count = await storage.countSystemAdminsAtMitra1();
       if (count <= 1) {
-        return sendError(res, "Tidak bisa demote — minimal 1 System-Admin di JABNET wajib ada", 400);
+        return sendError(res, "Tidak bisa demote - minimal 1 System-Admin di JABNET wajib ada", 400);
       }
     }
   }
@@ -766,7 +766,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
 });
 ```
 
-**Catatan**: `getUserMitraMembership(userId, mitraId)` mungkin tidak ada — kalau tidak ada, tambah method storage:
+**Catatan**: `getUserMitraMembership(userId, mitraId)` mungkin tidak ada - kalau tidak ada, tambah method storage:
 
 ```ts
 async getUserMitraMembership(userId: number, mitraId: number): Promise<UserMitra | null> {
@@ -832,7 +832,7 @@ EOF
 
 ---
 
-## Task 6: `POST /api/mitras` extension — transactional admin user creation
+## Task 6: `POST /api/mitras` extension - transactional admin user creation
 
 **Files:**
 - Modify: `server/routes.ts:782-900` `POST /api/mitras` handler
@@ -859,10 +859,10 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
   if (!parsed.success) return sendError(res, "Invalid mitra body", 400, parsed.error.flatten());
   const mitraData = parsed.data;
 
-  // Validate admin body (NEW — wajib)
+  // Validate admin body (NEW - wajib)
   const admin = req.body?.admin;
   if (!admin || typeof admin !== "object") {
-    return sendError(res, "Field 'admin' wajib di body — setiap mitra butuh minimal 1 Admin", 400);
+    return sendError(res, "Field 'admin' wajib di body - setiap mitra butuh minimal 1 Admin", 400);
   }
   const { username, name, email, phone, password } = admin;
   if (!username || !name || !password) {
@@ -951,7 +951,7 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
 
 **Catatan**: 
 - Adjust column list di INSERT statements sesuai actual schema (cek `mitras` table columns di shared/schema.ts).
-- Field `displayName`, `logoUrl`, `features`, dst — sesuaikan kalau column berbeda nama atau optional.
+- Field `displayName`, `logoUrl`, `features`, dst - sesuaikan kalau column berbeda nama atau optional.
 
 - [ ] **Step 3: Verify build**
 
@@ -1026,7 +1026,7 @@ EOF
 
 ---
 
-## Task 7: Frontend MembersTab — role selector per row + banner update
+## Task 7: Frontend MembersTab - role selector per row + banner update
 
 **Files:**
 - Modify: `client/pages/MitraPage.tsx` `MembersTab` component (line ~775)
@@ -1059,7 +1059,7 @@ const { data: roles = [] } = useQuery<{ id: number; name: string; isSystem: numb
 });
 ```
 
-(Sesuaikan dengan existing query pattern di file ini — kalau ada custom `apiFetch` helper, pakai itu.)
+(Sesuaikan dengan existing query pattern di file ini - kalau ada custom `apiFetch` helper, pakai itu.)
 
 - [ ] **Step 3: Add update role mutation**
 
@@ -1125,7 +1125,7 @@ Cari section `{members.map(...)}` atau equivalent. Replace dengan:
               {availableRoles.map((r) => (
                 <SelectItem key={r.id} value={String(r.id)}>
                   {r.name}
-                  {r.name === "System-Admin" && <span className="ml-1 text-[10px] text-red-500">⚠ cross-tenant</span>}
+                  {r.name === "System-Admin" && <span className="ml-1 text-[10px] text-red-500"> cross-tenant</span>}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1143,7 +1143,7 @@ Cari section `{members.map(...)}` atau equivalent. Replace dengan:
 )}
 ```
 
-(Sesuaikan dengan struktur data sebenarnya dari `members` query — gunakan field name yang sesuai response GET /api/mitras/:id.)
+(Sesuaikan dengan struktur data sebenarnya dari `members` query - gunakan field name yang sesuai response GET /api/mitras/:id.)
 
 - [ ] **Step 5: Update info banner text dari Part A**
 
@@ -1157,13 +1157,13 @@ Update text:
 
 ```tsx
 // Sebelum:
-<span className="font-semibold">Tips:</span> Pastikan setiap mitra punya <strong>minimal 1 user dari JABNET dengan role Administrator</strong> sebagai entry point — biar mereka bisa kelola data + tambah user lain. Mitra baru tidak bisa diakses kalau belum ada admin assigned.
+<span className="font-semibold">Tips:</span> Pastikan setiap mitra punya <strong>minimal 1 user dari JABNET dengan role Administrator</strong> sebagai entry point - biar mereka bisa kelola data + tambah user lain. Mitra baru tidak bisa diakses kalau belum ada admin assigned.
 
 // Sesudah:
 <span className="font-semibold">Tips:</span> Setiap mitra wajib punya minimal 1 user dengan role <strong>Admin</strong> sebagai entry point. Khusus mitra <strong>JABNET (mitra=1)</strong>, role yang dimaksud adalah <strong>System-Admin</strong> (cross-tenant). Mitra baru tidak bisa diakses tanpa Admin assigned.
 ```
 
-- [ ] **Step 6: Update Add Member dropdown — add role selector**
+- [ ] **Step 6: Update Add Member dropdown - add role selector**
 
 Cari section "Tambah user via dropdown" atau add member form. Update jadi 2-dropdown:
 
@@ -1184,7 +1184,7 @@ Cari section "Tambah user via dropdown" atau add member form. Update jadi 2-drop
 </div>
 ```
 
-Update addMutation body untuk include `roleId`. Update existing backend `POST /api/mitras/:id/users` untuk accept roleId field — sebelum task 7 commit, verify ini sudah handle atau extend.
+Update addMutation body untuk include `roleId`. Update existing backend `POST /api/mitras/:id/users` untuk accept roleId field - sebelum task 7 commit, verify ini sudah handle atau extend.
 
 ```bash
 grep -n 'router.post("/api/mitras/:id/users"' server/routes.ts
@@ -1285,7 +1285,7 @@ useEffect(() => {
 ```tsx
 <DialogContent>
   <DialogHeader>
-    <DialogTitle>Tambah Mitra {step === 2 && "— Step 2/2"}</DialogTitle>
+    <DialogTitle>Tambah Mitra {step === 2 && "- Step 2/2"}</DialogTitle>
     <DialogDescription>
       {step === 1 ? "Detail mitra & feature toggles" : "Akun Administrator (wajib)"}
     </DialogDescription>
@@ -1299,7 +1299,7 @@ useEffect(() => {
   ) : (
     <div className="space-y-3">
       <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200">
-        ℹ️ Setiap mitra wajib punya 1 Admin sebagai entry point. Password yang Anda set di sini bisa digunakan langsung untuk login.
+        ℹ Setiap mitra wajib punya 1 Admin sebagai entry point. Password yang Anda set di sini bisa digunakan langsung untuk login.
       </div>
       <FormField label="Username" htmlFor="admin-username" required error={adminErrors.username}>
         <Input id="admin-username" value={adminForm.username}
@@ -1400,7 +1400,7 @@ const createMutation = useMutation({
   onSuccess: (data) => {
     toast({
       title: "Mitra dibuat",
-      description: `Admin: ${data.adminUser.username} — bisa login sekarang.`,
+      description: `Admin: ${data.adminUser.username} - bisa login sekarang.`,
     });
     queryClient.invalidateQueries({ queryKey: ["mitras"] });
     setStep(1);
@@ -1454,7 +1454,7 @@ Submit kirim 1 POST /api/mitras dengan combined body { ...mitraFields,
 admin: { username, name, email?, phone?, password } }. Backend handle
 transaction (Task 6).
 
-Toast post-create info "Admin: <username> — bisa login sekarang."
+Toast post-create info "Admin: <username> - bisa login sekarang."
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
@@ -1466,9 +1466,9 @@ EOF
 ## Task 9: Frontend RolesPage + ProfilePage + TicketCategoriesPage sweep
 
 **Files:**
-- Modify: `client/pages/RolesPage.tsx:468, 504, 507` — replace "Administrator" guards
-- Modify: `client/pages/ProfilePage.tsx:93` — role label map
-- Modify: `client/pages/TicketCategoriesPage.tsx:127` — admin check
+- Modify: `client/pages/RolesPage.tsx:468, 504, 507` - replace "Administrator" guards
+- Modify: `client/pages/ProfilePage.tsx:93` - role label map
+- Modify: `client/pages/TicketCategoriesPage.tsx:127` - admin check
 
 - [ ] **Step 1: Update RolesPage.tsx string references**
 
@@ -1504,7 +1504,7 @@ Cari section yang render role card. Tambah special styling kalau `role.name === 
 // Cari render role item, biasanya ada className dynamic atau Badge:
 <Badge variant={role.name === "System-Admin" ? "destructive" : (role.isSystem ? "default" : "secondary")}>
   {role.name}
-  {role.name === "System-Admin" && " ⚠"}
+  {role.name === "System-Admin" && " "}
 </Badge>
 ```
 
@@ -1527,14 +1527,14 @@ const roleMap = {
 
 // → ganti:
 const roleMap = {
-  admin: { label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400", icon: ShieldCheck, desc: "Legacy admin — akan diganti System-Admin" },
+  admin: { label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400", icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
   "System-Admin": { label: "System Admin", color: "text-red-600 dark:text-red-400", icon: ShieldCheck, desc: "Akses cross-tenant (JABNET pusat)" },
   "Admin": { label: "Admin", color: "text-blue-600 dark:text-blue-400", icon: Shield, desc: "Akses penuh di satu mitra" },
   // ...keep rest
 };
 ```
 
-Pastikan `roleMap[user.role]` access tetap aman — kalau key tidak ada, fallback ke object default.
+Pastikan `roleMap[user.role]` access tetap aman - kalau key tidak ada, fallback ke object default.
 
 - [ ] **Step 4: Update TicketCategoriesPage.tsx admin check**
 
@@ -1561,7 +1561,7 @@ refactor(ui): sweep Administrator → System-Admin/Admin di client pages
 
 - RolesPage: canSeeAllData lock untuk System-Admin; bulk-set permission
   buttons disabled untuk System-Admin + Admin (both built-in)
-- RolesPage: badge styling khusus System-Admin (destructive variant + ⚠)
+- RolesPage: badge styling khusus System-Admin (destructive variant + )
 - ProfilePage: role label map tambah entry System-Admin + Admin
 - TicketCategoriesPage: isAdmin check expand jadi accept 4 role names
 
@@ -1574,7 +1574,7 @@ EOF
 
 ## Task 10: Verification + manual test matrix + push
 
-**Files:** No code changes — verification only.
+**Files:** No code changes - verification only.
 
 - [ ] **Step 1: Full typecheck + build**
 
@@ -1585,13 +1585,13 @@ npm run build
 
 Expected: 0 errors, build success.
 
-- [ ] **Step 2: Grep audit — ensure no stale "Administrator" string left in code**
+- [ ] **Step 2: Grep audit - ensure no stale "Administrator" string left in code**
 
 ```bash
 grep -rn '"Administrator"' server/ client/ shared/ --include='*.ts' --include='*.tsx'
 ```
 
-Expected: setiap occurrence yang masih ada harus DELIBERATE — either:
+Expected: setiap occurrence yang masih ada harus DELIBERATE - either:
 - Legacy backward-compat (e.g. `=== "Administrator"` di filter OR clause), OR
 - Migration SQL string literal (sengaja untuk rename `WHERE name = 'Administrator'`)
 - Comment / doc string
@@ -1618,7 +1618,7 @@ Test sequence (semua via browser):
 | 8 | Logout, login new admin (username dari step 7) | Login sukses, active mitra = mitra baru, data kosong | |
 | 9 | Sebagai new admin, akses /mitra | 403 atau hide (bukan System-Admin) | |
 | 10 | Sebagai new admin, akses /customers | Tampil 0 customers (mitra baru kosong) | |
-| 11 | Logout, login `admin` → /roles | 2 role baru muncul: "System-Admin" (badge red ⚠) + "Admin" | |
+| 11 | Logout, login `admin` → /roles | 2 role baru muncul: "System-Admin" (badge red ) + "Admin" | |
 | 12 | Click System-Admin role → preview | canSeeAllData checkbox locked (disabled) | |
 | 13 | /mitra → edit mitra baru → Anggota → try assign System-Admin di dropdown | Option tidak muncul (filtered) | |
 

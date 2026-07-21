@@ -57,7 +57,7 @@ export default function Dashboard() {
     retry: false,
   });
 
-  // v4.1.5: Aktivitas Terakhir — pull real data dari audit log (internal staff only)
+  // v4.1.5: Aktivitas Terakhir - pull real data dari audit log (internal staff only)
   const { data: recentActivity = [] } = useQuery<any[]>({
     queryKey: ["/api/audit-logs", "recent-dashboard"],
     queryFn: () => api.get<any[]>("/audit-logs?limit=8"),
@@ -68,11 +68,11 @@ export default function Dashboard() {
   // Global Filter
   const [globalDistrict, setGlobalDistrict] = useState("__all__");
 
-  // Filter state — ODP Breakdown
+  // Filter state - ODP Breakdown
   const [odpFilterDistrict, setOdpFilterDistrict] = useState("__all__");
   const [odpFilterStatus, setOdpFilterStatus] = useState("__all__");
 
-  // Filter state — Demografi
+  // Filter state - Demografi
   const [demoFilterDistrict, setDemoFilterDistrict] = useState("__all__");
 
   // Konfigurasi Filter Sinkronisasi
@@ -173,7 +173,7 @@ export default function Dashboard() {
     { name: "Drop", value: cableMeters.drop },
   ].filter(d => d.value > 0);
 
-  // ── APLIKASIKAN GLOBAL FILTER PADA METRIK LOKAL ──
+  // -- APLIKASIKAN GLOBAL FILTER PADA METRIK LOKAL --
   const odpListRaw = odpUtil?.odps || [];
   const filteredCustomers = customers ? (globalDistrict !== "__all__" ? customers.filter((c: any) => c.district?.trim() === globalDistrict) : customers) : [];
   
@@ -272,7 +272,7 @@ export default function Dashboard() {
         }
       />
 
-      {/* ── BILLING SYNC STATUS BANNER ──────────────────────────────── */}
+      {/* -- BILLING SYNC STATUS BANNER -------------------------------- */}
       {syncStatus?.stale === true && (
         <div className="flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
           <div className="shrink-0 w-10 h-10 rounded-lg bg-destructive/15 flex items-center justify-center">
@@ -299,7 +299,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── CAPACITY COMMAND BAR ───────────────────────────────────── */}
+      {/* -- CAPACITY COMMAND BAR ------------------------------------- */}
       {(() => {
         const totalPorts = data.totalPortUsage.total || 1;
         const portTersediaPct = (data.portTersediaTotal / totalPorts) * 100;
@@ -347,7 +347,7 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* ── HERO KPI: Health Score & Alerts ────────────────────────────── */}
+      {/* -- HERO KPI: Health Score & Alerts ------------------------------ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className={`md:col-span-1 border-primary/20 transition-all ${showScoreDetails ? 'row-span-2' : ''} bg-gradient-to-br from-primary/10 via-background to-background`}>
           <CardContent className="p-5 flex flex-col h-full">
@@ -475,7 +475,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── SEKSI 2: Pelanggan ─────────────────────────────────────── */}
+      {/* -- SEKSI 2: Pelanggan --------------------------------------- */}
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Pelanggan
@@ -529,7 +529,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── SEKSI 3: Kabel per Kategori ────────────────────────────── */}
+      {/* -- SEKSI 3: Kabel per Kategori ------------------------------ */}
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Kabel Fiber Optik
@@ -571,7 +571,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── SEKSI 4: Core Management ───────────────────────────────── */}
+      {/* -- SEKSI 4: Core Management --------------------------------- */}
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Core Management
@@ -607,7 +607,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── CHARTS ROW ─────────────────────────────────────────────── */}
+      {/* -- CHARTS ROW ----------------------------------------------- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Kapasitas vs Utilisasi ODP */}
         <Card className="col-span-1">
@@ -864,7 +864,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── ODP UTILIZATION ────────────────────────────────────────── */}
+      {/* -- ODP UTILIZATION ------------------------------------------ */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -879,7 +879,7 @@ export default function Dashboard() {
         </div>
 
         <p className="text-xs text-muted-foreground mb-4">
-          Target penetrasi: setiap ODP minimal <strong>80%</strong> terisi — maksimal <strong>100%</strong> (penuh = sukses)
+          Target penetrasi: setiap ODP minimal <strong>80%</strong> terisi - maksimal <strong>100%</strong> (penuh = sukses)
         </p>
 
         {!odpUtil ? (
@@ -920,14 +920,14 @@ export default function Dashboard() {
                     {
                       label: "ODP Penuh",
                       value: full,
-                      sub: "100% — Butuh ekspansi ODP baru",
+                      sub: "100% - Butuh ekspansi ODP baru",
                       icon: AlertTriangle,
                       color: "text-blue-500", bg: "bg-blue-500/10",
                     },
                     {
                       label: "Di Bawah Target",
                       value: belowTarget,
-                      sub: "< 80% — Perlu penetrasi lebih",
+                      sub: "< 80% - Perlu penetrasi lebih",
                       icon: PackageOpen,
                       color: belowTarget > 0 ? "text-red-500" : "text-green-500",
                       bg: belowTarget > 0 ? "bg-red-500/10" : "bg-green-500/10",
@@ -987,7 +987,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 text-[10px] text-muted-foreground hidden md:flex">
                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> 100% Penuh</span>
                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> ≥80% Target</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> 50–79%</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> 50-79%</span>
                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> &lt;50%</span>
                     </div>
                   </div>
@@ -1002,7 +1002,7 @@ export default function Dashboard() {
                         <SelectItem value="__all__">Semua Kecamatan</SelectItem>
                         {odpDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                         {odpListRaw.some((o: any) => !o.district) && (
-                          <SelectItem value="__nodistrict__">— Belum Ada Data —</SelectItem>
+                          <SelectItem value="__nodistrict__">- Belum Ada Data -</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -1014,7 +1014,7 @@ export default function Dashboard() {
                         <SelectItem value="__all__">Semua Status</SelectItem>
                         <SelectItem value="penuh">Penuh (100%)</SelectItem>
                         <SelectItem value="ontarget">On Target (≥80%)</SelectItem>
-                        <SelectItem value="kurang">Kurang (50–79%)</SelectItem>
+                        <SelectItem value="kurang">Kurang (50-79%)</SelectItem>
                         <SelectItem value="rendah">Rendah (&lt;50%)</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1062,7 +1062,7 @@ export default function Dashboard() {
                                 <div className="text-[10px] text-muted-foreground font-mono">{odp.code}</div>
                               </td>
                               <td className="px-3 py-2.5 text-[11px] text-muted-foreground">
-                                {(odp as any).district || <span className="italic opacity-50">—</span>}
+                                {(odp as any).district || <span className="italic opacity-50">-</span>}
                               </td>
                               <td className="px-3 py-2.5 text-center">
                                 <div className="inline-flex items-center justify-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
@@ -1114,14 +1114,14 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── DEMOGRAFI KECAMATAN ────────────────────────────────────── */}
+      {/* -- DEMOGRAFI KECAMATAN -------------------------------------- */}
       {(() => {
         // Hitung distribusi kecamatan dari pelanggan dan ODP
         const custByDistrict = new Map<string, number>();
         const villageByDistrict = new Map<string, Map<string, number>>();
         for (const c of customers ?? []) {
           const d = (c as any).district?.trim() || "Tidak Diketahui";
-          const v = (c as any).village?.trim() || "—";
+          const v = (c as any).village?.trim() || "-";
           custByDistrict.set(d, (custByDistrict.get(d) ?? 0) + 1);
           if (!villageByDistrict.has(d)) villageByDistrict.set(d, new Map());
           const vm = villageByDistrict.get(d)!;
@@ -1236,7 +1236,7 @@ export default function Dashboard() {
                               </div>
                             </td>
                             <td className="px-4 py-2.5 text-center tabular-nums text-xs font-bold">{cust}</td>
-                            <td className="px-4 py-2.5 text-center tabular-nums text-xs text-muted-foreground">{odpCount || "—"}</td>
+                            <td className="px-4 py-2.5 text-center tabular-nums text-xs text-muted-foreground">{odpCount || "-"}</td>
                             <td className="px-4 py-2.5 text-center">
                               {odpCap > 0 ? (
                                 <div className="inline-flex items-center justify-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-semibold">
@@ -1270,7 +1270,7 @@ export default function Dashboard() {
                 {selectedVillages && selectedVillages.length > 0 && (
                   <div className="border-t bg-muted/10">
                     <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      Kelurahan / Desa — {demoFilterDistrict}
+                      Kelurahan / Desa - {demoFilterDistrict}
                     </div>
                     <table className="w-full text-sm">
                       <thead>
@@ -1309,7 +1309,7 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* ── CUSTOMER GROWTH & ACTIVITY FEED ────────────────────────── */}
+      {/* -- CUSTOMER GROWTH & ACTIVITY FEED -------------------------- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="md:col-span-2">
           <CardHeader className="pb-2">

@@ -10,7 +10,7 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 
-// ── Lazy-loaded pages ──
+// -- Lazy-loaded pages --
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const BerandaPage = lazy(() => import("@/pages/BerandaPage"));
 const DivisionHubPage = lazy(() => import("@/pages/DivisionHubPage"));
@@ -91,7 +91,7 @@ const PerformancePage = lazy(() => import("@/pages/PerformancePage"));
 const CheersPage = lazy(() => import("@/pages/CheersPage"));
 const ChatwootAgentMapPage = lazy(() => import("@/pages/ChatwootAgentMapPage"));
 
-// ── Loading fallback ──
+// -- Loading fallback --
 function PageLoader() {
   return (
     <div
@@ -120,7 +120,7 @@ function PageLoader() {
  * Permission guard untuk per-route access control.
  * Jika user tidak punya read permission untuk feature tertentu, tampilkan
  * halaman Access Denied dengan link kembali ke dashboard.
- * Sidebar sudah hide menu-nya, tapi user bisa tetap type URL langsung — guard ini blokir akses itu.
+ * Sidebar sudah hide menu-nya, tapi user bisa tetap type URL langsung - guard ini blokir akses itu.
  */
 function WithPerm({ permission, requireSystemAdmin, children }: { permission?: string; requireSystemAdmin?: boolean; children: React.ReactNode }) {
   const { canRead, user } = useAuth();
@@ -187,7 +187,7 @@ function ProtectedRouter() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  // ── Global keyboard shortcuts ──
+  // -- Global keyboard shortcuts --
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Don't fire if typing in input/textarea
@@ -235,13 +235,13 @@ function ProtectedRouter() {
           <Route path="/" component={BerandaPage} />
           <Route path="/divisi/:key" component={DivisionHubPage} />
           <Route path="/dashboard-jaringan" component={Dashboard} />
-          {/* SDM: tanpa WithPerm — cuti self-service untuk semua staff; tab HR di-gate izin hr_sdm di halaman */}
+          {/* SDM: tanpa WithPerm - cuti self-service untuk semua staff; tab HR di-gate izin hr_sdm di halaman */}
           <Route path="/hrd/sdm" component={SdmPage} />
-          {/* ESS absen: semua staff (GPS+selfie) — PRD-HR FR-HR-1102 */}
+          {/* ESS absen: semua staff (GPS+selfie) - PRD-HR FR-HR-1102 */}
           <Route path="/hr/absen" component={EssAbsenPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/showcase" component={ShowcasePage} />
-          {/* Aset jaringan — guarded per feature permission */}
+          {/* Aset jaringan - guarded per feature permission */}
           <Route path="/map">{() => <WithPerm permission="map"><MapPage /></WithPerm>}</Route>
           <Route path="/pops">{() => <WithPerm permission="pops"><PopsPage /></WithPerm>}</Route>
           <Route path="/odcs">{() => <WithPerm permission="odcs"><OdcsPage /></WithPerm>}</Route>
@@ -270,7 +270,7 @@ function ProtectedRouter() {
           <Route path="/collections/marketing">{() => <WithPerm permission="leads"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
           <Route path="/pipelines/:id">{() => <WithPerm permission="pipelines"><PipelineBoardPage /></WithPerm>}</Route>
-          {/* Teamspace v5.0 — kolaborasi tim internal */}
+          {/* Teamspace v5.0 - kolaborasi tim internal */}
           <Route path="/teamspace/tasks">{() => <WithPerm permission="team_tasks"><AllTasksPage /></WithPerm>}</Route>
           <Route path="/teamspace/teams">{() => <WithPerm permission="team_tasks"><TeamListPage /></WithPerm>}</Route>
           <Route path="/teamspace/teams/:id">{() => <WithPerm permission="team_tasks"><TeamPage /></WithPerm>}</Route>
@@ -354,7 +354,7 @@ function ProtectedRouter() {
 }
 
 // v4.2.13: Detect kalau diakses lewat domain portal khusus pelanggan.
-// Saat hostname = portal.jabnet.id (atau env override), routing dibatasi ke /portal/* saja —
+// Saat hostname = portal.jabnet.id (atau env override), routing dibatasi ke /portal/* saja -
 // staff workspace ngga ke-load di sini, sidebar/staff dashboard tidak muncul.
 const PORTAL_HOSTNAMES = ["portal.jabnet.id", "portal.jabnet.local"];
 function isPortalDomain(): boolean {
@@ -370,19 +370,19 @@ function isPortalDomain(): boolean {
 
 function Router() {
   const portalOnly = isPortalDomain();
-  // v4.2.14: pakai <Switch> terpisah per domain — wouter ngga flatten fragment children,
+  // v4.2.14: pakai <Switch> terpisah per domain - wouter ngga flatten fragment children,
   // jadi <Route> harus jadi direct child <Switch>, ngga dibungkus <>.
   if (portalOnly) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Switch>
-          {/* Domain portal.jabnet.id — HANYA portal pelanggan */}
+          {/* Domain portal.jabnet.id - HANYA portal pelanggan */}
           <Route path="/portal" component={PortalLoginPage} />
           <Route path="/portal/login" component={PortalLoginPage} />
           <Route path="/portal/verify" component={PortalVerifyOtpPage} />
           <Route path="/portal/dashboard" component={PortalDashboardPage} />
           <Route path="/portal/track/:id" component={PortalTrackerPage} />
-          {/* v4.2.17: Public CSAT — accessible tanpa login via WhatsApp link */}
+          {/* v4.2.17: Public CSAT - accessible tanpa login via WhatsApp link */}
           <Route path="/csat/:token" component={PortalCsatPage} />
           <Route path="/portal/csat/:token" component={PortalCsatPage} />
           <Route path="/coverage-check" component={CoverageCheckPage} />
@@ -397,7 +397,7 @@ function Router() {
       <Switch>
         <Route path="/login" component={LoginPage} />
         <Route path="/coverage-check" component={CoverageCheckPage} />
-        {/* Portal Pelanggan (public) — v4.1.3 — tetap accessible di domain lama */}
+        {/* Portal Pelanggan (public) - v4.1.3 - tetap accessible di domain lama */}
         <Route path="/portal" component={PortalLoginPage} />
         <Route path="/portal/login" component={PortalLoginPage} />
         <Route path="/portal/verify" component={PortalVerifyOtpPage} />
@@ -406,7 +406,7 @@ function Router() {
         <Route path="/csat/:token" component={PortalCsatPage} />
         <Route path="/portal/csat/:token" component={PortalCsatPage} />
         <Route path="/portal/:rest*">{() => <Redirect to="/portal/login" />}</Route>
-        {/* Phase G — per-mitra portal URL scoping. Slug is stashed by CustomerPortalAuthContext
+        {/* Phase G - per-mitra portal URL scoping. Slug is stashed by CustomerPortalAuthContext
             and passed via X-Mitra-Slug header on every /api/portal/* call. */}
         <Route path="/t/:slug/portal" component={PortalLoginPage} />
         <Route path="/t/:slug/portal/login" component={PortalLoginPage} />

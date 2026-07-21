@@ -68,7 +68,7 @@ declare module "express-serve-static-core" {
       effectiveRoleId: number | null;  // resolved per-mitra role id (distinct from global roleId)
       roleName: string | null;
       isSystemAdmin: boolean;        // true jika role bawaan System-Admin di mitra=1 (cross-tenant full access)
-      canSeeAllData: boolean;        // supervisor flag — lihat data semua user
+      canSeeAllData: boolean;        // supervisor flag - lihat data semua user
       permLevels: Record<string, PermissionLevel>;  // {feature: "read"|"write"|"none"}
       permissions: string[];          // DEPRECATED: legacy array of permission keys (read or write >= "read")
       activeMitraId: number;          // Phase B: currently active tenant (default 1 = JABNET)
@@ -114,12 +114,12 @@ router.get("/api/health", (_req: Request, res: Response) => {
 });
 const SERVER_STARTED_AT = Date.now();
 
-// Public, unauthenticated config — used by GoogleMapsProvider on app load.
+// Public, unauthenticated config - used by GoogleMapsProvider on app load.
 // Only safe values exposed (Maps key is domain-restricted at GCP side).
 // In-memory cache per mitra (slug or id) with 60s TTL to avoid DB hammer.
 // Phase F: respect per-mitra google_maps_api_key override (falls back to global app_settings).
 const publicConfigCache = new Map<string, { data: { googleMapsApiKey: string }; expiresAt: number }>();
-/** GET /api/public/mitras/by-slug/:slug — public lookup for portal slug resolution. NO AUTH. */
+/** GET /api/public/mitras/by-slug/:slug - public lookup for portal slug resolution. NO AUTH. */
 router.get("/api/public/mitras/by-slug/:slug", async (req: Request, res: Response) => {
   try {
     const slug = String(req.params.slug ?? "").toLowerCase().trim();
@@ -174,7 +174,7 @@ router.get("/api/public-config", async (req: Request, res: Response) => {
 });
 
 router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
-  // Env gate FIRST — on production these vars are absent, so the route 404s (looks like it doesn't exist).
+  // Env gate FIRST - on production these vars are absent, so the route 404s (looks like it doesn't exist).
   if (!devDbSyncAvailable(process.env)) return sendError(res, "Not found", 404);
   if (!requireWritePermission(req, res, "integrations")) return;
   try {
@@ -193,7 +193,7 @@ router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
       const tmpDir = path.join(process.cwd(), "tmp");
       await mkdir(tmpDir, { recursive: true });
       await writeFile(path.join(tmpDir, "restart.txt"), new Date().toISOString());
-    } catch { /* ignore — not fatal */ }
+    } catch { /* ignore - not fatal */ }
   } catch (e: any) {
     sendError(res, e?.message || "Sinkronisasi gagal", 500);
   }
@@ -247,7 +247,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
       let activeMitraId = Number((user as any).activeMitraId ?? 1);
       const isMember = await storage.isUserMemberOfMitra(user.id, activeMitraId);
       if (!isMember) {
-        // User's activeMitraId is invalid/revoked — fallback to primary membership or 1
+        // User's activeMitraId is invalid/revoked - fallback to primary membership or 1
         const memberships = await storage.getUserMitras(user.id);
         activeMitraId = memberships[0]?.id ?? 1;
       }
@@ -321,7 +321,7 @@ function requireWritePermission(req: Request, res: Response, feature: string): b
 
 /** Teamspace v5.0: endpoint pipeline melayani juga board tugas tim, jadi gerbang fitur
  *  menerima key `pipelines` ATAU `team_tasks`. Ini TIDAK membocorkan data: resolusi
- *  per-pipeline di getPipelineCapabilities tetap ketat — pemegang team_tasks tanpa
+ *  per-pipeline di getPipelineCapabilities tetap ketat - pemegang team_tasks tanpa
  *  key pipelines mendapat nol kapabilitas atas pipeline ops, dan sebaliknya pemegang
  *  pipelines yang bukan anggota tim mendapat nol kapabilitas atas board tim. */
 function requirePipelinesFeature(req: Request, res: Response): boolean {
@@ -350,7 +350,7 @@ const PATH_TO_FEATURE: Array<{ pattern: RegExp; feature: string }> = [
   { pattern: /^\/api\/marketing\/ads\b/, feature: "marketing_ads" },
   { pattern: /^\/api\/marketing\b/, feature: "marketing_dashboard" },
   // Billing / MikroTik / ONT
-  // v4.1.2: Collections + billing sync — urutkan SEBELUM /api/billing\b biar spesifik tangkap duluan
+  // v4.1.2: Collections + billing sync - urutkan SEBELUM /api/billing\b biar spesifik tangkap duluan
   { pattern: /^\/api\/collections\b/, feature: "collections" },
   { pattern: /^\/api\/billing\/sync\b/, feature: "billing_sync" },
   { pattern: /^\/api\/billing\b/, feature: "billing_sync" },
@@ -418,7 +418,7 @@ function globalWriteGuard(req: Request, res: Response, next: NextFunction) {
   const matched = PATH_TO_FEATURE.find(m => m.pattern.test(path));
   if (!matched) return next(); // endpoint belum di-map → biarkan (fallback ke guard internal route)
 
-  // Teamspace: endpoint pipeline dipakai juga board tugas tim — team_tasks write setara
+  // Teamspace: endpoint pipeline dipakai juga board tugas tim - team_tasks write setara
   // (keamanan per-pipeline tetap di getPipelineCapabilities).
   if (matched.feature === "pipelines" && hasWritePermission(req, "team_tasks")) return next();
 
@@ -440,7 +440,7 @@ function isSystemAdmin(req: Request): boolean {
 /** Validate a user may be assigned to a card in this pipeline, in the current request context.
  *  Returns null if OK, else an Indonesian error string.
  *  - Always: target user must exist and be active.
- *  - JABNET sysadmin: any existing+active user (cross-tenant, record-only — grants no access).
+ *  - JABNET sysadmin: any existing+active user (cross-tenant, record-only - grants no access).
  *  - Everyone else: target must already have access to the pipeline (existing rule preserved). */
 async function validateAssignTarget(req: Request, userId: number, pipelineId: number): Promise<string | null> {
   const u = await storage.getUser(userId);
@@ -452,7 +452,7 @@ async function validateAssignTarget(req: Request, userId: number, pipelineId: nu
 
 async function logAudit(req: Request, action: string, entityType: string, entityId?: number, entityName?: string, details?: object) {
   if (!req.authUser) return;
-  // Fire-and-forget — no await. Errors logged inside createAuditLog.
+  // Fire-and-forget - no await. Errors logged inside createAuditLog.
   void storage.createAuditLog({
     userId: req.authUser.id,
     username: req.authUser.username,
@@ -467,7 +467,7 @@ async function logAudit(req: Request, action: string, entityType: string, entity
 }
 
 /**
- * v4.2.18 (A.3): logTicketActivity — capture IP/User-Agent/GPS dari request automatically.
+ * v4.2.18 (A.3): logTicketActivity - capture IP/User-Agent/GPS dari request automatically.
  * Pakai action enum yang konsisten:
  *   "ticket.created" | "ticket.assigned" | "ticket.priority_changed" |
  *   "stage.started" | "stage.completed" | "stage.edited" |
@@ -543,10 +543,10 @@ function clearLoginAttempts(key: string) {
   loginAttempts.delete(key);
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Generic rate limiter — reusable across integration / billing endpoints.
+// --------------------------------------------------------------------------
+// Generic rate limiter - reusable across integration / billing endpoints.
 // Buckets are isolated per name so verify abuse doesn't lock save abuse.
-// ──────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 interface RateBucketEntry { count: number; firstAttempt: number; lastAttempt: number; lockedUntil: number; }
 const rateBuckets = new Map<string, Map<string, RateBucketEntry>>();
@@ -556,7 +556,7 @@ interface RateLimiterOpts {
   maxAttempts: number;
   windowMs: number;
   lockoutMs: number;
-  /** Custom key extractor — default `${userId}:${activeMitraId}:${ip}` */
+  /** Custom key extractor - default `${userId}:${activeMitraId}:${ip}` */
   keyOf?: (req: Request) => string;
 }
 
@@ -582,7 +582,7 @@ function createRateLimiter(opts: RateLimiterOpts) {
         });
       }
       if (now - entry.firstAttempt > opts.windowMs) {
-        // Window expired — reset
+        // Window expired - reset
         bucket.delete(key);
       }
     }
@@ -634,7 +634,7 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
-// Legacy SHA-256 check for migration — will auto-upgrade to bcrypt on login
+// Legacy SHA-256 check for migration - will auto-upgrade to bcrypt on login
 function isLegacyHash(hash: string): boolean {
   return /^[a-f0-9]{64}$/.test(hash) && !hash.startsWith("$2");
 }
@@ -733,7 +733,7 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
     };
     await logAudit(req, "LOGIN", "auth", user.id, user.username, { ip });
     // Cookie untuk <img> tag (Authorization header tidak terkirim oleh browser pada <img src>).
-    // Token sama dengan localStorage `ftth_user.token` — di-validate via requirePhotoAuth.
+    // Token sama dengan localStorage `ftth_user.token` - di-validate via requirePhotoAuth.
     const isProd = (process.env.NODE_ENV ?? "").toLowerCase() === "production";
     res.cookie("ftth_session", token, {
       httpOnly: true,
@@ -794,7 +794,7 @@ router.get("/api/auth/me", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// Phase B: tenant switcher — change user's active mitra
+// Phase B: tenant switcher - change user's active mitra
 router.post("/api/auth/switch-tenant", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -842,10 +842,10 @@ function isJabnetRoot(req: Request): boolean {
   return !!req.authUser?.isSystemAdmin;
 }
 
-/** GET /api/mitras — list all mitras (owner cross-tenant view) */
+/** GET /api/mitras - list all mitras (owner cross-tenant view) */
 router.get("/api/mitras", async (req: Request, res: Response) => {
-  // System admin only — mitra admin tidak boleh lihat list mitra lain
-  if (!req.authUser?.isSystemAdmin) return sendError(res, "Forbidden — system admin only", 403);
+  // System admin only - mitra admin tidak boleh lihat list mitra lain
+  if (!req.authUser?.isSystemAdmin) return sendError(res, "Forbidden - system admin only", 403);
   try {
     const includeInactive = String(req.query.includeInactive ?? "false") === "true";
     const list = await storage.listMitras(includeInactive);
@@ -873,7 +873,7 @@ router.get("/api/mitras", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/mitras/:id — detail + members list */
+/** GET /api/mitras/:id - detail + members list */
 router.get("/api/mitras/:id", async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   try {
@@ -907,7 +907,7 @@ router.get("/api/mitras/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/mitras — create new mitra (owner only) */
+/** POST /api/mitras - create new mitra (owner only) */
 router.post("/api/mitras", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!req.authUser.isSystemAdmin) return sendError(res, "Hanya System-Admin yang boleh create mitra", 403);
@@ -921,10 +921,10 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
   const slug = String(b.slug ?? b.name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
   if (!slug) return sendError(res, "Slug tidak valid");
 
-  // Validate admin body — wajib, setiap mitra butuh minimal 1 Admin
+  // Validate admin body - wajib, setiap mitra butuh minimal 1 Admin
   const admin = b.admin;
   if (!admin || typeof admin !== "object") {
-    return sendError(res, "Field 'admin' wajib di body — setiap mitra butuh minimal 1 Admin", 400);
+    return sendError(res, "Field 'admin' wajib di body - setiap mitra butuh minimal 1 Admin", 400);
   }
   const { username, name: adminName, email: adminEmail, phone: adminPhone, password } = admin;
   if (!username || !adminName || !password) {
@@ -945,12 +945,12 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
   const existingUser = await storage.getUserByUsername(username);
   if (existingUser) return sendError(res, `Username '${username}' sudah dipakai`, 400);
 
-  // Per-mitra Admin role dibuat di dalam transaksi (lihat step 2b) — isolasi role per mitra.
+  // Per-mitra Admin role dibuat di dalam transaksi (lihat step 2b) - isolasi role per mitra.
 
   // Pre-compute password hash BEFORE acquiring pool connection (~80ms, don't hold conn idle)
   const passwordHash = await hashPassword(password);
 
-  // Build features map — start with all true unless caller provides
+  // Build features map - start with all true unless caller provides
   const callerFeatures = typeof b.features === "object" && b.features ? b.features : {};
   const featuresMap: Record<string, boolean> = {};
   for (const f of ALL_FEATURES) {
@@ -961,7 +961,7 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
   let newMitraId: number;
   let newUserId: number;
 
-  // Transaction — mitra + admin user + user_mitras membership atomically
+  // Transaction - mitra + admin user + user_mitras membership atomically
   const pool: any = (storage as any).pool;
   const conn = await pool.getConnection();
   await conn.beginTransaction();
@@ -999,7 +999,7 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
        VALUES (?, 'Admin', ?, 1, 0, ?, ?, ?)`,
       [
         newMitraId,
-        "Akses penuh di satu mitra (intra-tenant). Role bawaan terkunci — tidak bisa diedit/dihapus oleh admin mitra.",
+        "Akses penuh di satu mitra (intra-tenant). Role bawaan terkunci - tidak bisa diedit/dihapus oleh admin mitra.",
         JSON.stringify(adminPermsObj),
         now,
         now,
@@ -1033,7 +1033,7 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
     conn.release();
   }
 
-  // Post-commit hooks (conn already released — failure here does NOT rollback committed data)
+  // Post-commit hooks (conn already released - failure here does NOT rollback committed data)
   try {
     const seedResult = await storage.seedMitraIntegrationDefaults(newMitraId!);
     console.log(`[mitras] seeded ${seedResult.inserted} default integrations for new mitra ${newMitraId!} (${slug})`);
@@ -1073,7 +1073,7 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
   return sendSuccess(res, { ...created, features: featuresMap, adminUser: { id: newUserId!, username, name: adminName } });
 });
 
-/** PUT /api/mitras/:id — update mitra fields + features */
+/** PUT /api/mitras/:id - update mitra fields + features */
 router.put("/api/mitras/:id", async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   try {
@@ -1100,7 +1100,7 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
       updates.push("is_active = ?");
       params.push(b.isActive ? 1 : 0);
     }
-    // Slug change — validate uniqueness, rename upload dir SEBELUM DB update (best-effort rollback di catch)
+    // Slug change - validate uniqueness, rename upload dir SEBELUM DB update (best-effort rollback di catch)
     let pendingSlugRename: { from: string; to: string } | null = null;
     if (b.slug !== undefined && b.slug !== existing.slug) {
       const newSlug = String(b.slug).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
@@ -1110,7 +1110,7 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
       updates.push("slug = ?"); params.push(newSlug);
       pendingSlugRename = { from: existing.slug || `mitra-${id}`, to: newSlug };
     }
-    // Features merge — caller can patch partial
+    // Features merge - caller can patch partial
     if (b.features && typeof b.features === "object") {
       let current: Record<string, boolean> = {};
       try { current = JSON.parse((existing as any).features ?? "{}"); } catch {}
@@ -1121,7 +1121,7 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
     updates.push("updated_at = ?"); params.push(new Date().toISOString());
     params.push(id);
     const pool: any = (storage as any).pool;
-    // Rename upload dir dulu (kalau gagal, jangan UPDATE DB — biar tidak drift)
+    // Rename upload dir dulu (kalau gagal, jangan UPDATE DB - biar tidak drift)
     if (pendingSlugRename) {
       try {
         await renameMitraDir(pendingSlugRename.from, pendingSlugRename.to);
@@ -1140,7 +1140,7 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
     }
     if (pendingSlugRename) storage.invalidateMitraSlugCache(id);
     if (b.features && typeof b.features === "object") {
-      // Feature toggle changes effective permissions for this mitra's users — drop cached perms.
+      // Feature toggle changes effective permissions for this mitra's users - drop cached perms.
       invalidatePermCacheAtMitra();
     }
     const after = await storage.getMitra(id);
@@ -1163,7 +1163,7 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/mitras/:id — soft delete (set inactive). Hard delete needs explicit ?hard=true */
+/** DELETE /api/mitras/:id - soft delete (set inactive). Hard delete needs explicit ?hard=true */
 router.delete("/api/mitras/:id", async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   try {
@@ -1174,7 +1174,7 @@ router.delete("/api/mitras/:id", async (req: Request, res: Response) => {
     const hard = String(req.query.hard ?? "false") === "true";
     const pool: any = (storage as any).pool;
     if (hard) {
-      // Safety check — refuse hard delete if mitra has customers
+      // Safety check - refuse hard delete if mitra has customers
       const [rows]: any = await pool.execute("SELECT COUNT(*) AS n FROM customers WHERE mitra_id = ?", [id]);
       const n = Number(rows?.[0]?.n ?? 0);
       if (n > 0) return sendError(res, `Tidak bisa hard-delete: mitra punya ${n} customer. Soft-delete dulu atau migrasi data.`, 400);
@@ -1205,7 +1205,7 @@ router.delete("/api/mitras/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/mitras/:id/users — add existing user as member of this mitra */
+/** POST /api/mitras/:id/users - add existing user as member of this mitra */
 router.post("/api/mitras/:id/users", async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   try {
@@ -1244,7 +1244,7 @@ router.post("/api/mitras/:id/users", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/mitras/:id/users/:userId — remove user membership */
+/** DELETE /api/mitras/:id/users/:userId - remove user membership */
 router.delete("/api/mitras/:id/users/:userId", async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   try {
@@ -1258,7 +1258,7 @@ router.delete("/api/mitras/:id/users/:userId", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PATCH /api/mitras/:mitraId/members/:userId — update per-membership role */
+/** PATCH /api/mitras/:mitraId/members/:userId - update per-membership role */
 router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   const mitraId = Number(req.params.mitraId);
@@ -1278,7 +1278,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
     canManage = requesterEff.roleName === "Admin" || requesterEff.roleName === "System-Admin";
   }
   if (!canManage) {
-    return sendError(res, "Forbidden — only System-Admin or Admin di mitra yang sama bisa change roles", 403);
+    return sendError(res, "Forbidden - only System-Admin or Admin di mitra yang sama bisa change roles", 403);
   }
 
   try {
@@ -1307,7 +1307,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
       if (currentRole?.name === "System-Admin" && role.name !== "System-Admin") {
         const count = await storage.countSystemAdminsAtMitra1();
         if (count <= 1) {
-          return sendError(res, "Tidak bisa demote — minimal 1 System-Admin di JABNET wajib ada", 400);
+          return sendError(res, "Tidak bisa demote - minimal 1 System-Admin di JABNET wajib ada", 400);
         }
       }
     }
@@ -1342,11 +1342,11 @@ const INTEGRATION_KEY_SPECS: Array<{ key: string; group: string; label: string; 
   // NOTE: billing_api_url + billing_api_token are SHARED across all mitras (single JABNET billing
   // backend). Set via process.env.BILLING_API_URL & BILLING_API_TOKEN di .env. Tidak per-mitra.
   { key: "billing_reseller_id",   group: "Billing",  label: "Billing Reseller ID (kode_reseller)",  isSecret: false },
-  { key: "billing_reseller_nama",   group: "Billing", label: "Reseller Profil — Nama",               isSecret: false },
-  { key: "billing_reseller_alamat", group: "Billing", label: "Reseller Profil — Alamat",             isSecret: false },
-  { key: "billing_reseller_phone",  group: "Billing", label: "Reseller Profil — Nomor Telepon",      isSecret: false },
-  { key: "billing_reseller_email",  group: "Billing", label: "Reseller Profil — Email",              isSecret: false },
-  { key: "billing_reseller_password", group: "Billing", label: "Reseller Profil — Password Verifikasi", isSecret: true },
+  { key: "billing_reseller_nama",   group: "Billing", label: "Reseller Profil - Nama",               isSecret: false },
+  { key: "billing_reseller_alamat", group: "Billing", label: "Reseller Profil - Alamat",             isSecret: false },
+  { key: "billing_reseller_phone",  group: "Billing", label: "Reseller Profil - Nomor Telepon",      isSecret: false },
+  { key: "billing_reseller_email",  group: "Billing", label: "Reseller Profil - Email",              isSecret: false },
+  { key: "billing_reseller_password", group: "Billing", label: "Reseller Profil - Password Verifikasi", isSecret: true },
   { key: "company_name",          group: "Branding", label: "Company Display Name",                 isSecret: false },
   { key: "company_wa_cs",         group: "Branding", label: "WhatsApp CS Link",                     isSecret: false },
   { key: "company_wa_finance",    group: "Branding", label: "WhatsApp Finance Link",                isSecret: false },
@@ -1369,7 +1369,7 @@ function isSecretIntegrationKey(key: string): boolean {
   return INTEGRATION_KEY_SPECS.find(s => s.key === key)?.isSecret ?? false;
 }
 
-/** GET /api/mitras/:id/integrations — list current overrides for this mitra */
+/** GET /api/mitras/:id/integrations - list current overrides for this mitra */
 router.get("/api/mitras/:id/integrations", async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   try {
@@ -1390,8 +1390,8 @@ router.get("/api/mitras/:id/integrations", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/mitras/:id/integrations — upsert one or many key/value pairs.
- *  Body: { settings: [{ key, value }, ...] }  — null value deletes the override (revert to global fallback). */
+/** PUT /api/mitras/:id/integrations - upsert one or many key/value pairs.
+ *  Body: { settings: [{ key, value }, ...] }  - null value deletes the override (revert to global fallback). */
 router.put("/api/mitras/:id/integrations", integrationsLimiter, async (req: Request, res: Response) => {
   if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
   recordRateAttempt(INTEGRATIONS_LIMIT.bucket, rateLimitKey(req), INTEGRATIONS_LIMIT);
@@ -1400,7 +1400,7 @@ router.put("/api/mitras/:id/integrations", integrationsLimiter, async (req: Requ
     const m = await storage.getMitra(mitraId);
     if (!m) return sendError(res, "Mitra tidak ditemukan", 404);
     const items = Array.isArray(req.body?.settings) ? req.body.settings : [];
-    if (items.length === 0) return sendError(res, "Body kosong — kirim settings: [{key,value}]");
+    if (items.length === 0) return sendError(res, "Body kosong - kirim settings: [{key,value}]");
     const applied: string[] = [];
     const skipped: string[] = [];
     await new Promise<void>((resolve, reject) => {
@@ -1459,7 +1459,7 @@ function validatePhone(s: string): boolean {
   return /^[+0][0-9]{7,14}$/.test(s.replace(/\s|-/g, ""));
 }
 
-// ── Self-service: update own profile (name, email, phone, address, birthDate, emergencyContact) ──
+// -- Self-service: update own profile (name, email, phone, address, birthDate, emergencyContact) --
 router.patch("/api/auth/me", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -1517,7 +1517,7 @@ router.patch("/api/auth/me", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Self-service: upload/remove own photo profile ──
+// -- Self-service: upload/remove own photo profile --
 // Accept data URL (base64) max ~500KB (after base64 encoding = ~380KB raw).
 // Frontend wajib sudah resize ke <=256x256 square + JPEG quality ~0.85.
 router.put("/api/auth/me/photo", async (req: Request, res: Response) => {
@@ -1543,7 +1543,7 @@ router.put("/api/auth/me/photo", async (req: Request, res: Response) => {
 /**
  * Sync plain-text password ke `billing_reseller_password` di mitra_integrations untuk
  * semua mitra di mana user ini adalah primary admin (is_primary=1).
- * Mitra JABNET (id=1) di-skip — JABNET adalah owner billing, tidak butuh shared secret.
+ * Mitra JABNET (id=1) di-skip - JABNET adalah owner billing, tidak butuh shared secret.
  * Dipanggil dari endpoint perubahan password (self change-password, admin reset, create user).
  */
 async function syncBillingResellerPasswordForUser(userId: number, plainPassword: string, byUserId: number) {
@@ -1551,7 +1551,7 @@ async function syncBillingResellerPasswordForUser(userId: number, plainPassword:
     const mitras = await storage.getUserMitras(userId);
     for (const m of mitras) {
       if (!m.isPrimary) continue;
-      if (m.id === 1) continue; // JABNET — skip
+      if (m.id === 1) continue; // JABNET - skip
       await new Promise<void>((resolve, reject) => {
         tenantContext.run({ mitraId: m.id, userId: byUserId, isSuperAdmin: true }, async () => {
           try {
@@ -1567,7 +1567,7 @@ async function syncBillingResellerPasswordForUser(userId: number, plainPassword:
   }
 }
 
-// ── Self-service: change own password ──
+// -- Self-service: change own password --
 router.post("/api/auth/change-password", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -1611,7 +1611,7 @@ router.get("/api/audit-logs", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/activity/stats — productivity dashboard data */
+/** GET /api/activity/stats - productivity dashboard data */
 router.get("/api/activity/stats", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -1621,7 +1621,7 @@ router.get("/api/activity/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/activity/cleanup-sync-logs — admin one-shot cleanup */
+/** POST /api/activity/cleanup-sync-logs - admin one-shot cleanup */
 router.post("/api/activity/cleanup-sync-logs", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -1678,7 +1678,7 @@ router.get("/api/users", async (req: Request, res: Response) => {
     let allUsers = await storage.getAllUsers();
     // Tenant isolation: DEFAULT semua admin (termasuk JABNET System-Admin) hanya lihat
     // user member mitra aktif. JABNET System-Admin boleh opt-in lintas mitra via
-    // ?scope=cross — di-honor server-side hanya untuk isSystemAdmin (mirror assignable-users).
+    // ?scope=cross - di-honor server-side hanya untuk isSystemAdmin (mirror assignable-users).
     const wantCross = req.query.scope === "cross" && isSystemAdmin(req);
     if (!wantCross && req.authUser!.activeMitraId) {
       const memberIds = await storage.getUserIdsInMitra(req.authUser!.activeMitraId);
@@ -1725,7 +1725,7 @@ router.post("/api/users", async (req: Request, res: Response) => {
     if (extra.email && !validateEmail(extra.email)) return sendError(res, "Format email tidak valid");
     if (extra.phone && !validatePhone(extra.phone)) return sendError(res, "Format nomor HP tidak valid");
 
-    // Resolve roleId — tenant-scoped ke mitra aktif pembuat user
+    // Resolve roleId - tenant-scoped ke mitra aktif pembuat user
     const creatorMitraId = req.authUser!.activeMitraId ?? 1;
     // Tenant isolation (pre-insert, before any user row is created): a non-sysadmin may only
     // create users in their OWN mitra. The form never sends mitraId; a foreign one = tampering.
@@ -1757,7 +1757,7 @@ router.post("/api/users", async (req: Request, res: Response) => {
       resolvedRoleId = r?.id ?? null;
     }
 
-    // FIX BUG 1: handle legacy `permissions` array (backward compat) — simpan sebagai JSON
+    // FIX BUG 1: handle legacy `permissions` array (backward compat) - simpan sebagai JSON
     let legacyPermissions: string | undefined = undefined;
     if (permissions !== undefined) {
       if (Array.isArray(permissions)) {
@@ -1791,7 +1791,7 @@ router.post("/api/users", async (req: Request, res: Response) => {
         const mitraExists = await storage.getMitra(assignMitraId);
         if (mitraExists) {
           // Attach the resolved role to the membership only when it belongs to the target mitra
-          // (auto-link / same-tenant case — resolvedRoleId was validated against creatorMitraId).
+          // (auto-link / same-tenant case - resolvedRoleId was validated against creatorMitraId).
           // For cross-mitra explicit creation, leave membership role unset (preserve prior behavior).
           const membershipRoleId = assignMitraId === creatorMitraId ? resolvedRoleId : undefined;
           await storage.addUserToMitra(user.id, assignMitraId, isPrimary, membershipRoleId);
@@ -1844,7 +1844,7 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
       if (f === "username") {
         if (s.length < 3 || s.length > 30) return sendError(res, "Username harus 3-30 karakter");
         if (!/^[a-zA-Z0-9_.-]+$/.test(s)) return sendError(res, "Username hanya boleh huruf, angka, titik, underscore, atau strip");
-        // Uniqueness check — skip if unchanged
+        // Uniqueness check - skip if unchanged
         const current = await storage.getUser(id);
         if (current && current.username !== s) {
           const dup = await storage.getUserByUsername(s);
@@ -1857,7 +1857,7 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
 
     if (role !== undefined) { updateData.role = role; changes.push(`role→${role}`); }
 
-    // Handle roleId — FIX BUG 1 (role_id tersimpan ke DB)
+    // Handle roleId - FIX BUG 1 (role_id tersimpan ke DB)
     if (roleId !== undefined) {
       if (roleId === null || roleId === "") {
         updateData.roleId = null;
@@ -1865,7 +1865,7 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
       } else {
         const r = await storage.getRoleById(Number(roleId));
         if (!r) return sendError(res, "Role tidak ditemukan");
-        // Tenant isolation: hanya role milik mitra aktif (System-Admin boleh lintas) — parity dengan POST create.
+        // Tenant isolation: hanya role milik mitra aktif (System-Admin boleh lintas) - parity dengan POST create.
         if (r.mitraId !== (req.authUser!.activeMitraId ?? 1) && !req.authUser!.isSystemAdmin) {
           return sendError(res, "Role bukan milik mitra Anda", 403);
         }
@@ -1874,7 +1874,7 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
       }
     }
 
-    // Handle legacy permissions array — FIX BUG 1 (permissions tersimpan ke DB)
+    // Handle legacy permissions array - FIX BUG 1 (permissions tersimpan ke DB)
     if (permissions !== undefined) {
       if (Array.isArray(permissions)) {
         const filtered = permissions.filter((p: any) => typeof p === "string" && ALL_PERMISSION_KEYS.includes(p as any));
@@ -1932,7 +1932,7 @@ router.delete("/api/users/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/users/:id/activity — timeline aktivitas user dari audit_logs (untuk user detail drawer) */
+/** GET /api/users/:id/activity - timeline aktivitas user dari audit_logs (untuk user detail drawer) */
 router.get("/api/users/:id/activity", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -1948,7 +1948,7 @@ router.get("/api/users/:id/activity", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/users/:id/stats — quick stats untuk user profile (productivity counters) */
+/** GET /api/users/:id/stats - quick stats untuk user profile (productivity counters) */
 router.get("/api/users/:id/stats", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -1959,7 +1959,7 @@ router.get("/api/users/:id/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/users/bulk-action — bulk activate/deactivate/role-change/delete */
+/** POST /api/users/bulk-action - bulk activate/deactivate/role-change/delete */
 router.post("/api/users/bulk-action", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -2014,7 +2014,7 @@ router.post("/api/users/bulk-action", async (req: Request, res: Response) => {
 
 // ==================== ROLES MANAGEMENT (custom role + read/write permission) ====================
 
-// GET /api/roles — list all roles (semua user login boleh read untuk dropdown)
+// GET /api/roles - list all roles (semua user login boleh read untuk dropdown)
 // Admin dapat tambahan: userCount per role
 router.get("/api/roles", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -2053,7 +2053,7 @@ router.get("/api/roles", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/roles/:id/users — list users yang assigned ke role ini (admin only) */
+/** GET /api/roles/:id/users - list users yang assigned ke role ini (admin only) */
 router.get("/api/roles/:id/users", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -2074,7 +2074,7 @@ router.get("/api/roles/:id/users", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// POST /api/roles — create custom role (admin only)
+// POST /api/roles - create custom role (admin only)
 router.post("/api/roles", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -2105,7 +2105,7 @@ router.post("/api/roles", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// PUT /api/roles/:id — update role (admin only; system role hanya boleh ubah description + permissions)
+// PUT /api/roles/:id - update role (admin only; system role hanya boleh ubah description + permissions)
 router.put("/api/roles/:id", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -2116,12 +2116,12 @@ router.put("/api/roles/:id", async (req: Request, res: Response) => {
     // Tenant isolation: role hanya bisa diedit dari dalam mitra pemiliknya.
     const scopeMitraId = req.authUser!.activeMitraId ?? 1;
     if (existing.mitraId !== scopeMitraId) {
-      return sendError(res, "Role ini milik mitra lain — tidak bisa diedit dari sini", 403);
+      return sendError(res, "Role ini milik mitra lain - tidak bisa diedit dari sini", 403);
     }
     // Role terkunci (Admin per-mitra & System-Admin): hanya platform owner (System-Admin) yang boleh edit.
     const isLockedRole = existing.isSystem === 1 && (existing.name === "Admin" || existing.name === "System-Admin" || existing.name === "Administrator");
     if (isLockedRole && !req.authUser!.isSystemAdmin) {
-      return sendError(res, "Role Admin bawaan terkunci — tidak bisa diubah oleh admin mitra", 403);
+      return sendError(res, "Role Admin bawaan terkunci - tidak bisa diubah oleh admin mitra", 403);
     }
 
     const { name, description, canSeeAllData, permissions } = req.body;
@@ -2168,7 +2168,7 @@ router.put("/api/roles/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// DELETE /api/roles/:id — delete custom role (admin only, tidak bisa hapus system role)
+// DELETE /api/roles/:id - delete custom role (admin only, tidak bisa hapus system role)
 router.delete("/api/roles/:id", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -2178,7 +2178,7 @@ router.delete("/api/roles/:id", async (req: Request, res: Response) => {
     // Tenant isolation: tidak bisa hapus role milik mitra lain.
     const scopeMitraId = req.authUser!.activeMitraId ?? 1;
     if (role.mitraId !== scopeMitraId) {
-      return sendError(res, "Role ini milik mitra lain — tidak bisa dihapus dari sini", 403);
+      return sendError(res, "Role ini milik mitra lain - tidak bisa dihapus dari sini", 403);
     }
     if (role.isSystem === 1) return sendError(res, "Role bawaan sistem tidak bisa dihapus", 403);
     const ok = await storage.deleteRole(id);
@@ -2273,7 +2273,7 @@ router.post("/api/role-presets/:id/default", async (req: Request, res: Response)
   sendSuccess(res, { ok: true });
 });
 
-// ==================== COVERAGE CHECK (PUBLIC — no login required) ====================
+// ==================== COVERAGE CHECK (PUBLIC - no login required) ====================
 //
 // Public tool agar tim lain (sales, marketing, customer) bisa cek apakah suatu lokasi
 // tercover jaringan FTTH JABNET tanpa harus login. Input lat/lng → return ODP terdekat,
@@ -2381,7 +2381,7 @@ router.post("/api/coverage-check", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// Meta CAPI helper — lazy load config from settings
+// Meta CAPI helper - lazy load config from settings
 import { trackLead as metaTrackLead, trackPurchase as metaTrackPurchase, type MetaCapiConfig } from "./meta-capi.js";
 
 async function getMetaCapiConfig(): Promise<MetaCapiConfig | null> {
@@ -2425,7 +2425,7 @@ router.use("/api", (req: Request, res: Response, next: Function) => {
   if (req.path === "/coverage-check" || req.path === "/coverage-check/register") return next(); // Public landing page
   if (req.path === "/integrations/chatwoot/webhook") return next(); // v4.2.5: Chatwoot webhook (HMAC verify di handler)
   if (!req.authUser) {
-    return sendError(res, "Unauthorized — silakan login terlebih dahulu", 401);
+    return sendError(res, "Unauthorized - silakan login terlebih dahulu", 401);
   }
   next();
 });
@@ -2455,7 +2455,7 @@ router.get("/api/map-data", async (_req: Request, res: Response) => {
   }
 });
 
-/** GET /api/map-data/customer-search?q= — cari pelanggan di luar viewport untuk map search.
+/** GET /api/map-data/customer-search?q= - cari pelanggan di luar viewport untuk map search.
  *  Hasil menyertakan odpId supaya search bisa menampilkan relasi pelanggan→ODP. */
 router.get("/api/map-data/customer-search", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
@@ -2625,7 +2625,7 @@ router.get("/api/odps", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ODP utilization — real-time dari customer data
+// ODP utilization - real-time dari customer data
 router.get("/api/odps/utilization", async (_req, res) => {
   try {
     const [allOdps, allCustomers] = await Promise.all([
@@ -2633,7 +2633,7 @@ router.get("/api/odps/utilization", async (_req, res) => {
       storage.getCustomers(),
     ]);
 
-    // Count customers per ODP — group by odpId
+    // Count customers per ODP - group by odpId
     // custsByOdp: { count = total pelanggan, assignedPorts = port yang sudah terisi (non-null) }
     const custsByOdp = new Map<number, { count: number; assignedPorts: Set<number> }>();
     allCustomers.forEach((c) => {
@@ -2726,9 +2726,9 @@ router.delete("/api/odps/:id", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── ODP photo gallery (filesystem-backed) ──
+// -- ODP photo gallery (filesystem-backed) --
 
-/** GET /api/odps/:id/photos — list semua foto ODP (metadata only, tanpa binary) */
+/** GET /api/odps/:id/photos - list semua foto ODP (metadata only, tanpa binary) */
 router.get("/api/odps/:id/photos", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2740,12 +2740,12 @@ router.get("/api/odps/:id/photos", async (req, res) => {
       uploadedBy: p.uploadedBy,
       isCover: Boolean(p.isCover),
       createdAt: p.createdAt,
-      // photoPath NOT exposed ke client — pakai endpoint stream sebagai gantinya
+      // photoPath NOT exposed ke client - pakai endpoint stream sebagai gantinya
     })));
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/odps/:id/photos — upload foto baru (base64 di body, decode + write fs di backend) */
+/** POST /api/odps/:id/photos - upload foto baru (base64 di body, decode + write fs di backend) */
 router.post("/api/odps/:id/photos", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2755,7 +2755,7 @@ router.post("/api/odps/:id/photos", async (req, res) => {
       return sendError(res, "photoData (base64 data URL) wajib");
     }
     if (photoData.length > 7_500_000) {
-      return sendError(res, "Foto terlalu besar — max 5MB", 413);
+      return sendError(res, "Foto terlalu besar - max 5MB", 413);
     }
     const photo = await storage.addOdpPhoto({
       odpId,
@@ -2775,7 +2775,7 @@ router.post("/api/odps/:id/photos", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/odps/:id/photos/:photoId — stream binary foto */
+/** GET /api/odps/:id/photos/:photoId - stream binary foto */
 router.get("/api/odps/:id/photos/:photoId", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2787,7 +2787,7 @@ router.get("/api/odps/:id/photos/:photoId", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/odps/:id/photos/:photoId/cover — set foto cover (1 cover per ODP) */
+/** POST /api/odps/:id/photos/:photoId/cover - set foto cover (1 cover per ODP) */
 router.post("/api/odps/:id/photos/:photoId/cover", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2799,7 +2799,7 @@ router.post("/api/odps/:id/photos/:photoId/cover", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/odps/:id/photos/:photoId — hapus foto (file + row) */
+/** DELETE /api/odps/:id/photos/:photoId - hapus foto (file + row) */
 router.delete("/api/odps/:id/photos/:photoId", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2813,7 +2813,7 @@ router.delete("/api/odps/:id/photos/:photoId", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Galeri foto aset generik (odp/odc/pole) — sumber data tunggal asset_photos ──
+// -- Galeri foto aset generik (odp/odc/pole) - sumber data tunggal asset_photos --
 // Lihat foto cukup login; upload/ubah/hapus butuh izin tulis sesuai tipe aset
 // (odp→odps, odc→odcs, pole→poles). globalWriteGuard tidak match path ini, jadi
 // gating tulis dilakukan eksplisit di handler.
@@ -2822,7 +2822,7 @@ function assetPhotoFeature(type: string): string | null {
   return ASSET_PHOTO_FEATURE[type] ?? null;
 }
 
-/** GET /api/asset-photos/:type/:id — list metadata foto (tanpa binary) */
+/** GET /api/asset-photos/:type/:id - list metadata foto (tanpa binary) */
 router.get("/api/asset-photos/:type/:id", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2837,7 +2837,7 @@ router.get("/api/asset-photos/:type/:id", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/asset-photos/:type/:id — upload foto (base64 di body) */
+/** POST /api/asset-photos/:type/:id - upload foto (base64 di body) */
 router.post("/api/asset-photos/:type/:id", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2848,7 +2848,7 @@ router.post("/api/asset-photos/:type/:id", async (req, res) => {
     const assetId = Number(req.params.id);
     const { photoData, caption, isCover } = req.body ?? {};
     if (!photoData || typeof photoData !== "string") return sendError(res, "photoData (base64 data URL) wajib");
-    if (photoData.length > 7_500_000) return sendError(res, "Foto terlalu besar — max 5MB", 413);
+    if (photoData.length > 7_500_000) return sendError(res, "Foto terlalu besar - max 5MB", 413);
     const photo = await storage.addAssetPhoto({
       assetType: type, assetId, photoData,
       caption: caption ? String(caption).slice(0, 500) : null,
@@ -2862,7 +2862,7 @@ router.post("/api/asset-photos/:type/:id", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/asset-photos/:type/:id/:photoId — stream binary foto */
+/** GET /api/asset-photos/:type/:id/:photoId - stream binary foto */
 router.get("/api/asset-photos/:type/:id/:photoId", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2876,7 +2876,7 @@ router.get("/api/asset-photos/:type/:id/:photoId", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/asset-photos/:type/:id/:photoId/cover — set foto cover (1 cover per aset) */
+/** POST /api/asset-photos/:type/:id/:photoId/cover - set foto cover (1 cover per aset) */
 router.post("/api/asset-photos/:type/:id/:photoId/cover", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2892,7 +2892,7 @@ router.post("/api/asset-photos/:type/:id/:photoId/cover", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/asset-photos/:type/:id/:photoId — hapus foto (file + row) */
+/** DELETE /api/asset-photos/:type/:id/:photoId - hapus foto (file + row) */
 router.delete("/api/asset-photos/:type/:id/:photoId", async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
@@ -2910,7 +2910,7 @@ router.delete("/api/asset-photos/:type/:id/:photoId", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/odps/:id/detail — mini-dashboard ODP (lazy, dipanggil saat klik di map).
+/** GET /api/odps/:id/detail - mini-dashboard ODP (lazy, dipanggil saat klik di map).
  *  DB-only supaya cepat; data ACS dipisah di /ont-status. */
 router.get("/api/odps/:id/detail", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
@@ -2949,7 +2949,7 @@ router.get("/api/odps/:id/detail", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/odps/:id/ont-status — optical power ONT semua pelanggan satu ODP.
+/** GET /api/odps/:id/ont-status - optical power ONT semua pelanggan satu ODP.
  *  Device list GenieACS di-cache 60s per-mitra (klik ODP berurutan tidak refetch ACS). */
 router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
@@ -3010,7 +3010,7 @@ router.get("/api/customers", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// v4.2.5: Integration audit — find customers dengan PPPoE tapi tidak match GenieACS,
+// v4.2.5: Integration audit - find customers dengan PPPoE tapi tidak match GenieACS,
 // coba fuzzy match supaya bisa di-pair semi-auto.
 // Strategi matching (urutan confidence dari tinggi ke rendah):
 //   1. exact (sudah handled di /ont-status)
@@ -3067,7 +3067,7 @@ router.get("/api/customers/integration-audit", async (req: Request, res: Respons
     const config = await getGenieConfig().catch(() => null);
     if (!config) return sendError(res, "GenieACS belum dikonfigurasi", 400);
 
-    // 8s timeout untuk GenieACS fetch — kalau lambat fail-fast supaya frontend ga gantung
+    // 8s timeout untuk GenieACS fetch - kalau lambat fail-fast supaya frontend ga gantung
     const genieDevicesPromise = Promise.race([
       genieGetDevices(config, {}, 10000, 0).catch(() => [] as any[]),
       new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000)),
@@ -3176,7 +3176,7 @@ router.get("/api/customers/integration-audit", async (req: Request, res: Respons
 
 /**
  * v4.2.5: POST /api/customers/auto-pair-ont
- * Bulk apply ONT pairing — save ontSerialNumber ke customer DB untuk pasangan yang dipilih.
+ * Bulk apply ONT pairing - save ontSerialNumber ke customer DB untuk pasangan yang dipilih.
  * Body: { pairs: [{ customerId: number, deviceSerialNumber: string }] }
  */
 router.post("/api/customers/auto-pair-ont", async (req: Request, res: Response) => {
@@ -3277,7 +3277,7 @@ router.get("/api/customers/:id", async (req, res) => {
 });
 
 /**
- * v4.2.18 (B.2): Customer 360 profile — full info + recent tickets + billing snapshot
+ * v4.2.18 (B.2): Customer 360 profile - full info + recent tickets + billing snapshot
  * Used by ticket detail screen Customer Panel
  */
 router.get("/api/customers/:id/profile", async (req: Request, res: Response) => {
@@ -3328,7 +3328,7 @@ router.get("/api/customers/:id/profile", async (req: Request, res: Response) => 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── PPPoE Auto-Sync Helper ──
+// -- PPPoE Auto-Sync Helper --
 async function syncPppoeToMikrotik(
   customer: { pppoeUsername?: string | null; pppoePassword?: string | null; pppoeProfile?: string | null; pppoeRouterId?: number | null; pppoeMikrotikId?: string | null; name?: string | null; isIsolir?: number | null },
   action: "create" | "update" | "delete" | "isolir" | "activate",
@@ -3382,8 +3382,8 @@ async function syncPppoeToMikrotik(
 
 /**
  * v4.1.3+: Data pelanggan adalah MIRROR dari billing.jabnet.id (read-only sync).
- * - POST /api/customers: DISABLED — pelanggan baru harus register di billing dulu, lalu sync worker akan auto-import
- * - PUT /api/customers/:id: RESTRICTED — hanya 6 field local (koordinat + ODP mapping + ONT SN + notes) yang boleh diedit
+ * - POST /api/customers: DISABLED - pelanggan baru harus register di billing dulu, lalu sync worker akan auto-import
+ * - PUT /api/customers/:id: RESTRICTED - hanya 6 field local (koordinat + ODP mapping + ONT SN + notes) yang boleh diedit
  */
 
 // Whitelist field yang boleh di-edit via PUT (local data, bukan dari billing)
@@ -3869,7 +3869,7 @@ router.post("/api/power-budget", async (req, res) => {
 
 function requireAuth(req: Request, res: Response): boolean {
   if (!req.authUser) {
-    sendError(res, "Unauthorized — silakan login terlebih dahulu", 401);
+    sendError(res, "Unauthorized - silakan login terlebih dahulu", 401);
     return false;
   }
   return true;
@@ -4189,7 +4189,7 @@ router.post("/api/import/otbs", async (req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ==================== BILLING SYNC (v4.1.2 — delegate ke BillingSyncWorker) ====================
+// ==================== BILLING SYNC (v4.1.2 - delegate ke BillingSyncWorker) ====================
 
 import { billingSyncWorker } from "./billing-sync-worker.js";
 
@@ -4220,7 +4220,7 @@ router.post("/api/billing/sync", billingSyncLimiter, async (req: Request, res: R
   }
 });
 
-/** GET /api/billing/sync/cooldown — manual-sync availability for the active mitra. */
+/** GET /api/billing/sync/cooldown - manual-sync availability for the active mitra. */
 router.get("/api/billing/sync/cooldown", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   const lastAt = await storage.getMitraSetting("billing_manual_sync_last_at", { fallbackToGlobal: false });
@@ -4228,9 +4228,9 @@ router.get("/api/billing/sync/cooldown", async (req: Request, res: Response) => 
   sendSuccess(res, { ...cd, cooldownMinutes: MANUAL_SYNC_COOLDOWN_MS / 60_000 });
 });
 
-// ── JABNET-root billing admin: manage each mitra's reseller_id centrally ──
+// -- JABNET-root billing admin: manage each mitra's reseller_id centrally --
 
-/** GET /api/billing/mitras — list all mitras + billing_id + last sync status + customer count. JABNET-root only. */
+/** GET /api/billing/mitras - list all mitras + billing_id + last sync status + customer count. JABNET-root only. */
 router.get("/api/billing/mitras", async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   try {
@@ -4262,12 +4262,12 @@ router.get("/api/billing/mitras", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/billing/mitras/:id — save billing_reseller_id for a mitra. JABNET-root only. */
+/** PUT /api/billing/mitras/:id - save billing_reseller_id for a mitra. JABNET-root only. */
 router.put("/api/billing/mitras/:id", integrationsLimiter, async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   const mitraId = Number(req.params.id);
   const billingId = String(req.body?.billingId ?? "").trim();
-  if (mitraId === 1) return sendError(res, "JABNET adalah billing root (reseller_id=12, via .env) — tidak bisa diubah di sini", 400);
+  if (mitraId === 1) return sendError(res, "JABNET adalah billing root (reseller_id=12, via .env) - tidak bisa diubah di sini", 400);
   const m = await storage.getMitra(mitraId);
   if (!m) return sendError(res, "Mitra tidak ditemukan", 404);
   if (billingId && !/^\d+$/.test(billingId)) return sendError(res, "Billing ID harus angka", 400);
@@ -4286,7 +4286,7 @@ router.put("/api/billing/mitras/:id", integrationsLimiter, async (req: Request, 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/billing/mitras/:id/test — does this reseller_id pull customers? JABNET-root only. */
+/** POST /api/billing/mitras/:id/test - does this reseller_id pull customers? JABNET-root only. */
 router.post("/api/billing/mitras/:id/test", billingSyncLimiter, async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   recordRateAttempt(BILLING_SYNC_LIMIT.bucket, rateLimitKey(req), BILLING_SYNC_LIMIT);
@@ -4310,7 +4310,7 @@ router.post("/api/billing/mitras/:id/test", billingSyncLimiter, async (req: Requ
   } catch (e: any) { sendError(res, `Test gagal: ${e.message}`, 502); }
 });
 
-/** POST /api/billing/mitras/:id/sync — full sync of a specific mitra. JABNET-root only. Exempt from manual cooldown. */
+/** POST /api/billing/mitras/:id/sync - full sync of a specific mitra. JABNET-root only. Exempt from manual cooldown. */
 router.post("/api/billing/mitras/:id/sync", billingSyncLimiter, async (req: Request, res: Response) => {
   if (!isJabnetRoot(req)) return sendError(res, "Akses ditolak: khusus JABNET", 403);
   recordRateAttempt(BILLING_SYNC_LIMIT.bucket, rateLimitKey(req), BILLING_SYNC_LIMIT);
@@ -4362,7 +4362,7 @@ router.post("/api/billing/verify-reseller", verifyResellerLimiter, async (req: R
         mitraId: 1,
         resellerId: 12,
         isJabnetRoot: true,
-        message: "Mitra JABNET adalah billing provider root — tidak perlu verifikasi reseller.",
+        message: "Mitra JABNET adalah billing provider root - tidak perlu verifikasi reseller.",
         totalFound: 0,
         resellerNameFromBilling: null,
         elapsedMs: 0,
@@ -4440,7 +4440,7 @@ router.post("/api/billing/verify-reseller", verifyResellerLimiter, async (req: R
     const r = await fetch(`${apiUrl}?${qs}`, { signal: AbortSignal.timeout(20_000) });
     const elapsedMs = Date.now() - t0;
     if (!r.ok) {
-      return sendError(res, `Billing API HTTP ${r.status} — periksa URL/token`, 502);
+      return sendError(res, `Billing API HTTP ${r.status} - periksa URL/token`, 502);
     }
     const json: any = await r.json();
     const rows: any[] = json?.data?.data_pelanggan ?? json?.data ?? [];
@@ -4452,7 +4452,7 @@ router.post("/api/billing/verify-reseller", verifyResellerLimiter, async (req: R
     const namaOk = !!resellerNameFromBilling && expectedNama.toLowerCase() === resellerNameFromBilling.toLowerCase();
     const phoneOk = !!expectedPhone && (!phoneStored || expectedPhone === String(phoneStored).trim());
     const emailOk = !!expectedEmail && (!emailStored || expectedEmail.toLowerCase() === String(emailStored).trim().toLowerCase());
-    // Alamat: ALWAYS informational only — TIDAK termasuk dalam passed check (per user spec).
+    // Alamat: ALWAYS informational only - TIDAK termasuk dalam passed check (per user spec).
     const alamatMatches = !expectedAlamat || !alamatStored || expectedAlamat.toLowerCase() === String(alamatStored).trim().toLowerCase();
     // Password: shared secret stored plain-text in mitra_integrations. Fails if not configured (force owner to set).
     const passwordOk = !!passwordStored && inputPassword === String(passwordStored).trim();
@@ -4464,7 +4464,7 @@ router.post("/api/billing/verify-reseller", verifyResellerLimiter, async (req: R
     if (!passed) {
       const reasons: string[] = [];
       if (!billingIdOk) reasons.push("Billing ID tidak ditemukan di billing");
-      if (!namaOk) reasons.push(`Nama tidak cocok (input: "${expectedNama}", billing: "${resellerNameFromBilling ?? "—"}")`);
+      if (!namaOk) reasons.push(`Nama tidak cocok (input: "${expectedNama}", billing: "${resellerNameFromBilling ?? "-"}")`);
       if (!phoneOk) reasons.push("Nomor Telepon tidak cocok dengan yang tersimpan");
       if (!emailOk) reasons.push("Email tidak cocok dengan yang tersimpan");
       if (!passwordOk) {
@@ -4511,7 +4511,7 @@ router.post("/api/billing/verify-reseller", verifyResellerLimiter, async (req: R
   }
 });
 
-// GET status — dipakai Dashboard banner & IntegrationPage
+// GET status - dipakai Dashboard banner & IntegrationPage
 router.get("/api/billing/sync/status", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   // Baik read billing_sync maupun dashboard boleh akses status (banner perlu ini)
@@ -4526,7 +4526,7 @@ router.get("/api/billing/sync/status", async (req: Request, res: Response) => {
   }
 });
 
-/** GET /api/billing/sync/health — drift detection (customer isolir vs open collection) */
+/** GET /api/billing/sync/health - drift detection (customer isolir vs open collection) */
 router.get("/api/billing/sync/health", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "billing_sync") && !hasPermission(req, "dashboard")) {
@@ -4538,7 +4538,7 @@ router.get("/api/billing/sync/health", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/billing/sync/reconcile — manual trigger reconciliation pass (admin only) */
+/** POST /api/billing/sync/reconcile - manual trigger reconciliation pass (admin only) */
 router.post("/api/billing/sync/reconcile", billingSyncLimiter, async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "billing_sync")) return sendError(res, "Akses ditolak (write)", 403);
@@ -4550,7 +4550,7 @@ router.post("/api/billing/sync/reconcile", billingSyncLimiter, async (req: Reque
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/billing/sync/customer/:id/force — force resync 1 customer dari billing API */
+/** POST /api/billing/sync/customer/:id/force - force resync 1 customer dari billing API */
 router.post("/api/billing/sync/customer/:id/force", billingSyncLimiter, async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   recordRateAttempt(BILLING_SYNC_LIMIT.bucket, rateLimitKey(req), BILLING_SYNC_LIMIT);
@@ -4567,7 +4567,7 @@ router.post("/api/billing/sync/customer/:id/force", billingSyncLimiter, async (r
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/customers/:id/manual-overrides — toggle locked fields (admin/CS) */
+/** POST /api/customers/:id/manual-overrides - toggle locked fields (admin/CS) */
 router.post("/api/customers/:id/manual-overrides", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "customers")) return sendError(res, "Akses ditolak (write)", 403);
@@ -4588,7 +4588,7 @@ router.post("/api/customers/:id/manual-overrides", async (req: Request, res: Res
 // ==================== COLLECTION PIPELINE (v4.1.2) ====================
 
 /**
- * Collection Settings — parameter auto-trigger & auto-action
+ * Collection Settings - parameter auto-trigger & auto-action
  * Stored in app_settings, configurable admin-only.
  */
 router.get("/api/collections/settings", async (req: Request, res: Response) => {
@@ -4780,7 +4780,7 @@ async function guardCard(req: Request, res: Response, card: PipelineCard | undef
     ? await requirePipelineView(req, res, card.pipelineId)
     : await requirePipelineCapability(req, res, card.pipelineId, gate);
   if (!ok) return false;
-  // Teamspace FR-1404: kartu "Rahasia" hanya untuk creator/assignee/follower/admin — 404 (sembunyikan keberadaan).
+  // Teamspace FR-1404: kartu "Rahasia" hanya untuk creator/assignee/follower/admin - 404 (sembunyikan keberadaan).
   if ((card as any).isPrivate === 1 && !(await canAccessPrivateCard(req, card))) {
     sendError(res, "Kartu tidak ditemukan", 404);
     return false;
@@ -5129,7 +5129,7 @@ async function validateTriggerConfig(
   router.get("/api/pipelines", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     const includeArchived = req.query.archived === "1";
-    // Teamspace: pipeline milik tim disembunyikan dari daftar ops (NFR-012) —
+    // Teamspace: pipeline milik tim disembunyikan dari daftar ops (NFR-012) -
     // board tim diakses via /api/teamspace/* + GET /api/pipelines/:id.
     const all = (await storage.listPipelines(includeArchived)).filter((p) => (p as any).teamId == null);
     const admin = isPipelineAdmin(req);
@@ -5193,7 +5193,7 @@ async function validateTriggerConfig(
     const pipe = await storage.getPipeline(pid);
     if (!pipe) return sendError(res, "Pipeline tidak ditemukan", 404);
     // The "delete" capability gate is authoritative (admins/creators get it via the resolver;
-    // a role can be explicitly granted it) — no redundant creator/sysadmin guard.
+    // a role can be explicitly granted it) - no redundant creator/sysadmin guard.
     if (!(await requirePipelineCapability(req, res, pid, "delete"))) return;
     await storage.deletePipeline(pid);
     sendSuccess(res, { ok: true });
@@ -5247,7 +5247,7 @@ async function validateTriggerConfig(
     sendSuccess(res, { ok: true });
   });
 
-  // ── Assignable users — literal path; MUST be before GET /api/pipelines/:id ──
+  // -- Assignable users - literal path; MUST be before GET /api/pipelines/:id --
   router.get("/api/pipelines/assignable-users", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     const allowCross = req.query.scope === "cross" && isSystemAdmin(req);
@@ -5255,7 +5255,7 @@ async function validateTriggerConfig(
     sendSuccess(res, list);
   });
 
-  // ── Card routes — MUST be registered BEFORE GET /api/pipelines/:id ──────────
+  // -- Card routes - MUST be registered BEFORE GET /api/pipelines/:id ----------
   router.get("/api/pipelines/:id/cards", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
@@ -5330,7 +5330,7 @@ async function validateTriggerConfig(
     const exportableFields = fields.filter((f) => (exportAccess.get(f.id) ?? "view") !== "hidden");
     const csvFields: CsvField[] = exportableFields.map((f) => ({ id: f.id, label: f.label, type: f.type, options: f.options, config: (f as any).config }));
     const cols = buildExportColumns(csvFields);
-    // Row-level filter: build exportCards list (use for-loop — await inside .filter doesn't work).
+    // Row-level filter: build exportCards list (use for-loop - await inside .filter doesn't work).
     // Single batched fetch of all card values for the pipeline (anti-N+1) reused for both loops.
     const rowFilter = await getCardFilterForRequest(req, pid);
     const cachedCardValues = await storage.getAllCardValuesForPipeline(pid);
@@ -5467,7 +5467,7 @@ async function validateTriggerConfig(
     // corrupting the card and firing stage-enter automations against a stage the pipeline doesn't own.
     const moveStages = await storage.listStages(cardForGuard.pipelineId);
     if (!moveStages.some((s) => s.id === Number(toStageId))) return sendError(res, "Stage tujuan tidak valid untuk pipeline ini", 400);
-    // Teamspace FR-403: move permission per list — enforce pada stage asal DAN tujuan.
+    // Teamspace FR-403: move permission per list - enforce pada stage asal DAN tujuan.
     const fromStageRow = moveStages.find((s) => s.id === cardForGuard.stageId);
     const toStageRow = moveStages.find((s) => s.id === Number(toStageId));
     const mpFrom = parseMovePermission((fromStageRow as any)?.movePermission);
@@ -5515,7 +5515,7 @@ async function validateTriggerConfig(
     sendSuccess(res, { ok: true });
   });
 
-  // ── Bulk card actions ──
+  // -- Bulk card actions --
   router.post("/api/pipelines/:id/cards/bulk", async (req, res) => {
     if (!requireWritePipelinesFeature(req, res)) return;
     const pid = Number(req.params.id);
@@ -5531,7 +5531,7 @@ async function validateTriggerConfig(
       return sendError(res, `Akses ditolak: butuh kapabilitas '${neededCap}'`, 403);
     }
 
-    // set_field: one field for all cards — validate field + edit-access + value once up front.
+    // set_field: one field for all cards - validate field + edit-access + value once up front.
     let field: any = null;
     let fieldOpts: string[] | undefined;
     let fieldMultiple = false;
@@ -5592,7 +5592,7 @@ async function validateTriggerConfig(
         }
 
         if (runAutomation) {
-          // Mutation already committed — an automation error must NOT flip this card to failed.
+          // Mutation already committed - an automation error must NOT flip this card to failed.
           try {
             if (op === "move") await runStageEnterAutomations(updated, actor);
             else if (op === "assign") await dispatchCardEvent("assignee_changed", updated, actor);
@@ -5610,7 +5610,7 @@ async function validateTriggerConfig(
     sendSuccess(res, { processed: (cardIds as number[]).length, succeeded, failed });
   });
 
-  // ── Card relations (Phase 1) ──
+  // -- Card relations (Phase 1) --
   router.get("/api/pipelines/cards/:cardId/relations", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "view");
@@ -5671,7 +5671,7 @@ async function validateTriggerConfig(
     sendSuccess(res, { ok: true });
   });
 
-  // ── Lead-link endpoints ──────────────────────────────────────────────────────
+  // -- Lead-link endpoints ------------------------------------------------------
 
   router.get("/api/pipelines/cards/:cardId/lead-link", async (req, res) => {
     const card = await loadGuardedCard(req, res, "view");
@@ -5715,7 +5715,7 @@ async function validateTriggerConfig(
 
     await storage.createLeadCardLink({ leadId: lead.id, cardId: card.id, ruleId: null });
     await logAudit(req, "CREATE", "lead", lead.id, lead.name, { fromCardId: card.id });
-    // NOTE: intentionally NO emitLeadEvent — the card already exists and is now linked (anti-loop).
+    // NOTE: intentionally NO emitLeadEvent - the card already exists and is now linked (anti-loop).
     return sendSuccess(res, { lead, link: { leadId: lead.id, cardId: card.id } }, 201);
   });
 
@@ -5822,7 +5822,7 @@ async function saveOneAttachment(opts: {
   });
 }
 
-  // ── Card attachments ──────────────────────────────────────────────────────
+  // -- Card attachments ------------------------------------------------------
   router.post("/api/pipelines/cards/:cardId/attachments", async (req, res) => {
     if (!requireWritePipelinesFeature(req, res)) return;
     const card = await loadGuardedCard(req, res, "cards");
@@ -5904,7 +5904,7 @@ async function saveOneAttachment(opts: {
     const { userId } = req.body ?? {};
     if (!userId) return sendError(res, "userId wajib diisi", 400);
     // Same tenant guard as assignees: non-sysadmin can only follow users with pipeline access;
-    // JABNET sysadmin may add cross-tenant (record-only — being a follower grants no read access).
+    // JABNET sysadmin may add cross-tenant (record-only - being a follower grants no read access).
     const ferr = await validateAssignTarget(req, Number(userId), card.pipelineId);
     if (ferr) return sendError(res, ferr, 400);
     await storage.addFollower(card.id, Number(userId), req.authUser!.id);
@@ -5955,7 +5955,7 @@ async function saveOneAttachment(opts: {
     sendSuccess(res, { ok: true });
   });
 
-  // ── Field routes — registered BEFORE GET /:id to avoid :id swallowing "fields" ──
+  // -- Field routes - registered BEFORE GET /:id to avoid :id swallowing "fields" --
   router.get("/api/pipelines/:id/fields", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineView(req, res, Number(req.params.id)))) return;
@@ -6028,7 +6028,7 @@ async function saveOneAttachment(opts: {
     }
     const accessMap = await fieldAccessForRequest(req, card.pipelineId, fields);
     // Conditional-required enforcement: only fields that opt in via a requiredWhen rule block save.
-    // Skip fields this role can't edit (view/hidden) — can't require what the user can't fill.
+    // Skip fields this role can't edit (view/hidden) - can't require what the user can't fill.
     const existingVals = await storage.getCardValues(cardId);
     const effective = new Map<number, string>(Object.entries(existingVals).map(([k, v]) => [Number(k), String(v)]));
     for (const v of values) effective.set(Number(v.fieldId), String(v.value ?? ""));
@@ -6061,7 +6061,7 @@ async function saveOneAttachment(opts: {
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "manage"))) return;
     const { restricted, grants } = req.body ?? {};
     if (typeof restricted !== "boolean" || !Array.isArray(grants)) return sendError(res, "restricted (boolean) & grants (array) wajib", 400);
-    // Admin/System-Admin akses-nya fixed full (isPipelineAdmin) — grant untuk mereka
+    // Admin/System-Admin akses-nya fixed full (isPipelineAdmin) - grant untuk mereka
     // tidak pernah dibaca dan hanya menyesatkan UI. Buang sebelum simpan.
     const mitraRoles = await storage.getRoles(req.authUser!.activeMitraId ?? 1);
     const lockedRoleIds = new Set(mitraRoles.filter((r: any) => isAdminLockedRole(r)).map((r: any) => r.id));
@@ -6074,7 +6074,7 @@ async function saveOneAttachment(opts: {
     sendSuccess(res, { ok: true });
   });
 
-  // ── Collection config ────────────────────────────────────────────────────────
+  // -- Collection config --------------------------------------------------------
   router.get("/api/pipelines/:id/collection-metrics", async (req: Request, res: Response) => {
     const pid = Number(req.params.id);
     if (!requirePipelinesFeature(req, res)) return;
@@ -6136,7 +6136,7 @@ async function saveOneAttachment(opts: {
     return sendSuccess(res, { ok: true });
   });
 
-  // ── Automation rules ─────────────────────────────────────────────────────────
+  // -- Automation rules ---------------------------------------------------------
   router.get("/api/pipelines/:id/rules", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     if (!(await requirePipelineCapability(req, res, Number(req.params.id), "automation"))) return;
@@ -6191,7 +6191,7 @@ async function saveOneAttachment(opts: {
           triggerFieldLabel = srcFields.get(triggerConfig.fieldId)?.label ?? `Field #${triggerConfig.fieldId} (dihapus)`;
         }
       } else if (r.triggerType === "billing_sync" || String(r.triggerType ?? "").startsWith("lead_")) {
-        // lead_* rules keep entryStage/sources/fieldMap/notify inside triggerConfig JSON — must
+        // lead_* rules keep entryStage/sources/fieldMap/notify inside triggerConfig JSON - must
         // be parsed back so the rule renders + edit-mode hydration (ruleToDraft) restores the form.
         try { triggerConfig = r.triggerConfig ? JSON.parse(r.triggerConfig) : null; } catch { triggerConfig = null; }
       }
@@ -6319,7 +6319,7 @@ async function saveOneAttachment(opts: {
     sendSuccess(res, { ok: true });
   });
 
-  // ── Pipeline detail — registered AFTER all /cards/... literals and /:id/fields ──
+  // -- Pipeline detail - registered AFTER all /cards/... literals and /:id/fields --
   router.get("/api/pipelines/:id", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     const pipeline = await storage.getPipeline(Number(req.params.id));
@@ -6333,7 +6333,7 @@ async function saveOneAttachment(opts: {
     sendSuccess(res, { ...pipeline, stages, fields, level: deriveLevel([...caps]), capabilities: [...caps] });
   });
 
-  // ── Pipeline Templates ──
+  // -- Pipeline Templates --
 
   router.get("/api/pipeline-templates", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
@@ -6404,7 +6404,7 @@ async function loadTeamForManage(req: Request, res: Response): Promise<import(".
   return team;
 }
 
-/** Load tim :id untuk BACA — anggota, admin, atau pemegang teams:read. */
+/** Load tim :id untuk BACA - anggota, admin, atau pemegang teams:read. */
 async function loadTeamForView(req: Request, res: Response): Promise<{ team: import("../shared/schema.js").Team; myRole: string | null } | null> {
   const team = await storage.getTeam(Number(req.params.id));
   if (!team) { sendError(res, "Tim tidak ditemukan", 404); return null; }
@@ -6425,7 +6425,7 @@ async function enrichTeams(teamsList: Array<any>, forUserId?: number): Promise<A
     : new Map<number, number>();
   return teamsList.map((t) => {
     // Tim lama menyimpan enabledViews sebelum view default baru (mis. "announcements")
-    // ada — merge default agar tab baru langsung muncul tanpa migrasi data.
+    // ada - merge default agar tab baru langsung muncul tanpa migrasi data.
     const stored = parseEnabledViews(t.enabledViews);
     const views = [...stored, ...TEAM_DEFAULT_VIEWS.filter((v) => !stored.includes(v))];
     return {
@@ -6438,7 +6438,7 @@ async function enrichTeams(teamsList: Array<any>, forUserId?: number): Promise<A
   });
 }
 
-/** Search All gaya Cicle: tim + kartu board tim + dokumen (scoped keanggotaan) — dipakai ⌘K. */
+/** Search All gaya Cicle: tim + kartu board tim + dokumen (scoped keanggotaan) - dipakai ⌘K. */
 router.get("/api/teamspace/search", async (req, res) => {
   if (!requireTeamspaceAccess(req, res)) return;
   const q = String(req.query.q ?? "").trim();
@@ -6471,7 +6471,7 @@ router.post("/api/teamspace/teams", async (req, res) => {
   }
   const { name, description, icon, color, type, memberIds, managerIds, parentId } = req.body ?? {};
   if (!name || typeof name !== "string" || !name.trim()) return sendError(res, "Nama tim wajib diisi", 400);
-  // FR-302: nested tree — validasi tim induk ada (& belum diarsip).
+  // FR-302: nested tree - validasi tim induk ada (& belum diarsip).
   let parent: number | null = null;
   if (parentId != null && Number(parentId) > 0) {
     const p = await storage.getTeam(Number(parentId));
@@ -6517,7 +6517,7 @@ router.patch("/api/teamspace/teams/:id", async (req, res) => {
   const { name, description, icon, color, type, enabledViews, parentId } = req.body ?? {};
   if (name !== undefined && (!name || typeof name !== "string" || !name.trim())) return sendError(res, "Nama tim tidak valid", 400);
   const views = enabledViews !== undefined ? parseEnabledViews(JSON.stringify(enabledViews)) : undefined;
-  // FR-302: validasi pindah induk — ada, bukan diri sendiri, dan tidak membentuk siklus
+  // FR-302: validasi pindah induk - ada, bukan diri sendiri, dan tidak membentuk siklus
   // (walk rantai induk calon parent; jumlah tim kecil sehingga loop murah).
   let parentPatch: number | null | undefined = undefined;
   if (parentId !== undefined) {
@@ -6604,7 +6604,7 @@ router.delete("/api/teamspace/teams/:id/members/:userId", async (req, res) => {
   if (existing.role === "manager") {
     const members = await storage.listTeamMembers(team.id);
     if (members.filter((m) => m.teamRole === "manager").length <= 1) {
-      return sendError(res, "Tim harus punya minimal satu manager — tunjuk manager lain dulu", 400);
+      return sendError(res, "Tim harus punya minimal satu manager - tunjuk manager lain dulu", 400);
     }
   }
   await storage.removeTeamMember(team.id, userId);
@@ -6612,7 +6612,7 @@ router.delete("/api/teamspace/teams/:id/members/:userId", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-/** Semua Tugas (FR-412): agregasi kartu dari seluruh tim milik user — batched, hormati Rahasia. */
+/** Semua Tugas (FR-412): agregasi kartu dari seluruh tim milik user - batched, hormati Rahasia. */
 router.get("/api/teamspace/tasks", async (req, res) => {
   if (!requireTeamspaceAccess(req, res)) return;
   const myTeams = await storage.listTeamsForUser(req.authUser!.id);
@@ -6648,7 +6648,7 @@ router.get("/api/teamspace/tasks", async (req, res) => {
   });
 });
 
-// ── Ekstensi kartu: checklist (FR-406) ──
+// -- Ekstensi kartu: checklist (FR-406) --
 
 router.get("/api/pipelines/cards/:cardId/checklists", async (req, res) => {
   if (!requirePipelinesFeature(req, res)) return;
@@ -6737,7 +6737,7 @@ router.delete("/api/pipelines/checklist-items/:id", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── Ekstensi kartu: label berwarna (FR-413) ──
+// -- Ekstensi kartu: label berwarna (FR-413) --
 
 router.get("/api/pipelines/:id/labels", async (req, res) => {
   if (!requirePipelinesFeature(req, res)) return;
@@ -6795,7 +6795,7 @@ router.put("/api/pipelines/cards/:cardId/labels", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── Ekstensi kartu: selesai / rahasia / arsip / salin (FR-405, 409, 414) ──
+// -- Ekstensi kartu: selesai / rahasia / arsip / salin (FR-405, 409, 414) --
 
 router.post("/api/pipelines/cards/:cardId/complete", async (req, res) => {
   if (!requireWritePipelinesFeature(req, res)) return;
@@ -6811,7 +6811,7 @@ router.post("/api/pipelines/cards/:cardId/complete", async (req, res) => {
       nextCard = await storage.spawnRecurringCard(card.id, req.authUser!.id);
       if (nextCard) {
         await notifyPipelineCardWatchers(nextCard.id, req.authUser!.id, "Tugas berulang dibuat",
-          `Instance baru "${nextCard.title}" — tenggat ${nextCard.dueDate ? new Date(nextCard.dueDate).toLocaleDateString("id-ID") : "-"}`);
+          `Instance baru "${nextCard.title}" - tenggat ${nextCard.dueDate ? new Date(nextCard.dueDate).toLocaleDateString("id-ID") : "-"}`);
       }
     }
   }
@@ -6909,7 +6909,7 @@ router.get("/api/pipelines/:id/cards/archived", async (req, res) => {
   sendSuccess(res, await storage.listArchivedCards(Number(req.params.id)));
 });
 
-/** FR-403: atur siapa yang boleh memindahkan kartu di sebuah list (manager/admin — capability "stages"). */
+/** FR-403: atur siapa yang boleh memindahkan kartu di sebuah list (manager/admin - capability "stages"). */
 router.patch("/api/pipelines/:id/stages/:stageId/move-permission", async (req, res) => {
   if (!requireWritePipelinesFeature(req, res)) return;
   if (!(await requirePipelineCapability(req, res, Number(req.params.id), "stages"))) return;
@@ -6922,7 +6922,7 @@ router.patch("/api/pipelines/:id/stages/:stageId/move-permission", async (req, r
   sendSuccess(res, { ok: true, movePermission: parsed });
 });
 
-// ── Teamspace Fase 2 — helper guard modul ──
+// -- Teamspace Fase 2 - helper guard modul --
 
 type TeamModuleKey = "team_chat" | "team_schedule" | "team_checkins" | "team_docs" | "team_announcements";
 
@@ -6937,7 +6937,7 @@ function requireTeamModule(req: Request, res: Response, key: TeamModuleKey, writ
   return true;
 }
 
-/** Load tim :id, wajib ANGGOTA tim (atau admin) — untuk ruang khusus anggota (chat, jawab check-in). */
+/** Load tim :id, wajib ANGGOTA tim (atau admin) - untuk ruang khusus anggota (chat, jawab check-in). */
 async function loadTeamForMember(req: Request, res: Response): Promise<{ team: import("../shared/schema.js").Team; myRole: string | null } | null> {
   const team = await storage.getTeam(Number(req.params.id));
   if (!team) { sendError(res, "Tim tidak ditemukan", 404); return null; }
@@ -6955,7 +6955,7 @@ function canSeeConfidential(req: Request, createdBy: number, recipientIds: numbe
   return createdBy === uid || recipientIds.includes(uid);
 }
 
-// ── Teamspace Fase 2: Chat Grup (FR-5xx) ──
+// -- Teamspace Fase 2: Chat Grup (FR-5xx) --
 
 router.get("/api/teamspace/teams/:id/chat", async (req, res) => {
   if (!requireTeamModule(req, res, "team_chat")) return;
@@ -7048,7 +7048,7 @@ router.delete("/api/teamspace/chat/:messageId", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── Teamspace Fase 2: Jadwal (FR-7xx) ──
+// -- Teamspace Fase 2: Jadwal (FR-7xx) --
 
 router.get("/api/teamspace/teams/:id/events", async (req, res) => {
   if (!requireTeamModule(req, res, "team_schedule")) return;
@@ -7085,7 +7085,7 @@ router.post("/api/teamspace/teams/:id/events", async (req, res) => {
     if (uid === req.authUser!.id) continue;
     await storage.createNotification({
       userId: uid, type: "team_event", title: "Jadwal baru",
-      message: `"${ev.title}" — ${new Date(ev.startAt).toLocaleString("id-ID")}`,
+      message: `"${ev.title}" - ${new Date(ev.startAt).toLocaleString("id-ID")}`,
       link: `/teamspace/teams/${team.id}`, entityType: "team_event", entityId: ev.id,
       fromUserId: req.authUser!.id,
     });
@@ -7151,14 +7151,14 @@ router.post("/api/teamspace/calendar-token", async (req, res) => {
   sendSuccess(res, { feedToken: token });
 });
 
-/** Feed iCal per tim — TANPA header auth (dipakai Google/Apple Calendar).
+/** Feed iCal per tim - TANPA header auth (dipakai Google/Apple Calendar).
  *  Autentikasi via feedToken personal; wajib anggota tim tsb. */
 router.get("/api/teamspace/teams/:id/calendar.ics", async (req, res) => {
   try {
     const token = String(req.query.feedToken ?? "");
     const user = await storage.getUserByCalendarFeedToken(token);
     if (!user || (user as any).isActive === 0) return sendError(res, "Feed token tidak valid", 401);
-    // Route anonim berjalan di tenant ctx default (mitra 1) — resolve tim via pool lalu
+    // Route anonim berjalan di tenant ctx default (mitra 1) - resolve tim via pool lalu
     // jalankan sisa query di tenant ctx tim tsb.
     const [teamRows]: any = await (storage as any).pool.execute(`SELECT * FROM teams WHERE id = ?`, [Number(req.params.id)]);
     const teamRaw = (teamRows as any[])[0];
@@ -7173,7 +7173,7 @@ router.get("/api/teamspace/teams/:id/calendar.ics", async (req, res) => {
           const visible = events.filter((e) => e.isConfidential !== 1
             || e.createdBy === user.id || (participants.get(e.id) ?? []).includes(user.id));
           const ics = buildTeamCalendarIcs(
-            `JABNET — ${teamRaw.name}`,
+            `JABNET - ${teamRaw.name}`,
             visible.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, endAt: e.endAt, recurrence: e.recurrence, notes: e.notes })),
             new Date(),
           );
@@ -7191,7 +7191,7 @@ router.get("/api/teamspace/teams/:id/calendar.ics", async (req, res) => {
   }
 });
 
-// ── Teamspace Fase 2: Check-in (FR-8xx) ──
+// -- Teamspace Fase 2: Check-in (FR-8xx) --
 
 router.get("/api/teamspace/teams/:id/checkins", async (req, res) => {
   if (!requireTeamModule(req, res, "team_checkins")) return;
@@ -7287,7 +7287,7 @@ router.delete("/api/teamspace/checkins/:qid", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-/** Jawab instance check-in (FR-804) — penerima saja; instance = lastSentDate (default). */
+/** Jawab instance check-in (FR-804) - penerima saja; instance = lastSentDate (default). */
 router.post("/api/teamspace/checkins/:qid/respond", async (req, res) => {
   if (!requireTeamModule(req, res, "team_checkins")) return;
   const q = await storage.getCheckinQuestion(Number(req.params.qid));
@@ -7330,7 +7330,7 @@ router.get("/api/teamspace/checkins/:qid/responses", async (req, res) => {
   sendSuccess(res, await storage.listCheckinResponses(q.id));
 });
 
-// ── Teamspace Fase 2: Dokumen & File (FR-9xx) ──
+// -- Teamspace Fase 2: Dokumen & File (FR-9xx) --
 
 router.get("/api/teamspace/teams/:id/docs", async (req, res) => {
   if (!requireTeamModule(req, res, "team_docs")) return;
@@ -7513,7 +7513,7 @@ router.post("/api/teamspace/files/:fileId/archive", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── Teamspace: Pengumuman per-tim (BUG-004 / FR-6xx) ──
+// -- Teamspace: Pengumuman per-tim (BUG-004 / FR-6xx) --
 // Berbeda dari /announcements company-wide (changelog): ini komunikasi internal tim,
 // bertarget + Rahasia + expiry, dikirim manager tim ke anggotanya.
 
@@ -7557,7 +7557,7 @@ router.post("/api/teamspace/teams/:id/announcements", async (req, res) => {
   for (const uid of notifyIds) {
     if (uid === req.authUser!.id) continue;
     await storage.createNotification({
-      userId: uid, type: "announcement", title: `📢 ${team.name}: ${row.title}`,
+      userId: uid, type: "announcement", title: ` ${team.name}: ${row.title}`,
       message: row.content.length > 140 ? row.content.slice(0, 137) + "..." : row.content,
       link: `/teamspace/teams/${team.id}?tab=announcements`, entityType: "announcement", entityId: row.id,
       fromUserId: req.authUser!.id,
@@ -7620,7 +7620,7 @@ router.delete("/api/teamspace/announcements/:aid", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── Teamspace Fase 3: Laporan Kinerja terpadu (FR-10xx) ──
+// -- Teamspace Fase 3: Laporan Kinerja terpadu (FR-10xx) --
 
 interface TsPerfParams { from: string; to: string; teamId?: number; userId?: number }
 
@@ -7680,7 +7680,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
     && c.createdAt <= toIso
     && (!isDone(c) || (completedDateOf(c) ?? nowIso) >= fromIso));
 
-  // ── Totals (per kartu, tanpa double-count assignee) ──
+  // -- Totals (per kartu, tanpa double-count assignee) --
   const distribution = { belum: 0, dikerjakan: 0, terlambat: 0, selesai: 0 };
   let totOnTimeNum = 0, totOnTimeDen = 0, totCycleSum = 0, totCycleN = 0;
   for (const c of periodCards) {
@@ -7692,7 +7692,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
     }
   }
 
-  // ── Per-user tugas ──
+  // -- Per-user tugas --
   interface UserAgg {
     selesai: number; dikerjakan: number; belum: number; terlambat: number;
     onTimeNum: number; onTimeDen: number; cycleSum: number; cycleN: number;
@@ -7709,7 +7709,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
     targets.delete(-1);
     // BUG-006: kartu tanpa penanggung jawab dikreditkan ke pembuatnya, supaya angka
     // "Kinerja per Anggota" rekonsiliasi dengan total di atas (tiap kartu non-batal
-    // pasti punya creator) — bukan hilang dari tabel dan memunculkan empty-state palsu.
+    // pasti punya creator) - bukan hilang dari tabel dan memunculkan empty-state palsu.
     if (targets.size === 0) targets.add(c.createdBy);
     const st = statusOf(c);
     for (const t of targets) {
@@ -7724,7 +7724,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
     }
   }
 
-  // ── Check-in rate per user (instance = tanggal jawaban terobservasi ∪ lastSentDate dalam periode) ──
+  // -- Check-in rate per user (instance = tanggal jawaban terobservasi ∪ lastSentDate dalam periode) --
   for (const t of teamsList) {
     const questions = await storage.listCheckinQuestions(t.id);
     if (questions.length === 0) continue;
@@ -7744,7 +7744,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
     }
   }
 
-  // ── Ops terpadu (FR-1006) ──
+  // -- Ops terpadu (FR-1006) --
   const opsMap = await storage.getOpsStatsForUsers(fromIso, toIso);
   for (const [id] of opsMap) if (userVisible(id)) aggOf(id);   // pastikan user ops-only ikut tampil
   let maxOpsTotal = 0;
@@ -7754,7 +7754,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
   };
   for (const id of perUser.keys()) maxOpsTotal = Math.max(maxOpsTotal, opsTotalOf(id));
 
-  // ── Kemungkinan Penghambat (FR-1003) ──
+  // -- Kemungkinan Penghambat (FR-1003) --
   const threshold = Number(await storage.getMitraSetting("teamspace_stuck_threshold_days")) || 40;
   const nowMs = Date.now();
   const blockers = cards
@@ -7776,7 +7776,7 @@ async function computeTeamspacePerformance(req: Request, opts: TsPerfParams) {
       status: statusOf(x.card),
     }));
 
-  // ── Skor deterministik (§14.3) ──
+  // -- Skor deterministik (§14.3) --
   const weights = parseScoreWeights(await storage.getMitraSetting("teamspace_score_weights"));
   const users = [...perUser.entries()].map(([id, a]) => {
     const total = a.selesai + a.dikerjakan + a.belum + a.terlambat;
@@ -7833,14 +7833,14 @@ router.get("/api/teamspace/performance", async (req, res) => {
 });
 
 /** Saran AI (FR-1004): 1 paragraf bahasa natural dari statistik AKTUAL via Claude API.
- *  Key & toggle di appSettings (pola google_maps_api_key) — cache 24 jam per kombinasi filter. */
+ *  Key & toggle di appSettings (pola google_maps_api_key) - cache 24 jam per kombinasi filter. */
 const tsAiCache = new Map<string, { text: string; expiresAt: number }>();
 router.get("/api/teamspace/performance/suggestion", async (req, res) => {
   if (!requirePermission(req, res, "performance_reports")) return;
   const enabled = (await storage.getMitraSetting("teamspace_ai_enabled")) === "true";
   const apiKey = await storage.getMitraSetting("anthropic_api_key");
   if (!enabled || !apiKey) {
-    return sendError(res, "Saran AI belum aktif — set 'teamspace_ai_enabled=true' dan 'anthropic_api_key' di pengaturan (halaman Integrasi / app_settings)", 400);
+    return sendError(res, "Saran AI belum aktif - set 'teamspace_ai_enabled=true' dan 'anthropic_api_key' di pengaturan (halaman Integrasi / app_settings)", 400);
   }
   const p = parsePerfParams(req);
   const cacheKey = `${req.authUser!.activeMitraId}:${p.from}:${p.to}:${p.teamId ?? 0}:${p.userId ?? 0}:${localDateStr(new Date())}`;
@@ -7852,7 +7852,7 @@ router.get("/api/teamspace/performance/suggestion", async (req, res) => {
   const prompt = [
     "Kamu adalah asisten analisis kinerja tim untuk ISP JABNET (bahasa Indonesia).",
     "Berdasarkan data JSON berikut, tulis TEPAT SATU paragraf (4-6 kalimat) rangkuman kondisi kinerja periode ini.",
-    "Aturan ketat: sebut hanya angka yang ADA di data — jangan mengarang angka, nama, atau penyebab.",
+    "Aturan ketat: sebut hanya angka yang ADA di data - jangan mengarang angka, nama, atau penyebab.",
     "Sorot: distribusi status tugas, on-time rate, tugas macet (blockers) bila ada, dan 1 saran tindakan konkret.",
     "",
     "DATA:",
@@ -7890,14 +7890,14 @@ router.get("/api/teamspace/performance/suggestion", async (req, res) => {
   }
 });
 
-// ── Teamspace Fase 3: Cheers (FR-1203) ──
+// -- Teamspace Fase 3: Cheers (FR-1203) --
 
 // ==================== SDM / HRD Fase 1 (v5.1) ====================
 // Kehadiran & rekap: butuh izin hr_sdm. Cuti: semua staff boleh ajukan untuk
 // diri sendiri + lihat riwayatnya (self-service, "ngelink ke HRD"); daftar
 // penuh + approve/reject butuh hr_sdm.
 
-/** Registry karyawan: cek akun mana yang karyawan resmi — hub data lintas divisi. */
+/** Registry karyawan: cek akun mana yang karyawan resmi - hub data lintas divisi. */
 router.get("/api/hr/employees", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: butuh izin 'hr_sdm'", 403);
@@ -7988,7 +7988,7 @@ router.post("/api/hr/leaves/:id/review", async (req, res) => {
   const current = (await storage.listLeaves({ limit: 500 })).find((l) => l.id === id);
   if (!current) return sendError(res, "Pengajuan cuti tidak ditemukan", 404);
   const isHr = hasWritePermission(req, "hr_sdm");
-  // FR-HR-502: tahap manager — hanya atasan langsung pengaju (atau HR) yang boleh memutus.
+  // FR-HR-502: tahap manager - hanya atasan langsung pengaju (atau HR) yang boleh memutus.
   if (current.status === "pending" && (current as any).stage === "manager" && !isHr) {
     const profile = await storage.getEmployeeProfile(current.userId);
     if (profile?.supervisorId !== req.authUser.id) return sendError(res, "Akses ditolak: bukan atasan langsung pengaju", 403);
@@ -8014,7 +8014,7 @@ router.post("/api/hr/leaves/:id/review", async (req, res) => {
   sendSuccess(res, row);
 });
 
-// ── PRD-HR HR-1a: presensi ESS (GPS+selfie) + approval + shift + libur + saldo cuti ──
+// -- PRD-HR HR-1a: presensi ESS (GPS+selfie) + approval + shift + libur + saldo cuti --
 
 function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000, toRad = (d: number) => (d * Math.PI) / 180;
@@ -8052,7 +8052,7 @@ router.post("/api/hr/clock", async (req, res) => {
   });
   if (approvalStatus === "approved") {
     await storage.applyAttendanceEvent(ev, req.authUser.id);
-    // Hitung telat vs shift user (FR-HR-304) — dicatat sebagai note kehadiran.
+    // Hitung telat vs shift user (FR-HR-304) - dicatat sebagai note kehadiran.
     if (kind === "in") {
       // FR-HR-301: roster shift per-tanggal menang atas jadwal tetap
       const shift = await storage.effectiveShift(req.authUser.id, date);
@@ -8168,7 +8168,7 @@ router.delete("/api/hr/holidays/:id", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── FR-HR-901: pelacakan lokasi (aktif hanya saat status kerja; transparan ke karyawan) ──
+// -- FR-HR-901: pelacakan lokasi (aktif hanya saat status kerja; transparan ke karyawan) --
 router.post("/api/hr/ping", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   const { lat, lng, accuracy } = req.body ?? {};
@@ -8197,7 +8197,7 @@ router.get("/api/hr/tracking/:userId", async (req, res) => {
   sendSuccess(res, await storage.listUserPings(Number(req.params.userId), date));
 });
 
-// ── FR-HR-1501/1502: Dashboard HR ──
+// -- FR-HR-1501/1502: Dashboard HR --
 router.get("/api/hr/dashboard", async (req, res) => {
   if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   const now = new Date();
@@ -8205,7 +8205,7 @@ router.get("/api/hr/dashboard", async (req, res) => {
   sendSuccess(res, await storage.hrDashboard(date));
 });
 
-// ── FR-HR-902/903: master klien + kunjungan (check-in sah hanya dalam radius) ──
+// -- FR-HR-902/903: master klien + kunjungan (check-in sah hanya dalam radius) --
 router.get("/api/hr/clients", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   sendSuccess(res, await storage.listClients());
@@ -8233,7 +8233,7 @@ router.get("/api/hr/visits", async (req, res) => {
   sendSuccess(res, await storage.listVisits({ userId: mineOnly ? req.authUser.id : undefined }));
 });
 
-// ── FR-HR-12xx: KPI formulir + penilaian ──
+// -- FR-HR-12xx: KPI formulir + penilaian --
 router.get("/api/hr/kpi", async (req, res) => {
   if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   sendSuccess(res, { forms: await storage.listKpiForms(), assessments: await storage.listKpiAssessments(req.query.period ? String(req.query.period) : undefined) });
@@ -8264,7 +8264,7 @@ router.post("/api/hr/kpi/assess", async (req, res) => {
   sendSuccess(res, { total });
 });
 
-// ── FR-HR-703: petty cash ──
+// -- FR-HR-703: petty cash --
 router.get("/api/hr/pettycash", async (req, res) => {
   if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   sendSuccess(res, await storage.pettyCashLedger());
@@ -8279,7 +8279,7 @@ router.post("/api/hr/pettycash", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── HR-1b: profil karyawan (wizard), org/jabatan, lembur ──
+// -- HR-1b: profil karyawan (wizard), org/jabatan, lembur --
 
 router.get("/api/hr/profile/:userId", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -8293,7 +8293,7 @@ router.post("/api/hr/profile/:userId", async (req, res) => {
   const target = Number(req.params.userId);
   if (!target) return sendError(res, "userId tidak valid", 400);
   const body = req.body ?? {};
-  // Whitelist kolom profil — cegah field liar masuk DB.
+  // Whitelist kolom profil - cegah field liar masuk DB.
   const ALLOWED = ["birthPlace","maritalStatus","bloodType","religion","nationality","idType","idNumber","kkNumber",
     "addressKtp","addressDomisili","educationLevel","educationInstitution","educationMajor",
     "orgUnitId","positionId","rank","employmentStatus","supervisorId","resignDate",
@@ -8333,7 +8333,7 @@ router.post("/api/hr/overtime", async (req, res) => {
   const { date, hours, reason } = req.body ?? {};
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date ?? ""))) return sendError(res, "date wajib YYYY-MM-DD", 400);
   const h = Number(hours);
-  if (!Number.isFinite(h) || h <= 0 || h > 12) return sendError(res, "hours wajib 0–12", 400);
+  if (!Number.isFinite(h) || h <= 0 || h > 12) return sendError(res, "hours wajib 0-12", 400);
   sendSuccess(res, await storage.createOvertime({ userId: req.authUser.id, date: String(date), hours: h, reason: reason ? String(reason).slice(0, 255) : null }));
 });
 router.post("/api/hr/overtime/:id/review", async (req, res) => {
@@ -8345,7 +8345,7 @@ router.post("/api/hr/overtime/:id/review", async (req, res) => {
   sendSuccess(res, row);
 });
 
-// ── HR-2: PAYROLL (FR-HR-6xx) — metode GROSS + TER bulanan; data gaji = hr_sdm write only ──
+// -- HR-2: PAYROLL (FR-HR-6xx) - metode GROSS + TER bulanan; data gaji = hr_sdm write only --
 
 router.get("/api/hr/salary", async (req, res) => {
   if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak: data gaji butuh 'hr_sdm' (write)", 403);
@@ -8419,7 +8419,7 @@ router.post("/api/hr/payroll/generate", async (req, res) => {
       fixedDeduction: c.fixedDeduction + installment, ptkp: (profile?.ptkpStatus as any) || "TK/0",
       enrollBpjsTk: c.enrollBpjsTk === 1, enrollBpjsKes: c.enrollBpjsKes === 1,
     });
-    // Reimburse bukan objek pajak — ditambahkan SETELAH hitung PPh/BPJS.
+    // Reimburse bukan objek pajak - ditambahkan SETELAH hitung PPh/BPJS.
     result.totalAllowance += reimburseTotal;
     result.takeHomePay += reimburseTotal;
     await storage.upsertPayslip({
@@ -8446,7 +8446,7 @@ router.post("/api/hr/payroll/:id/status", async (req, res) => {
   if (!slip) return sendError(res, "Slip tidak ditemukan", 404);
   await storage.setPayslipStatus(slip.id, status);
   // QA H2: efek uang (potong sisa kasbon + tandai reimburse paid) dijalankan SEKALI
-  // seumur slip via flag effects_applied — kebal terhadap transisi paid→ready→paid.
+  // seumur slip via flag effects_applied - kebal terhadap transisi paid→ready→paid.
   if (status === "paid" && (slip as any).effectsApplied !== 1) {
     try {
       const d = JSON.parse(slip.detail);
@@ -8458,7 +8458,7 @@ router.post("/api/hr/payroll/:id/status", async (req, res) => {
   sendSuccess(res, { ok: true });
 });
 
-// ── FR-HR-701/702: kasbon + reimburse (self-service + review HR) ──
+// -- FR-HR-701/702: kasbon + reimburse (self-service + review HR) --
 router.get("/api/hr/kasbon", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   const mineOnly = req.query.mine === "1" || !hasPermission(req, "hr_sdm");
@@ -8469,7 +8469,7 @@ router.post("/api/hr/kasbon", async (req, res) => {
   const { amount, months, reason } = req.body ?? {};
   const amt = Number(amount), m = Number(months) || 1;
   if (!Number.isFinite(amt) || amt <= 0) return sendError(res, "amount wajib > 0", 400);
-  if (m < 1 || m > 12) return sendError(res, "months 1–12", 400);
+  if (m < 1 || m > 12) return sendError(res, "months 1-12", 400);
   // Plafon: configurable via app_settings hr_kasbon_plafon (default 1× gaji pokok; tanpa gaji → 5jt)
   let plafon = 5_000_000;
   try {
@@ -8489,7 +8489,7 @@ router.post("/api/hr/kasbon/:id/review", async (req, res) => {
   const all = await storage.listCashAdvances({});
   const target = all.find((k) => k.id === Number(req.params.id));
   if (!target) return sendError(res, "Kasbon tidak ditemukan", 404);
-  // QA M2: gerbang plafon nyata ada di approve — cegah dua pengajuan konkuren
+  // QA M2: gerbang plafon nyata ada di approve - cegah dua pengajuan konkuren
   // yang sama-sama lolos cek saat pengajuan lalu di-approve melebihi plafon.
   if (status === "approved") {
     let plafon = 5_000_000;
@@ -8526,7 +8526,7 @@ router.post("/api/hr/reimburse/:id/review", async (req, res) => {
   await storage.setReimbursementStatus(Number(req.params.id), status, req.authUser.id);
   sendSuccess(res, { ok: true });
 });
-/** ESS: slip gaji milik sendiri — hanya yang SUDAH dibayar (FR-HR-1104). */
+/** ESS: slip gaji milik sendiri - hanya yang SUDAH dibayar (FR-HR-1104). */
 router.get("/api/hr/my/payslips", async (req, res) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   sendSuccess(res, await storage.listPayslips({ userId: req.authUser.id, paidOnly: true }));
@@ -8545,9 +8545,9 @@ router.get("/api/hr/payslip/:id/print", async (req, res) => {
   const rp = (n: number) => `Rp ${Math.round(n || 0).toLocaleString("id-ID")}`;
   const row = (label: string, val: string, bold = false) =>
     `<tr><td style="padding:4px 8px">${label}</td><td style="padding:4px 8px;text-align:right;${bold ? "font-weight:700" : ""}">${val}</td></tr>`;
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Slip Gaji ${slip.period} — ${emp?.name ?? ""}</title>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Slip Gaji ${slip.period} - ${emp?.name ?? ""}</title>
 <style>body{font-family:Arial,sans-serif;max-width:640px;margin:24px auto;color:#111}h1{font-size:18px;margin:0}h2{font-size:13px;color:#555;font-weight:400;margin:2px 0 16px}table{width:100%;border-collapse:collapse;font-size:13px}thead td{font-weight:700;border-bottom:2px solid #111;padding:6px 8px}tfoot td{border-top:2px solid #111}@media print{button{display:none}}</style></head><body>
-<h1>PT Arkanova Cipta Inovasi — JABNET</h1><h2>Slip Gaji Periode ${slip.period} · RAHASIA</h2>
+<h1>PT Arkanova Cipta Inovasi - JABNET</h1><h2>Slip Gaji Periode ${slip.period} · RAHASIA</h2>
 <table><tr><td style="padding:2px 8px"><b>${emp?.name ?? "-"}</b> (${emp?.username ?? "-"})</td><td style="padding:2px 8px;text-align:right">NIK: ${emp?.employeeId ?? "-"} · PTKP: ${profile?.ptkpStatus ?? "-"}</td></tr>
 <tr><td style="padding:2px 8px">${emp?.position ?? ""} ${emp?.department ? "· " + emp.department : ""}</td><td style="padding:2px 8px;text-align:right">Bank: ${profile?.bankName ?? "-"} ${profile?.bankAccount ?? ""}</td></tr></table><br>
 <table><thead><tr><td>Komponen</td><td style="text-align:right">Jumlah</td></tr></thead><tbody>
@@ -8567,7 +8567,7 @@ ${row(`PPh 21 (TER ${d.terRatePct ?? 0}%)`, "− " + rp(d.pph21))}
   res.send(html);
 });
 
-/** FR-HR-802 (subset): rekap PPh 21 bulanan per karyawan — CSV siap lapor. */
+/** FR-HR-802 (subset): rekap PPh 21 bulanan per karyawan - CSV siap lapor. */
 router.get("/api/hr/payroll/export-pph", async (req, res) => {
   if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
   const period = String(req.query.period ?? "").slice(0, 7);
@@ -8624,7 +8624,7 @@ router.post("/api/teamspace/cheers", async (req, res) => {
   const cardId = req.body?.cardId ? Number(req.body.cardId) : null;
   const cheer = await storage.createCheer(req.authUser!.id, toUserId, message, cardId);
   await storage.createNotification({
-    userId: toUserId, type: "cheers_received", title: "🎉 Kamu dapat Cheers!",
+    userId: toUserId, type: "cheers_received", title: " Kamu dapat Cheers!",
     message: `${req.authUser!.name}: "${message.slice(0, 80)}"`,
     link: "/teamspace/cheers", entityType: "cheer", entityId: cheer.id,
     fromUserId: req.authUser!.id,
@@ -8651,7 +8651,7 @@ router.get("/api/teamspace/cheers/leaderboard", async (req, res) => {
 
 // ==================== LOYALTY ADMIN (v4.1.8) ====================
 
-/** GET /api/loyalty/admin/summary — dashboard top stats */
+/** GET /api/loyalty/admin/summary - dashboard top stats */
 router.get("/api/loyalty/admin/summary", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -8677,7 +8677,7 @@ router.get("/api/loyalty/admin/discounts", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/discounts/:id/apply — mark discount applied + save invoice_ref */
+/** POST /api/loyalty/admin/discounts/:id/apply - mark discount applied + save invoice_ref */
 router.post("/api/loyalty/admin/discounts/:id/apply", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8690,7 +8690,7 @@ router.post("/api/loyalty/admin/discounts/:id/apply", async (req: Request, res: 
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** POST /api/loyalty/admin/discounts/:id/cancel — cancel pending discount */
+/** POST /api/loyalty/admin/discounts/:id/cancel - cancel pending discount */
 router.post("/api/loyalty/admin/discounts/:id/cancel", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8703,7 +8703,7 @@ router.post("/api/loyalty/admin/discounts/:id/cancel", async (req: Request, res:
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** PUT /api/loyalty/admin/discounts/:id — edit type/value/source/description (status='pending' only) */
+/** PUT /api/loyalty/admin/discounts/:id - edit type/value/source/description (status='pending' only) */
 router.put("/api/loyalty/admin/discounts/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8724,7 +8724,7 @@ router.put("/api/loyalty/admin/discounts/:id", async (req: Request, res: Respons
   }
 });
 
-/** DELETE /api/loyalty/admin/discounts/:id — soft delete (block status='applied') */
+/** DELETE /api/loyalty/admin/discounts/:id - soft delete (block status='applied') */
 router.delete("/api/loyalty/admin/discounts/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8743,7 +8743,7 @@ router.delete("/api/loyalty/admin/discounts/:id", async (req: Request, res: Resp
   }
 });
 
-/** GET /api/loyalty/admin/leaderboard — top Sahabat (default sort=referrals, fallback streak) */
+/** GET /api/loyalty/admin/leaderboard - top Sahabat (default sort=referrals, fallback streak) */
 router.get("/api/loyalty/admin/leaderboard", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -8766,7 +8766,7 @@ router.get("/api/loyalty/admin/referrals", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/referrals — admin manual create (offline referral entry) */
+/** POST /api/loyalty/admin/referrals - admin manual create (offline referral entry) */
 router.post("/api/loyalty/admin/referrals", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8802,7 +8802,7 @@ async function notifyReferrerInviteRecorded(referrer: any, refereeName: string, 
     await sendLoyaltyNotification("sahabat_invite_recorded", referrer.phone, {
       nama: referrer.name,
       refereeName,
-      refereePhoneLine: refereePhone ? `\n📱 ${refereePhone}` : "",
+      refereePhoneLine: refereePhone ? `\n ${refereePhone}` : "",
       sahabatCode: (loyalty as any).sahabatCode ?? loyalty.referralCode ?? "-",
       totalInvited: String(allRefs.length),
     });
@@ -8822,8 +8822,8 @@ async function notifyReferrerInviteRegistered(referral: { referrerCustomerId: nu
     const level = (loyalty as any).sahabatLevel ?? "new";
     const totalSuccessful = (loyalty as any).totalSuccessfulReferrals ?? 0;
     const LEVEL_LABEL: Record<string, string> = {
-      new: "Pelanggan", perunggu: "Perunggu 🥉", perak: "Perak 🥈",
-      emas: "Emas 🥇", platinum: "Platinum 💎", berlian: "Berlian 👑", ambassador: "Ambassador 🌟",
+      new: "Pelanggan", perunggu: "Perunggu ", perak: "Perak ",
+      emas: "Emas ", platinum: "Platinum ", berlian: "Berlian ", ambassador: "Ambassador ",
     };
     const NEXT: Record<string, string> = {
       new: "5 lagi ke Perunggu (Bonus Rp 200K + Speed Boost)",
@@ -8831,7 +8831,7 @@ async function notifyReferrerInviteRegistered(referral: { referrerCustomerId: nu
       perak: "10 lagi ke Emas (GRATIS 24 bulan)",
       emas: "10 lagi ke Platinum (Cash Rp 2jt)",
       platinum: "20 lagi ke Berlian (Cash Rp 5jt)",
-      berlian: "Level maksimal — Legend 👑",
+      berlian: "Level maksimal - Legend ",
       ambassador: "Rev share 15% aktif",
     };
     await sendLoyaltyNotification("sahabat_invite_registered", referrer.phone, {
@@ -8847,7 +8847,7 @@ async function notifyReferrerInviteRegistered(referral: { referrerCustomerId: nu
   }
 }
 
-/** POST /api/loyalty/admin/referrals/:id/link — admin manual link referee to customer */
+/** POST /api/loyalty/admin/referrals/:id/link - admin manual link referee to customer */
 router.post("/api/loyalty/admin/referrals/:id/link", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8863,7 +8863,7 @@ router.post("/api/loyalty/admin/referrals/:id/link", async (req: Request, res: R
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** PUT /api/loyalty/admin/referrals/:id — edit referee name/phone/notes (block rewarded) */
+/** PUT /api/loyalty/admin/referrals/:id - edit referee name/phone/notes (block rewarded) */
 router.put("/api/loyalty/admin/referrals/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8884,7 +8884,7 @@ router.put("/api/loyalty/admin/referrals/:id", async (req: Request, res: Respons
   }
 });
 
-/** DELETE /api/loyalty/admin/referrals/:id — soft delete (block rewarded) */
+/** DELETE /api/loyalty/admin/referrals/:id - soft delete (block rewarded) */
 router.delete("/api/loyalty/admin/referrals/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8903,7 +8903,7 @@ router.delete("/api/loyalty/admin/referrals/:id", async (req: Request, res: Resp
   }
 });
 
-/** POST /api/loyalty/admin/discounts — manual issue reward (admin ad-hoc) */
+/** POST /api/loyalty/admin/discounts - manual issue reward (admin ad-hoc) */
 router.post("/api/loyalty/admin/discounts", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8922,7 +8922,7 @@ router.post("/api/loyalty/admin/discounts", async (req: Request, res: Response) 
     if (!reason) return sendError(res, "Alasan wajib diisi untuk audit trail");
     const customer = await storage.getCustomer(customerId);
     if (!customer) return sendError(res, "Customer tidak ditemukan", 404);
-    const fullDesc = description || `${discountType} ${discountValue} — ${reason}`;
+    const fullDesc = description || `${discountType} ${discountValue} - ${reason}`;
     const row = await storage.createManualDiscount({
       customerId,
       discountType,
@@ -8939,7 +8939,7 @@ router.post("/api/loyalty/admin/discounts", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/sahabat/:customerId — detail Sahabat lengkap untuk drawer */
+/** GET /api/loyalty/admin/sahabat/:customerId - detail Sahabat lengkap untuk drawer */
 router.get("/api/loyalty/admin/sahabat/:customerId", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -8952,7 +8952,7 @@ router.get("/api/loyalty/admin/sahabat/:customerId", async (req: Request, res: R
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/budget — tracker budget program bulan ini */
+/** GET /api/loyalty/admin/budget - tracker budget program bulan ini */
 router.get("/api/loyalty/admin/budget", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -8967,7 +8967,7 @@ router.get("/api/loyalty/admin/budget", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/loyalty/admin/budget/config — set monthly budget limit */
+/** PUT /api/loyalty/admin/budget/config - set monthly budget limit */
 router.put("/api/loyalty/admin/budget/config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -8979,7 +8979,7 @@ router.put("/api/loyalty/admin/budget/config", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/campaign — active seasonal campaign */
+/** GET /api/loyalty/admin/campaign - active seasonal campaign */
 router.get("/api/loyalty/admin/campaign", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -8995,7 +8995,7 @@ router.get("/api/loyalty/admin/campaign", async (req: Request, res: Response) =>
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/loyalty/admin/campaign — set / update active seasonal campaign */
+/** PUT /api/loyalty/admin/campaign - set / update active seasonal campaign */
 router.put("/api/loyalty/admin/campaign", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9020,7 +9020,7 @@ router.put("/api/loyalty/admin/campaign", async (req: Request, res: Response) =>
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/loyalty/admin/campaign — clear active campaign */
+/** DELETE /api/loyalty/admin/campaign - clear active campaign */
 router.delete("/api/loyalty/admin/campaign", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9031,7 +9031,7 @@ router.delete("/api/loyalty/admin/campaign", async (req: Request, res: Response)
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/funnel — funnel + cohort analytics */
+/** GET /api/loyalty/admin/funnel - funnel + cohort analytics */
 router.get("/api/loyalty/admin/funnel", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9041,7 +9041,7 @@ router.get("/api/loyalty/admin/funnel", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/fraud-checks — flag suspicious referral patterns */
+/** GET /api/loyalty/admin/fraud-checks - flag suspicious referral patterns */
 router.get("/api/loyalty/admin/fraud-checks", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9051,7 +9051,7 @@ router.get("/api/loyalty/admin/fraud-checks", async (req: Request, res: Response
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/statement — kirim statement bulanan WA ke 1 Sahabat */
+/** POST /api/loyalty/admin/sahabat/:customerId/statement - kirim statement bulanan WA ke 1 Sahabat */
 router.post("/api/loyalty/admin/sahabat/:customerId/statement", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9063,7 +9063,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/statement", async (req: Requ
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/statement/broadcast — kirim statement ke SEMUA Sahabat aktif (tier rtrw/desa) */
+/** POST /api/loyalty/admin/statement/broadcast - kirim statement ke SEMUA Sahabat aktif (tier rtrw/desa) */
 router.post("/api/loyalty/admin/statement/broadcast", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9098,8 +9098,8 @@ async function sendSahabatMonthlyStatement(customerId: number): Promise<{ sent: 
   const { sendLoyaltyNotification } = await import("./mpwa.js");
   const totalSuccessful = (loyalty as any).totalSuccessfulReferrals ?? 0;
   const LEVEL_LABEL: Record<string, string> = {
-    new: "Pelanggan", perunggu: "Perunggu 🥉", perak: "Perak 🥈",
-    emas: "Emas 🥇", platinum: "Platinum 💎", berlian: "Berlian 👑", ambassador: "Ambassador 🌟",
+    new: "Pelanggan", perunggu: "Perunggu ", perak: "Perak ",
+    emas: "Emas ", platinum: "Platinum ", berlian: "Berlian ", ambassador: "Ambassador ",
   };
   const level = (loyalty as any).sahabatLevel ?? "new";
   const result = await sendLoyaltyNotification("sahabat_monthly_statement", customer.phone, {
@@ -9109,13 +9109,13 @@ async function sendSahabatMonthlyStatement(customerId: number): Promise<{ sent: 
     thisMonthRewarded: String(thisMonthRewarded.length),
     totalSuccessful: String(totalSuccessful),
     level: LEVEL_LABEL[level] ?? level,
-    rank: rank ? `#${rank}` : "—",
+    rank: rank ? `#${rank}` : "-",
     sahabatCode: (loyalty as any).sahabatCode ?? loyalty.referralCode ?? "-",
   });
   return { sent: result.sent, reason: result.error };
 }
 
-/** GET /api/loyalty/admin/expiry-config — read expiry + reminder days */
+/** GET /api/loyalty/admin/expiry-config - read expiry + reminder days */
 router.get("/api/loyalty/admin/expiry-config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9128,7 +9128,7 @@ router.get("/api/loyalty/admin/expiry-config", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/loyalty/admin/expiry-config — update expiry + reminder days */
+/** PUT /api/loyalty/admin/expiry-config - update expiry + reminder days */
 router.put("/api/loyalty/admin/expiry-config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9141,7 +9141,7 @@ router.put("/api/loyalty/admin/expiry-config", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/tier — upgrade tier (RT/RW / Desa setup) */
+/** POST /api/loyalty/admin/sahabat/:customerId/tier - upgrade tier (RT/RW / Desa setup) */
 router.post("/api/loyalty/admin/sahabat/:customerId/tier", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9163,7 +9163,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/tier", async (req: Request, 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/points-adjust — adjust points balance (delta + reason) */
+/** POST /api/loyalty/admin/sahabat/:customerId/points-adjust - adjust points balance (delta + reason) */
 router.post("/api/loyalty/admin/sahabat/:customerId/points-adjust", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9185,7 +9185,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/points-adjust", async (req: 
   }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/level — override sahabat level */
+/** POST /api/loyalty/admin/sahabat/:customerId/level - override sahabat level */
 router.post("/api/loyalty/admin/sahabat/:customerId/level", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9204,7 +9204,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/level", async (req: Request,
   }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/code — rename sahabatCode */
+/** POST /api/loyalty/admin/sahabat/:customerId/code - rename sahabatCode */
 router.post("/api/loyalty/admin/sahabat/:customerId/code", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9223,7 +9223,7 @@ router.post("/api/loyalty/admin/sahabat/:customerId/code", async (req: Request, 
   }
 });
 
-/** POST /api/loyalty/admin/sahabat/:customerId/freeze — toggle freeze flag */
+/** POST /api/loyalty/admin/sahabat/:customerId/freeze - toggle freeze flag */
 router.post("/api/loyalty/admin/sahabat/:customerId/freeze", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9240,11 +9240,11 @@ router.post("/api/loyalty/admin/sahabat/:customerId/freeze", async (req: Request
   }
 });
 
-// ════════════════════════════════════════════════════════════
-//  POINTS & SPEED-ON-DEMAND — ADMIN (v4.2.2)
-// ════════════════════════════════════════════════════════════
+// ============================================================
+//  POINTS & SPEED-ON-DEMAND - ADMIN (v4.2.2)
+// ============================================================
 
-/** GET /api/loyalty/admin/points/stats — KPI redemption */
+/** GET /api/loyalty/admin/points/stats - KPI redemption */
 router.get("/api/loyalty/admin/points/stats", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9266,7 +9266,7 @@ router.get("/api/loyalty/admin/points/redemptions", async (req: Request, res: Re
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/points/redemptions/:id/verify — activate redemption + auto-apply MikroTik */
+/** POST /api/loyalty/admin/points/redemptions/:id/verify - activate redemption + auto-apply MikroTik */
 router.post("/api/loyalty/admin/points/redemptions/:id/verify", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9313,8 +9313,8 @@ async function notifyCustomerBoostActivated(redemption: any): Promise<void> {
       rewardLabel: redemption.rewardLabel,
       speedMultiplier: String(redemption.speedMultiplier),
       durationHours: String(redemption.durationHours),
-      startAt: redemption.startAt ? fmtTime(redemption.startAt) : "—",
-      endAt: redemption.endAt ? fmtTime(redemption.endAt) : "—",
+      startAt: redemption.startAt ? fmtTime(redemption.startAt) : "-",
+      endAt: redemption.endAt ? fmtTime(redemption.endAt) : "-",
       balance: String((loyalty as any).pointsBalance ?? 0),
     });
   } catch (e: any) {
@@ -9341,7 +9341,7 @@ async function notifyCustomerBoostRejected(redemption: any, reason: string): Pro
   }
 }
 
-/** POST /api/loyalty/admin/points/redemptions/:id/reject — reject pending + refund points */
+/** POST /api/loyalty/admin/points/redemptions/:id/reject - reject pending + refund points */
 router.post("/api/loyalty/admin/points/redemptions/:id/reject", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9355,14 +9355,14 @@ router.post("/api/loyalty/admin/points/redemptions/:id/reject", async (req: Requ
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** POST /api/loyalty/admin/points/redemptions/:id/cancel — cancel active early + revert MikroTik + refund */
+/** POST /api/loyalty/admin/points/redemptions/:id/cancel - cancel active early + revert MikroTik + refund */
 router.post("/api/loyalty/admin/points/redemptions/:id/cancel", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
   try {
     const id = Number(req.params.id);
     const reason = String(req.body?.reason ?? "cancelled by admin").trim();
-    // Get redemption sebelum cancel — kalau active dengan MikroTik data, revert dulu
+    // Get redemption sebelum cancel - kalau active dengan MikroTik data, revert dulu
     const before = await storage.getRedemption(id);
     if (before?.status === "active" && before.originalPppProfile) {
       try {
@@ -9379,7 +9379,7 @@ router.post("/api/loyalty/admin/points/redemptions/:id/cancel", async (req: Requ
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** PUT /api/loyalty/admin/points/redemptions/:id — edit boost params (status='pending' only) */
+/** PUT /api/loyalty/admin/points/redemptions/:id - edit boost params (status='pending' only) */
 router.put("/api/loyalty/admin/points/redemptions/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9400,7 +9400,7 @@ router.put("/api/loyalty/admin/points/redemptions/:id", async (req: Request, res
   }
 });
 
-/** DELETE /api/loyalty/admin/points/redemptions/:id — soft delete (block 'active', auto-refund pending) */
+/** DELETE /api/loyalty/admin/points/redemptions/:id - soft delete (block 'active', auto-refund pending) */
 router.delete("/api/loyalty/admin/points/redemptions/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9419,7 +9419,7 @@ router.delete("/api/loyalty/admin/points/redemptions/:id", async (req: Request, 
   }
 });
 
-/** GET /api/loyalty/admin/mikrotik-boost/config — read MikroTik auto-activate settings */
+/** GET /api/loyalty/admin/mikrotik-boost/config - read MikroTik auto-activate settings */
 router.get("/api/loyalty/admin/mikrotik-boost/config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9433,7 +9433,7 @@ router.get("/api/loyalty/admin/mikrotik-boost/config", async (req: Request, res:
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/loyalty/admin/mikrotik-boost/config — update settings */
+/** PUT /api/loyalty/admin/mikrotik-boost/config - update settings */
 router.put("/api/loyalty/admin/mikrotik-boost/config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9463,7 +9463,7 @@ router.put("/api/loyalty/admin/mikrotik-boost/config", async (req: Request, res:
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/mikrotik-boost/test — test apply boost untuk 1 customer (dry-run check) */
+/** POST /api/loyalty/admin/mikrotik-boost/test - test apply boost untuk 1 customer (dry-run check) */
 router.post("/api/loyalty/admin/mikrotik-boost/test", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9485,13 +9485,13 @@ router.post("/api/loyalty/admin/mikrotik-boost/test", async (req: Request, res: 
     sendSuccess(res, {
       tested: true,
       success: true,
-      message: `Test sukses — profile sementara di-set ke ${apply.boostedProfile} (di router ${apply.routerName}), auto-revert dalam 5 detik`,
+      message: `Test sukses - profile sementara di-set ke ${apply.boostedProfile} (di router ${apply.routerName}), auto-revert dalam 5 detik`,
       ...rest2,
     });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/points/config — earn rules + catalog */
+/** GET /api/loyalty/admin/points/config - earn rules + catalog */
 router.get("/api/loyalty/admin/points/config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9513,7 +9513,7 @@ router.get("/api/loyalty/admin/points/config", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/loyalty/admin/points/config — update earn rules + catalog */
+/** PUT /api/loyalty/admin/points/config - update earn rules + catalog */
 router.put("/api/loyalty/admin/points/config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9531,7 +9531,7 @@ router.put("/api/loyalty/admin/points/config", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/points/backfill/preview — preview initial loyalty grant per tier */
+/** GET /api/loyalty/admin/points/backfill/preview - preview initial loyalty grant per tier */
 router.get("/api/loyalty/admin/points/backfill/preview", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9541,7 +9541,7 @@ router.get("/api/loyalty/admin/points/backfill/preview", async (req: Request, re
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/points/backfill — execute backfill (idempotent, audit) */
+/** POST /api/loyalty/admin/points/backfill - execute backfill (idempotent, audit) */
 router.post("/api/loyalty/admin/points/backfill", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9554,7 +9554,7 @@ router.post("/api/loyalty/admin/points/backfill", async (req: Request, res: Resp
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/points/redemptions/expire-overdue — manual trigger atomic expire+revert */
+/** POST /api/loyalty/admin/points/redemptions/expire-overdue - manual trigger atomic expire+revert */
 router.post("/api/loyalty/admin/points/redemptions/expire-overdue", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9598,14 +9598,14 @@ router.post("/api/loyalty/admin/points/redemptions/expire-overdue", async (req: 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/points/redemptions/:id/force-expire — admin override force-mark expired tanpa revert MikroTik */
+/** POST /api/loyalty/admin/points/redemptions/:id/force-expire - admin override force-mark expired tanpa revert MikroTik */
 router.post("/api/loyalty/admin/points/redemptions/:id/force-expire", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
   try {
     const id = Number(req.params.id);
     const reason = String(req.body?.reason ?? "").trim();
-    if (!reason) return sendError(res, "reason wajib (audit trail) — misal: 'Sudah set profile manual via WinBox'");
+    if (!reason) return sendError(res, "reason wajib (audit trail) - misal: 'Sudah set profile manual via WinBox'");
     const r = await storage.forceExpireRedemption(id, req.authUser.id, reason);
     if (!r) return sendError(res, "Redemption tidak ditemukan", 404);
     await logAudit(req, "FORCE_EXPIRE", "point_redemption", id, r.rewardLabel, { customerId: r.customerId, reason });
@@ -9613,7 +9613,7 @@ router.post("/api/loyalty/admin/points/redemptions/:id/force-expire", async (req
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/loyalty/admin/points/redemptions/health — list redemption dengan revert issues (admin alert) */
+/** GET /api/loyalty/admin/points/redemptions/health - list redemption dengan revert issues (admin alert) */
 router.get("/api/loyalty/admin/points/redemptions/health", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9644,7 +9644,7 @@ router.get("/api/loyalty/admin/points/redemptions/health", async (req: Request, 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/points/award — manual award points to customer (admin) */
+/** POST /api/loyalty/admin/points/award - manual award points to customer (admin) */
 router.post("/api/loyalty/admin/points/award", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9666,7 +9666,7 @@ router.post("/api/loyalty/admin/points/award", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/loyalty/admin/streak-adjust — manual adjust for dispute/correction */
+/** POST /api/loyalty/admin/streak-adjust - manual adjust for dispute/correction */
 router.post("/api/loyalty/admin/streak-adjust", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9684,7 +9684,7 @@ router.post("/api/loyalty/admin/streak-adjust", async (req: Request, res: Respon
 
 const VALID_API_SCOPES = ["marketing:read", "marketing:write", "reports:read", "leads:read", "collections:read", "sahabat:read", "tickets:read", "finance:read", "customers:read", "teamspace:read", "divisions:read", "*"];
 
-/** GET /api/api-keys — list all keys (hash never exposed) */
+/** GET /api/api-keys - list all keys (hash never exposed) */
 router.get("/api/api-keys", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "api_keys")) return sendError(res, "Akses ditolak", 403);
@@ -9708,7 +9708,7 @@ router.get("/api/api-keys", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/api-keys — create new key. Full key returned ONCE (never again). */
+/** POST /api/api-keys - create new key. Full key returned ONCE (never again). */
 router.post("/api/api-keys", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "api_keys")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9736,7 +9736,7 @@ router.post("/api/api-keys", async (req: Request, res: Response) => {
 
     await logAudit(req, "CREATE", "api_key", row.id, name, { scopes, rateLimit });
 
-    // Return plain key ONCE — user must store this
+    // Return plain key ONCE - user must store this
     sendSuccess(res, {
       id: row.id,
       name: row.name,
@@ -9746,12 +9746,12 @@ router.post("/api/api-keys", async (req: Request, res: Response) => {
       rateLimit: row.rateLimit,
       expiresAt: row.expiresAt,
       createdAt: row.createdAt,
-      warning: "Simpan 'fullKey' sekarang — key ini tidak akan ditampilkan lagi setelah dialog ditutup.",
+      warning: "Simpan 'fullKey' sekarang - key ini tidak akan ditampilkan lagi setelah dialog ditutup.",
     }, 201);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PATCH /api/api-keys/:id — update name/scopes/rateLimit/enabled/expiresAt */
+/** PATCH /api/api-keys/:id - update name/scopes/rateLimit/enabled/expiresAt */
 router.patch("/api/api-keys/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "api_keys")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9777,7 +9777,7 @@ router.patch("/api/api-keys/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/api-keys/:id/revoke — revoke (disable + timestamp) */
+/** POST /api/api-keys/:id/revoke - revoke (disable + timestamp) */
 router.post("/api/api-keys/:id/revoke", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "api_keys")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9790,7 +9790,7 @@ router.post("/api/api-keys/:id/revoke", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/api-keys/:id — hapus permanen + usage logs */
+/** DELETE /api/api-keys/:id - hapus permanen + usage logs */
 router.delete("/api/api-keys/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "api_keys")) return sendError(res, "Akses ditolak (write)", 403);
@@ -9804,7 +9804,7 @@ router.delete("/api/api-keys/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/api-keys/:id/usage — recent usage logs */
+/** GET /api/api-keys/:id/usage - recent usage logs */
 router.get("/api/api-keys/:id/usage", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "api_keys")) return sendError(res, "Akses ditolak", 403);
@@ -9816,11 +9816,11 @@ router.get("/api/api-keys/:id/usage", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ══════════════════════════════════════════════════════════════════
-// NOTIFICATIONS (bell icon) — semua authenticated user dapat akses own-notifications
-// ══════════════════════════════════════════════════════════════════
+// ==================================================================
+// NOTIFICATIONS (bell icon) - semua authenticated user dapat akses own-notifications
+// ==================================================================
 
-/** GET /api/notifications — list own notifications */
+/** GET /api/notifications - list own notifications */
 router.get("/api/notifications", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -9832,7 +9832,7 @@ router.get("/api/notifications", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/notifications/unread-count — badge count */
+/** GET /api/notifications/unread-count - badge count */
 router.get("/api/notifications/unread-count", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -9868,11 +9868,11 @@ router.delete("/api/notifications/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ══════════════════════════════════════════════════════════════════
-// ANNOUNCEMENTS (News Feed) — semua user bisa baca published; admin kelola
-// ══════════════════════════════════════════════════════════════════
+// ==================================================================
+// ANNOUNCEMENTS (News Feed) - semua user bisa baca published; admin kelola
+// ==================================================================
 
-/** GET /api/announcements — list (default: published only) */
+/** GET /api/announcements - list (default: published only) */
 router.get("/api/announcements", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -9884,7 +9884,7 @@ router.get("/api/announcements", async (req: Request, res: Response) => {
       limit: Math.min(200, Number(req.query.limit) || 100),
     });
     // Teamspace FR-601/603: pengumuman Rahasia hanya untuk penerima/penulis/admin;
-    // status expired dianotasi (riwayat tetap terbaca penerima — FR-603).
+    // status expired dianotasi (riwayat tetap terbaca penerima - FR-603).
     const confidentialIds = list.filter((a: any) => a.isConfidential === 1).map((a: any) => a.id);
     const recipientsMap = await storage.getRecipientsForOwners("announcement", confidentialIds);
     const uid = req.authUser.id;
@@ -9918,7 +9918,7 @@ router.get("/api/announcements/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/announcements — create (draft or direct publish) */
+/** POST /api/announcements - create (draft or direct publish) */
 router.post("/api/announcements", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "announcements_admin")) return sendError(res, "Akses ditolak", 403);
@@ -9945,12 +9945,12 @@ router.post("/api/announcements", async (req: Request, res: Response) => {
 
     // Publish → notif: bertarget bila ada penerima terpilih, broadcast bila tidak.
     if (row.publishedAt && targetIds.length > 0) {
-      const catLabel: any = { feature_update: "🚀 Fitur Baru", bug_fix: "🐛 Perbaikan Bug", announcement: "📢 Pengumuman", maintenance: "🔧 Maintenance", training: "📚 Training" };
+      const catLabel: any = { feature_update: " Fitur Baru", bug_fix: " Perbaikan Bug", announcement: " Pengumuman", maintenance: " Maintenance", training: " Training" };
       for (const uidTarget of targetIds) {
         if (uidTarget === req.authUser.id) continue;
         await storage.createNotification({
           userId: uidTarget, type: "announcement",
-          title: `${catLabel[row.category] ?? "📢"}: ${row.title}`,
+          title: `${catLabel[row.category] ?? ""}: ${row.title}`,
           message: row.content.length > 150 ? row.content.slice(0, 147) + "..." : row.content,
           link: `/announcements/${row.id}`, entityType: "announcement", entityId: row.id,
           fromUserId: req.authUser.id,
@@ -9958,16 +9958,16 @@ router.post("/api/announcements", async (req: Request, res: Response) => {
       }
     } else if (row.publishedAt) {
       const categoryLabel: any = {
-        feature_update: "🚀 Fitur Baru",
-        bug_fix: "🐛 Perbaikan Bug",
-        announcement: "📢 Pengumuman",
-        maintenance: "🔧 Maintenance",
-        training: "📚 Training",
+        feature_update: " Fitur Baru",
+        bug_fix: " Perbaikan Bug",
+        announcement: " Pengumuman",
+        maintenance: " Maintenance",
+        training: " Training",
       };
       try {
         await storage.broadcastNotification({
           type: "announcement",
-          title: `${categoryLabel[row.category] ?? "📢"}: ${row.title}`,
+          title: `${categoryLabel[row.category] ?? ""}: ${row.title}`,
           message: row.content.length > 150 ? row.content.slice(0, 147) + "..." : row.content,
           link: `/announcements/${row.id}`,
           entityType: "announcement", entityId: row.id,
@@ -10005,16 +10005,16 @@ router.patch("/api/announcements/:id", async (req: Request, res: Response) => {
     // Kalau baru dipublish sekarang → broadcast notif
     if (!before.publishedAt && row?.publishedAt) {
       const categoryLabel: any = {
-        feature_update: "🚀 Fitur Baru",
-        bug_fix: "🐛 Perbaikan Bug",
-        announcement: "📢 Pengumuman",
-        maintenance: "🔧 Maintenance",
-        training: "📚 Training",
+        feature_update: " Fitur Baru",
+        bug_fix: " Perbaikan Bug",
+        announcement: " Pengumuman",
+        maintenance: " Maintenance",
+        training: " Training",
       };
       try {
         await storage.broadcastNotification({
           type: "announcement",
-          title: `${categoryLabel[row.category] ?? "📢"}: ${row.title}`,
+          title: `${categoryLabel[row.category] ?? ""}: ${row.title}`,
           message: row.content.length > 150 ? row.content.slice(0, 147) + "..." : row.content,
           link: `/announcements/${row.id}`,
           entityType: "announcement", entityId: row.id,
@@ -10042,12 +10042,12 @@ router.delete("/api/announcements/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ══════════════════════════════════════════════════════════════════
-// BUG REPORTS — semua authenticated user bisa create & view list
+// ==================================================================
+// BUG REPORTS - semua authenticated user bisa create & view list
 // Admin / yang ada permission bug_reports (write) bisa triage
-// ══════════════════════════════════════════════════════════════════
+// ==================================================================
 
-/** GET /api/bugs — list */
+/** GET /api/bugs - list */
 router.get("/api/bugs", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -10080,7 +10080,7 @@ router.get("/api/bugs/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/bugs/:id/photo — stream screenshot (filesystem-aware + legacy fallback) */
+/** GET /api/bugs/:id/photo - stream screenshot (filesystem-aware + legacy fallback) */
 router.get("/api/bugs/:id/photo", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -10109,7 +10109,7 @@ router.get("/api/bugs/:id/photo", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/bugs — create bug (any authenticated user) */
+/** POST /api/bugs - create bug (any authenticated user) */
 router.post("/api/bugs", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -10137,7 +10137,7 @@ router.post("/api/bugs", async (req: Request, res: Response) => {
           await storage.createNotification({
             userId: u.id,
             type: "bug_report",
-            title: `🐛 Bug Baru (${severity ?? "medium"}): ${row.title}`,
+            title: ` Bug Baru (${severity ?? "medium"}): ${row.title}`,
             message: `Dilaporkan oleh ${req.authUser.name}`,
             link: `/bugs/${row.id}`,
             entityType: "bug", entityId: row.id,
@@ -10152,7 +10152,7 @@ router.post("/api/bugs", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PATCH /api/bugs/:id — update status/assign/resolution (admin only) */
+/** PATCH /api/bugs/:id - update status/assign/resolution (admin only) */
 router.patch("/api/bugs/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "bug_reports")) return sendError(res, "Akses ditolak (write)", 403);
@@ -10167,8 +10167,8 @@ router.patch("/api/bugs/:id", async (req: Request, res: Response) => {
     // Notify reporter kalau status berubah
     if (req.body?.status && req.body.status !== before.status && before.reportedByUserId !== req.authUser.id) {
       const statusLabel: any = {
-        triaged: "🔍 Bug kamu di-triage", in_progress: "🛠 Bug kamu sedang diperbaiki",
-        resolved: "✅ Bug kamu sudah diperbaiki", closed: "✔️ Bug kamu ditutup",
+        triaged: " Bug kamu di-triage", in_progress: " Bug kamu sedang diperbaiki",
+        resolved: " Bug kamu sudah diperbaiki", closed: "✔ Bug kamu ditutup",
         duplicate: "⧉ Bug kamu ditandai duplikat", wontfix: "⊘ Bug kamu wontfix",
       };
       try {
@@ -10191,7 +10191,7 @@ router.patch("/api/bugs/:id", async (req: Request, res: Response) => {
         await storage.createNotification({
           userId: Number(req.body.assignedToUserId),
           type: "bug_assigned",
-          title: `🛠 Bug ditugaskan untuk Anda`,
+          title: ` Bug ditugaskan untuk Anda`,
           message: `${row.title} (${row.severity})`,
           link: `/bugs/${id}`,
           entityType: "bug", entityId: id,
@@ -10205,7 +10205,7 @@ router.patch("/api/bugs/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** DELETE /api/bugs/:id — admin only */
+/** DELETE /api/bugs/:id - admin only */
 router.delete("/api/bugs/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "bug_reports")) return sendError(res, "Akses ditolak", 403);
@@ -10238,7 +10238,7 @@ router.post("/api/bugs/:id/comments", async (req: Request, res: Response) => {
         await storage.createNotification({
           userId: uid,
           type: "bug_comment",
-          title: `💬 Komentar baru di bug kamu`,
+          title: ` Komentar baru di bug kamu`,
           message: `${req.authUser.name}: "${content.length > 80 ? content.slice(0, 77) + "..." : content}"`,
           link: `/bugs/${bugId}`,
           entityType: "bug", entityId: bugId,
@@ -10251,7 +10251,7 @@ router.post("/api/bugs/:id/comments", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/collections/run-thresholds — manual trigger Phase 2 (admin) */
+/** POST /api/collections/run-thresholds - manual trigger Phase 2 (admin) */
 router.post("/api/collections/run-thresholds", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "collections")) return sendError(res, "Akses ditolak", 403);
@@ -10262,7 +10262,7 @@ router.post("/api/collections/run-thresholds", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/customers/:id/payment-history — timeline riwayat customer */
+/** GET /api/customers/:id/payment-history - timeline riwayat customer */
 router.get("/api/customers/:id/payment-history", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "collections") && !hasPermission(req, "customers")) {
@@ -10341,7 +10341,7 @@ router.get("/api/customers/:id/payment-history", async (req: Request, res: Respo
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Akses collection ter-scope divisi (SOP delegasi churn→reaktivasi) ─────────
+// -- Akses collection ter-scope divisi (SOP delegasi churn→reaktivasi) ---------
 // User penuh (izin 'collections') melihat semua. User divisi CS/Marketing melihat
 // HANYA kartu di stage milik divisinya lewat ?division=. Izin fallback tanpa key baru:
 // cs → 'customers', marketing → 'leads' (divisi tsb sudah memiliki izin itu).
@@ -10360,7 +10360,7 @@ function collectionAccessOK(req: Request, division: string | undefined, write: b
 /** Untuk write ter-scope: user tanpa izin 'collections' penuh hanya boleh menyentuh kartu
  *  yang stage-nya milik divisinya. Return true kalau boleh lanjut. */
 async function collectionScopedOwnershipOK(req: Request, res: Response, colId: number, division: string | undefined): Promise<boolean> {
-  if (hasWritePermission(req, "collections")) return true; // akses penuh — tanpa batas divisi
+  if (hasWritePermission(req, "collections")) return true; // akses penuh - tanpa batas divisi
   const col = await storage.getCollection(colId);
   if (!col) { sendError(res, "Collection tidak ditemukan", 404); return false; }
   const stages = await storage.getCollectionStages();
@@ -10403,7 +10403,7 @@ router.get("/api/collections/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Collection pipeline stages (custom per-mitra) ─────────────────────────────
+// -- Collection pipeline stages (custom per-mitra) -----------------------------
 // NB: harus terdaftar SEBELUM "/api/collections/:id" supaya tidak ke-match sebagai :id.
 router.get("/api/collections/stages", async (req: Request, res: Response) => {
   const division = collectionScopedDivision(req);
@@ -10486,7 +10486,7 @@ router.patch("/api/collections/:id/stage", async (req: Request, res: Response) =
     if (!stageRow) return sendError(res, "Stage tidak valid");
     const extra: any = {};
     if (promiseDate) extra.promiseDate = promiseDate;  // optional pada any stage (legacy compat)
-    if (issueType) extra.issueType = issueType;        // opsional — tidak lagi diwajibkan
+    if (issueType) extra.issueType = issueType;        // opsional - tidak lagi diwajibkan
     if (stageRow.role === "paid" || stageRow.role === "writeoff") {
       extra.closeReason = closeReason ?? `manual_${stage}`;
     }
@@ -10502,7 +10502,7 @@ router.patch("/api/collections/:id/stage", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/collections/:id/assignees — replace assignee set (multi-user).
+/** PUT /api/collections/:id/assignees - replace assignee set (multi-user).
  *  Body: { userIds: number[] }. Empty array = clear all assignees. */
 router.put("/api/collections/:id/assignees", async (req: Request, res: Response) => {
   const division = collectionScopedDivision(req);
@@ -10524,7 +10524,7 @@ router.put("/api/collections/:id/assignees", async (req: Request, res: Response)
           userId: a.userId,
           type: "collection_assigned",
           title: "Collection case ditugaskan untuk Anda",
-          message: `Case #${collectionId} — outstanding Rp ${(col?.openedAmount ?? 0).toLocaleString("id-ID")}`,
+          message: `Case #${collectionId} - outstanding Rp ${(col?.openedAmount ?? 0).toLocaleString("id-ID")}`,
           link: `/collections`,
           entityType: "collection", entityId: collectionId,
           fromUserId: req.authUser!.id,
@@ -10536,7 +10536,7 @@ router.put("/api/collections/:id/assignees", async (req: Request, res: Response)
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PATCH /api/collections/:id/assign — legacy single-assignee endpoint (backwards compat).
+/** PATCH /api/collections/:id/assign - legacy single-assignee endpoint (backwards compat).
  *  assignedTo=null clears all assignees; assignedTo=N replaces full set dengan [N]. */
 router.patch("/api/collections/:id/assign", async (req: Request, res: Response) => {
   if (!requireWritePermission(req, res, "collections")) return;
@@ -10554,7 +10554,7 @@ router.patch("/api/collections/:id/assign", async (req: Request, res: Response) 
           userId: Number(assignedTo),
           type: "collection_assigned",
           title: "Collection case ditugaskan untuk Anda",
-          message: `Case #${collectionId} — outstanding Rp ${(col?.openedAmount ?? 0).toLocaleString("id-ID")}`,
+          message: `Case #${collectionId} - outstanding Rp ${(col?.openedAmount ?? 0).toLocaleString("id-ID")}`,
           link: `/collections`,
           entityType: "collection", entityId: collectionId,
           fromUserId: req.authUser!.id,
@@ -10731,7 +10731,7 @@ function requireMarketing(req: Request, res: Response): boolean {
   return true;
 }
 
-// ── Marketing Dashboard ──────────────────────────────────────────────────
+// -- Marketing Dashboard --------------------------------------------------
 
 router.get("/api/marketing/dashboard", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
@@ -10770,7 +10770,7 @@ router.get("/api/marketing/dashboard", async (req: Request, res: Response) => {
       count: byStage[s] ?? 0,
     }));
 
-    // Recent activities (last 20) — batched: 1 query for all 50 leads instead of 50 sequential queries
+    // Recent activities (last 20) - batched: 1 query for all 50 leads instead of 50 sequential queries
     const top50Leads = allLeads.slice(0, 50);
     const activitiesByLead = await storage.getLeadActivitiesForLeads(top50Leads.map(l => l.id));
     const recentActivities: any[] = [];
@@ -10836,7 +10836,7 @@ router.get("/api/marketing/dashboard", async (req: Request, res: Response) => {
       logsBySeverity[log.severity ?? "info"] = (logsBySeverity[log.severity ?? "info"] ?? 0) + 1;
     }
 
-    // Field logs enrichment — batched: 1 query for all ODP refs instead of N sequential
+    // Field logs enrichment - batched: 1 query for all ODP refs instead of N sequential
     const topLogs = allLogs.slice(0, 5);
     const logOdpIds = Array.from(new Set(topLogs.map(l => l.odpId).filter((id): id is number => id != null)));
     const odpsByIdMap = await storage.getOdpsByIds(logOdpIds);
@@ -10870,7 +10870,7 @@ router.get("/api/marketing/dashboard", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Marketing Contacts ──────────────────────────────────────────────────
+// -- Marketing Contacts --------------------------------------------------
 
 router.get("/api/marketing/contacts", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
@@ -10898,7 +10898,7 @@ router.get("/api/marketing/contacts", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Canvassing Sessions ──────────────────────────────────────────────────
+// -- Canvassing Sessions --------------------------------------------------
 
 router.get("/api/marketing/canvassing/sessions", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
@@ -10968,7 +10968,7 @@ router.get("/api/marketing/canvassing/active-all", async (req: Request, res: Res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Canvassing Logs (Field Reports / BI) ──
+// -- Canvassing Logs (Field Reports / BI) --
 
 router.get("/api/marketing/canvassing/logs", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
@@ -11018,7 +11018,7 @@ router.get("/api/marketing/canvassing/reports", async (req: Request, res: Respon
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/marketing/canvassing/reports/export — download CSV dengan filter yang sama */
+/** GET /api/marketing/canvassing/reports/export - download CSV dengan filter yang sama */
 router.get("/api/marketing/canvassing/reports/export", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
   try {
@@ -11094,7 +11094,7 @@ router.get("/api/marketing/canvassing/reports/export", async (req: Request, res:
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/marketing/canvassing/reports/stats — aggregate untuk cards di dashboard */
+/** GET /api/marketing/canvassing/reports/stats - aggregate untuk cards di dashboard */
 router.get("/api/marketing/canvassing/reports/stats", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
   try {
@@ -11149,7 +11149,7 @@ router.post("/api/marketing/canvassing/logs", async (req: Request, res: Response
     if (!title) return sendError(res, "title wajib diisi");
     // Guard: photo data URL max ~7MB (5MB file + base64 overhead)
     if (photoData && typeof photoData === "string" && photoData.length > 7_500_000) {
-      return sendError(res, "Foto terlalu besar — max 5MB", 413);
+      return sendError(res, "Foto terlalu besar - max 5MB", 413);
     }
     const log = await storage.createCanvassingLog({
       sessionId: Number(sessionId),
@@ -11162,20 +11162,20 @@ router.post("/api/marketing/canvassing/logs", async (req: Request, res: Response
       ...(photoData ? { photoData } : {}),
       createdAt: new Date().toISOString(),
     } as any);
-    // Telegram push ke marketing SPV/admin (broadcast by role) — async, non-blocking
+    // Telegram push ke marketing SPV/admin (broadcast by role) - async, non-blocking
     if (severity === "warning" || severity === "critical" || type === "lead") {
       try {
         const { notifyRolesTelegram } = await import("./telegram.js");
         const authorName = req.authUser!.name || req.authUser!.username;
         notifyRolesTelegram(["admin", "marketing_spv"], "canvassing_report",
-          `📍 *Canvassing: ${title}*\n\n_Oleh ${authorName}_\n${description ? description.substring(0, 200) : ""}\n\nType: ${type} · Severity: ${severity || "info"}`);
+          ` *Canvassing: ${title}*\n\n_Oleh ${authorName}_\n${description ? description.substring(0, 200) : ""}\n\nType: ${type} · Severity: ${severity || "info"}`);
       } catch { /* ignore */ }
     }
     sendSuccess(res, log, 201);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Canvassing History (enriched sessions + KPI) ──
+// -- Canvassing History (enriched sessions + KPI) --
 router.get("/api/marketing/canvassing/history", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
   try {
@@ -11272,7 +11272,7 @@ router.get("/api/marketing/canvassing/history", async (req: Request, res: Respon
       .map(d => ({ ...d, areas: [...d.areas] }))
       .sort((a, b) => b.date.localeCompare(a.date));
 
-    // Filter daily summaries ke rentang tanggal terpilih — semua KPI, leaderboard
+    // Filter daily summaries ke rentang tanggal terpilih - semua KPI, leaderboard
     // dan daftar sesi yang dikembalikan mengacu ke rentang ini.
     const enriched = enrichedAll.filter(s => s.date >= rangeFrom && s.date <= rangeTo);
 
@@ -11281,7 +11281,7 @@ router.get("/api/marketing/canvassing/history", async (req: Request, res: Respon
     const totalClosing = enriched.reduce((s, e) => s + e.totalClosing, 0);
     const totalDuration = enriched.reduce((s, e) => s + e.totalDurationMinutes, 0);
 
-    // ODP Coverage: geo-based — ODP yang punya aktivitas canvassing dalam radius
+    // ODP Coverage: geo-based - ODP yang punya aktivitas canvassing dalam radius
     const CANVASS_RADIUS_M = 200; // Radius coverage canvassing per ODP (meter)
     const allOdps = await storage.getOdps();
     const totalOdps = allOdps.length;
@@ -11449,20 +11449,20 @@ router.get("/api/marketing/field-reports/analytics", async (req: Request, res: R
         recommendations.push({
           type: "investigate",
           area: area.odpName,
-          reason: `Potensi tinggi (${potensiCount}x) tapi ada kendala ${aksesCount > 0 ? "akses" : "infrastruktur"}${distInfo} — perlu evaluasi`,
+          reason: `Potensi tinggi (${potensiCount}x) tapi ada kendala ${aksesCount > 0 ? "akses" : "infrastruktur"}${distInfo} - perlu evaluasi`,
         });
       } else if (potensiCount >= 1) {
         recommendations.push({
           type: "invest",
           area: area.odpName,
-          reason: `${potensiCount} laporan potensi tinggi${distInfo} — prioritaskan area ini untuk canvassing`,
+          reason: `${potensiCount} laporan potensi tinggi${distInfo} - prioritaskan area ini untuk canvassing`,
         });
       }
       if (sepiCount >= 2 || kompCount >= 2 || criticalCount >= 2) {
         recommendations.push({
           type: "avoid",
           area: area.odpName,
-          reason: `${sepiCount > 0 ? `Area sepi (${sepiCount}x)` : ""}${kompCount > 0 ? ` Kompetitor kuat (${kompCount}x)` : ""}${criticalCount > 0 ? ` ${criticalCount} issue kritis` : ""}${distInfo} — hindari sementara`.trim(),
+          reason: `${sepiCount > 0 ? `Area sepi (${sepiCount}x)` : ""}${kompCount > 0 ? ` Kompetitor kuat (${kompCount}x)` : ""}${criticalCount > 0 ? ` ${criticalCount} issue kritis` : ""}${distInfo} - hindari sementara`.trim(),
         });
       }
       // Distance-specific recommendation: if far from ODP
@@ -11470,7 +11470,7 @@ router.get("/api/marketing/field-reports/analytics", async (req: Request, res: R
         recommendations.push({
           type: "investigate",
           area: area.odpName,
-          reason: `Jarak rata-rata ke ODP ${area.avgDistanceMeters >= 1000 ? (area.avgDistanceMeters / 1000).toFixed(1) + " km" : area.avgDistanceMeters + " m"} — evaluasi biaya kabel drop`,
+          reason: `Jarak rata-rata ke ODP ${area.avgDistanceMeters >= 1000 ? (area.avgDistanceMeters / 1000).toFixed(1) + " km" : area.avgDistanceMeters + " m"} - evaluasi biaya kabel drop`,
         });
       }
     }
@@ -11497,7 +11497,7 @@ router.get("/api/marketing/field-reports/analytics", async (req: Request, res: R
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Leads ─────────────────────────────────────────────────────────────────
+// -- Leads -----------------------------------------------------------------
 
 function maskLead(lead: any, role: string, userId: number): any {
   // Supervisor & admin can see everything
@@ -11601,7 +11601,7 @@ router.get("/api/marketing/leads/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// Edit lead — hanya pemilik (createdBy) atau admin
+// Edit lead - hanya pemilik (createdBy) atau admin
 router.put("/api/marketing/leads/:id", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
   try {
@@ -11644,7 +11644,7 @@ router.patch("/api/marketing/leads/:id/stage", async (req: Request, res: Respons
     if ((stage === "hot" || stage === "won") && lead.assignedTo && Number(lead.assignedTo) !== req.authUser!.id) {
       try {
         const { notifyUserTelegram } = await import("./telegram.js");
-        const emoji = stage === "won" ? "🏆" : "🔥";
+        const emoji = stage === "won" ? "" : "";
         notifyUserTelegram(Number(lead.assignedTo), "lead_hot",
           `${emoji} *Lead pindah stage: ${stage.toUpperCase()}*\n\n*${lead.name}*\n${lead.phone ?? ""} · ${lead.district ?? ""}\n\nBuka: /leads`);
       } catch { /* ignore */ }
@@ -11683,7 +11683,7 @@ router.patch("/api/marketing/leads/:id/assign", async (req: Request, res: Respon
           userId: Number(assignedTo),
           type: "lead_assigned",
           title: "Lead baru ditugaskan untuk Anda",
-          message: `${lead.name} — ${lead.phone ?? "no phone"} · ${lead.district ?? ""}`.trim(),
+          message: `${lead.name} - ${lead.phone ?? "no phone"} · ${lead.district ?? ""}`.trim(),
           link: leadLink,
           entityType: "lead", entityId: lead.id,
           fromUserId: req.authUser.id,
@@ -11694,7 +11694,7 @@ router.patch("/api/marketing/leads/:id/assign", async (req: Request, res: Respon
         const { notifyUserTelegram } = await import("./telegram.js");
         const tail = [lead.phone, lead.district].filter(Boolean).join(" · ");
         notifyUserTelegram(Number(assignedTo), "lead_assigned",
-          `🎯 *Lead baru di-assign*\n\n*${lead.name}*\n${tail}\n\nBuka: /leads`);
+          ` *Lead baru di-assign*\n\n*${lead.name}*\n${tail}\n\nBuka: /leads`);
       } catch { /* ignore */ }
     }
     await logAudit(req, "UPDATE", "lead", lead.id, lead.name, { assignedTo });
@@ -11719,7 +11719,7 @@ router.post("/api/marketing/leads/:id/activity", async (req: Request, res: Respo
 });
 
 /**
- * GET /api/marketing/leads/activities/:id/photo — stream lead activity photo.
+ * GET /api/marketing/leads/activities/:id/photo - stream lead activity photo.
  * Filesystem (photo_path) → fallback ke legacy base64 (photo_data) untuk pre-migration data.
  */
 router.get("/api/marketing/leads/activities/:id/photo", async (req: Request, res: Response) => {
@@ -11750,7 +11750,7 @@ router.get("/api/marketing/leads/activities/:id/photo", async (req: Request, res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Lead → Customer Conversion ──
+// -- Lead → Customer Conversion --
 router.post("/api/marketing/leads/:id/convert", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -11882,7 +11882,7 @@ router.delete("/api/marketing/leads/:id", async (req: Request, res: Response) =>
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Delete Lead Activity ──
+// -- Delete Lead Activity --
 router.delete("/api/marketing/leads/:leadId/activity/:activityId", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -11892,7 +11892,7 @@ router.delete("/api/marketing/leads/:leadId/activity/:activityId", async (req: R
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Delete Canvassing Session ──
+// -- Delete Canvassing Session --
 router.delete("/api/marketing/canvassing/sessions/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (req.authUser.role !== "admin" && req.authUser.role !== "marketing_spv") return sendError(res, "Hanya admin/SPV yang bisa hapus sesi", 403);
@@ -11903,7 +11903,7 @@ router.delete("/api/marketing/canvassing/sessions/:id", async (req: Request, res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Delete Canvassing Log ──
+// -- Delete Canvassing Log --
 router.delete("/api/marketing/canvassing/logs/:id", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -11913,7 +11913,7 @@ router.delete("/api/marketing/canvassing/logs/:id", async (req: Request, res: Re
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Prospects (saved from Google Places) ─────────────────────────────────
+// -- Prospects (saved from Google Places) ---------------------------------
 
 router.get("/api/marketing/prospects/odp/:odpId", async (req: Request, res: Response) => {
   if (!requireMarketing(req, res)) return;
@@ -11934,9 +11934,9 @@ router.delete("/api/marketing/prospects/odp/:odpId", async (req: Request, res: R
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  MARKETING ADS — Audience Export & Webhook
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  MARKETING ADS - Audience Export & Webhook
+// ===========================================================
 import {
   customerToAudienceRow, audienceToCSV, clusterOdps,
   type OdpForCluster,
@@ -12029,7 +12029,7 @@ router.get("/api/marketing/ads/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ─────────── INTERNAL ADS CAMPAIGNS CRUD (for MarketingAdsPage) ───────────
+// ----------- INTERNAL ADS CAMPAIGNS CRUD (for MarketingAdsPage) -----------
 router.get("/api/marketing/ads/campaigns", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "marketing_ads")) return sendError(res, "Akses ditolak", 403);
@@ -12184,11 +12184,11 @@ router.post("/api/webhook/tiktok-leads", async (req: Request, res: Response) => 
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  TICKETING / WORK ORDER
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
-// ── Ticket Categories ──
+// -- Ticket Categories --
 router.get("/api/ticket-categories", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12227,7 +12227,7 @@ router.delete("/api/ticket-categories/:id", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Tickets ──
+// -- Tickets --
 router.get("/api/tickets/stats", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12236,7 +12236,7 @@ router.get("/api/tickets/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// v4.2.18 (C.4): SLA dashboard stats — compliance %, MTTR, breach trend (last 14 hari)
+// v4.2.18 (C.4): SLA dashboard stats - compliance %, MTTR, breach trend (last 14 hari)
 router.get("/api/tickets/sla-stats", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12305,7 +12305,7 @@ router.post("/api/tickets/auto-from-alarm", async (req: Request, res: Response) 
       return;
     }
 
-    // Tentukan kategori — default ke "Gangguan" (id=2 dari seed)
+    // Tentukan kategori - default ke "Gangguan" (id=2 dari seed)
     const cats = await storage.getTicketCategories();
     const gangguanCat = cats.find(c => /gangguan/i.test(c.name));
     const categoryId = gangguanCat?.id ?? null;
@@ -12320,10 +12320,10 @@ router.post("/api/tickets/auto-from-alarm", async (req: Request, res: Response) 
       priority = "urgent";
     } else if (customerId) {
       const cust = await storage.getCustomer(customerId);
-      title = `[AUTO] ${alarmType.replace(/_/g, " ")} — ${cust?.name ?? "Customer"}`;
+      title = `[AUTO] ${alarmType.replace(/_/g, " ")} - ${cust?.name ?? "Customer"}`;
       priority = "high";
     } else {
-      title = `[AUTO] ${alarmType.replace(/_/g, " ")} — ${pppoeUsername ?? deviceId ?? "unknown"}`;
+      title = `[AUTO] ${alarmType.replace(/_/g, " ")} - ${pppoeUsername ?? deviceId ?? "unknown"}`;
     }
 
     const ticketNumber = await storage.getNextTicketNumber();
@@ -12469,7 +12469,7 @@ router.post("/api/tickets/:id/status", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// Bulk status — ganti N+1 loop HTTP di client jadi 1 request. Per-tiket error tidak menggagalkan batch.
+// Bulk status - ganti N+1 loop HTTP di client jadi 1 request. Per-tiket error tidak menggagalkan batch.
 router.post("/api/tickets/bulk-status", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12528,7 +12528,7 @@ router.post("/api/tickets/:id/assign", async (req: Request, res: Response) => {
           userId: assignedTo,
           type: "ticket_assigned",
           title: "Tiket ditugaskan untuk Anda",
-          message: `${ticket.ticketNumber} — ${ticket.title}`,
+          message: `${ticket.ticketNumber} - ${ticket.title}`,
           link: `/tickets/${id}`,
           entityType: "ticket", entityId: id,
           fromUserId: req.authUser.id,
@@ -12537,10 +12537,10 @@ router.post("/api/tickets/:id/assign", async (req: Request, res: Response) => {
       try {
         const { notifyUserTelegram } = await import("./telegram.js");
         notifyUserTelegram(Number(assignedTo), "ticket_assigned",
-          `🎫 *Ticket di-assign*\n\n*${ticket.ticketNumber}* — ${ticket.title}\n\nBuka: /tickets/${id}`);
+          ` *Ticket di-assign*\n\n*${ticket.ticketNumber}* - ${ticket.title}\n\nBuka: /tickets/${id}`);
       } catch { /* ignore */ }
     }
-    // Batch 2f: auto-routing — kalau tiket punya conversation Chatwoot terkait & assignee
+    // Batch 2f: auto-routing - kalau tiket punya conversation Chatwoot terkait & assignee
     // punya pemetaan agent, assign conversation Chatwoot ke agent itu (best-effort).
     try {
       const link = await storage.getChatwootLinkByTicket(id);
@@ -12582,11 +12582,11 @@ router.delete("/api/tickets/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  WORK ORDER ENHANCEMENT (Team, Evidence, GPS, MTTR)
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
-// ── Ticket Team ──
+// -- Ticket Team --
 // v4.2.18 (A.3): GET activities paginated + filterable by action type
 router.get("/api/tickets/:id/activities", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -12647,7 +12647,7 @@ router.delete("/api/tickets/:id/team/:memberId", async (req: Request, res: Respo
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Check-in / Check-out ──
+// -- Check-in / Check-out --
 router.post("/api/tickets/:id/check-in", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12696,7 +12696,7 @@ router.post("/api/tickets/:id/check-out", async (req: Request, res: Response) =>
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Evidence ──
+// -- Evidence --
 router.get("/api/tickets/:id/evidence", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12718,7 +12718,7 @@ router.post("/api/tickets/:id/evidence", async (req: Request, res: Response) => 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── GPS Log ──
+// -- GPS Log --
 router.post("/api/tickets/:id/gps", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12739,7 +12739,7 @@ router.get("/api/tickets/:id/gps", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── MTTR ──
+// -- MTTR --
 router.get("/api/tickets/:id/mttr", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12748,7 +12748,7 @@ router.get("/api/tickets/:id/mttr", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Checklist Update ──
+// -- Checklist Update --
 router.put("/api/tickets/:id/checklist", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -12758,11 +12758,11 @@ router.put("/api/tickets/:id/checklist", async (req: Request, res: Response) => 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.4: WORKFLOW STAGES — Per-kategori flexible workflow
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.4: WORKFLOW STAGES - Per-kategori flexible workflow
+// ===========================================================
 
-/** GET /api/tickets/:id/workflow — return workflow stages + current stage + per-stage durations
+/** GET /api/tickets/:id/workflow - return workflow stages + current stage + per-stage durations
  * v4.2.18 (C.1): SLA countdown sekarang aware pause/hold:
  *   - totalPauseSec = sum of (endedAt - startedAt) untuk semua pauses (active dihitung sampai now)
  *   - effectiveDeadline = slaDeadline + totalPauseSec  (deadline geser sebanyak waktu pause)
@@ -12783,7 +12783,7 @@ router.get("/api/tickets/:id/workflow", async (req: Request, res: Response) => {
     const activePause = await storage.getActivePause(id);
     const isOnHold = !!activePause;
 
-    // v4.2.18 (C.3): Business hours awareness — out-of-hours time auto-pause SLA
+    // v4.2.18 (C.3): Business hours awareness - out-of-hours time auto-pause SLA
     const bhCfg = await storage.getBusinessHoursConfig();
     const { getOutOfHoursMs } = await import("./business-hours.js");
 
@@ -12855,7 +12855,7 @@ router.get("/api/tickets/:id/workflow", async (req: Request, res: Response) => {
 });
 
 /**
- * v4.2.18 (D.4): GET /api/tickets/:id/bast — return HTML BAST untuk preview/print.
+ * v4.2.18 (D.4): GET /api/tickets/:id/bast - return HTML BAST untuk preview/print.
  * BAST = Berita Acara Serah Terima. Browser bisa "Print → Save as PDF" untuk simpan.
  */
 router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
@@ -12889,10 +12889,10 @@ router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
         NO_ISSUE_FOUND: "Tidak Ditemukan Kerusakan",
         OTHER: "Lainnya",
       };
-      return map[ticket.resolutionCode ?? ""] ?? ticket.resolutionCode ?? "—";
+      return map[ticket.resolutionCode ?? ""] ?? ticket.resolutionCode ?? "-";
     })();
 
-    const fmtDate = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+    const fmtDate = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
 
     const html = `<!DOCTYPE html>
 <html lang="id">
@@ -12921,11 +12921,11 @@ router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
 </style>
 </head>
 <body>
-  <div class="no-print">📄 Tip: Tekan <strong>Ctrl/Cmd + P</strong> untuk print atau Save as PDF. <button onclick="window.print()">Print Sekarang</button></div>
+  <div class="no-print"> Tip: Tekan <strong>Ctrl/Cmd + P</strong> untuk print atau Save as PDF. <button onclick="window.print()">Print Sekarang</button></div>
 
   <div class="header">
     <h1>BERITA ACARA SERAH TERIMA</h1>
-    <div class="subtitle">JABNET — Layanan Internet Fiber-to-the-Home</div>
+    <div class="subtitle">JABNET - Layanan Internet Fiber-to-the-Home</div>
     <div style="font-size: 10pt; margin-top: 6px;"><strong>${bastNumber}</strong></div>
   </div>
 
@@ -12933,11 +12933,11 @@ router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
 
   <div style="margin: 12px 0;">
     <div class="meta-row"><span><strong>No. Tiket</strong></span><span>:</span><span>${ticket.ticketNumber}</span></div>
-    <div class="meta-row"><span><strong>Kategori</strong></span><span>:</span><span>${category?.name ?? "—"}</span></div>
+    <div class="meta-row"><span><strong>Kategori</strong></span><span>:</span><span>${category?.name ?? "-"}</span></div>
     <div class="meta-row"><span><strong>Tanggal Diterima</strong></span><span>:</span><span>${fmtDate(ticket.createdAt)}</span></div>
     <div class="meta-row"><span><strong>Tanggal Selesai</strong></span><span>:</span><span>${fmtDate(ticket.resolvedAt)}</span></div>
-    <div class="meta-row"><span><strong>Pelanggan</strong></span><span>:</span><span>${customer?.name ?? "—"} ${customer?.customerId ? `(${customer.customerId})` : ""}</span></div>
-    <div class="meta-row"><span><strong>Alamat</strong></span><span>:</span><span>${ticket.address ?? customer?.address ?? "—"}</span></div>
+    <div class="meta-row"><span><strong>Pelanggan</strong></span><span>:</span><span>${customer?.name ?? "-"} ${customer?.customerId ? `(${customer.customerId})` : ""}</span></div>
+    <div class="meta-row"><span><strong>Alamat</strong></span><span>:</span><span>${ticket.address ?? customer?.address ?? "-"}</span></div>
   </div>
 
   <div style="margin: 14px 0;">
@@ -12948,7 +12948,7 @@ router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
   <div style="margin: 14px 0;">
     <div style="font-weight: bold; margin-bottom: 4px;">B. Tindakan & Solusi</div>
     <div class="meta-row"><span><strong>Kode Resolusi</strong></span><span>:</span><span>${resolutionCodeLabel}</span></div>
-    <div style="padding-left: 16px; margin-top: 4px;">${(ticket.resolution ?? "—").replace(/\n/g, "<br/>")}</div>
+    <div style="padding-left: 16px; margin-top: 4px;">${(ticket.resolution ?? "-").replace(/\n/g, "<br/>")}</div>
   </div>
 
   ${materialList.length > 0 ? `
@@ -12969,8 +12969,8 @@ router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
 
   <div style="margin: 14px 0;">
     <div style="font-weight: bold; margin-bottom: 4px;">D. Tim Pelaksana</div>
-    <div class="meta-row"><span><strong>Lead Teknisi</strong></span><span>:</span><span>${(lead as any)?.userName ?? "—"}</span></div>
-    ${helpers.length > 0 ? `<div class="meta-row"><span><strong>Helper</strong></span><span>:</span><span>${helpers.map(h => (h as any).userName ?? "—").join(", ")}</span></div>` : ""}
+    <div class="meta-row"><span><strong>Lead Teknisi</strong></span><span>:</span><span>${(lead as any)?.userName ?? "-"}</span></div>
+    ${helpers.length > 0 ? `<div class="meta-row"><span><strong>Helper</strong></span><span>:</span><span>${helpers.map(h => (h as any).userName ?? "-").join(", ")}</span></div>` : ""}
   </div>
 
   <p style="margin-top: 18px;">Demikian Berita Acara Serah Terima ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.</p>
@@ -12997,7 +12997,7 @@ router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/tickets/:id/advance-stage — teknisi advance ke stage berikutnya */
+/** POST /api/tickets/:id/advance-stage - teknisi advance ke stage berikutnya */
 router.post("/api/tickets/:id/advance-stage", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -13074,9 +13074,9 @@ router.post("/api/tickets/:id/advance-stage", async (req: Request, res: Response
 });
 
 /**
- * v4.2.7: PUT /api/tickets/:id/stages/:stageKey/transition — edit existing closed stage transition.
+ * v4.2.7: PUT /api/tickets/:id/stages/:stageKey/transition - edit existing closed stage transition.
  * Buat teknisi koreksi data setelah submit (mis: ketik numeric salah, foto salah).
- * Tidak ubah durasi atau stage flow — cuma update note + evidence + lat/lng + metadata.
+ * Tidak ubah durasi atau stage flow - cuma update note + evidence + lat/lng + metadata.
  */
 router.put("/api/tickets/:id/stages/:stageKey/transition", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -13110,7 +13110,7 @@ router.put("/api/tickets/:id/stages/:stageKey/transition", async (req: Request, 
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** GET /api/tickets/:id/stage-transitions — full history per stage */
+/** GET /api/tickets/:id/stage-transitions - full history per stage */
 router.get("/api/tickets/:id/stage-transitions", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -13120,7 +13120,7 @@ router.get("/api/tickets/:id/stage-transitions", async (req: Request, res: Respo
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** v4.2.18 (P1.4): GET /api/tickets/:id/stage-edit-history — edit log per field per stage */
+/** v4.2.18 (P1.4): GET /api/tickets/:id/stage-edit-history - edit log per field per stage */
 router.get("/api/tickets/:id/stage-edit-history", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -13131,9 +13131,9 @@ router.get("/api/tickets/:id/stage-edit-history", async (req: Request, res: Resp
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.18 (B.6): TICKET COMMENTS — internal chat
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.18 (B.6): TICKET COMMENTS - internal chat
+// ===========================================================
 
 router.get("/api/tickets/:id/comments", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -13193,9 +13193,9 @@ router.delete("/api/tickets/:id/comments/:commentId", async (req: Request, res: 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  v4.2.18 (B.7 + C.1): HOLD / RESUME / ESCALATE / CANCEL
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.post("/api/tickets/:id/hold", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -13214,7 +13214,7 @@ router.post("/api/tickets/:id/hold", async (req: Request, res: Response) => {
     await storage.updateTicket(id, { status: "pending" } as any);
     await logTicketActivity(req, id, "ticket.held", {
       pauseId: pause.id, reason, note, previousStatus: ticket.status,
-    }, `Hold: ${reason}${note ? ` — ${note}` : ""}`);
+    }, `Hold: ${reason}${note ? ` - ${note}` : ""}`);
     sendSuccess(res, pause);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -13225,7 +13225,7 @@ router.post("/api/tickets/:id/resume", async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const pause = await storage.endTicketPause(id, req.authUser.id);
     if (!pause) return sendError(res, "Tiket tidak sedang hold", 400);
-    // Resume status — kembali ke in_progress kalau ada team, kalau tidak assigned
+    // Resume status - kembali ke in_progress kalau ada team, kalau tidak assigned
     const team = await storage.getTicketTeam(id);
     const newStatus = team.length > 0 ? "in_progress" : "assigned";
     await storage.updateTicket(id, { status: newStatus } as any);
@@ -13270,7 +13270,7 @@ router.post("/api/tickets/:id/escalate", async (req: Request, res: Response) => 
     try {
       const { notifyRolesTelegram } = await import("./telegram.js");
       await notifyRolesTelegram(["System-Admin", "Admin", "Administrator", "admin", "Supervisor"], "ticket_escalation",
-        `🚨 *ESCALATION: ${ticket.ticketNumber}*\n\n${ticket.title}\n\nDari: ${req.authUser.name}\nCatatan: ${note || "(tanpa catatan)"}`);
+        ` *ESCALATION: ${ticket.ticketNumber}*\n\n${ticket.title}\n\nDari: ${req.authUser.name}\nCatatan: ${note || "(tanpa catatan)"}`);
     } catch (e: any) { console.warn("[Escalate] telegram fail:", e.message); }
     await logTicketActivity(req, id, "ticket.escalated", {
       note, raisedPriority: raisePriority ? newPriority : null,
@@ -13303,7 +13303,7 @@ router.post("/api/tickets/:id/cancel", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/odps/:id/active-tickets — duplicate detection saat create tiket di ODP */
+/** GET /api/odps/:id/active-tickets - duplicate detection saat create tiket di ODP */
 router.get("/api/odps/:id/active-tickets", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -13314,11 +13314,11 @@ router.get("/api/odps/:id/active-tickets", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.5: TICKET CHECKPOINTS — Action-based simplified workflow
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.5: TICKET CHECKPOINTS - Action-based simplified workflow
+// ===========================================================
 
-/** POST /api/tickets/:id/checkpoint — teknisi log action checkpoint */
+/** POST /api/tickets/:id/checkpoint - teknisi log action checkpoint */
 router.post("/api/tickets/:id/checkpoint", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -13365,7 +13365,7 @@ router.post("/api/tickets/:id/checkpoint", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-/** GET /api/tickets/:id/timeline — chronological feed: checkpoints + activities + time metrics */
+/** GET /api/tickets/:id/timeline - chronological feed: checkpoints + activities + time metrics */
 router.get("/api/tickets/:id/timeline", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -13376,11 +13376,11 @@ router.get("/api/tickets/:id/timeline", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  v4.2.5: CHATWOOT INTEGRATION
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
-/** GET /api/integrations/chatwoot/config — admin only */
+/** GET /api/integrations/chatwoot/config - admin only */
 router.get("/api/integrations/chatwoot/config", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "chatwoot_settings")) return sendError(res, "Akses ditolak", 403);
@@ -13397,7 +13397,7 @@ router.get("/api/integrations/chatwoot/config", async (req: Request, res: Respon
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/integrations/chatwoot/status — status ringan untuk badge + tombol "Buka di Chatwoot".
+/** GET /api/integrations/chatwoot/status - status ringan untuk badge + tombol "Buka di Chatwoot".
  *  Tidak pernah mengembalikan token. Gated by `chatwoot` (read) supaya non-admin pun bisa pakai tombol. */
 router.get("/api/integrations/chatwoot/status", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -13411,7 +13411,7 @@ router.get("/api/integrations/chatwoot/status", async (req: Request, res: Respon
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** Communications (read) — Batch 2a. All gated by `chatwoot` (read), tenant-scoped via account token. */
+/** Communications (read) - Batch 2a. All gated by `chatwoot` (read), tenant-scoped via account token. */
 router.get("/api/integrations/chatwoot/inboxes", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "chatwoot")) return sendError(res, "Akses ditolak", 403);
@@ -13493,7 +13493,7 @@ router.get("/api/integrations/chatwoot/customers/:id/conversations", async (req:
   }
 });
 
-/** Contact sync (Batch 2b) — manual. Gated `chatwoot` write. Workspace → Chatwoot upsert. */
+/** Contact sync (Batch 2b) - manual. Gated `chatwoot` write. Workspace → Chatwoot upsert. */
 router.post("/api/integrations/chatwoot/customers/:id/sync", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "chatwoot")) return sendError(res, "Akses ditolak (write)", 403);
@@ -13526,7 +13526,7 @@ router.post("/api/integrations/chatwoot/contacts/sync-bulk", async (req: Request
   try {
     const ids: number[] = Array.isArray(req.body?.customerIds) ? req.body.customerIds.slice(0, 200).map(Number) : [];
     if (!ids.length) return sendError(res, "customerIds kosong", 400);
-    // Pre-check: kalau Chatwoot belum dikonfigurasi, gagalkan cepat (400) — jangan loop 200x error.
+    // Pre-check: kalau Chatwoot belum dikonfigurasi, gagalkan cepat (400) - jangan loop 200x error.
     const cwConfig = await storage.getChatwootConfig();
     if (!cwConfig?.enabled || !cwConfig.accountId || !cwConfig.apiAccessToken) return sendError(res, "Chatwoot belum dikonfigurasi", 400);
     const { upsertChatwootContact } = await import("./chatwoot.js");
@@ -13623,7 +13623,7 @@ router.delete("/api/integrations/chatwoot/users/:userId/agent", async (req: Requ
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** Reply ke conversation (Batch 2d) — outgoing atau private note. Gated `chatwoot` write. */
+/** Reply ke conversation (Batch 2d) - outgoing atau private note. Gated `chatwoot` write. */
 router.post("/api/integrations/chatwoot/conversations/:id/messages", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "chatwoot")) return sendError(res, "Akses ditolak (write)", 403);
@@ -13742,7 +13742,7 @@ router.put("/api/integrations/chatwoot/config", async (req: Request, res: Respon
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/integrations/chatwoot/test — test koneksi ke Chatwoot */
+/** POST /api/integrations/chatwoot/test - test koneksi ke Chatwoot */
 router.post("/api/integrations/chatwoot/test", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "chatwoot_settings")) return sendError(res, "Akses ditolak", 403);
@@ -13786,7 +13786,7 @@ router.delete("/api/integrations/chatwoot/keyword-rules/:id", async (req: Reques
 });
 
 /**
- * POST /api/integrations/chatwoot/webhook — incoming webhook receiver
+ * POST /api/integrations/chatwoot/webhook - incoming webhook receiver
  * NO AUTH (Chatwoot tidak punya bearer; pakai HMAC signature verify)
  */
 router.post("/api/integrations/chatwoot/webhook", async (req: Request, res: Response) => {
@@ -13798,7 +13798,7 @@ router.post("/api/integrations/chatwoot/webhook", async (req: Request, res: Resp
 
     // Verify HMAC signature kalau secret di-set
     const signature = req.headers["x-chatwoot-signature"] as string | undefined ?? req.headers["x-chatwoot-webhook-signature"] as string | undefined;
-    const rawBody = JSON.stringify(req.body); // best-effort — Express sudah parse
+    const rawBody = JSON.stringify(req.body); // best-effort - Express sudah parse
     const { verifyWebhookSignature, handleConversationCreated, handleMessageCreated } = await import("./chatwoot.js");
     if (config.webhookSecret && !verifyWebhookSignature(rawBody, signature, config.webhookSecret)) {
       console.warn("[Chatwoot] webhook signature invalid");
@@ -13820,9 +13820,9 @@ router.post("/api/integrations/chatwoot/webhook", async (req: Request, res: Resp
   }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  GENIEACS TR-069 DEVICE MANAGEMENT
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 import {
   testConnection as genieTest,
   getDevices as genieGetDevices,
@@ -13844,7 +13844,7 @@ import {
 async function getGenieConfig(): Promise<GenieAcsConfig> {
   // Tenant isolation: tiap mitra punya GenieACS server sendiri (mitra_integrations).
   // JABNET (mitra 1) boleh fallback ke app_settings global (config asli single-tenant).
-  // Mitra lain WAJIB punya config sendiri — TIDAK fallback (cegah akses ACS JABNET / mitra lain).
+  // Mitra lain WAJIB punya config sendiri - TIDAK fallback (cegah akses ACS JABNET / mitra lain).
   const mitraId = tenantContext.getStore()?.mitraId ?? 1;
   const pick = async (key: string): Promise<string | null> => {
     const own = await storage.getMitraSetting(key, { fallbackToGlobal: false });
@@ -13856,7 +13856,7 @@ async function getGenieConfig(): Promise<GenieAcsConfig> {
     return null;
   };
   const host = await pick("genieacs_host");
-  if (!host) throw new Error("GenieACS belum dikonfigurasi untuk mitra ini — atur di Integrasi API");
+  if (!host) throw new Error("GenieACS belum dikonfigurasi untuk mitra ini - atur di Integrasi API");
   const port = await pick("genieacs_port");
   const username = await pick("genieacs_username");
   const password = await pick("genieacs_password");
@@ -13864,7 +13864,7 @@ async function getGenieConfig(): Promise<GenieAcsConfig> {
 }
 
 /** Threshold optical power configurable per ISP (app_settings, mitra-aware seperti
- *  getGenieConfig) — default -25/-28 dBm (sama dengan nilai legacy yang dulu hardcoded). */
+ *  getGenieConfig) - default -25/-28 dBm (sama dengan nilai legacy yang dulu hardcoded). */
 async function getOpticalThresholds(): Promise<OpticalThresholds> {
   const mitraId = tenantContext.getStore()?.mitraId ?? 1;
   const pick = async (key: string): Promise<string | null> => {
@@ -13928,10 +13928,10 @@ async function buildDeviceSearchQuery(search: string): Promise<any> {
     "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.Username._value",
     "Device.PPP.Interface.1.Username._value",
     "VirtualParameters.pppoeUsername._value",
-    // IP Address — parser ambil dari ConnectionRequestURL (http://10.0.x.x:7547/)
+    // IP Address - parser ambil dari ConnectionRequestURL (http://10.0.x.x:7547/)
     "InternetGatewayDevice.ManagementServer.ConnectionRequestURL._value",
     "Device.ManagementServer.ConnectionRequestURL._value",
-    // IP Address — varian WAN (juga di-cari untuk coverage maksimal)
+    // IP Address - varian WAN (juga di-cari untuk coverage maksimal)
     "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress._value",
     "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress._value",
     "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.ExternalIPAddress._value",
@@ -13946,7 +13946,7 @@ async function buildDeviceSearchQuery(search: string): Promise<any> {
     "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID._value",
   ];
 
-  // Per-token clause: $or across all fields — tiap token minimal match di 1 field
+  // Per-token clause: $or across all fields - tiap token minimal match di 1 field
   const tokenClauses = tokens.map(t => {
     const re = { $regex: escapeRe(t), $options: "i" };
     return { $or: FIELDS.map(f => ({ [f]: re })) };
@@ -13961,7 +13961,7 @@ async function buildDeviceSearchQuery(search: string): Promise<any> {
         .map(c => c.pppoeUsername)
         .filter((u): u is string => !!u && u.length > 0);
     }
-  } catch { /* storage error — skip cross-resolve */ }
+  } catch { /* storage error - skip cross-resolve */ }
 
   // Base query: 1 token → langsung; multi-token → $and (semua token harus match)
   const baseQuery = tokens.length === 1 ? tokenClauses[0] : { $and: tokenClauses };
@@ -14099,9 +14099,9 @@ router.delete("/api/genieacs/devices/:id", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  v4.2.18 (C.3): Business hours / SLA calendar settings
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 // v4.2.23: Upload image untuk WA template (base64 → save disk → return public URL)
 router.post("/api/whatsapp/upload-image", async (req: Request, res: Response) => {
@@ -14147,7 +14147,7 @@ router.post("/api/whatsapp/upload-image", async (req: Request, res: Response) =>
     const filePath = path.join(uploadDir, finalName);
     await fs.writeFile(filePath, buffer);
 
-    // Build public URL (host-aware) — relative URL works untuk dev + prod
+    // Build public URL (host-aware) - relative URL works untuk dev + prod
     const publicUrl = `/uploads/wa-images/${finalName}`;
     // Full URL kalau request punya host (untuk send ke MPWA yang butuh absolute URL)
     const host = req.get("host");
@@ -14201,9 +14201,9 @@ router.put("/api/settings/business-hours", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  APP SETTINGS (Integration Configuration)
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.get("/api/settings", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
@@ -14273,7 +14273,7 @@ router.get("/api/settings/:key", async (req: Request, res: Response) => {
 
 /** A1: GET /api/settings mengembalikan "••••••••" untuk key secret (password/token/secret).
  *  Kalau form mengirim balik nilai mask itu apa adanya (admin tidak mengetik ulang), artinya
- *  "biarkan" — JANGAN timpa kredensial asli dengan placeholder. Berlaku universal untuk semua
+ *  "biarkan" - JANGAN timpa kredensial asli dengan placeholder. Berlaku universal untuk semua
  *  field secret di /integrations (genieacs/mpwa/meta/billing/maps), juga form baru ke depan. */
 function isSecretMaskEcho(value: unknown): boolean {
   return typeof value === "string" && value.trim().length > 0 && /^•+$/.test(value.trim());
@@ -14343,12 +14343,12 @@ router.delete("/api/settings/:key", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  MPWA WHATSAPP GATEWAY (admin-only test + status)
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 import { testMpwaConnection, getMpwaDeviceStatus, loadMpwaConfig } from "./mpwa.js";
 
-/** GET /api/mpwa/status — live status device MPWA (connected/disconnect) */
+/** GET /api/mpwa/status - live status device MPWA (connected/disconnect) */
 router.get("/api/mpwa/status", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14373,7 +14373,7 @@ router.get("/api/mpwa/status", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/mpwa/test — kirim pesan test ke nomor admin */
+/** POST /api/mpwa/test - kirim pesan test ke nomor admin */
 router.post("/api/mpwa/test", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14385,7 +14385,7 @@ router.post("/api/mpwa/test", async (req: Request, res: Response) => {
       // Custom test message (pakai config saat ini)
       const { loadMpwaConfig, sendMpwaMessage } = await import("./mpwa.js");
       const config = await loadMpwaConfig();
-      if (!config) return sendError(res, "MPWA belum dikonfigurasi — isi URL + API key dulu");
+      if (!config) return sendError(res, "MPWA belum dikonfigurasi - isi URL + API key dulu");
       result = await sendMpwaMessage(config, testPhone, customMessage);
     } else {
       result = await testMpwaConnection(testPhone);
@@ -14399,7 +14399,7 @@ router.post("/api/mpwa/test", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/mpwa/config — ambil config (untuk form MPWA page) */
+/** GET /api/mpwa/config - ambil config (untuk form MPWA page) */
 router.get("/api/mpwa/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14414,7 +14414,7 @@ router.get("/api/mpwa/config", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/mpwa/config — simpan config */
+/** PUT /api/mpwa/config - simpan config */
 router.put("/api/mpwa/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14429,9 +14429,9 @@ router.put("/api/mpwa/config", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  TELEGRAM BOT — admin config + per-user pairing & prefs
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  TELEGRAM BOT - admin config + per-user pairing & prefs
+// ===========================================================
 
 import {
   sendTelegramMessage,
@@ -14443,7 +14443,7 @@ import {
   type TelegramEventKey,
 } from "./telegram.js";
 
-/** GET /api/telegram/config — admin ambil config bot */
+/** GET /api/telegram/config - admin ambil config bot */
 router.get("/api/telegram/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14459,7 +14459,7 @@ router.get("/api/telegram/config", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/telegram/config — admin simpan config (verify via getMe) */
+/** PUT /api/telegram/config - admin simpan config (verify via getMe) */
 router.put("/api/telegram/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14484,7 +14484,7 @@ router.put("/api/telegram/config", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/telegram/test — admin test kirim pesan ke chat_id tertentu */
+/** POST /api/telegram/test - admin test kirim pesan ke chat_id tertentu */
 router.post("/api/telegram/test", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -14492,7 +14492,7 @@ router.post("/api/telegram/test", async (req: Request, res: Response) => {
     if (!chatId) return sendError(res, "chatId wajib (ambil dari user atau @userinfobot)");
     const cfg = await loadTelegramConfig();
     if (!cfg) return sendError(res, "Telegram belum dikonfigurasi");
-    const message = `🛰 *Test dari JABNET Workspace*\n\nKalau kamu lihat pesan ini, integrasi Telegram sudah jalan ✅\n\n_${new Date().toLocaleString("id-ID")}_`;
+    const message = ` *Test dari JABNET Workspace*\n\nKalau kamu lihat pesan ini, integrasi Telegram sudah jalan \n\n_${new Date().toLocaleString("id-ID")}_`;
     const result = await sendTelegramMessage(cfg.botToken, chatId, message, { parseMode: "Markdown" });
     await logAudit(req, "SEND", "telegram_test", undefined, chatId, { sent: result.sent, error: result.error });
     if (result.sent) sendSuccess(res, { sent: true, message: `Test pesan terkirim ke ${chatId}` });
@@ -14500,7 +14500,7 @@ router.post("/api/telegram/test", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/auth/me/telegram/pair/request — generate pairing code 6-digit */
+/** POST /api/auth/me/telegram/pair/request - generate pairing code 6-digit */
 router.post("/api/auth/me/telegram/pair/request", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -14518,7 +14518,7 @@ router.post("/api/auth/me/telegram/pair/request", async (req: Request, res: Resp
 });
 
 /**
- * POST /api/telegram/webhook — Telegram ngirim update ke sini
+ * POST /api/telegram/webhook - Telegram ngirim update ke sini
  * Cuma handle message yg start dengan /start <code> untuk pairing.
  * Webhook ini harus diset di @BotFather → Bot Settings → Set Webhook,
  * atau via setWebhook API dengan URL publik (ngrok saat dev).
@@ -14545,14 +14545,14 @@ router.post("/api/telegram/webhook", async (req: Request, res: Response) => {
 
     if (!code) {
       await sendTelegramMessage(cfg.botToken, chatId,
-        `👋 Halo! Untuk pairing akun JABNET Workspace, generate kode di Profile → Integrasi Telegram → Connect, lalu kirim:\n\n/start <kode-6-digit>`);
+        ` Halo! Untuk pairing akun JABNET Workspace, generate kode di Profile → Integrasi Telegram → Connect, lalu kirim:\n\n/start <kode-6-digit>`);
       return sendSuccess(res, { ok: true });
     }
 
     const userId = resolvePairingCode(code);
     if (!userId) {
       await sendTelegramMessage(cfg.botToken, chatId,
-        `❌ Kode *${code}* tidak valid atau sudah kedaluwarsa.\nGenerate kode baru di JABNET Workspace → Profile.`,
+        ` Kode *${code}* tidak valid atau sudah kedaluwarsa.\nGenerate kode baru di JABNET Workspace → Profile.`,
         { parseMode: "Markdown" });
       return sendSuccess(res, { ok: false, reason: "invalid_code" });
     }
@@ -14567,7 +14567,7 @@ router.post("/api/telegram/webhook", async (req: Request, res: Response) => {
     } as any);
 
     await sendTelegramMessage(cfg.botToken, chatId,
-      `✅ *Berhasil terhubung!*\n\nAkun JABNET Workspace *${user.name}* (${user.username}) sudah tersambung ke Telegram ini.\n\nKamu akan terima notifikasi untuk event marketing & operasional sesuai preferensi di Profile.`,
+      ` *Berhasil terhubung!*\n\nAkun JABNET Workspace *${user.name}* (${user.username}) sudah tersambung ke Telegram ini.\n\nKamu akan terima notifikasi untuk event marketing & operasional sesuai preferensi di Profile.`,
       { parseMode: "Markdown" });
 
     sendSuccess(res, { ok: true, linked: userId });
@@ -14578,7 +14578,7 @@ router.post("/api/telegram/webhook", async (req: Request, res: Response) => {
   }
 });
 
-/** DELETE /api/auth/me/telegram — unlink Telegram */
+/** DELETE /api/auth/me/telegram - unlink Telegram */
 router.delete("/api/auth/me/telegram", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -14592,7 +14592,7 @@ router.delete("/api/auth/me/telegram", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PUT /api/auth/me/telegram/prefs — per-user notif toggle */
+/** PUT /api/auth/me/telegram/prefs - per-user notif toggle */
 router.put("/api/auth/me/telegram/prefs", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -14608,9 +14608,9 @@ router.put("/api/auth/me/telegram/prefs", async (req: Request, res: Response) =>
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  MPWA TEMPLATE MESSAGES (admin only)
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.get("/api/mpwa/templates", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -14716,11 +14716,11 @@ router.delete("/api/mpwa/templates/:id", async (req: Request, res: Response) => 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.19: BROADCAST — campaigns + segments + send worker
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.19: BROADCAST - campaigns + segments + send worker
+// ===========================================================
 
-/** GET /api/broadcast/audience-fields — list field & operator yang valid (untuk UI builder) */
+/** GET /api/broadcast/audience-fields - list field & operator yang valid (untuk UI builder) */
 router.get("/api/broadcast/audience-fields", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "broadcast") && !hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -14742,7 +14742,7 @@ router.get("/api/broadcast/audience-fields", async (req: Request, res: Response)
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/broadcast/audience-preview — evaluate filter, return count + sample */
+/** POST /api/broadcast/audience-preview - evaluate filter, return count + sample */
 router.post("/api/broadcast/audience-preview", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "broadcast") && !hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -14754,7 +14754,7 @@ router.post("/api/broadcast/audience-preview", async (req: Request, res: Respons
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Segments ──
+// -- Segments --
 router.get("/api/broadcast/segments", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "broadcast") && !hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -14811,7 +14811,7 @@ router.delete("/api/broadcast/segments/:id", async (req: Request, res: Response)
   } catch (e: any) { sendError(res, e.message, 400); }
 });
 
-// ── Campaigns ──
+// -- Campaigns --
 router.get("/api/broadcast/campaigns", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "broadcast") && !hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -14891,7 +14891,7 @@ router.post("/api/broadcast/campaigns", async (req: Request, res: Response) => {
     const hasDirect = Array.isArray(directRecipients) && directRecipients.length > 0;
     if (!hasDirect && !audienceFilter && !savedSegmentId) {
       // Debug log untuk traceability
-      console.warn("[broadcast] reject create — no audience source. Body keys:", Object.keys(req.body));
+      console.warn("[broadcast] reject create - no audience source. Body keys:", Object.keys(req.body));
       console.warn("[broadcast] directRecipients type:", typeof directRecipients, Array.isArray(directRecipients) ? `array(${directRecipients.length})` : directRecipients);
       return sendError(res, `Audience kosong. Pastikan kirim salah satu: directRecipients (array, min 1), audienceFilter, atau savedSegmentId. Yang diterima: ${Object.keys(req.body).join(", ") || "(empty body)"}`);
     }
@@ -14980,7 +14980,7 @@ router.delete("/api/broadcast/campaigns/:id", async (req: Request, res: Response
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/broadcast/campaigns/:id/start — launch (enrol + spawn worker) */
+/** POST /api/broadcast/campaigns/:id/start - launch (enrol + spawn worker) */
 router.post("/api/broadcast/campaigns/:id/start", async (req: Request, res: Response) => {
   // Accept both broadcast (legacy) + whatsapp (v2) permissions
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -15011,7 +15011,7 @@ router.post("/api/broadcast/campaigns/:id/cancel", async (req: Request, res: Res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/broadcast/campaigns/:id/retry — reset failed recipients ke pending + relaunch */
+/** POST /api/broadcast/campaigns/:id/retry - reset failed recipients ke pending + relaunch */
 router.post("/api/broadcast/campaigns/:id/retry", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "whatsapp") && !hasWritePermission(req, "broadcast")) {
@@ -15029,7 +15029,7 @@ router.post("/api/broadcast/campaigns/:id/retry", async (req: Request, res: Resp
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/broadcast/campaigns/:id/recipients — list recipients (paginated) */
+/** GET /api/broadcast/campaigns/:id/recipients - list recipients (paginated) */
 router.get("/api/broadcast/campaigns/:id/recipients", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "broadcast") && !hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -15044,7 +15044,7 @@ router.get("/api/broadcast/campaigns/:id/recipients", async (req: Request, res: 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/broadcast/test — kirim ke satu nomor (preview live tanpa enrol audience) */
+/** POST /api/broadcast/test - kirim ke satu nomor (preview live tanpa enrol audience) */
 router.post("/api/broadcast/test", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401); if (!hasWritePermission(req, "whatsapp") && !hasWritePermission(req, "broadcast")) return sendError(res, "Akses ditolak (write)", 403);
   try {
@@ -15100,11 +15100,11 @@ router.post("/api/broadcast/test", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.20: WhatsApp v2 — Multi-device + Resellers + Template v2
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.20: WhatsApp v2 - Multi-device + Resellers + Template v2
+// ===========================================================
 
-/** GET /api/whatsapp/providers — list 12 providers + dynamic field requirements */
+/** GET /api/whatsapp/providers - list 12 providers + dynamic field requirements */
 router.get("/api/whatsapp/providers", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -15115,7 +15115,7 @@ router.get("/api/whatsapp/providers", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/whatsapp/template-params — list 28+ parameter dinamis (untuk modal Petunjuk) */
+/** GET /api/whatsapp/template-params - list 28+ parameter dinamis (untuk modal Petunjuk) */
 router.get("/api/whatsapp/template-params", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -15125,7 +15125,7 @@ router.get("/api/whatsapp/template-params", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── WA DEVICES ──
+// -- WA DEVICES --
 router.get("/api/whatsapp/devices", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -15142,7 +15142,7 @@ router.get("/api/whatsapp/devices", async (req: Request, res: Response) => {
 });
 
 router.get("/api/whatsapp/devices/:id", async (req: Request, res: Response) => {
-  if (!requireAdmin(req, res)) return; // admin only — config sensitive
+  if (!requireAdmin(req, res)) return; // admin only - config sensitive
   try {
     const d = await storage.getWaDevice(Number(req.params.id));
     if (!d) return sendError(res, "Device not found", 404);
@@ -15213,7 +15213,7 @@ router.delete("/api/whatsapp/devices/:id", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/whatsapp/devices/:id/test — kirim test text ke nomor admin */
+/** POST /api/whatsapp/devices/:id/test - kirim test text ke nomor admin */
 router.post("/api/whatsapp/devices/:id/test", async (req: Request, res: Response) => {
   if (!requireWritePermission(req, res, "whatsapp")) return;
   try {
@@ -15232,11 +15232,11 @@ router.post("/api/whatsapp/devices/:id/test", async (req: Request, res: Response
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ════════════════════════════════════════════════════════════════
-//  v4.2.21: MPWA Full Integration — Device Management
-// ════════════════════════════════════════════════════════════════
+// ================================================================
+//  v4.2.21: MPWA Full Integration - Device Management
+// ================================================================
 
-/** Helper: build MPWAClient from device (admin only — config in plain) */
+/** Helper: build MPWAClient from device (admin only - config in plain) */
 async function getMpwaClientForDevice(deviceId: number) {
   const device = await storage.getWaDevice(deviceId);
   if (!device) throw new Error("Device not found");
@@ -15255,7 +15255,7 @@ async function getMpwaClientForDevice(deviceId: number) {
   };
 }
 
-/** POST /api/whatsapp/devices/:id/qr — generate QR Code */
+/** POST /api/whatsapp/devices/:id/qr - generate QR Code */
 router.post("/api/whatsapp/devices/:id/qr", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -15281,7 +15281,7 @@ router.post("/api/whatsapp/devices/:id/qr", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/whatsapp/devices/:id/logout — disconnect device dari MPWA */
+/** POST /api/whatsapp/devices/:id/logout - disconnect device dari MPWA */
 router.post("/api/whatsapp/devices/:id/logout", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -15298,7 +15298,7 @@ router.post("/api/whatsapp/devices/:id/logout", async (req: Request, res: Respon
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/whatsapp/devices/:id/delete-remote — delete device di MPWA (tidak hapus row lokal) */
+/** POST /api/whatsapp/devices/:id/delete-remote - delete device di MPWA (tidak hapus row lokal) */
 router.post("/api/whatsapp/devices/:id/delete-remote", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -15315,7 +15315,7 @@ router.post("/api/whatsapp/devices/:id/delete-remote", async (req: Request, res:
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** GET /api/whatsapp/devices/:id/info — fetch live status dari MPWA */
+/** GET /api/whatsapp/devices/:id/info - fetch live status dari MPWA */
 router.get("/api/whatsapp/devices/:id/info", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -15362,7 +15362,7 @@ router.get("/api/whatsapp/devices/:id/info", async (req: Request, res: Response)
         webhookUrl: info?.webhook ?? device.webhookUrl ?? null,
       });
     } else if (result.status === false) {
-      // MPWA returned error — simpan ke lastError supaya keliatan di UI
+      // MPWA returned error - simpan ke lastError supaya keliatan di UI
       const msgStr = typeof result.msg === "string" ? result.msg : JSON.stringify(result.msg ?? result);
       await storage.markWaDeviceError(id, msgStr);
       await storage.patchWaDeviceState(id, {
@@ -15388,7 +15388,7 @@ router.get("/api/whatsapp/devices/:id/info", async (req: Request, res: Response)
   }
 });
 
-/** POST /api/whatsapp/devices/:id/check-number — verifikasi nomor exists di WA */
+/** POST /api/whatsapp/devices/:id/check-number - verifikasi nomor exists di WA */
 router.post("/api/whatsapp/devices/:id/check-number", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -15402,7 +15402,7 @@ router.post("/api/whatsapp/devices/:id/check-number", async (req: Request, res: 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/whatsapp/devices/:id/webhook-token — generate/refresh webhook token */
+/** POST /api/whatsapp/devices/:id/webhook-token - generate/refresh webhook token */
 router.post("/api/whatsapp/devices/:id/webhook-token", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -15422,11 +15422,11 @@ router.post("/api/whatsapp/devices/:id/webhook-token", async (req: Request, res:
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ════════════════════════════════════════════════════════════════
+// ================================================================
 //  Extended Send Endpoints (poll, list, location, vcard, sticker)
-// ════════════════════════════════════════════════════════════════
+// ================================================================
 
-/** POST /api/whatsapp/devices/:id/send — universal send (kirim via device) */
+/** POST /api/whatsapp/devices/:id/send - universal send (kirim via device) */
 router.post("/api/whatsapp/devices/:id/send", async (req: Request, res: Response) => {
   if (!requireWritePermission(req, res, "whatsapp")) return;
   try {
@@ -15444,13 +15444,13 @@ router.post("/api/whatsapp/devices/:id/send", async (req: Request, res: Response
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ════════════════════════════════════════════════════════════════
-//  Webhook Receiver — MPWA incoming messages
-// ════════════════════════════════════════════════════════════════
+// ================================================================
+//  Webhook Receiver - MPWA incoming messages
+// ================================================================
 
-/** POST /api/whatsapp/webhook/mpwa/:token — receive incoming WhatsApp messages */
+/** POST /api/whatsapp/webhook/mpwa/:token - receive incoming WhatsApp messages */
 router.post("/api/whatsapp/webhook/mpwa/:token", async (req: Request, res: Response) => {
-  // PUBLIC endpoint — auth via webhook_token di URL path
+  // PUBLIC endpoint - auth via webhook_token di URL path
   try {
     const token = String(req.params.token);
     if (!token || token.length < 8) return res.status(400).json({ status: false, msg: "Invalid token" });
@@ -15493,7 +15493,7 @@ router.post("/api/whatsapp/webhook/mpwa/:token", async (req: Request, res: Respo
   }
 });
 
-/** GET /api/whatsapp/devices/:id/inbox — list incoming messages */
+/** GET /api/whatsapp/devices/:id/inbox - list incoming messages */
 router.get("/api/whatsapp/devices/:id/inbox", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "whatsapp")) return sendError(res, "Akses ditolak", 403);
@@ -15508,7 +15508,7 @@ router.get("/api/whatsapp/devices/:id/inbox", async (req: Request, res: Response
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** PATCH /api/whatsapp/inbox/:id — mark as read/replied/archived */
+/** PATCH /api/whatsapp/inbox/:id - mark as read/replied/archived */
 router.patch("/api/whatsapp/inbox/:id", async (req: Request, res: Response) => {
   if (!requireWritePermission(req, res, "whatsapp")) return;
   try {
@@ -15522,7 +15522,7 @@ router.patch("/api/whatsapp/inbox/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── RESELLERS ──
+// -- RESELLERS --
 router.get("/api/resellers", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "resellers")) return sendError(res, "Akses ditolak", 403);
@@ -15590,9 +15590,9 @@ router.delete("/api/resellers/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  v4.2.24: PHONEBOOKS — custom contact lists untuk broadcast
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
+//  v4.2.24: PHONEBOOKS - custom contact lists untuk broadcast
+// ===========================================================
 
 router.get("/api/phonebooks", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -15664,7 +15664,7 @@ router.delete("/api/phonebooks/:id", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Contacts per phonebook ──
+// -- Contacts per phonebook --
 router.get("/api/phonebooks/:id/contacts", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "phonebooks") && !hasPermission(req, "whatsapp")) {
@@ -15703,7 +15703,7 @@ router.post("/api/phonebooks/:id/contacts", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-/** POST /api/phonebooks/:id/contacts/bulk — bulk add (import dari customers, CSV, dll) */
+/** POST /api/phonebooks/:id/contacts/bulk - bulk add (import dari customers, CSV, dll) */
 router.post("/api/phonebooks/:id/contacts/bulk", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "phonebooks") && !hasWritePermission(req, "whatsapp")) {
@@ -15847,7 +15847,7 @@ router.post("/api/phonebooks/:id/import-from-phonebook", async (req: Request, re
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// v4.2.27: smart filter customers untuk import — return customer list pakai filter (paket, kecamatan, status, etc)
+// v4.2.27: smart filter customers untuk import - return customer list pakai filter (paket, kecamatan, status, etc)
 // Pakai prefix /api/phonebook-import/ untuk avoid clash dengan /api/phonebooks/:id
 router.get("/api/phonebook-import/customers", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -15961,9 +15961,9 @@ function maskWaConfig(jsonStr: string): string {
   } catch { return jsonStr; }
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  MIKROTIK ROUTER MANAGEMENT
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 import {
   testConnection as mikrotikTest,
   getSystemResource,
@@ -16004,7 +16004,7 @@ function routerToCreds(r: { host: string; port: number | null; username: string;
   };
 }
 
-// ── CRUD Routers ──
+// -- CRUD Routers --
 router.get("/api/mikrotik/routers", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -16079,7 +16079,7 @@ router.delete("/api/mikrotik/routers/:id", async (req: Request, res: Response) =
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Test Connection ──
+// -- Test Connection --
 router.post("/api/mikrotik/routers/:id/test", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -16110,7 +16110,7 @@ router.post("/api/mikrotik/test-connection", async (req: Request, res: Response)
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── System Resource ──
+// -- System Resource --
 router.get("/api/mikrotik/routers/:id/resource", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -16123,7 +16123,7 @@ router.get("/api/mikrotik/routers/:id/resource", async (req: Request, res: Respo
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── PPPoE Active Sessions ──
+// -- PPPoE Active Sessions --
 router.get("/api/mikrotik/routers/:id/ppp/active", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16134,7 +16134,7 @@ router.get("/api/mikrotik/routers/:id/ppp/active", async (req: Request, res: Res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── PPPoE Secrets ──
+// -- PPPoE Secrets --
 router.get("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16145,7 +16145,7 @@ router.get("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── PPP Profiles ──
+// -- PPP Profiles --
 router.get("/api/mikrotik/routers/:id/ppp/profile", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16156,7 +16156,7 @@ router.get("/api/mikrotik/routers/:id/ppp/profile", async (req: Request, res: Re
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Disconnect PPPoE Session ──
+// -- Disconnect PPPoE Session --
 router.post("/api/mikrotik/routers/:id/ppp/disconnect", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
@@ -16170,7 +16170,7 @@ router.post("/api/mikrotik/routers/:id/ppp/disconnect", async (req: Request, res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Interfaces ──
+// -- Interfaces --
 router.get("/api/mikrotik/routers/:id/interfaces", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16181,7 +16181,7 @@ router.get("/api/mikrotik/routers/:id/interfaces", async (req: Request, res: Res
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── IP Pools ──
+// -- IP Pools --
 router.get("/api/mikrotik/routers/:id/ip/pool", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16192,7 +16192,7 @@ router.get("/api/mikrotik/routers/:id/ip/pool", async (req: Request, res: Respon
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Logs ──
+// -- Logs --
 router.get("/api/mikrotik/routers/:id/log", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16204,7 +16204,7 @@ router.get("/api/mikrotik/routers/:id/log", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ── Aggregated Active Sessions (all routers) ──
+// -- Aggregated Active Sessions (all routers) --
 router.get("/api/mikrotik/sessions/active", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
@@ -16230,9 +16230,9 @@ router.get("/api/mikrotik/sessions/active", async (req: Request, res: Response) 
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  PPP PROFILE CRUD
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.post("/api/mikrotik/routers/:id/ppp/profile", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
@@ -16269,9 +16269,9 @@ router.delete("/api/mikrotik/routers/:id/ppp/profile/:profileId", async (req: Re
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  PPP SECRET CRUD
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.post("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
@@ -16336,9 +16336,9 @@ router.post("/api/mikrotik/routers/:id/ppp/secret/:secretId/toggle", async (req:
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  SIMPLE QUEUE CRUD
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.get("/api/mikrotik/routers/:id/queue/simple", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
@@ -16385,9 +16385,9 @@ router.delete("/api/mikrotik/routers/:id/queue/simple/:queueId", async (req: Req
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  UTILITY READ-ONLY ROUTES
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 router.get("/api/mikrotik/routers/:id/dhcp/leases", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);

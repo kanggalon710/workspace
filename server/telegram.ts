@@ -1,6 +1,6 @@
 /**
  * Telegram Bot Adapter (v4.2.1)
- * ─────────────────────────────
+ * -----------------------------
  * Integrasi dengan Telegram Bot API untuk kirim notifikasi per-user (staff).
  * Pairing flow: user generate 6-digit kode → kirim `/start <kode>` ke bot →
  * server resolve kode → simpan chat_id ke users.telegram_chat_id.
@@ -63,7 +63,7 @@ export const TELEGRAM_EVENT_LABELS: Record<TelegramEventKey, string> = {
   sla_escalation: "SLA breach / mendekati expiry",
 };
 
-// ── In-memory pairing code store (TTL 5 menit) ──
+// -- In-memory pairing code store (TTL 5 menit) --
 // Tidak di-persist ke DB: codes cuma hidup sebentar + regen gampang.
 const pairingCodes = new Map<string, TelegramPairing>();
 const PAIRING_TTL_MS = 5 * 60 * 1000;
@@ -165,7 +165,7 @@ export async function sendTelegramMessage(
 
 /**
  * Kirim notifikasi event ke user tertentu (staff).
- * Respect user's telegram_prefs — kalau opt-out, skip.
+ * Respect user's telegram_prefs - kalau opt-out, skip.
  * Fire-and-forget: tidak throw kalau Telegram belum configured.
  */
 export async function notifyUserTelegram(
@@ -180,7 +180,7 @@ export async function notifyUserTelegram(
     const user: any = await storage.getUser(userId);
     if (!user?.telegramChatId) return { sent: false, reason: "user_not_paired" };
 
-    // Check prefs — default semua true kalau null
+    // Check prefs - default semua true kalau null
     let prefs: Record<string, boolean> = { ...TELEGRAM_EVENT_DEFAULTS };
     if (user.telegramPrefs) {
       try { prefs = { ...prefs, ...JSON.parse(user.telegramPrefs) }; } catch { /* ignore */ }

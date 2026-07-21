@@ -142,7 +142,7 @@ export default function CablesPage() {
   return (
     <AssetTable<Cable>
       title="Kabel"
-      description="Data kabel fiber optik — core/tube usage tracking"
+      description="Data kabel fiber optik - core/tube usage tracking"
       data={data}
       isLoading={isLoading}
       columns={columns}

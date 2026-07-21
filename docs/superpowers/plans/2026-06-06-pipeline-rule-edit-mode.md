@@ -4,9 +4,9 @@
 
 **Goal:** Let users edit an existing pipeline automation rule (currently create-only) by clicking a pencil on its row, which hydrates the shared bottom form and saves via `updateRule`.
 
-**Architecture:** Extract the form's pure mapping/validation into a new React-free module `ruleFormState.ts` (`ruleToDraft` for hydration, `draftToPayload` for the request body — shared by create AND edit; `emptyDraft` for defaults). The dialog keeps its `useState` hooks but adds thin `applyDraft`/`currentDraft` glue, an `editingId`, a pencil entry, and a `submit` that branches create vs update. The add/edit fields become a semantic `<form>`.
+**Architecture:** Extract the form's pure mapping/validation into a new React-free module `ruleFormState.ts` (`ruleToDraft` for hydration, `draftToPayload` for the request body - shared by create AND edit; `emptyDraft` for defaults). The dialog keeps its `useState` hooks but adds thin `applyDraft`/`currentDraft` glue, an `editingId`, a pencil entry, and a `submit` that branches create vs update. The add/edit fields become a semantic `<form>`.
 
-**Tech Stack:** React 18 + TS + Vite; TanStack Query mutations (`useRules`/`usePipelineMutations`); shadcn `Button`/`Combobox`/`Input`/`FormField`/`FormSection`. No backend/schema/migration changes — the PATCH route already accepts the full payload.
+**Tech Stack:** React 18 + TS + Vite; TanStack Query mutations (`useRules`/`usePipelineMutations`); shadcn `Button`/`Combobox`/`Input`/`FormField`/`FormSection`. No backend/schema/migration changes - the PATCH route already accepts the full payload.
 
 **Base branch:** `feat/pipeline-rule-edit-mode` (off `dev`). Spec: `docs/superpowers/specs/2026-06-06-pipeline-rule-edit-mode-design.md`.
 
@@ -22,7 +22,7 @@
 - [ ] **Step 1: Write the module**
 
 ```ts
-// Pure form-state helpers for the pipeline rule dialog — no React.
+// Pure form-state helpers for the pipeline rule dialog - no React.
 // SoC: hydration (ruleToDraft) + validation/body (draftToPayload) live here so
 // the same logic drives BOTH create and edit, and can be reasoned about in isolation.
 import type { PipelineRuleActionType } from "@shared/schema";
@@ -204,13 +204,13 @@ export function draftToPayload(d: RuleDraft):
 - [ ] **Step 2: Typecheck the module compiles standalone**
 
 Run: `npm run typecheck`
-Expected: **0 errors** (the module has no consumers yet; it must compile on its own — confirms the type-only imports + `RuleWithMaps`/`TimeTriggerConfig`/`DraftCondition` shapes line up).
+Expected: **0 errors** (the module has no consumers yet; it must compile on its own - confirms the type-only imports + `RuleWithMaps`/`TimeTriggerConfig`/`DraftCondition` shapes line up).
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add client/components/pipelines/ruleFormState.ts
-git commit -m "feat(pipelines): pure ruleFormState module — emptyDraft/ruleToDraft/draftToPayload (rule edit-mode)"
+git commit -m "feat(pipelines): pure ruleFormState module - emptyDraft/ruleToDraft/draftToPayload (rule edit-mode)"
 ```
 
 ---
@@ -221,7 +221,7 @@ git commit -m "feat(pipelines): pure ruleFormState module — emptyDraft/ruleToD
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
 - Modify: `client/components/pipelines/ConditionsBuilder.tsx` (button `type`s)
 
-This refactors the existing create flow to use the pure module (DRY) and makes the form a semantic `<form>`. No edit-mode yet — creating rules must still work identically.
+This refactors the existing create flow to use the pure module (DRY) and makes the form a semantic `<form>`. No edit-mode yet - creating rules must still work identically.
 
 - [ ] **Step 1: Imports**
 
@@ -302,7 +302,7 @@ Delete the `buildConditionsPayload` helper and the entire `add` function. Replac
 
 - [ ] **Step 5: Wrap the add fields in a semantic `<form>`**
 
-In the JSX, the add-form lives in `<FormSection title="Tambah Otomasi" ...>`. Wrap ALL of its children — from the first `<FormField label="Pemicu" ...>` through the final submit `<Button>` — in a `<form>`:
+In the JSX, the add-form lives in `<FormSection title="Tambah Otomasi" ...>`. Wrap ALL of its children - from the first `<FormField label="Pemicu" ...>` through the final submit `<Button>` - in a `<form>`:
 
 - Immediately after the `<FormSection ...>` opening tag, add: `<form onSubmit={submit}>`
 - Immediately before the `</FormSection>` closing tag, add: `</form>`
@@ -500,7 +500,7 @@ Expected: **0 typecheck errors**, build succeeds.
 
 ```bash
 git add client/components/pipelines/PipelineRulesDialog.tsx
-git commit -m "feat(pipelines): rule edit-mode — pencil entry, form hydration, update-or-create submit (rule edit-mode)"
+git commit -m "feat(pipelines): rule edit-mode - pencil entry, form hydration, update-or-create submit (rule edit-mode)"
 ```
 
 - [ ] **Step 10: Manual checklist (relay to user; run on dev after deploy)**
@@ -524,4 +524,4 @@ git commit -m "feat(pipelines): rule edit-mode — pencil entry, form hydration,
 - **Type consistency:** `RuleDraft` shape identical in module (T1) and `currentDraft`/`applyDraft` (T2). `draftToPayload`/`ruleToDraft`/`emptyDraft` signatures used exactly as defined. The 21 fields in `applyDraft`/`currentDraft` match `RuleDraft` 1:1.
 - **Behavior-preserving:** T2's `draftToPayload` reproduces the old `add()` logic (same validations, same body, `fieldMaps` create_card-only); create flow unchanged before edit-mode is added in T3.
 - **Form gotcha:** every non-submit button inside the new `<form>` (map rows, createInTarget, addMap, delete, and ConditionsBuilder's two) gets `type="button"`; only the save button is `type="submit"`.
-- **No backend/migration**: confirmed — uses existing `createRule`/`updateRule` mutations + PATCH route.
+- **No backend/migration**: confirmed - uses existing `createRule`/`updateRule` mutations + PATCH route.

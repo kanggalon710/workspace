@@ -68,7 +68,7 @@ export default function BugReportsPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden bg-slate-50/40 dark:bg-slate-950/40 -m-4 md:-m-6 -mt-4 md:-mt-6 pb-20 md:pb-0">
-      {/* Header — sticky */}
+      {/* Header - sticky */}
       <div className="sticky top-0 z-10 px-4 md:px-6 pt-4 md:pt-6 pb-4 space-y-4 shrink-0 bg-background border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3 md:gap-4 min-w-0 flex-1">
@@ -90,7 +90,7 @@ export default function BugReportsPage() {
           </Button>
         </div>
 
-        {/* Stats — 2 cols mobile, 4 cols desktop */}
+        {/* Stats - 2 cols mobile, 4 cols desktop */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
             <StatTile label="Total" value={stats.total} />
@@ -100,7 +100,7 @@ export default function BugReportsPage() {
           </div>
         )}
 
-        {/* Filters — horizontal scroll di mobile */}
+        {/* Filters - horizontal scroll di mobile */}
         <div className="overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
           <div className="flex items-center gap-2 w-fit md:w-full">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -172,7 +172,7 @@ export default function BugReportsPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 function StatTile({ label, value, tone, urgent }: any) {
   const colors: Record<string, string> = {
     sky: "text-sky-600 dark:text-sky-400",
@@ -219,7 +219,7 @@ function BugRow({ b, onClick }: any) {
             {b.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{b.description}</p>}
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
               <span className="inline-flex items-center gap-1">
-                <UserIcon className="h-3 w-3" /> {b.reporterName ?? "—"}
+                <UserIcon className="h-3 w-3" /> {b.reporterName ?? "-"}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {fmtRelative(b.createdAt)}
@@ -247,7 +247,7 @@ function BugRow({ b, onClick }: any) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 function CreateBugDialog({ open, onClose, onSaved }: any) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -315,10 +315,10 @@ function CreateBugDialog({ open, onClose, onSaved }: any) {
               <Select value={severity} onValueChange={(v) => setSeverity(v as Severity)}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low — cosmetic</SelectItem>
-                  <SelectItem value="medium">Medium — ganggu tapi workaround ada</SelectItem>
-                  <SelectItem value="high">High — blocking pekerjaan</SelectItem>
-                  <SelectItem value="critical">Critical — sistem down / data loss</SelectItem>
+                  <SelectItem value="low">Low - cosmetic</SelectItem>
+                  <SelectItem value="medium">Medium - ganggu tapi workaround ada</SelectItem>
+                  <SelectItem value="high">High - blocking pekerjaan</SelectItem>
+                  <SelectItem value="critical">Critical - sistem down / data loss</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -371,7 +371,7 @@ function CreateBugDialog({ open, onClose, onSaved }: any) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 function BugDetailDialog({ open, onClose, bugId, canTriage, currentUserId, onUpdated }: any) {
   const { data, isLoading } = useQuery<any>({
     queryKey: ["/api/bugs", bugId],
@@ -519,7 +519,7 @@ function BugDetailDialog({ open, onClose, bugId, canTriage, currentUserId, onUpd
                     <Select value={String(assignEdit ?? "")} onValueChange={(v) => setAssignEdit(v ? Number(v) : null)}>
                       <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue placeholder="Belum di-assign" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0">— Unassign —</SelectItem>
+                        <SelectItem value="0">- Unassign -</SelectItem>
                         {users.filter((u: any) => u.isActive).map((u: any) => (
                           <SelectItem key={u.id} value={String(u.id)}>{u.name} ({u.role})</SelectItem>
                         ))}

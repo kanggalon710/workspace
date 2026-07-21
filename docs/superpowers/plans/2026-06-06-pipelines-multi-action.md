@@ -10,7 +10,7 @@
 
 **Base branch:** `feat/pipelines-multi-action` (off `dev`). Spec: `docs/superpowers/specs/2026-06-06-pipelines-multi-action-design.md`.
 
-**Canonical shapes (used across tasks — keep identical):**
+**Canonical shapes (used across tasks - keep identical):**
 - DB `PipelineRuleAction`: `{ id, mitraId, ruleId, position, actionType, actionConfig: string|null, targetPipelineId: number|null, targetStageId: number|null, titleTemplate: string|null, copyAssignee: number, createdAt }`.
 - `ActionInput` (request → storage): `{ actionType: string; actionConfig?: any|null; targetPipelineId?: number|null; targetStageId?: number|null; titleTemplate?: string|null; copyAssignee?: number; fieldMaps?: {sourceFieldId:number; targetFieldId:number}[] }`.
 - `RuleActionView` (GET enrichment / client): `PipelineRuleAction & { setFieldLabel?, setFieldType?, moveStageName?, assigneeName?, targetPipelineName?, targetStageName?, actionConfig: any, fieldMaps: ShapedFieldMap[] }`.
@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Schema — `pipeline_rule_actions` + field_maps `action_id`
+### Task 1: Schema - `pipeline_rule_actions` + field_maps `action_id`
 
 **Files:**
 - Modify: `shared/schema.ts`
@@ -58,13 +58,13 @@ Leave the existing `uniqueIndex("uniq_rule_field_map_source").on(t.ruleId, t.sou
 - [ ] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
-Expected: 0 errors (purely additive). Note any residuals (there should be none — no consumer references the new table/column yet).
+Expected: 0 errors (purely additive). Note any residuals (there should be none - no consumer references the new table/column yet).
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add shared/schema.ts
-git commit -m "feat(pipelines): schema for multi-action — pipeline_rule_actions + field_maps action_id (P4d-1)"
+git commit -m "feat(pipelines): schema for multi-action - pipeline_rule_actions + field_maps action_id (P4d-1)"
 ```
 
 ---
@@ -72,7 +72,7 @@ git commit -m "feat(pipelines): schema for multi-action — pipeline_rule_action
 ### Task 2: Startup migration
 
 **Files:**
-- Modify: `server/storage.ts` (the pipeline migration block — find with `grep -n "trigger_config" server/storage.ts`, add AFTER the P4c block)
+- Modify: `server/storage.ts` (the pipeline migration block - find with `grep -n "trigger_config" server/storage.ts`, add AFTER the P4c block)
 
 Per [[reference-startup-add-column]]: info_schema guard + plain DDL; each ALTER in its own try/catch.
 
@@ -81,7 +81,7 @@ Per [[reference-startup-add-column]]: info_schema guard + plain DDL; each ALTER 
 Add after the P4c migration block:
 
 ```ts
-// P4d-1 — multi-action
+// P4d-1 - multi-action
 try {
   await this.pool.execute(`CREATE TABLE IF NOT EXISTS pipeline_rule_actions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -150,12 +150,12 @@ Expected: succeeds (esbuild does not run the migration; this just confirms no sy
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(pipelines): startup migration — pipeline_rule_actions table + backfill + field-map index swap (P4d-1)"
+git commit -m "feat(pipelines): startup migration - pipeline_rule_actions table + backfill + field-map index swap (P4d-1)"
 ```
 
 ---
 
-### Task 3: Storage — action CRUD + rule wiring
+### Task 3: Storage - action CRUD + rule wiring
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -224,7 +224,7 @@ In `createRule`'s data type, add `actions?: { ... }[]` (same shape as `setRuleAc
 ```ts
     if (data.actions) await this.setRuleActions(row!.id, data.actions);
 ```
-Keep the legacy `actionType`/`actionConfig`/etc. columns being written from `data` (they stay as legacy backfill source — harmless). If they're no longer passed, they default to existing column defaults.
+Keep the legacy `actionType`/`actionConfig`/etc. columns being written from `data` (they stay as legacy backfill source - harmless). If they're no longer passed, they default to existing column defaults.
 
 In `updateRule`'s data type, add `actions?: { ... }[]`. Where it currently does `if (data.fieldMaps !== undefined) await this.setRuleFieldMaps(id, data.fieldMaps);`, replace with:
 ```ts
@@ -241,18 +241,18 @@ In `deleteRule`, before/after the existing field-map delete, add a delete of the
 - [ ] **Step 5: Typecheck**
 
 Run: `npm run typecheck`
-Expected: storage.ts compiles. Residuals expected in `server/pipeline-automation.ts` (still calls old single-action path) + `server/routes.ts` (still sends single-action) + client — fixed in later tasks. Report residual list.
+Expected: storage.ts compiles. Residuals expected in `server/pipeline-automation.ts` (still calls old single-action path) + `server/routes.ts` (still sends single-action) + client - fixed in later tasks. Report residual list.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add server/storage.ts
-git commit -m "feat(pipelines): storage — listRuleActions/getActionFieldMaps/setRuleActions + rule action wiring (P4d-1)"
+git commit -m "feat(pipelines): storage - listRuleActions/getActionFieldMaps/setRuleActions + rule action wiring (P4d-1)"
 ```
 
 ---
 
-### Task 4: Engine — `applyAction` + `applyRuleActions`
+### Task 4: Engine - `applyAction` + `applyRuleActions`
 
 **Files:**
 - Modify: `server/pipeline-automation.ts`
@@ -261,7 +261,7 @@ Read the file first. It currently has `applyRuleAction(rule, card, actorId)` (th
 
 - [ ] **Step 1: Add `applyAction(action, card, actorId)`**
 
-Add this function — it is the existing `applyRuleAction` switch, but reading from a `PipelineRuleAction` row (and field-maps via `getActionFieldMaps(action.id)`). Import `PipelineRuleAction` type.
+Add this function - it is the existing `applyRuleAction` switch, but reading from a `PipelineRuleAction` row (and field-maps via `getActionFieldMaps(action.id)`). Import `PipelineRuleAction` type.
 
 ```ts
 import type { PipelineCard, PipelineRule, PipelineRuleAction } from "../shared/schema.js";
@@ -271,13 +271,13 @@ export async function applyAction(action: PipelineRuleAction, card: PipelineCard
   if (action.actionType === "create_card") {
     const targetStages = await storage.listStages(action.targetPipelineId!);
     if (!targetStages.some((s) => s.id === action.targetStageId)) {
-      console.warn(`[automation] action ${action.id}: target stage ${action.targetStageId} no longer exists — skipped`);
+      console.warn(`[automation] action ${action.id}: target stage ${action.targetStageId} no longer exists - skipped`);
       return false;
     }
     const assigneeId = (action.copyAssignee && card.assigneeId && await storage.canUserAccessPipeline(card.assigneeId, action.targetPipelineId!))
       ? card.assigneeId : null;
     if (action.copyAssignee && card.assigneeId && assigneeId === null) {
-      console.warn(`[automation] action ${action.id}: assignee ${card.assigneeId} lacks access to pipeline ${action.targetPipelineId} — created unassigned`);
+      console.warn(`[automation] action ${action.id}: assignee ${card.assigneeId} lacks access to pipeline ${action.targetPipelineId} - created unassigned`);
     }
     const newCard = await storage.createCard(action.targetPipelineId!, {
       stageId: action.targetStageId!,
@@ -302,7 +302,7 @@ export async function applyAction(action: PipelineRuleAction, card: PipelineCard
       await storage.setCardValues(card.id, [{ fieldId: cfg.fieldId, value: cfg.value }]);
       return true;
     }
-    console.warn(`[automation] action ${action.id}: set_field config invalid or field missing — skipped`);
+    console.warn(`[automation] action ${action.id}: set_field config invalid or field missing - skipped`);
     return false;
   }
   if (action.actionType === "move_stage") {
@@ -312,14 +312,14 @@ export async function applyAction(action: PipelineRuleAction, card: PipelineCard
       await storage.moveCard(card.id, cfg.stageId, undefined, actorId);
       return true;
     }
-    console.warn(`[automation] action ${action.id}: move_stage config invalid, stage missing, or no-op — skipped`);
+    console.warn(`[automation] action ${action.id}: move_stage config invalid, stage missing, or no-op - skipped`);
     return false;
   }
   if (action.actionType === "assign") {
     const cfg = parseActionConfig("assign", action.actionConfig) as { assigneeId: number | null } | null;
-    if (!cfg) { console.warn(`[automation] action ${action.id}: assign config invalid — skipped`); return false; }
+    if (!cfg) { console.warn(`[automation] action ${action.id}: assign config invalid - skipped`); return false; }
     if (cfg.assigneeId != null && !(await storage.canUserAccessPipeline(cfg.assigneeId, card.pipelineId))) {
-      console.warn(`[automation] action ${action.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} — skipped`);
+      console.warn(`[automation] action ${action.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} - skipped`);
       return false;
     }
     await storage.updateCard(card.id, { assigneeId: cfg.assigneeId }, actorId);
@@ -361,7 +361,7 @@ Expected: all pass (unchanged).
 
 ```bash
 git add server/pipeline-automation.ts
-git commit -m "feat(pipelines): engine — applyAction per action + applyRuleActions loop (P4d-1)"
+git commit -m "feat(pipelines): engine - applyAction per action + applyRuleActions loop (P4d-1)"
 ```
 
 ---
@@ -371,7 +371,7 @@ git commit -m "feat(pipelines): engine — applyAction per action + applyRuleAct
 **Files:**
 - Modify: `server/pipeline-automation-helpers.ts`, `server/pipeline-automation-helpers.test.ts`
 
-This shapes a rule's raw actions + field-maps into the GET response view (labels resolved from caller-provided lookups). Pure — no DB.
+This shapes a rule's raw actions + field-maps into the GET response view (labels resolved from caller-provided lookups). Pure - no DB.
 
 - [ ] **Step 1: Write failing tests**
 
@@ -416,7 +416,7 @@ test("shapeRuleActions: deleted refs → (dihapus) fallbacks", () => {
 - [ ] **Step 2: Run tests, verify FAIL**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: FAIL — `shapeRuleActions` not exported.
+Expected: FAIL - `shapeRuleActions` not exported.
 
 - [ ] **Step 3: Implement `shapeRuleActions`**
 
@@ -481,7 +481,7 @@ git commit -m "feat(pipelines): pure shapeRuleActions helper for GET enrichment 
 
 ---
 
-### Task 6: Routes — `actions[]` validation (POST/PATCH) + enrichment (GET)
+### Task 6: Routes - `actions[]` validation (POST/PATCH) + enrichment (GET)
 
 **Files:**
 - Modify: `server/routes.ts` (rule routes ~4627-4775)
@@ -515,7 +515,7 @@ async function validateActions(req: any, pipelineId: number, actions: any): Prom
 }
 ```
 
-- [ ] **Step 3: POST — accept `actions[]`**
+- [ ] **Step 3: POST - accept `actions[]`**
 
 In `router.post("/api/pipelines/:id/rules", ...)`, REMOVE the single-action branching (the `const actionType = ...`, the `if (actionType === "create_card") {...}` create_card block, the generic-action block, and the old `validateActionConfig`/`validateRuleFieldMaps` single calls). Keep the conditions + trigger validation. Replace the action handling with:
 ```ts
@@ -541,7 +541,7 @@ In `router.post("/api/pipelines/:id/rules", ...)`, REMOVE the single-action bran
 ```
 (Keep the existing `validateTriggerConfig` + `validateConditions` calls earlier in the handler.)
 
-- [ ] **Step 4: PATCH — accept `actions[]`**
+- [ ] **Step 4: PATCH - accept `actions[]`**
 
 In `router.patch(...)`, REMOVE the single-action `fieldMaps`/`actionConfig` validation blocks. After the trigger/conditions validation, add:
 ```ts
@@ -564,7 +564,7 @@ In the `storage.updateRule(...)` call, REMOVE the `actionType`/`targetPipelineId
 ```
 (Keep `name`, trigger fields, `conditions`, `enabled`. Preserve the "Rule tidak ditemukan"→404 catch.)
 
-- [ ] **Step 5: GET — enrich with `actions[]`**
+- [ ] **Step 5: GET - enrich with `actions[]`**
 
 In `router.get("/api/pipelines/:id/rules", ...)`: load all actions for the page's rules and shape them. After `const rules = await storage.listRules(pid);` and the existing lookups (`pipeName`, `srcFields`, `selfStages`, `userName`), add:
 ```ts
@@ -609,7 +609,7 @@ Expected: routes.ts = 0 errors. Only client residuals remain. Report.
 
 ```bash
 git add server/routes.ts
-git commit -m "feat(pipelines): rule routes — actions[] validation + GET enrichment (P4d-1)"
+git commit -m "feat(pipelines): rule routes - actions[] validation + GET enrichment (P4d-1)"
 ```
 
 ---
@@ -640,7 +640,7 @@ In `RuleWithMaps`: remove `actionConfig`, `setFieldLabel`, `setFieldType`, `move
 - [ ] **Step 2: Typecheck**
 
 Run: `npm run typecheck`
-Expected: NEW errors now appear in `ruleFormState.ts` + `PipelineRulesDialog.tsx` (they read the removed fields) — those are fixed in Tasks 8-10. Report the residual list (should be confined to those two files).
+Expected: NEW errors now appear in `ruleFormState.ts` + `PipelineRulesDialog.tsx` (they read the removed fields) - those are fixed in Tasks 8-10. Report the residual list (should be confined to those two files).
 
 - [ ] **Step 3: Commit**
 
@@ -651,7 +651,7 @@ git commit -m "feat(pipelines): RuleWithMaps carries actions[] view (P4d-1)"
 
 ---
 
-### Task 8: `ruleFormState.ts` — actions array
+### Task 8: `ruleFormState.ts` - actions array
 
 **Files:**
 - Modify: `client/components/pipelines/ruleFormState.ts`
@@ -751,7 +751,7 @@ Expected: ruleFormState.ts = 0 errors. Only `PipelineRulesDialog.tsx` residuals 
 
 ```bash
 git add client/components/pipelines/ruleFormState.ts
-git commit -m "feat(pipelines): ruleFormState over actions[] — ActionDraft + draft<->payload (P4d-1)"
+git commit -m "feat(pipelines): ruleFormState over actions[] - ActionDraft + draft<->payload (P4d-1)"
 ```
 
 ---
@@ -793,12 +793,12 @@ Expected: the new component compiles. The dialog still has its old inline action
 
 ```bash
 git add client/components/pipelines/RuleActionEditor.tsx
-git commit -m "feat(pipelines): RuleActionEditor component — single-action editor (P4d-1)"
+git commit -m "feat(pipelines): RuleActionEditor component - single-action editor (P4d-1)"
 ```
 
 ---
 
-### Task 10: Dialog — action list (add/remove/reorder) + read-side
+### Task 10: Dialog - action list (add/remove/reorder) + read-side
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -846,7 +846,7 @@ Add a small local helper near the other helpers:
 ```
 Import `ChevronUp` from lucide-react. `sourceFields`, `selfStages`, `allPipelines`, `staffUsers` already exist in the dialog.
 
-- [ ] **Step 2: Read-side — summary + detail over actions**
+- [ ] **Step 2: Read-side - summary + detail over actions**
 
 - Replace `actionSummary(r)` so it summarizes the action LIST. New version:
 ```tsx
@@ -892,5 +892,5 @@ git commit -m "feat(pipelines): rule dialog action list (add/remove/reorder) + r
 - **Spec coverage:** §1 schema → T1; §2 migration → T2; §3 engine → T4; §4 storage → T3; §5 routes → T6 (+ §enrichment helper → T5); §6 frontend → T7/T8/T9/T10; §7 edge cases → engine per-action try/catch (T4) + validateActions ≥1 (T6) + manual (T10).
 - **Type consistency:** `ActionInput`/`setRuleActions` param shape identical in T3 + T6; `ActionDraft` identical in T8 + T9 + T10; `RuleActionView`/`actions` on `RuleWithMaps` (T7) consumed by `ruleToDraft` (T8) + read-side (T10); `shapeRuleActions` signature (T5) called in GET (T6) with the `lk` lookup object whose Maps match.
 - **Residual-error tracking:** T7 removes single-action fields from `RuleWithMaps`, breaking `ruleFormState.ts` + dialog; fixed in T8 + T10. Each task states expected residuals.
-- **Conditions stay rule-level** (unchanged) — trigger + conditions validation in routes is untouched.
+- **Conditions stay rule-level** (unchanged) - trigger + conditions validation in routes is untouched.
 - **No placeholders**; pure helper (`shapeRuleActions`) is TDD'd; client logic (`draftToPayload`/`ruleToDraft`) pure + reviewable; UI verified via typecheck/build/manual (no client test runner).

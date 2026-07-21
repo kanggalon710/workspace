@@ -6,7 +6,7 @@ import { useJsApiLoader } from "@react-google-maps/api";
 const LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
 // Key resolved at runtime from /api/public-config (reads google_maps_api_key per active mitra
-// from mitra_integrations). No source-code fallback — owner must set via /integrations.
+// from mitra_integrations). No source-code fallback - owner must set via /integrations.
 
 interface GoogleMapsContextType {
   isLoaded: boolean;

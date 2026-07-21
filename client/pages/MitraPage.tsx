@@ -26,7 +26,7 @@ import {
   Mail, Phone, MapPin, Globe, User, Lock, Layers, Zap, Info,
 } from "lucide-react";
 
-// ─── Types ───
+// --- Types ---
 interface MitraItem {
   id: number;
   slug: string | null;
@@ -54,7 +54,7 @@ interface SafeUser {
   isActive: number | null;
 }
 
-// ─── Helpers ───
+// --- Helpers ---
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
@@ -66,13 +66,13 @@ function slugify(val: string): string {
 }
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// SWITCH COMPONENT (inline — no separate file needed)
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
+// SWITCH COMPONENT (inline - no separate file needed)
+// =======================================================================
 function Switch({ checked, onCheckedChange, disabled }: { checked: boolean; onCheckedChange: (v: boolean) => void; disabled?: boolean }) {
   return (
     <SwitchPrimitive.Root
@@ -92,9 +92,9 @@ function Switch({ checked, onCheckedChange, disabled }: { checked: boolean; onCh
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 // MAIN PAGE
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 export default function MitraPage() {
   const { canWrite } = useAuth();
   const canEdit = canWrite("mitra_admin");
@@ -153,7 +153,7 @@ export default function MitraPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden bg-slate-50/40 dark:bg-slate-950/40 -m-4 md:-m-6 -mt-4 md:-mt-6 pb-20 md:pb-0">
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div className="sticky top-0 z-10 px-4 md:px-6 pt-4 md:pt-6 pb-4 space-y-4 shrink-0 bg-background border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3 md:gap-4 min-w-0 flex-1">
@@ -163,7 +163,7 @@ export default function MitraPage() {
             <div className="min-w-0">
               <h1 className="text-xl md:text-2xl font-bold tracking-tight">Kelola Mitra</h1>
               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                <span className="hidden md:inline">Manajemen tenant mitra JABNET — CRUD, feature flags, dan membership.</span>
+                <span className="hidden md:inline">Manajemen tenant mitra JABNET - CRUD, feature flags, dan membership.</span>
                 <span className="md:hidden">Manajemen tenant mitra</span>
               </p>
             </div>
@@ -219,7 +219,7 @@ export default function MitraPage() {
         </div>
       </div>
 
-      {/* ── Content ── */}
+      {/* -- Content -- */}
       <div className="flex-1 md:overflow-y-auto px-4 md:px-6 py-4">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -283,7 +283,7 @@ export default function MitraPage() {
         )}
       </div>
 
-      {/* ── Dialogs ── */}
+      {/* -- Dialogs -- */}
       <MitraDetailDrawer
         mitra={detailFor}
         canEdit={canEdit}
@@ -325,9 +325,9 @@ export default function MitraPage() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 // MITRA CARD
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 function MitraCard({ mitra, canEdit, onClick, onToggleActive, onDelete }: {
   mitra: MitraItem;
   canEdit: boolean;
@@ -363,7 +363,7 @@ function MitraCard({ mitra, canEdit, onClick, onToggleActive, onDelete }: {
               {mitra.displayName || mitra.name}
             </div>
             <div className="font-mono text-[11px] text-muted-foreground mt-0.5 truncate">
-              {mitra.slug ?? "—"}
+              {mitra.slug ?? "-"}
             </div>
             <div className="mt-1">
               <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
@@ -431,9 +431,9 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 // DETAIL DRAWER
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 type DetailTab = "overview" | "features" | "members";
 
 function MitraDetailDrawer({ mitra, canEdit, onClose, onSaved }: {
@@ -535,7 +535,7 @@ function MitraDetailDrawer({ mitra, canEdit, onClose, onSaved }: {
   );
 }
 
-// ─── Overview Tab (inline edit form) ───
+// --- Overview Tab (inline edit form) ---
 function OverviewTab({ mitra, canEdit, onSaved }: { mitra: MitraItem; canEdit: boolean; onSaved: () => void }) {
   const [form, setForm] = useState({
     name: mitra.name ?? "",
@@ -652,7 +652,7 @@ function OverviewTab({ mitra, canEdit, onSaved }: { mitra: MitraItem; canEdit: b
   );
 }
 
-// ─── Features Tab ───
+// --- Features Tab ---
 function FeaturesTab({ mitra, canEdit, onSaved }: { mitra: MitraItem; canEdit: boolean; onSaved: () => void }) {
   const [features, setFeatures] = useState<Record<string, boolean>>({ ...mitra.features });
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -726,7 +726,7 @@ function FeaturesTab({ mitra, canEdit, onSaved }: { mitra: MitraItem; canEdit: b
   );
 }
 
-// ─── Members Tab ───
+// --- Members Tab ---
 function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: boolean }) {
   const qc = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -812,7 +812,7 @@ function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: boolean }) 
 
   return (
     <div className="space-y-4">
-      {/* Onboarding tip — visible only in edit mode */}
+      {/* Onboarding tip - visible only in edit mode */}
       {canEdit && (
         <div className="flex gap-2 items-start p-3 rounded-lg border bg-violet-50/30 border-violet-200 dark:bg-violet-950/20 dark:border-violet-800/50">
           <Info className="h-4 w-4 text-violet-600 dark:text-violet-300 shrink-0 mt-0.5" />
@@ -961,9 +961,9 @@ function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: boolean }) 
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 // CREATE DIALOG (2-step wizard)
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 const EMPTY_MITRA_FORM = { name: "", slug: "", displayName: "", phone: "", primaryContactName: "", primaryContactPhone: "", district: "", address: "", email: "", notes: "" };
 const EMPTY_ADMIN_FORM = { username: "", name: "", email: "", phone: "", password: "", passwordConfirm: "" };
 
@@ -1004,7 +1004,7 @@ function MitraCreateDialog({ open, onClose, onSaved }: { open: boolean; onClose:
     mutationFn: (data: any) => api.post<any>("/mitras", data),
     onSuccess: (data: any) => {
       const adminUsername = data?.adminUser?.username ?? "?";
-      toast.success(`Mitra dibuat — Admin: ${adminUsername} bisa login sekarang`);
+      toast.success(`Mitra dibuat - Admin: ${adminUsername} bisa login sekarang`);
       onSaved();
     },
     onError: (e: any) => toast.error(e.message),
@@ -1055,12 +1055,12 @@ function MitraCreateDialog({ open, onClose, onSaved }: { open: boolean; onClose:
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-violet-500" />
-            {step === 1 ? "Tambah Mitra Baru" : "Tambah Mitra — Step 2/2"}
+            {step === 1 ? "Tambah Mitra Baru" : "Tambah Mitra - Step 2/2"}
           </DialogTitle>
           <DialogDescription>
             {step === 1
               ? "Daftarkan tenant mitra baru ke platform JABNET. Logo URL bisa diatur setelah mitra dibuat."
-              : "Akun Administrator mitra (wajib — sebagai entry point login)."}
+              : "Akun Administrator mitra (wajib - sebagai entry point login)."}
           </DialogDescription>
           {/* Step indicator */}
           <div className="flex gap-1.5 pt-1">
@@ -1157,7 +1157,7 @@ function MitraCreateDialog({ open, onClose, onSaved }: { open: boolean; onClose:
                 type="email"
               />
               <FF
-                label="Phone (opsional — MPWA OTP)"
+                label="Phone (opsional - MPWA OTP)"
                 value={adminForm.phone}
                 onChange={(v) => setAdminForm((p) => ({ ...p, phone: v }))}
                 placeholder="08123456789"
@@ -1214,9 +1214,9 @@ function MitraCreateDialog({ open, onClose, onSaved }: { open: boolean; onClose:
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 // SHARED MICRO-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════
+// =======================================================================
 function KpiTile({ icon, label, value, iconBg }: { icon: React.ReactNode; label: string; value: number; iconBg: string }) {
   return (
     <Card>
@@ -1242,7 +1242,7 @@ function InfoRow({ icon, label, value, mono }: { icon: React.ReactNode; label: s
       <div className="flex-1 min-w-0 grid grid-cols-3 gap-2">
         <div className="text-[11px] text-muted-foreground">{label}</div>
         <div className={`col-span-2 text-sm break-words ${mono ? "font-mono" : ""} ${value ? "" : "text-muted-foreground italic"}`}>
-          {value || "—"}
+          {value || "-"}
         </div>
       </div>
     </div>

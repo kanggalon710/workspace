@@ -11,7 +11,7 @@ export const queryClient = new QueryClient({
         return failureCount < 1;
       },
       refetchOnWindowFocus: false,
-      // Pause auto-refetch when tab is hidden — saves ~80 polling queries across
+      // Pause auto-refetch when tab is hidden - saves ~80 polling queries across
       // the app from running while user is in another tab or phone is locked.
       // Pages that need keep-alive polling can override with refetchIntervalInBackground: true.
       refetchIntervalInBackground: false,

@@ -52,7 +52,7 @@ test("alpha & cuti tidak dibayar memotong harian; lembur menambah", () => {
 test("QA M3: dasar BPJS = pokok + tunjangan tetap, TIDAK termasuk lembur", () => {
   // Tanpa lembur
   const a = computePayslip({ baseSalary: 5_000_000, fixedAllowance: 1_000_000, variableAllowance: 0, overtimeHours: 0, alphaDays: 0, unpaidLeaveDays: 0, workingDays: 22, fixedDeduction: 0, ptkp: "TK/0" });
-  // Dengan lembur 20 jam — BPJS harus SAMA (lembur tidak menambah dasar iuran)
+  // Dengan lembur 20 jam - BPJS harus SAMA (lembur tidak menambah dasar iuran)
   const b = computePayslip({ baseSalary: 5_000_000, fixedAllowance: 1_000_000, variableAllowance: 0, overtimeHours: 20, alphaDays: 0, unpaidLeaveDays: 0, workingDays: 22, fixedDeduction: 0, ptkp: "TK/0" });
   assert.equal(a.bpjsTkEmp, b.bpjsTkEmp, "BPJS TK tidak boleh berubah karena lembur");
   assert.equal(a.bpjsKesEmp, b.bpjsKesEmp, "BPJS Kesehatan tidak boleh berubah karena lembur");

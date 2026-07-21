@@ -2,17 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let a JABNET sysadmin optionally see and assign users from other mitras in pipeline assignment pickers, while keeping the default JABNET-only and non-JABNET tenants fully isolated (cross-tenant assignment is record-only — no access granted).
+**Goal:** Let a JABNET sysadmin optionally see and assign users from other mitras in pipeline assignment pickers, while keeping the default JABNET-only and non-JABNET tenants fully isolated (cross-tenant assignment is record-only - no access granted).
 
 **Architecture:** All pickers funnel through one hook (`useAssignableUsers`) → one endpoint (`GET /api/pipelines/assignable-users`) → one storage method (`getAssignableUsers`). We add an opt-in `?scope=cross` param gated by the existing `isSystemAdmin(req)` helper, harden the two assignee write paths server-side, and replace five duplicated inline pickers with one reusable `<AssigneePicker>` that owns the cross-tenant toggle + tenant labels.
 
 **Tech Stack:** Express 5 + Drizzle (MySQL) backend; React 18 + TanStack Query + shadcn `Combobox` frontend. Spec: `docs/superpowers/specs/2026-06-11-pipeline-assignment-visibility-design.md`.
 
-**Verification note:** This feature is wiring + UI, not pure algorithm — there is little unit-testable pure logic. Per the project's established convention (pure logic in `shared/*` is unit-tested via `tsx --test`; DB/route/UI code is verified via `npx tsc --noEmit` + `npm run build` + manual on dev), tasks here verify with typecheck/build and a manual acceptance pass (Task 7). Do not invent low-value unit tests for DB/UI glue.
+**Verification note:** This feature is wiring + UI, not pure algorithm - there is little unit-testable pure logic. Per the project's established convention (pure logic in `shared/*` is unit-tested via `tsx --test`; DB/route/UI code is verified via `npx tsc --noEmit` + `npm run build` + manual on dev), tasks here verify with typecheck/build and a manual acceptance pass (Task 7). Do not invent low-value unit tests for DB/UI glue.
 
 ---
 
-### Task 1: Storage — cross-tenant `getAssignableUsers` + tenant labels
+### Task 1: Storage - cross-tenant `getAssignableUsers` + tenant labels
 
 **Files:**
 - Modify: `server/storage.ts:6547-6557` (the `getAssignableUsers` method)
@@ -54,7 +54,7 @@ Notes: the second param's *meaning* changes from `isSystemAdmin` to `allowCrossT
 - [ ] **Step 2: Typecheck**
 
 Run: `npx tsc --noEmit`
-Expected: PASS (0 errors). The only caller is updated in Task 2; until then tsc may flag the boolean arg meaning — that's fine, it's still a boolean, so it stays green. If tsc errors on `mitras` not imported, add it to the existing schema import.
+Expected: PASS (0 errors). The only caller is updated in Task 2; until then tsc may flag the boolean arg meaning - that's fine, it's still a boolean, so it stays green. If tsc errors on `mitras` not imported, add it to the existing schema import.
 
 - [ ] **Step 3: Commit**
 
@@ -65,7 +65,7 @@ git commit -m "feat(pipelines): getAssignableUsers cross-tenant flag + mitra lab
 
 ---
 
-### Task 2: Endpoint — `?scope=cross` gated by `isSystemAdmin`
+### Task 2: Endpoint - `?scope=cross` gated by `isSystemAdmin`
 
 **Files:**
 - Modify: `server/routes.ts:4771-4775` (the `GET /api/pipelines/assignable-users` handler)
@@ -87,7 +87,7 @@ Replace the middle line so it reads:
     sendSuccess(res, list);
 ```
 
-`isSystemAdmin(req)` is the function defined at `server/routes.ts:398` (JABNET System-Admin role OR legacy JABNET admin) — NOT the `req.authUser.isSystemAdmin` boolean. A non-sysadmin passing `?scope=cross` gets `allowCross=false` (silent safe default, no 403).
+`isSystemAdmin(req)` is the function defined at `server/routes.ts:398` (JABNET System-Admin role OR legacy JABNET admin) - NOT the `req.authUser.isSystemAdmin` boolean. A non-sysadmin passing `?scope=cross` gets `allowCross=false` (silent safe default, no 403).
 
 - [ ] **Step 2: Typecheck**
 
@@ -107,10 +107,10 @@ git commit -m "feat(pipelines): assignable-users ?scope=cross gated by isSystemA
 
 ---
 
-### Task 3: Server — shared assignee validation on the two write paths
+### Task 3: Server - shared assignee validation on the two write paths
 
 **Files:**
-- Modify: `server/routes.ts` — add helper near line 403 (after `isSystemAdmin`); apply in PATCH card (`:4929`) and POST secondary assignee (`:5345`)
+- Modify: `server/routes.ts` - add helper near line 403 (after `isSystemAdmin`); apply in PATCH card (`:4929`) and POST secondary assignee (`:5345`)
 
 - [ ] **Step 1: Add the validation helper**
 
@@ -120,7 +120,7 @@ Insert immediately after the `isSystemAdmin` function (after line 403):
 /** Validate a user may be assigned to a card in this pipeline, in the current request context.
  *  Returns null if OK, else an Indonesian error string.
  *  - Always: target user must exist and be active.
- *  - JABNET sysadmin: any existing+active user (cross-tenant, record-only — grants no access).
+ *  - JABNET sysadmin: any existing+active user (cross-tenant, record-only - grants no access).
  *  - Everyone else: target must already have access to the pipeline (existing rule preserved). */
 async function validateAssignTarget(req: Request, userId: number, pipelineId: number): Promise<string | null> {
   const u = await storage.getUser(userId);
@@ -177,7 +177,7 @@ git commit -m "feat(pipelines): validate assignee on primary+secondary paths (sy
 
 ---
 
-### Task 4: Client — `useAssignableUsers(crossTenant?)` + type
+### Task 4: Client - `useAssignableUsers(crossTenant?)` + type
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts:44` (type) and `:84-89` (hook)
@@ -219,7 +219,7 @@ The two lists cache separately via the query key.
 - [ ] **Step 3: Typecheck**
 
 Run: `npx tsc --noEmit`
-Expected: PASS — existing callers pass no arg (param is optional). New `mitraId`/`mitraName` are additive.
+Expected: PASS - existing callers pass no arg (param is optional). New `mitraId`/`mitraName` are additive.
 
 - [ ] **Step 4: Commit**
 
@@ -230,7 +230,7 @@ git commit -m "feat(pipelines): useAssignableUsers(crossTenant) + mitra label fi
 
 ---
 
-### Task 5: Client — reusable `<AssigneePicker>` component
+### Task 5: Client - reusable `<AssigneePicker>` component
 
 **Files:**
 - Create: `client/components/pipelines/AssigneePicker.tsx`
@@ -246,7 +246,7 @@ import { useAssignableUsers, type AssignableUser } from "@/hooks/usePipelines";
 const JABNET_MITRA_ID = 1;
 const LS_KEY = "pipeline_assignee_cross_tenant";
 
-// ── Shared cross-tenant source toggle (module-level so every picker on screen stays in sync) ──
+// -- Shared cross-tenant source toggle (module-level so every picker on screen stays in sync) --
 let crossSource = (() => { try { return localStorage.getItem(LS_KEY) === "1"; } catch { return false; } })();
 const listeners = new Set<() => void>();
 function setCrossSource(v: boolean) {
@@ -297,7 +297,7 @@ export function AssigneePicker(props: SingleProps | MultiProps) {
   if (props.mode === "single") {
     const excl = new Set(props.excludeIds ?? []);
     const options = [
-      ...(props.includeUnassign ? [{ value: "__unassign__", label: "— Kosongkan (unassign) —" }] : []),
+      ...(props.includeUnassign ? [{ value: "__unassign__", label: "- Kosongkan (unassign) -" }] : []),
       ...list.filter((u) => !excl.has(u.id)).map((u) => ({ value: String(u.id), label: labelFor(u, effectiveCross), description: u.role || undefined })),
     ];
     return (
@@ -353,7 +353,7 @@ export function AssigneePicker(props: SingleProps | MultiProps) {
 }
 ```
 
-Verify `useAuth()` returns `{ user }` with `isSystemAdmin?: boolean` and `activeMitraId?: number` (it does — `client/context/AuthContext.tsx:239`, AuthUser fields at `:27`/`:36`).
+Verify `useAuth()` returns `{ user }` with `isSystemAdmin?: boolean` and `activeMitraId?: number` (it does - `client/context/AuthContext.tsx:239`, AuthUser fields at `:27`/`:36`).
 
 - [ ] **Step 2: Typecheck + build**
 
@@ -369,7 +369,7 @@ git commit -m "feat(pipelines): reusable AssigneePicker (single+multi, cross-ten
 
 ---
 
-### Task 6: Client — refactor the five consumers onto `<AssigneePicker>`
+### Task 6: Client - refactor the five consumers onto `<AssigneePicker>`
 
 **Files:**
 - Modify: `client/components/pipelines/CardDetailModal.tsx` (primary `:187-193`, secondary `:204-228`)
@@ -377,9 +377,9 @@ git commit -m "feat(pipelines): reusable AssigneePicker (single+multi, cross-ten
 - Modify: `client/components/pipelines/FieldValueInput.tsx` (`UserSelect` `:259-284`, `UserMultiSelect` `:200-257`)
 - Modify: `client/components/pipelines/RuleActionEditor.tsx` (assign `:382-399`)
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx` (stop threading `staffUsers` to the assign action)
-- Modify: the parent that renders `<BulkActionBar>` (grep `users={` near `BulkActionBar`) — drop the now-removed `users` prop
+- Modify: the parent that renders `<BulkActionBar>` (grep `users={` near `BulkActionBar`) - drop the now-removed `users` prop
 
-- [ ] **Step 1: CardDetailModal — primary assignee**
+- [ ] **Step 1: CardDetailModal - primary assignee**
 
 Add import: `import { AssigneePicker } from "./AssigneePicker";`
 Replace the primary Combobox (lines 187-193) with:
@@ -394,7 +394,7 @@ Replace the primary Combobox (lines 187-193) with:
                   />
 ```
 
-- [ ] **Step 2: CardDetailModal — secondary assignees**
+- [ ] **Step 2: CardDetailModal - secondary assignees**
 
 Replace the secondary block's chip-list + Combobox (lines 207-226, i.e. everything inside the `<div className="space-y-1.5">` after the `<label>`) with a single multi picker that diffs against the current secondary list and fires the existing mutations:
 ```tsx
@@ -410,9 +410,9 @@ Replace the secondary block's chip-list + Combobox (lines 207-226, i.e. everythi
                     }}
                   />
 ```
-Keep the surrounding `{canAssign && (<div className="space-y-1.5"><label …>Penanggung jawab tambahan</label> … </div>)}` wrapper and the `<label>`. `showSourceToggle={false}` so only the primary picker shows the toggle (both share the module store, so flipping the primary's toggle updates this one too). Leave the `const { data: users } = useAssignableUsers();` at line 77 in place — it is still used for `nameOf(card.createdBy)` at line 196.
+Keep the surrounding `{canAssign && (<div className="space-y-1.5"><label …>Penanggung jawab tambahan</label> … </div>)}` wrapper and the `<label>`. `showSourceToggle={false}` so only the primary picker shows the toggle (both share the module store, so flipping the primary's toggle updates this one too). Leave the `const { data: users } = useAssignableUsers();` at line 77 in place - it is still used for `nameOf(card.createdBy)` at line 196.
 
-- [ ] **Step 3: BulkActionBar — assign sheet + drop `users` prop**
+- [ ] **Step 3: BulkActionBar - assign sheet + drop `users` prop**
 
 Add import `import { AssigneePicker } from "./AssigneePicker";`. Replace the assign-sheet Combobox + the `userOptions` array (remove `userOptions` at lines 54-61; replace the `<Combobox …>` at 71-77) so the `if (sheet === "assign")` block is:
 ```tsx
@@ -433,7 +433,7 @@ Add import `import { AssigneePicker } from "./AssigneePicker";`. Replace the ass
 ```
 Then remove the now-unused `users` prop: delete `users: AssignableUser[];` from both `BulkActionBarProps` (line 30) and `BulkOpFormProps` (line 40), remove `users` from the `BulkOpForm({ … })` destructure (line 46) and from where `<BulkOpForm … users={users} />` is rendered. Remove the now-unused `AssignableUser` import if nothing else uses it. Finally, in the parent that renders `<BulkActionBar … users={…} />`, delete the `users={…}` prop (grep for `BulkActionBar` to find it; likely `PipelineBoardPage.tsx`). If that parent fetched `useAssignableUsers()` ONLY to feed BulkActionBar, remove that call too.
 
-- [ ] **Step 4: FieldValueInput — UserSelect + UserMultiSelect**
+- [ ] **Step 4: FieldValueInput - UserSelect + UserMultiSelect**
 
 Add import `import { AssigneePicker } from "./AssigneePicker";`. Replace the entire `UserSelect` function (lines 259-284) with:
 ```tsx
@@ -458,7 +458,7 @@ function UserMultiSelect({ value, onChange, disabled }: { value: string; onChang
 ```
 Remove the now-unused `useAssignableUsers` import from this file if nothing else references it.
 
-- [ ] **Step 5: RuleActionEditor — assign action**
+- [ ] **Step 5: RuleActionEditor - assign action**
 
 Add import `import { AssigneePicker } from "./AssigneePicker";`. Replace the assign `<Combobox …>` (lines 388-397) with:
 ```tsx
@@ -496,7 +496,7 @@ Expected: 0 errors, build succeeds.
 
 - [ ] **Step 2: Manual acceptance on dev** (per spec §8)
 
-1. **Non-sysadmin JABNET user:** open a card → assignee picker shows **no** source toggle and only JABNET users. Bulk assign, user custom field, multi-assignee field, automation assign — all JABNET-only, no toggle.
+1. **Non-sysadmin JABNET user:** open a card → assignee picker shows **no** source toggle and only JABNET users. Bulk assign, user custom field, multi-assignee field, automation assign - all JABNET-only, no toggle.
 2. **JABNET sysadmin:** toggle visible, default **JABNET**. Flip to **Lintas mitra** → other tenants' users appear as `Name (MitraName)`. Flipping the toggle in one picker updates the others (shared store).
 3. **Assign cross-tenant** (primary, secondary, multi field, bulk, and an automation rule) → saved and the name renders on the card.
 4. **Isolation check:** log in as that cross-tenant user under their own tenant → the JABNET card is NOT visible anywhere (board, search, assigned-to-me).
@@ -514,7 +514,7 @@ git commit -m "chore(pipelines): assignment visibility verified on dev" --allow-
 
 ## Self-Review notes (author)
 
-- **Spec coverage:** §1 endpoint → Task 2; §2 storage labels → Task 1; §3 write-path validation → Task 3; §4 hook → Task 4; §4 component → Task 5; §5 five consumers → Task 6; §6 semantic toggle (`fieldset`/`legend`/radio) → Task 5; §8 testing → Task 7. Acceptance criteria 1–4 → Task 7 manual pass.
-- **Conscious YAGNI:** server validation is enforced on the two dedicated assignee endpoints (the assignment-policy surface). The user-type **custom field** value path (`PUT /cards/:cardId/values`) gets no new server validation — values grant no access and a non-sysadmin's picker can't surface cross-tenant users. Documented in spec §3 scope.
+- **Spec coverage:** §1 endpoint → Task 2; §2 storage labels → Task 1; §3 write-path validation → Task 3; §4 hook → Task 4; §4 component → Task 5; §5 five consumers → Task 6; §6 semantic toggle (`fieldset`/`legend`/radio) → Task 5; §8 testing → Task 7. Acceptance criteria 1-4 → Task 7 manual pass.
+- **Conscious YAGNI:** server validation is enforced on the two dedicated assignee endpoints (the assignment-policy surface). The user-type **custom field** value path (`PUT /cards/:cardId/values`) gets no new server validation - values grant no access and a non-sysadmin's picker can't surface cross-tenant users. Documented in spec §3 scope.
 - **Automation execution path** assigns via storage methods (`addCardAssignee`/`updateCard`) which carry no `canUserAccessPipeline` guard (the guard lived only in the HTTP route), so sysadmin-authored cross-tenant rule assignments fire correctly with no extra change.
 - **Type consistency:** `AssignableUser` gains `mitraId`/`mitraName` (Task 4) consumed by `labelFor` (Task 5). `getAssignableUsers(activeMitraId, allowCrossTenant)` signature (Task 1) matches its sole caller (Task 2). `validateAssignTarget(req, userId, pipelineId)` defined once (Task 3) used twice.

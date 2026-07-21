@@ -1,4 +1,4 @@
-/** Pure helpers for bulk card actions — no I/O, unit-testable. */
+/** Pure helpers for bulk card actions - no I/O, unit-testable. */
 export type BulkOp = "assign" | "move" | "set_field" | "add_tag" | "remove_tag" | "delete";
 export const BULK_OPS: BulkOp[] = ["assign", "move", "set_field", "add_tag", "remove_tag", "delete"];
 export const BULK_MAX_CARDS = 200;

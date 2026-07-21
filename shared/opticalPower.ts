@@ -1,5 +1,5 @@
 /** Pure optical-power (dBm) classification. Thresholds are CONFIGURABLE per ISP via
- *  app_settings (optical_rx_warn / optical_rx_crit) — never hardcode in UI; defaults
+ *  app_settings (optical_rx_warn / optical_rx_crit) - never hardcode in UI; defaults
  *  mirror the legacy hardcoded values (-25 / -28) used by GenieACS page + portal. */
 
 export type OpticalLevel = "good" | "warn" | "crit" | "unknown";

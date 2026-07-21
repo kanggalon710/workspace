@@ -1,12 +1,12 @@
-# Pipelines Condition Groups — OR-of-AND (P4d-3) Design
+# Pipelines Condition Groups - OR-of-AND (P4d-3) Design
 
 > P4d slice. Rule conditions go from a single implicit-AND flat list to
 > **ANY-of-groups**: the rule fires if **any** group matches, where a group
-> matches when **all** its conditions match — i.e. `(A∧B) ∨ (C∧D)`. Connectors
+> matches when **all** its conditions match - i.e. `(A∧B) ∨ (C∧D)`. Connectors
 > are fixed (top = OR, within-group = AND). Conditions stay rule-level (one set
 > per rule, gating all its actions). No DB migration (conditions is opaque JSON).
 
-**Base branch:** `feat/pipelines-condition-groups` off `dev` (includes P4a–P4c, edit-mode, P4d-1).
+**Base branch:** `feat/pipelines-condition-groups` off `dev` (includes P4a-P4c, edit-mode, P4d-1).
 **Status:** Approved design, ready for spec review.
 
 ---
@@ -22,7 +22,7 @@ between groups).
 ## Coding standards applied
 
 - **DRY:** `evaluateConditionGroups` reuses the existing `evaluateConditions`
-  (per-group AND) — the OR is just `.some()` over groups.
+  (per-group AND) - the OR is just `.some()` over groups.
 - **SoC / testable:** parsing + evaluation stay in the pure
   `pipeline-automation-helpers.ts` module (TDD).
 - **Semantic HTML5:** each group is a `<fieldset>` with a `<legend>`; icon buttons
@@ -37,7 +37,7 @@ between groups).
   ```ts
   export type RuleConditionGroup = RuleCondition[]; // AND within a group
   ```
-- **Backward-compat (no migration):** the parser accepts BOTH shapes —
+- **Backward-compat (no migration):** the parser accepts BOTH shapes -
   a legacy flat `RuleCondition[]` → treated as a single AND group `[arr]`;
   the new `{ groups: [...] }` → its groups. `conditions` is opaque JSON in
   storage, so existing rows keep working without a rewrite.
@@ -46,7 +46,7 @@ between groups).
   conditions → always run" (identical to today's empty behavior). A rule with no
   conditions stores `null`.
 
-## 2. Pure helpers — `server/pipeline-automation-helpers.ts` (TDD)
+## 2. Pure helpers - `server/pipeline-automation-helpers.ts` (TDD)
 
 Add (keeping the existing `parseConditions`/`evaluateConditions` for per-group AND):
 
@@ -75,11 +75,11 @@ export function evaluateConditionGroups(groups: RuleCondition[][], values: Map<n
 }
 ```
 
-(`parseConditions` stays — it normalizes a single flat array; `parseConditionGroups`
+(`parseConditions` stays - it normalizes a single flat array; `parseConditionGroups`
 reuses the same per-entry filter logic. `evaluateConditions` stays as the AND
 evaluator, reused per group.)
 
-## 3. Engine — `server/pipeline-automation.ts`
+## 3. Engine - `server/pipeline-automation.ts`
 
 In `runStageEnterAutomations` AND `runTimeTriggers`, the condition gate currently:
 ```ts
@@ -93,16 +93,16 @@ if (groups.length) { /* load values (unchanged) */ if (!evaluateConditionGroups(
 ```
 Nothing else changes (value-loading, dedup, fire-recording all unchanged).
 
-## 4. Routes — `server/routes.ts`
+## 4. Routes - `server/routes.ts`
 
 - **`validateConditions(pipelineId, conditions)`** accepts both shapes: a flat
   array (validate each condition's `fieldId` ∈ pipeline) OR `{ groups: [...] }`
   (validate each condition in each group). Empty/absent → ok.
 - **GET enrichment**: each rule's `conditions` is enriched to the grouped, labelled
-  shape `{ groups: RuleConditionWithLabel[][] }` — each condition gets `fieldLabel`
+  shape `{ groups: RuleConditionWithLabel[][] }` - each condition gets `fieldLabel`
   from `srcFields` (with `Field #N (dihapus)` fallback). A legacy flat array
   enriches as one group. (Storage createRule/updateRule already `JSON.stringify`
-  whatever `conditions` value is passed — no storage change.)
+  whatever `conditions` value is passed - no storage change.)
 
 ## 5. Frontend
 
@@ -114,12 +114,12 @@ Nothing else changes (value-loading, dedup, fire-recording all unchanged).
 - `value`/`onChange` type changes from `DraftCondition[]` to `DraftCondition[][]`
   (groups). `DraftCondition` itself is unchanged.
 - Renders a list of **groups**; each group is a `<fieldset>` (with a small
-  `<legend>` like "Grup #i — semua harus terpenuhi") containing its condition rows
+  `<legend>` like "Grup #i - semua harus terpenuhi") containing its condition rows
   + "+ Tambah kondisi"; between groups a visible **"ATAU"** divider; a
   "+ Tambah grup (ATAU)" button; remove-condition and remove-group buttons
   (`type="button"`, `aria-label`).
 - A group emptied of its last condition is removed (or remove-group disabled at the
-  last remaining condition — keep simple: removing the last condition removes the
+  last remaining condition - keep simple: removing the last condition removes the
   group). Empty builder = zero groups = no conditions.
 
 ### `client/components/pipelines/ruleFormState.ts`
@@ -132,7 +132,7 @@ Nothing else changes (value-loading, dedup, fire-recording all unchanged).
   emit `conditions: groups.length ? { groups } : null`.
 
 ### `client/components/pipelines/PipelineRulesDialog.tsx` (read-side)
-- Detail panel "Syarat" block: render groups — conditions joined by **"DAN"**
+- Detail panel "Syarat" block: render groups - conditions joined by **"DAN"**
   within a group, groups separated by **"ATAU"**. (Reuse the existing per-condition
   render: `fieldLabel op value`.)
 - Collapsed-row badge: the "· N syarat" becomes "· N grup syarat" when >1 group,
@@ -145,7 +145,7 @@ Nothing else changes (value-loading, dedup, fire-recording all unchanged).
   the `{ groups }` shape transparently.
 - **Empty group** → dropped by parser + `draftToPayload` (never persisted/evaluated).
 - **All groups empty / no conditions** → `[]` → rule always runs (unchanged).
-- Conditions remain rule-level (one set gates all actions) — unaffected by P4d-1.
+- Conditions remain rule-level (one set gates all actions) - unaffected by P4d-1.
 
 ## 7. Files
 
@@ -185,8 +185,8 @@ Client has no unit runner → `npm run typecheck` + `npm run build` + manual:
 
 ## Consistency with memory
 
-- [[project-pipelines-engine]] — P4d-3; update the P4d-remaining line on merge.
-- [[feedback-coding-standards]] — DRY (reuse `evaluateConditions`), pure helpers
+- [[project-pipelines-engine]] - P4d-3; update the P4d-remaining line on merge.
+- [[feedback-coding-standards]] - DRY (reuse `evaluateConditions`), pure helpers
   (SoC/TDD), semantic `<fieldset>`/aria-labels.
-- [[reference-api-response-envelope]] — routes keep `sendSuccess`/`sendError`.
+- [[reference-api-response-envelope]] - routes keep `sendSuccess`/`sendError`.
 - No migration → [[reference-startup-add-column]] not engaged.

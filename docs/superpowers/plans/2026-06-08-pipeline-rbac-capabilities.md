@@ -1,4 +1,4 @@
-# Granular Pipeline RBAC — Role Capability Matrix (H1) Implementation Plan
+# Granular Pipeline RBAC - Role Capability Matrix (H1) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -73,12 +73,12 @@ test("resolvePipelineCapabilities: restricted uses grant + implies view; empty �
 - [ ] **Step 2: Run to verify failure**
 
 Run: `npx tsx --test shared/pipelineCapabilities.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Implement `shared/pipelineCapabilities.ts`**
 
 ```ts
-/** Pure pipeline RBAC capability model — no React, no DB. Shared by client + server + tests. */
+/** Pure pipeline RBAC capability model - no React, no DB. Shared by client + server + tests. */
 
 export type PipelineCapability = "view" | "cards" | "stages" | "fields" | "automation" | "manage" | "delete";
 
@@ -263,7 +263,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Routes — capability resolver, guard, re-gating, access API
+## Task 3: Routes - capability resolver, guard, re-gating, access API
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -314,7 +314,7 @@ async function requirePipelineView(req: Request, res: Response, pipelineId: numb
 }
 ```
 
-(Leave `getPipelineLevel` and `requirePipelineEdit` defined for now; Step 2 removes their call-sites. After Step 2, if `requirePipelineEdit` has no callers, delete it; `getPipelineLevel` may remain referenced by `requirePipelineEdit` only — delete both together. `resolvePipelineLevel` import stays only if the list endpoint still uses it — Step 3 removes that, so drop the now-unused import if the linter/types flag it.)
+(Leave `getPipelineLevel` and `requirePipelineEdit` defined for now; Step 2 removes their call-sites. After Step 2, if `requirePipelineEdit` has no callers, delete it; `getPipelineLevel` may remain referenced by `requirePipelineEdit` only - delete both together. `resolvePipelineLevel` import stays only if the list endpoint still uses it - Step 3 removes that, so drop the now-unused import if the linter/types flag it.)
 
 - [ ] **Step 2: Re-gate the mutation routes**
 
@@ -349,7 +349,7 @@ For each route below, replace the existing `if (!(await requirePipelineEdit(req,
 | GET `/api/pipelines/:id/access` | `manage` |
 | PUT `/api/pipelines/:id/access` | `manage` |
 
-Notes: the card-scoped routes resolve the pipeline id from the loaded card (they already call `requirePipelineEdit(req, res, card.pipelineId)` after fetching the card) — keep that same id expression. The rules GET currently uses `requirePipelineEdit`; it becomes `automation`. After this step, search `server/routes.ts` for `requirePipelineEdit(` — there should be **zero** remaining; then delete the now-unused `requirePipelineEdit` (and `getPipelineLevel` if only it referenced it).
+Notes: the card-scoped routes resolve the pipeline id from the loaded card (they already call `requirePipelineEdit(req, res, card.pipelineId)` after fetching the card) - keep that same id expression. The rules GET currently uses `requirePipelineEdit`; it becomes `automation`. After this step, search `server/routes.ts` for `requirePipelineEdit(` - there should be **zero** remaining; then delete the now-unused `requirePipelineEdit` (and `getPipelineLevel` if only it referenced it).
 
 - [ ] **Step 3: List endpoint → capabilities**
 
@@ -432,7 +432,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Client — access dialog grid + types + board gating
+## Task 4: Client - access dialog grid + types + board gating
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts`
@@ -460,7 +460,7 @@ and the `usePipelines` list query type:
     queryFn: () => api.get<(Pipeline & { level?: "view" | "edit"; restricted?: number; capabilities?: string[] })[]>(`/pipelines${includeArchived ? "?archived=1" : ""}`),
 ```
 
-(`setAccess` mutation already forwards `{ restricted, grants }` — no change needed; grants now carry `capabilities`. The detail endpoint already returns `capabilities` from Task 3 Step 4.)
+(`setAccess` mutation already forwards `{ restricted, grants }` - no change needed; grants now carry `capabilities`. The detail endpoint already returns `capabilities` from Task 3 Step 4.)
 
 - [ ] **Step 2: Access dialog → role × capability grid**
 
@@ -520,11 +520,11 @@ Expected: only the (possibly deleted) definition; **no call-sites**. If the func
 - [ ] **Step 4: Manual checklist (record results)**
 
 On dev:
-- Open pipeline (not restricted): a `pipelines:write` role still does everything; `pipelines:read` is view-only. ✅ (back-compat)
-- Restrict a pipeline; in Akses, give role X only **Kelola Kartu**. As a user with role X: can add/edit cards; gets 403 on stage/field/automation/rename/delete; the Field/Otomasi/Akses/Settings buttons are hidden. ✅
-- Give role Y **Kelola Field + Kelola Stage** (not automation/delete): can manage fields + stages, 403 on automation + delete. ✅
-- A pipeline with a pre-existing `edit` grant (legacy row) still grants everything to that role (derived caps). ✅
-- Creator + System-Admin: full access regardless. ✅
+- Open pipeline (not restricted): a `pipelines:write` role still does everything; `pipelines:read` is view-only.  (back-compat)
+- Restrict a pipeline; in Akses, give role X only **Kelola Kartu**. As a user with role X: can add/edit cards; gets 403 on stage/field/automation/rename/delete; the Field/Otomasi/Akses/Settings buttons are hidden.
+- Give role Y **Kelola Field + Kelola Stage** (not automation/delete): can manage fields + stages, 403 on automation + delete.
+- A pipeline with a pre-existing `edit` grant (legacy row) still grants everything to that role (derived caps).
+- Creator + System-Admin: full access regardless.
 
 - [ ] **Step 5: Final commit (only if the manual pass required a fixup; otherwise skip)**
 
@@ -541,5 +541,5 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 - **Spec coverage:** capability model + resolver + bridges → Task 1; storage capabilities + migration → Task 2; resolver/guard + re-gating + list + access API → Task 3; dialog grid + types + board gating → Task 4; verify → Task 5. Back-compat (open pipelines, legacy level rows, board `writable` via `deriveLevel`) handled. Per-user grants explicitly deferred to H2.
 - **Type consistency:** `PipelineCapability`, `resolvePipelineCapabilities(args)`, `getGrantCapabilitiesForRole`, `getGrantCapabilitiesMapForRole`, `requirePipelineCapability(req,res,id,cap)`, access shape `{restricted, grants:[{roleId,capabilities}]}` consistent across shared/server/client.
-- **Detail endpoint:** Task 4 Step 1 flags adding `capabilities` to `GET /api/pipelines/:id` (whichever task reaches it first) — needed for board gating.
+- **Detail endpoint:** Task 4 Step 1 flags adding `capabilities` to `GET /api/pipelines/:id` (whichever task reaches it first) - needed for board gating.
 - **No placeholders.**

@@ -1,12 +1,12 @@
-# Pipelines Notify Action — Bell + Webhook (P4b-2) Design
+# Pipelines Notify Action - Bell + Webhook (P4b-2) Design
 
 > The last missing automation action type. Adds a `notify` action to the P4d-1
 > multi-action framework: one rule action can send an **in-app bell** notification
 > and/or an **outbound webhook** (n8n-ready). Slots into the existing `actions[]`
-> list — no new trigger/condition concepts. **No DB migration** (`action_type` is
+> list - no new trigger/condition concepts. **No DB migration** (`action_type` is
 > `varchar(16)`, fits "notify"; `action_config` is opaque JSON).
 
-**Base branch:** `feat/pipelines-notify-action` off `dev` (includes P4a–P4c, edit-mode, P4d-1, P4d-3).
+**Base branch:** `feat/pipelines-notify-action` off `dev` (includes P4a-P4c, edit-mode, P4d-1, P4d-3).
 **Status:** Approved design, ready for spec review.
 
 ---
@@ -45,9 +45,9 @@ export type NotifyConfig = {
 };
 ```
 - `shared/schema.ts`: add `"notify"` to `PipelineRuleActionType`; add the `NotifyConfig` type.
-- Stored in `pipeline_rule_actions.action_config` (JSON) — no schema/DB change.
+- Stored in `pipeline_rule_actions.action_config` (JSON) - no schema/DB change.
 
-## 2. Engine — `server/pipeline-automation.ts`
+## 2. Engine - `server/pipeline-automation.ts`
 
 ### `applyAction` gains the rule (judgment call, approved)
 Change `applyAction(action, card, actorId)` → **`applyAction(action, rule, card, actorId)`**.
@@ -73,7 +73,7 @@ if (action.actionType === "notify") {
         link: "/pipelines", entityType: "pipeline_card", entityId: card.id, fromUserId: actorId,
       });
       acted = true;
-    } else { console.warn(`[automation] notify action ${action.id}: bell target has no recipient — skipped bell`); }
+    } else { console.warn(`[automation] notify action ${action.id}: bell target has no recipient - skipped bell`); }
   }
   if (cfg.channels.includes("webhook") && cfg.webhookUrl) {
     const ok = await postPipelineWebhook(cfg.webhookUrl, buildWebhookPayload(rule, card));
@@ -83,7 +83,7 @@ if (action.actionType === "notify") {
 }
 ```
 - `buildTargetTitle` (existing helper) reused for `{title}` substitution + 255-cap.
-- **bell `type`**: `"automation"` — NotificationBell renders unknown types with a
+- **bell `type`**: `"automation"` - NotificationBell renders unknown types with a
   default icon (acceptable; an icon mapping is out of scope).
 - **bell mitra**: `createNotification` uses `getMitraIdOrNull() ?? 1`; the engine
   runs inside the tenant context (stage-enter request, or `withMitra` for time
@@ -116,7 +116,7 @@ A small `postPipelineWebhook(url, payload): Promise<boolean>` (in
 ```
 (`firedAt` stamped with `new Date().toISOString()` inside the helper.)
 
-## 3. Validation — `server/routes.ts`
+## 3. Validation - `server/routes.ts`
 
 `validateActionConfig(pipelineId, "notify", cfg)`:
 - `cfg.channels` is a non-empty array ⊆ {`bell`, `webhook`}.
@@ -124,11 +124,11 @@ A small `postPipelineWebhook(url, payload): Promise<boolean>` (in
   `bellUserId` is a number.
 - If `webhook` ∈ channels: `webhookUrl` is a string parsing as an `http(s)` URL.
 - `validateActions` already dispatches non-create_card types to `validateActionConfig`
-  — add `"notify"` to its allowed set.
+  - add `"notify"` to its allowed set.
 
-## 4. Pure helpers — `server/pipeline-automation-helpers.ts` (TDD)
+## 4. Pure helpers - `server/pipeline-automation-helpers.ts` (TDD)
 
-- `parseActionConfig("notify", raw)`: shape-guard a `NotifyConfig` — `channels`
+- `parseActionConfig("notify", raw)`: shape-guard a `NotifyConfig` - `channels`
   non-empty array of valid values; per-channel field presence; malformed → null.
   (Extends the existing `parseActionConfig` switch.)
 - `shapeRuleActions`: add a `notify` case producing a human label, e.g.
@@ -137,7 +137,7 @@ A small `postPipelineWebhook(url, payload): Promise<boolean>` (in
 
 ## 5. Frontend
 
-### `RuleActionEditor.tsx` — notify block
+### `RuleActionEditor.tsx` - notify block
 A `{value.actionType === "notify" && (...)}` block:
 - **Channels**: two checkboxes/toggles (Bell internal / Webhook).
 - When bell: a target `<Combobox>` (Assignee kartu / User tertentu / Pembuat rule);
@@ -171,7 +171,7 @@ The per-action read-side (collapsed summary + detail) shows the notify label
 | `client/components/pipelines/ruleFormState.ts` | `ActionDraft` notify fields; draft↔payload |
 | `client/components/pipelines/RuleActionEditor.tsx` | notify editor block |
 | `client/components/pipelines/PipelineRulesDialog.tsx` | read-side notify label |
-| `client/hooks/usePipelines.ts` | `RuleActionView` already `actionConfig: any` — confirm notify fits (likely no change) |
+| `client/hooks/usePipelines.ts` | `RuleActionView` already `actionConfig: any` - confirm notify fits (likely no change) |
 
 No DB migration.
 
@@ -182,7 +182,7 @@ No DB migration.
 - **Webhook down / timeout** → logged, doesn't block other actions (per-action
   try/catch in `applyRuleActions`); `acted=false` for that channel.
 - **Loop-safety:** notify performs NO card mutation and never calls the automation
-  service — inherently loop-safe.
+  service - inherently loop-safe.
 - **Dedup:** once-dedup records the fire after a successful notify (no repeat on
   re-entry); time `every` re-notifies per interval (intended).
 - **Multi-action:** notify composes with other actions; ordering by `position`.
@@ -202,17 +202,17 @@ notify label). Typecheck + build + manual:
 
 - Named/reusable webhook registry (per-action URL only).
 - Webhook retries / delivery log / HMAC signing.
-- Role-target bell (resolve role→users) — deferred.
+- Role-target bell (resolve role→users) - deferred.
 - Templated webhook payload / templated message beyond `{title}` (e.g. field
-  placeholders) — fixed structured payload + `{title}` only.
+  placeholders) - fixed structured payload + `{title}` only.
 - NotificationBell icon for the `automation` type.
 
 ## Consistency with memory
 
-- [[project-pipelines-engine]] — P4b-2; update the deferred line on merge.
-- [[feedback-coding-standards]] — pure helpers (SoC/TDD), reuse `buildTargetTitle`
+- [[project-pipelines-engine]] - P4b-2; update the deferred line on merge.
+- [[feedback-coding-standards]] - pure helpers (SoC/TDD), reuse `buildTargetTitle`
   (DRY), semantic form inputs + button types.
-- [[reference-api-response-envelope]] — routes keep `sendSuccess`/`sendError`.
-- [[reference-tenant-isolation-gotchas]] — bell notif mitra via the active tenant
+- [[reference-api-response-envelope]] - routes keep `sendSuccess`/`sendError`.
+- [[reference-tenant-isolation-gotchas]] - bell notif mitra via the active tenant
   context; webhook is mitra-agnostic outbound.
 - No migration → [[reference-startup-add-column]] not engaged.

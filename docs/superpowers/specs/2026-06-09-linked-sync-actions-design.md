@@ -1,12 +1,12 @@
-# Spec — Linked-Card Sync Actions (SP3b of Advanced Pipeline Automation)
+# Spec - Linked-Card Sync Actions (SP3b of Advanced Pipeline Automation)
 
 > Date: 2026-06-09 · Mitra-scoped · Final sub-project of the epic. SP1/SP2/SP3a/SP4/SP5 merged.
 > Build on `dev`. Continuous "keep linked cards in step" for fields + assignee, composed from the
-> existing event triggers — NOT a separate sync engine.
+> existing event triggers - NOT a separate sync engine.
 
 ## Goal
 
-Two new automation actions — `set_field_linked` and `assign_linked` — that push a change on a card to its
+Two new automation actions - `set_field_linked` and `assign_linked` - that push a change on a card to its
 master-linked sibling in another pipeline. Combined with the existing `field_updated` / `assignee_changed`
 event triggers, this lets an admin configure continuous field/assignee sync as ordinary rules. Stage sync
 already exists (`move_linked`, SP3a). Loop-safe by the engine's existing invariant (propagation is
@@ -16,24 +16,24 @@ storage-direct, never re-dispatches).
 
 1. **Scope:** field-value sync (`set_field_linked`) + primary-assignee sync (`assign_linked`). Comments/
    attachments live-sync + a dedicated sync-policy table are **out of scope** (rules express the policy).
-2. **Direction:** the pipeline that holds the rule is the source. Bidirectional = a rule on each side —
+2. **Direction:** the pipeline that holds the rule is the source. Bidirectional = a rule on each side -
    still loop-safe (storage-direct writes never re-trigger events).
 3. **`assign_linked` copies the source card's primary assignee** to the sibling (true sync), not a fixed user.
 4. **Widen `action_type` to `varchar(32)`** (both `pipeline_rules` + `pipeline_rule_actions`) so action
    names stop fighting the 16-char limit. Guarded MODIFY, widening only, no data loss.
 
-## 1. Schema — widen action_type
+## 1. Schema - widen action_type
 
 `shared/schema.ts`: change both `actionType: varchar("action_type", { length: 16 })` (pipeline_rules ~667
 and pipeline_rule_actions ~716) to `{ length: 32 }`. Extend the `PipelineRuleActionType` union with
 `"set_field_linked" | "assign_linked"`.
 
-Migration (`server/storage.ts`): a guarded MODIFY — read `information_schema.columns.CHARACTER_MAXIMUM_LENGTH`
+Migration (`server/storage.ts`): a guarded MODIFY - read `information_schema.columns.CHARACTER_MAXIMUM_LENGTH`
 for each `action_type` column; if `< 32`, `ALTER TABLE <t> MODIFY action_type VARCHAR(32) ...` (preserve
 NOT NULL / default for pipeline_rules). Idempotent (re-runs are no-ops). Place near the existing
 column-additions block; widening varchar never loses data.
 
-## 2. Automation — two action branches (`server/pipeline-automation.ts`)
+## 2. Automation - two action branches (`server/pipeline-automation.ts`)
 
 Both reuse `getSiblingCardInPipeline` (SP3a) + `masterForSpawn` (the same master resolver). Add after the
 `move_linked` branch:
@@ -82,7 +82,7 @@ Add a branch: `set_field_linked` + `assign_linked` require `targetPipelineId` + 
 target pipeline (`getPipelineCapabilities(...).size > 0`); for `set_field_linked` also validate the field
 maps against the target pipeline (`validateRuleFieldMaps`, as `create_card` does).
 
-## 4. Frontend — `RuleActionEditor.tsx` (+ `ruleFormState.ts`)
+## 4. Frontend - `RuleActionEditor.tsx` (+ `ruleFormState.ts`)
 
 - Add to the action-type Combobox: "Set field di kartu tertaut" (`set_field_linked`) + "Sinkron assignee ke
   kartu tertaut" (`assign_linked`).
@@ -90,7 +90,7 @@ maps against the target pipeline (`validateRuleFieldMaps`, as `create_card` does
   here it maps THIS pipeline's fields → the target sibling's fields).
 - `assign_linked` editor: target-pipeline picker only (assignee copied from the source card automatically) +
   a one-line hint.
-- `ruleFormState.ts`: hydrate/serialize both like `move_linked` (target pipeline) — `set_field_linked` also
+- `ruleFormState.ts`: hydrate/serialize both like `move_linked` (target pipeline) - `set_field_linked` also
   carries `fieldMaps` like `create_card`.
 
 ## 5. Testing
@@ -116,6 +116,6 @@ maps against the target pipeline (`validateRuleFieldMaps`, as `create_card` does
 
 - Comments / attachments live-sync between linked cards.
 - A dedicated `pipeline_sync_policy` table / standalone propagation engine (rules are the policy).
-- Syncing secondary assignees (SP5) — only the primary is synced by `assign_linked`.
+- Syncing secondary assignees (SP5) - only the primary is synced by `assign_linked`.
 - Conflict resolution / last-writer-wins beyond the natural "the change that fired wins" (each event pushes
   the firing card's value; no merge logic).

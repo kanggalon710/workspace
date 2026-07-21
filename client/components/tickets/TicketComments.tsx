@@ -1,5 +1,5 @@
 /**
- * v4.2.18 (B.6): TicketComments — internal chat per tiket
+ * v4.2.18 (B.6): TicketComments - internal chat per tiket
  * Support: @mention user JABNET, internal-only flag, soft delete.
  */
 
@@ -177,7 +177,7 @@ export function TicketComments({ ticketId }: { ticketId: number }) {
               >
                 <AtSign className="w-3 h-3 text-muted-foreground" />
                 <span className="font-mono">{u.username}</span>
-                <span className="text-muted-foreground">— {u.name}</span>
+                <span className="text-muted-foreground">- {u.name}</span>
               </button>
             ))}
           </div>

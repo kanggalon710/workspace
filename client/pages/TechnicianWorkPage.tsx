@@ -1,5 +1,5 @@
 /**
- * v4.2.7: TechnicianWorkPage — Structural redesign mode-based.
+ * v4.2.7: TechnicianWorkPage - Structural redesign mode-based.
  *
  * State machine → render mode:
  *   open/assigned/in_progress/pending → ActiveMode    (stages + execution + CTA)
@@ -8,7 +8,7 @@
  *
  * Ngga ada mixed state. Tiket selesai = HANYA tampilan summary. Tidak ada tombol "Selesaikan Stage" atau CTA edit.
  *
- * Pixel-match design source: mobile-teknisi.jsx (active mode) — inline styles literal.
+ * Pixel-match design source: mobile-teknisi.jsx (active mode) - inline styles literal.
  */
 
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -37,7 +37,7 @@ import { MultiPhotoUploader, DEFAULT_PHOTO_SLOTS } from "@/components/tickets/Mu
 import { SignaturePad } from "@/components/tickets/SignaturePad";
 import { ResolutionForm, type ResolutionData, type MaterialItem } from "@/components/tickets/ResolutionForm";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 
 type FieldType = "photo" | "checklist" | "notes" | "numeric" | "speedtest" | "barcode" | "signature" | "gps" | "eta" | "rating";
 type CustomFieldType = "text" | "number" | "textarea" | "select" | "checkbox" | "date";
@@ -148,7 +148,7 @@ interface Category {
   icon: string | null;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------------
 
 // v4.2.7: extract raw notes dari serialized note string (skip "Pengukuran:", "Serial:", dst)
 function extractRawNote(serialized: string): string {
@@ -239,7 +239,7 @@ function useLiveCountdown(targetIso: string | null | undefined): { sec: number; 
   return val;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────
+// -- Main ------------------------------------------------------------------
 
 export default function TechnicianWorkPage() {
   const [, params] = useRoute("/work/:id");
@@ -306,11 +306,11 @@ export default function TechnicianWorkPage() {
     status === "cancelled" ? "cancelled" :
     "active";
 
-  // Stage execution screen — only valid in ACTIVE mode
+  // Stage execution screen - only valid in ACTIVE mode
   if (mode === "active" && screen === "stage" && activeStageKey && ticketId) {
     const stage = stages.find((s) => s.key === activeStageKey);
     if (stage) {
-      // v4.2.7: detect mode — kalau stage sudah done = edit, kalau current = advance
+      // v4.2.7: detect mode - kalau stage sudah done = edit, kalau current = advance
       const isStageDone = completedKeys.has(stage.key);
       const existingTransition = workflow?.transitions.find((t) => t.stage === stage.key);
       const execMode: "advance" | "edit" = isStageDone ? "edit" : "advance";
@@ -331,7 +331,7 @@ export default function TechnicianWorkPage() {
     }
   }
 
-  // Render appropriate mode — RESPONSIVE: mobile single col, desktop 2-col with right rail
+  // Render appropriate mode - RESPONSIVE: mobile single col, desktop 2-col with right rail
   return (
     <div className="min-h-screen" style={{ background: "#f8fafc", fontFamily: "Inter, sans-serif", color: "#0f172a" }}>
       <div className="mx-auto max-w-md md:max-w-3xl lg:max-w-6xl">
@@ -363,9 +363,9 @@ export default function TechnicianWorkPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// ACTIVE MODE — open / assigned / in_progress / pending
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// ACTIVE MODE - open / assigned / in_progress / pending
+// -------------------------------------------------------------------------
 
 function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, category, customer, team, ticketIdNum, onOpenStage }: {
   ticket: Ticket;
@@ -420,7 +420,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
 
         {/* MAIN CONTENT */}
         <div className="lg:order-1 space-y-3">
-          {/* Customer card — mobile only (desktop pakai versi di right rail) */}
+          {/* Customer card - mobile only (desktop pakai versi di right rail) */}
           {customer && (
             <div className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -430,7 +430,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
               </div>
               <div style={{ fontSize: 16, fontWeight: 700 }}>{customer.name}</div>
               <div style={{ fontSize: 12, color: "#475569", marginTop: 4, lineHeight: 1.5 }}>
-                {ticket.address ?? customer.address ?? "—"}
+                {ticket.address ?? customer.address ?? "-"}
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                 <a
@@ -452,7 +452,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           )}
 
-          {/* v4.2.16: Tim Tugas — mobile only (yang ngerjain bareng di lapangan) */}
+          {/* v4.2.16: Tim Tugas - mobile only (yang ngerjain bareng di lapangan) */}
           {team.length > 0 && (
             <div className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#64748b", marginBottom: 8 }}>
@@ -485,7 +485,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           )}
 
-          {/* Stage Saat Ini — mobile only */}
+          {/* Stage Saat Ini - mobile only */}
           {currentStage && (
             <div className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <Label>Stage Saat Ini</Label>
@@ -499,7 +499,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
                   {onHold ? (
                     <span className="jbn-mono jbn-tabular" style={{ fontWeight: 700, color: "#f59e0b", display: "inline-flex", alignItems: "center", gap: 4 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 3, background: "#f59e0b" }} />
-                      ON HOLD · {onHoldRemainingSec != null ? fmtSLA(onHoldRemainingSec, onHoldRemainingSec < 0) : "—"}
+                      ON HOLD · {onHoldRemainingSec != null ? fmtSLA(onHoldRemainingSec, onHoldRemainingSec < 0) : "-"}
                     </span>
                   ) : (
                     <span className="jbn-mono jbn-tabular" style={{ fontWeight: 700, color: sla.overdue ? "#ef4444" : "#0f172a" }}>
@@ -512,13 +512,13 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
               {onHold && workflow?.activePause && (
                 <div style={{ marginTop: 10, padding: "8px 10px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 6, fontSize: 11, color: "#92400e" }}>
                   <strong>SLA di-pause:</strong> {workflow.activePause.reason.replace(/_/g, " ")}
-                  {workflow.activePause.note && <> — {workflow.activePause.note}</>}
+                  {workflow.activePause.note && <> - {workflow.activePause.note}</>}
                 </div>
               )}
             </div>
           )}
 
-          {/* v4.2.18 (B.7): Action Toolbar — Hold/Resume/Reassign/Escalate/Cancel — mobile + desktop atas */}
+          {/* v4.2.18 (B.7): Action Toolbar - Hold/Resume/Reassign/Escalate/Cancel - mobile + desktop atas */}
           <div className="lg:hidden">
             <TicketActionToolbar
               ticketId={ticketIdNum}
@@ -566,19 +566,19 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           </div>
 
-          {/* v4.2.18 (B): Asset (ODP) panel — visible mobile + bottom of desktop main col */}
+          {/* v4.2.18 (B): Asset (ODP) panel - visible mobile + bottom of desktop main col */}
           {ticket.odpId && (
             <AssetPanel odpId={ticket.odpId} currentTicketId={ticketIdNum} />
           )}
 
-          {/* v4.2.18 (B.1): Activity timeline — full audit log */}
+          {/* v4.2.18 (B.1): Activity timeline - full audit log */}
           <ActivityTimeline ticketId={ticketIdNum} />
 
           {/* v4.2.18 (B.6): Internal comments / chat */}
           <TicketComments ticketId={ticketIdNum} />
         </div>
 
-        {/* RIGHT RAIL — desktop only (lg+). Sticky-ish for action toolbar + Customer360 + Asset, scrollable for activity */}
+        {/* RIGHT RAIL - desktop only (lg+). Sticky-ish for action toolbar + Customer360 + Asset, scrollable for activity */}
         <aside className="hidden lg:block lg:order-2 space-y-3">
           {/* v4.2.18 (B.7): Action Toolbar di top of right rail */}
           <TicketActionToolbar
@@ -606,7 +606,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
                   {onHold ? (
                     <span className="jbn-mono jbn-tabular" style={{ fontWeight: 700, color: "#f59e0b", display: "inline-flex", alignItems: "center", gap: 4 }}>
                       <span style={{ width: 6, height: 6, borderRadius: 3, background: "#f59e0b" }} />
-                      ON HOLD · {onHoldRemainingSec != null ? fmtSLA(onHoldRemainingSec, onHoldRemainingSec < 0) : "—"}
+                      ON HOLD · {onHoldRemainingSec != null ? fmtSLA(onHoldRemainingSec, onHoldRemainingSec < 0) : "-"}
                     </span>
                   ) : (
                     <span className="jbn-mono jbn-tabular" style={{ fontWeight: 700, color: sla.overdue ? "#ef4444" : "#0f172a" }}>
@@ -619,13 +619,13 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
               {onHold && workflow?.activePause && (
                 <div style={{ marginTop: 10, padding: "8px 10px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 6, fontSize: 11, color: "#92400e" }}>
                   <strong>SLA di-pause:</strong> {workflow.activePause.reason.replace(/_/g, " ")}
-                  {workflow.activePause.note && <> — {workflow.activePause.note}</>}
+                  {workflow.activePause.note && <> - {workflow.activePause.note}</>}
                 </div>
               )}
             </div>
           )}
 
-          {/* Inline CTA (desktop only — mobile pakai sticky bottom) */}
+          {/* Inline CTA (desktop only - mobile pakai sticky bottom) */}
           {currentStage && (
             <button
               onClick={() => onOpenStage(currentStage.key)}
@@ -653,7 +653,7 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
         </aside>
       </div>
 
-      {/* MOBILE STICKY CTA — hanya muncul di mobile (lg:hidden) saat ada current stage */}
+      {/* MOBILE STICKY CTA - hanya muncul di mobile (lg:hidden) saat ada current stage */}
       {currentStage && (
         <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden" style={{ padding: "12px 14px", background: "linear-gradient(to top, #f8fafc, rgba(248,250,252,0.95) 60%, transparent)" }}>
           <div className="mx-auto max-w-md">
@@ -686,9 +686,9 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// COMPLETED MODE — resolved / closed
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// COMPLETED MODE - resolved / closed
+// -------------------------------------------------------------------------
 
 function CompletedMode({ ticket, workflow, stages, transitions, evidence, category, customer }: {
   ticket: Ticket;
@@ -738,7 +738,7 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
         </div>
       </header>
 
-      {/* Hero success banner — full-width di mobile + desktop */}
+      {/* Hero success banner - full-width di mobile + desktop */}
       <div className="p-3.5 lg:px-6 lg:pt-6">
         <div style={{
           borderRadius: 12, padding: 18,
@@ -795,7 +795,7 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
               </div>
               <div style={{ fontSize: 15, fontWeight: 700 }}>{customer.name}</div>
               <div style={{ fontSize: 12, color: "#475569", marginTop: 4, lineHeight: 1.5 }}>
-                {ticket.address ?? customer.address ?? "—"}
+                {ticket.address ?? customer.address ?? "-"}
               </div>
             </div>
           )}
@@ -811,16 +811,16 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                   <AlertTriangle style={{ width: 16, height: 16, color: "#92400e", flexShrink: 0, marginTop: 2 }} />
                   <div style={{ fontSize: 12, color: "#78350f", lineHeight: 1.5 }}>
-                    <strong>Tiket lama:</strong> ditutup tanpa melalui workflow stages. Data stage tidak lengkap — counter di bawah tidak mewakili pengerjaan sebenarnya.
+                    <strong>Tiket lama:</strong> ditutup tanpa melalui workflow stages. Data stage tidak lengkap - counter di bawah tidak mewakili pengerjaan sebenarnya.
                   </div>
                 </div>
               </div>
             )}
             <div className="grid grid-cols-2 lg:grid-cols-4">
               <Metric label="Lead Time" value={fmtDuration(leadTimeSec)} icon={<Clock style={{ width: 14, height: 14 }} />} title="Waktu calendar end-to-end (created → resolved)" />
-              <Metric label="Active Work Time" value={ticket.legacyResolution === 1 ? "—" : fmtDuration(workTimeSec)} icon={<Timer style={{ width: 14, height: 14 }} />} borderLeft title={ticket.legacyResolution === 1 ? "Tidak tersedia (workflow lama)" : "Total durasi semua stage"} />
-              <Metric label="Stages Selesai" value={ticket.legacyResolution === 1 ? "—" : `${completedStagesCount} / ${stages.length}`} icon={<Check style={{ width: 14, height: 14 }} />} borderTopMobile borderLeftDesktop title={ticket.legacyResolution === 1 ? "Tidak tersedia (workflow lama)" : "Stages yang sudah dilewati / total"} />
-              <Metric label="Foto Evidence" value={ticket.legacyResolution === 1 && totalEvidenceCount === 0 ? "—" : String(totalEvidenceCount)} icon={<ImageIcon style={{ width: 14, height: 14 }} />} borderTopMobile borderLeft title={ticket.legacyResolution === 1 && totalEvidenceCount === 0 ? "Workflow lama tidak mensyaratkan foto" : `Total foto bukti dari semua stage`} />
+              <Metric label="Active Work Time" value={ticket.legacyResolution === 1 ? "-" : fmtDuration(workTimeSec)} icon={<Timer style={{ width: 14, height: 14 }} />} borderLeft title={ticket.legacyResolution === 1 ? "Tidak tersedia (workflow lama)" : "Total durasi semua stage"} />
+              <Metric label="Stages Selesai" value={ticket.legacyResolution === 1 ? "-" : `${completedStagesCount} / ${stages.length}`} icon={<Check style={{ width: 14, height: 14 }} />} borderTopMobile borderLeftDesktop title={ticket.legacyResolution === 1 ? "Tidak tersedia (workflow lama)" : "Stages yang sudah dilewati / total"} />
+              <Metric label="Foto Evidence" value={ticket.legacyResolution === 1 && totalEvidenceCount === 0 ? "-" : String(totalEvidenceCount)} icon={<ImageIcon style={{ width: 14, height: 14 }} />} borderTopMobile borderLeft title={ticket.legacyResolution === 1 && totalEvidenceCount === 0 ? "Workflow lama tidak mensyaratkan foto" : `Total foto bukti dari semua stage`} />
             </div>
           </div>
 
@@ -906,7 +906,7 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>{customer.name}</div>
                 <div style={{ fontSize: 12, color: "#475569", marginTop: 4, lineHeight: 1.5 }}>
-                  {ticket.address ?? customer.address ?? "—"}
+                  {ticket.address ?? customer.address ?? "-"}
                 </div>
                 {customer.phone && (
                   <div style={{ marginTop: 10, fontSize: 12, color: "#475569" }} className="jbn-mono">
@@ -929,7 +929,7 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f1f5f9" }}>
                   <span style={{ color: "#475569" }}>Active Work Time</span>
-                  <span className="jbn-mono jbn-tabular" style={{ fontWeight: 600 }}>{ticket.legacyResolution === 1 ? "—" : fmtDuration(workTimeSec)}</span>
+                  <span className="jbn-mono jbn-tabular" style={{ fontWeight: 600 }}>{ticket.legacyResolution === 1 ? "-" : fmtDuration(workTimeSec)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0" }}>
                   <span style={{ color: "#475569" }}>Foto evidence</span>
@@ -946,9 +946,9 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// CANCELLED MODE — cancelled
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// CANCELLED MODE - cancelled
+// -------------------------------------------------------------------------
 
 function CancelledMode({ ticket, stages, transitions, evidence, category, customer }: {
   ticket: Ticket;
@@ -970,7 +970,7 @@ function CancelledMode({ ticket, stages, transitions, evidence, category, custom
           <div style={{ flex: 1 }}>
             <div className="jbn-mono" style={{ fontSize: 13, fontWeight: 700 }}>{ticket.ticketNumber}</div>
             <div style={{ fontSize: 10, color: "#ef4444", marginTop: 1, fontWeight: 600 }}>
-              ✕ Dibatalkan
+               Dibatalkan
             </div>
           </div>
         </div>
@@ -998,14 +998,14 @@ function CancelledMode({ ticket, stages, transitions, evidence, category, custom
           )}
         </div>
 
-        {/* Customer + stages — read-only same as completed mode */}
+        {/* Customer + stages - read-only same as completed mode */}
         {customer && (
           <div className="bg-white" style={{ borderRadius: 10, padding: 14, marginBottom: 12, border: "1px solid #e2e8f0" }}>
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
               {category && <Badge color={catColor}>{category.name}</Badge>}
             </div>
             <div style={{ fontSize: 15, fontWeight: 700 }}>{customer.name}</div>
-            <div style={{ fontSize: 12, color: "#475569", marginTop: 4, lineHeight: 1.5 }}>{ticket.address ?? customer.address ?? "—"}</div>
+            <div style={{ fontSize: 12, color: "#475569", marginTop: 4, lineHeight: 1.5 }}>{ticket.address ?? customer.address ?? "-"}</div>
           </div>
         )}
 
@@ -1035,9 +1035,9 @@ function CancelledMode({ ticket, stages, transitions, evidence, category, custom
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// STAGE EXECUTION SCREEN — only valid in ACTIVE mode
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
+// STAGE EXECUTION SCREEN - only valid in ACTIVE mode
+// -------------------------------------------------------------------------
 
 function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, category, mode, existingTransition, onBack, onComplete }: {
   ticket: Ticket;
@@ -1066,7 +1066,7 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
   const [notesValue, setNotesValue] = useState(() => meta.notes?.toString() ?? (isEdit && existingTransition?.note ? extractRawNote(existingTransition.note) : ""));
   const [checklistDone, setChecklistDone] = useState<Record<number, boolean>>(() => meta.checklist ?? {});
   const [signatureValue, setSignatureValue] = useState(() => meta.signature?.toString() ?? "");
-  // v4.2.18 (B.5): tanda tangan canvas (data URL PNG) — disimpan di metadata.signatureImage
+  // v4.2.18 (B.5): tanda tangan canvas (data URL PNG) - disimpan di metadata.signatureImage
   const [signatureDataUrl, setSignatureDataUrl] = useState<string>(() => meta.signatureImage?.toString() ?? "");
   const [speedDownload, setSpeedDownload] = useState(() => meta.speedDownload?.toString() ?? "");
   const [speedUpload, setSpeedUpload] = useState(() => meta.speedUpload?.toString() ?? "");
@@ -1079,11 +1079,11 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
     return null;
   });
   const [gpsLoading, setGpsLoading] = useState(false);
-  // Custom fields values — keyed by field.key (pre-filled dari metadata.custom kalau edit)
+  // Custom fields values - keyed by field.key (pre-filled dari metadata.custom kalau edit)
   const [customValues, setCustomValues] = useState<Record<string, any>>(() => meta.custom ?? {});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // v4.2.18 (D): Resolution state — hanya dipakai di stage final
+  // v4.2.18 (D): Resolution state - hanya dipakai di stage final
   const [resolutionData, setResolutionData] = useState<ResolutionData>(() => {
     let mat: MaterialItem[] = [];
     try { if (ticket.materialUsed) mat = JSON.parse(ticket.materialUsed); } catch {}
@@ -1239,31 +1239,31 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
     const required = stage.fields ?? [];
     const out: Array<{ label: string; value: string; type?: "text" | "photo" | "gps" | "signature"; filled: boolean }> = [];
     if (required.includes("photo")) {
-      out.push({ label: "Foto Evidence", value: photoIds.length ? `${photoIds.length} foto terupload` : "—", type: "photo", filled: photoIds.length > 0 });
+      out.push({ label: "Foto Evidence", value: photoIds.length ? `${photoIds.length} foto terupload` : "-", type: "photo", filled: photoIds.length > 0 });
     }
     if (required.includes("numeric")) {
-      out.push({ label: "Pengukuran (dBm)", value: numericValue || "—", type: "text", filled: !!numericValue });
+      out.push({ label: "Pengukuran (dBm)", value: numericValue || "-", type: "text", filled: !!numericValue });
     }
     if (required.includes("barcode")) {
-      out.push({ label: "ONT Serial", value: barcodeValue || "—", type: "text", filled: !!barcodeValue });
+      out.push({ label: "ONT Serial", value: barcodeValue || "-", type: "text", filled: !!barcodeValue });
     }
     if (required.includes("signature")) {
       const sigOk = !!(signatureValue.trim() && signatureDataUrl);
-      out.push({ label: "TTD Pelanggan", value: signatureValue || "—", type: "signature", filled: sigOk });
+      out.push({ label: "TTD Pelanggan", value: signatureValue || "-", type: "signature", filled: sigOk });
     }
     if (required.includes("speedtest")) {
-      out.push({ label: "Speed Test", value: speedDownload && speedUpload ? `${speedDownload}↓/${speedUpload}↑ Mbps` : "—", type: "text", filled: !!(speedDownload && speedUpload) });
+      out.push({ label: "Speed Test", value: speedDownload && speedUpload ? `${speedDownload}↓/${speedUpload}↑ Mbps` : "-", type: "text", filled: !!(speedDownload && speedUpload) });
     }
     if (required.includes("gps")) {
-      out.push({ label: "GPS Lokasi", value: gpsCoords ? `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lng.toFixed(5)}` : "—", type: "gps", filled: !!gpsCoords });
+      out.push({ label: "GPS Lokasi", value: gpsCoords ? `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lng.toFixed(5)}` : "-", type: "gps", filled: !!gpsCoords });
     }
     if (required.includes("checklist")) {
       const total = checklistItems.length;
       const done = Object.values(checklistDone).filter(Boolean).length;
-      out.push({ label: "Checklist", value: total ? `${done}/${total} item` : "—", type: "text", filled: total > 0 && done === total });
+      out.push({ label: "Checklist", value: total ? `${done}/${total} item` : "-", type: "text", filled: total > 0 && done === total });
     }
     if (required.includes("rating")) {
-      out.push({ label: "Rating", value: ratingValue ? `${ratingValue}/5 bintang` : "—", type: "text", filled: ratingValue > 0 });
+      out.push({ label: "Rating", value: ratingValue ? `${ratingValue}/5 bintang` : "-", type: "text", filled: ratingValue > 0 });
     }
     if (notesValue.trim()) {
       out.push({ label: "Notes", value: notesValue.length > 60 ? notesValue.slice(0, 60) + "…" : notesValue, type: "text", filled: true });
@@ -1271,7 +1271,7 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
     // Custom fields
     for (const cf of (stage.customFields ?? [])) {
       const v = customValues[cf.key];
-      const display = v == null || v === "" ? "—" : (cf.type === "checkbox" ? (v ? "✓ Ya" : "Tidak") : (cf.unit ? `${v} ${cf.unit}` : String(v)));
+      const display = v == null || v === "" ? "-" : (cf.type === "checkbox" ? (v ? "✓ Ya" : "Tidak") : (cf.unit ? `${v} ${cf.unit}` : String(v)));
       const filled = cf.type === "checkbox" ? !!v : (v != null && String(v).trim() !== "");
       out.push({ label: cf.label + (cf.required ? " *" : ""), value: display, type: "text", filled: !cf.required || filled });
     }
@@ -1352,7 +1352,7 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
             </div>
           )}
 
-          {/* FIELDS GRID — desktop pakai 2-col supaya ga waste space */}
+          {/* FIELDS GRID - desktop pakai 2-col supaya ga waste space */}
           <div className="lg:grid lg:grid-cols-2 lg:gap-3">
 
 
@@ -1510,7 +1510,7 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
             />
           </FieldCard>
 
-          {/* v4.2.7: Custom fields — admin-defined per stage */}
+          {/* v4.2.7: Custom fields - admin-defined per stage */}
           {(stage.customFields ?? []).map((cf) => (
             <CustomFieldRender
               key={cf.key}
@@ -1522,14 +1522,14 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
           </div>
           {/* end fields grid */}
 
-          {/* v4.2.18 (D): Resolution form — hanya di stage final */}
+          {/* v4.2.18 (D): Resolution form - hanya di stage final */}
           {stage.isFinal && !isEdit && (
             <div className="mt-3">
               <div className="rounded-md border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 mb-3">
                 <div className="flex items-start gap-2 mb-1">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5" />
                   <div>
-                    <div className="text-sm font-bold text-emerald-900">Stage Final — Penyelesaian Tiket</div>
+                    <div className="text-sm font-bold text-emerald-900">Stage Final - Penyelesaian Tiket</div>
                     <div className="text-xs text-emerald-700 mt-0.5">
                       Isi kode resolusi & material sebelum tiket ditutup. Data ini akan masuk ke BAST yang bisa di-print.
                     </div>
@@ -1586,9 +1586,9 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
 // Sub-components
-// ─────────────────────────────────────────────────────────────────────────
+// -------------------------------------------------------------------------
 
 function StageDot({ index, done, current, catColor }: { index: number; done: boolean; current: boolean; catColor: string }) {
   return (
@@ -1701,7 +1701,7 @@ function CustomFieldRender({ field, value, onChange }: {
           onChange={(e) => onChange(e.target.value)}
           style={{ width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 6, fontSize: 13, background: "#fff" }}
         >
-          <option value="">— pilih —</option>
+          <option value="">- pilih -</option>
           {(field.options ?? []).map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}

@@ -25,7 +25,7 @@ export type SopAdvanceDecision = {
  * @param currentStageKey stage kartu sekarang
  * @param daysInStage     lama (hari, boleh pecahan) kartu diam di stage sekarang
  * @param stagesByKey     map key→metadata stage (dari collection_stages)
- * @param terminalKeys    set stage terminal (role paid/writeoff) — tidak pernah di-advance
+ * @param terminalKeys    set stage terminal (role paid/writeoff) - tidak pernah di-advance
  */
 export function decideSopAdvance(
   currentStageKey: string,

@@ -1,4 +1,4 @@
-// v4.2.18 (F.1): Kanban View — tiket dikelompokkan per status.
+// v4.2.18 (F.1): Kanban View - tiket dikelompokkan per status.
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";

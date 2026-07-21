@@ -24,7 +24,7 @@ import {
   SkeletonKPIGrid, SkeletonCard, SkeletonList,
 } from "@/components/ui/skeleton";
 
-// ─── Activity type mapping ────────────────────────────────────────────────
+// --- Activity type mapping ------------------------------------------------
 const ACTIVITY_ICONS: Record<string, any> = {
   note: StickyNote, call: PhoneCall, whatsapp: MessageSquare,
   visit: Navigation, stage_change: ArrowRight, assigned: UserIcon,
@@ -103,7 +103,7 @@ export default function MarketingDashboardPage() {
     refetchInterval: 60_000,
   });
 
-  // ── Loading state ──
+  // -- Loading state --
   if (isLoading || !data) {
     return (
       <PageContainer>
@@ -123,7 +123,7 @@ export default function MarketingDashboardPage() {
     );
   }
 
-  // ── Compute hot metrics ──
+  // -- Compute hot metrics --
   const maxPipeline = Math.max(...data.pipeline.map(p => p.count), 1);
   const prevMonth = data.lastMonthLeads;
   const thisMonth = data.thisMonthLeads;
@@ -151,7 +151,7 @@ export default function MarketingDashboardPage() {
         }
       />
 
-      {/* ═══ HERO: Pipeline Momentum ═══ */}
+      {/* === HERO: Pipeline Momentum === */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sidebar via-sidebar/95 to-sky-900 text-white shadow-elev-lg">
         {/* Decorative gradient mesh */}
         <div className="absolute inset-0 bg-mesh opacity-40" />
@@ -193,7 +193,7 @@ export default function MarketingDashboardPage() {
               </div>
             </div>
 
-            {/* Circular progress — conversion */}
+            {/* Circular progress - conversion */}
             <div className="flex items-center gap-4 md:gap-6 shrink-0">
               <div className="relative w-20 h-20 md:w-24 md:h-24">
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -238,7 +238,7 @@ export default function MarketingDashboardPage() {
         </div>
       </section>
 
-      {/* ═══ STAT TILES ═══ */}
+      {/* === STAT TILES === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatTile
           icon={Zap}
@@ -275,7 +275,7 @@ export default function MarketingDashboardPage() {
         />
       </div>
 
-      {/* ═══ PIPELINE FUNNEL + BREAKDOWN ═══ */}
+      {/* === PIPELINE FUNNEL + BREAKDOWN === */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Funnel */}
         <Card padding="lg">
@@ -388,7 +388,7 @@ export default function MarketingDashboardPage() {
         </Card>
       </div>
 
-      {/* ═══ ACTIVITY + TEAM PERFORMANCE ═══ */}
+      {/* === ACTIVITY + TEAM PERFORMANCE === */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Recent Activity */}
         <Card padding="lg">
@@ -456,7 +456,7 @@ export default function MarketingDashboardPage() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                         <span className="font-semibold text-foreground/80">{labels[act.type] ?? act.type}</span>
-                        {displayContent ? ` — ${displayContent}` : ""}
+                        {displayContent ? ` - ${displayContent}` : ""}
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
@@ -570,7 +570,7 @@ export default function MarketingDashboardPage() {
         )}
       </div>
 
-      {/* ═══ FIELD REPORT (conditional) ═══ */}
+      {/* === FIELD REPORT (conditional) === */}
       {data.fieldReportCount > 0 && (
         <PageSection
           title="Insights Lapangan"
@@ -679,7 +679,7 @@ export default function MarketingDashboardPage() {
         </PageSection>
       )}
 
-      {/* ═══ QUICK ACTIONS FOR SPV (extra row) ═══ */}
+      {/* === QUICK ACTIONS FOR SPV (extra row) === */}
       {isSupervisor && (
         <PageSection title="Aksi Cepat">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -694,7 +694,7 @@ export default function MarketingDashboardPage() {
   );
 }
 
-// ─── Subcomponents ─────────────────────────────────────────────────────
+// --- Subcomponents -----------------------------------------------------
 
 function MiniMetric({
   label, value, accent, small,

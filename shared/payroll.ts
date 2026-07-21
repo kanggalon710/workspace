@@ -1,6 +1,6 @@
-/** PRD-HR Fase HR-2 — mesin hitung payroll murni (unit-tested, tanpa I/O).
+/** PRD-HR Fase HR-2 - mesin hitung payroll murni (unit-tested, tanpa I/O).
  *  PPh 21 metode GROSS dengan TER bulanan (PMK 168/2023) + BPJS TK & Kesehatan.
- *  CATATAN: tarif TER & batas upah BPJS tersimpan sebagai data di file ini —
+ *  CATATAN: tarif TER & batas upah BPJS tersimpan sebagai data di file ini -
  *  verifikasi terhadap regulasi terbaru sebelum dipakai membayar sungguhan. */
 
 export type PtkpStatus = "TK/0" | "TK/1" | "TK/2" | "TK/3" | "K/0" | "K/1" | "K/2" | "K/3";
@@ -12,7 +12,7 @@ export function terCategory(ptkp: PtkpStatus): "A" | "B" | "C" {
   return "A";
 }
 
-// [batas_atas_bulanan, tarif_persen] — bracket terakhir Infinity.
+// [batas_atas_bulanan, tarif_persen] - bracket terakhir Infinity.
 const TER_A: Array<[number, number]> = [
   [5_400_000, 0], [5_650_000, 0.25], [5_950_000, 0.5], [6_300_000, 0.75], [6_750_000, 1],
   [7_500_000, 1.25], [8_550_000, 1.5], [9_650_000, 1.75], [10_050_000, 2], [10_350_000, 2.25],
@@ -105,7 +105,7 @@ export function computePayslip(inp: PayslipInput): PayslipResult {
   const bruto = inp.baseSalary + inp.fixedAllowance + inp.variableAllowance + overtimePay;
   const cfg = inp.bpjs ?? DEFAULT_BPJS;
   // QA M3: dasar iuran BPJS = UPAH TETAP (gaji pokok + tunjangan tetap), TIDAK
-  // termasuk lembur & tunjangan tidak tetap — sesuai kaidah umum upah BPJS.
+  // termasuk lembur & tunjangan tidak tetap - sesuai kaidah umum upah BPJS.
   const bpjsWage = inp.baseSalary + inp.fixedAllowance;
   const jpBase = Math.min(bpjsWage, cfg.jpCap);
   const kesBase = Math.min(bpjsWage, cfg.kesCap);
@@ -115,7 +115,7 @@ export function computePayslip(inp: PayslipInput): PayslipResult {
   const bpjsKesCo = inp.enrollBpjsKes === false ? 0 : round(kesBase * cfg.kesCo / 100);
 
   // TER: dasar = bruto sebulan (termasuk JKK/JKM/Kes perusahaan secara aturan;
-  // penyederhanaan v1 pakai bruto tunai — konsisten & konservatif).
+  // penyederhanaan v1 pakai bruto tunai - konsisten & konservatif).
   const rate = terRate(inp.ptkp, bruto);
   const pph21 = round(bruto * rate / 100);
 

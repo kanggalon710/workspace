@@ -1,13 +1,13 @@
-# Spec — Generic Pipelines Engine (Phase 1)
+# Spec - Generic Pipelines Engine (Phase 1)
 
 > **Date:** 2026-06-04
 > **Status:** Approved design, ready for implementation plan.
-> **Program:** "Customizable Multi-Tenant Pipeline / Kanban" — Phase 1 of 6 (see Roadmap).
+> **Program:** "Customizable Multi-Tenant Pipeline / Kanban" - Phase 1 of 6 (see Roadmap).
 
 ## Goal
 
-Give each mitra the ability to **create their own Kanban pipelines** — define stages,
-add cards, drag cards between stages — fully tenant-isolated and permission-gated. This is
+Give each mitra the ability to **create their own Kanban pipelines** - define stages,
+add cards, drag cards between stages - fully tenant-isolated and permission-gated. This is
 a **new, standalone module** (`/pipelines`) that lives **alongside** the existing hardcoded
 `/leads` and `/collections` pipelines and shares **no tables** with them.
 
@@ -15,18 +15,18 @@ Phase 1 is the foundation: pipelines → stages → cards, with comments, an act
 followers. Custom fields, resource-level RBAC, and the automation engine are explicitly
 **later phases** and out of scope here.
 
-## Program Roadmap (context — only P1 is specced here)
+## Program Roadmap (context - only P1 is specced here)
 
-1. **P1 — Generic `/pipelines` engine (this spec).** Separate from leads/collections.
-2. **P2 — Dynamic custom fields** per pipeline.
-3. **P3 — Resource-level RBAC** (pipeline / stage / field / action granularity).
-4. **P4 — No-code automation engine** (WHEN/IF/THEN, cross-pipeline).
-5. **P5 — Migrate `/leads`** onto the engine.
-6. **P6 — Migrate `/collections`** onto the engine — **highest risk, last.** Must preserve
+1. **P1 - Generic `/pipelines` engine (this spec).** Separate from leads/collections.
+2. **P2 - Dynamic custom fields** per pipeline.
+3. **P3 - Resource-level RBAC** (pipeline / stage / field / action granularity).
+4. **P4 - No-code automation engine** (WHEN/IF/THEN, cross-pipeline).
+5. **P5 - Migrate `/leads`** onto the engine.
+6. **P6 - Migrate `/collections`** onto the engine - **highest risk, last.** Must preserve
    billing auto-open/close + reconciliation against a now-user-editable stage model. Gets
    its own dedicated spec + heavy verification when reached.
 
-Each phase is its own spec → plan → implementation cycle. We do **not** design P2–P6 until
+Each phase is its own spec → plan → implementation cycle. We do **not** design P2-P6 until
 P1 ships and is proven.
 
 ## Key Decisions (from brainstorming)
@@ -34,13 +34,13 @@ P1 ships and is proven.
 - **Parallel build.** No shared tables with leads/collections. Collections keeps its billing
   wiring (auto-open on isolir, auto-close on payment, reconciliation) untouched. Zero billing
   risk in Phase 1.
-- **Approach A — dedicated relational tables** (rejected: generalizing `collection_stages`,
+- **Approach A - dedicated relational tables** (rejected: generalizing `collection_stages`,
   which would couple billing; rejected: JSON-document/EAV cards, which kill server-side
   filtering and make field-level RBAC painful later).
 - **Card MVP = all four:** core fields, comments thread, activity log, followers/watchers.
-- **`tags` as a JSON column** (no separate tag table yet — YAGNI until tags need management UI).
-- **No SLA / WIP-limit fields** — meaningless without automation (P4). Deferred.
-- **Attachments deferred** — they ride the separate base64→filesystem photo-storage plan, not
+- **`tags` as a JSON column** (no separate tag table yet - YAGNI until tags need management UI).
+- **No SLA / WIP-limit fields** - meaningless without automation (P4). Deferred.
+- **Attachments deferred** - they ride the separate base64→filesystem photo-storage plan, not
   new base64 columns here.
 - **Access gate:** one new permission key `pipelines` (none/read/write) + a `pipelines` entry
   in `mitras.features`. Full field/stage-level RBAC is P3.
@@ -49,11 +49,11 @@ P1 ships and is proven.
 
 ## Data Model (`shared/schema.ts`)
 
-All tables carry `mitra_id` and are resolved through `tenantContext` — same isolation
+All tables carry `mitra_id` and are resolved through `tenantContext` - same isolation
 guarantee as the rest of the platform. Pattern mirrors `collection_stages`.
 
 ```ts
-// pipelines — one row per user-defined board
+// pipelines - one row per user-defined board
 pipelines
   id            int autoincrement pk
   mitraId       int notNull default 1
@@ -68,7 +68,7 @@ pipelines
   createdAt     text notNull
   updatedAt     text
 
-// pipeline_stages — columns of a board (mirrors collection_stages)
+// pipeline_stages - columns of a board (mirrors collection_stages)
 pipeline_stages
   id            int autoincrement pk
   mitraId       int notNull default 1
@@ -79,7 +79,7 @@ pipeline_stages
   createdAt     text notNull
   updatedAt     text
 
-// pipeline_cards — items on a board
+// pipeline_cards - items on a board
 pipeline_cards
   id            int autoincrement pk
   mitraId       int notNull default 1
@@ -106,7 +106,7 @@ pipeline_card_comments
   body          text notNull
   createdAt     text notNull
 
-// pipeline_card_activity — auto-written audit of card lifecycle
+// pipeline_card_activity - auto-written audit of card lifecycle
 pipeline_card_activity
   id            int autoincrement pk
   mitraId       int notNull default 1
@@ -143,14 +143,14 @@ additive (no ALTER on existing tables), so zero risk to existing data.
 - Add to `ALL_FEATURES`: `{ key: "pipelines", label: "Pipelines (Kanban)" }`.
 - Add to `FEATURE_PERMISSIONS`: `pipelines: ["pipelines"]`.
 - Auto-migration (`upgradePermissionsV412`-style) auto-grants the new key per existing rules
-  on startup — no manual role edits.
+  on startup - no manual role edits.
 
 **Enforcement:**
 - View pipelines/board/cards → `hasPermission(req, "pipelines")` (read).
 - Create/edit/archive pipeline, create/edit/reorder stages, create/edit/move/delete cards,
   comment, manage followers → `hasWritePermission(req, "pipelines")`.
 - All reads/writes run under `tenantContext`; every query filters `mitra_id`. Cross-mitra
-  access is impossible by construction (no `?mitra=` override in this module — JABNET-root
+  access is impossible by construction (no `?mitra=` override in this module - JABNET-root
   cross-tenant viewing is out of scope for P1).
 
 ## Backend (`server/routes.ts` + `server/storage.ts`)
@@ -169,12 +169,12 @@ Activity:   listActivity(cardId) · (internal) logActivity(cardId, type, detail)
 Followers:  listFollowers(cardId) · addFollower(cardId, userId) · removeFollower(cardId, userId)
 ```
 
-- **MySQL Drizzle gotchas honored** (per CLAUDE.md): no `.returning()` — insert then re-select
+- **MySQL Drizzle gotchas honored** (per CLAUDE.md): no `.returning()` - insert then re-select
   by `insertId`; deletes use `affectedRows`; raw queries via `.execute()`.
 - **Activity logging** is written inside the same storage methods that mutate cards
   (create/move/reassign/edit/comment/follower changes) so the timeline can't drift.
 - **Stage delete guard:** refuse to delete a stage that still holds cards (force the user to
-  move/delete cards first) — returns a 409 with a clear message.
+  move/delete cards first) - returns a 409 with a clear message.
 - **Notifications:** on card create/move/reassign/comment, notify the assignee + all followers
   (except the actor) via the existing notification system. Reuse the notification helper used
   by announcements/bell.
@@ -215,10 +215,10 @@ DELETE /api/pipelines/cards/:cardId/followers/:userId  remove
 
 - **Nav:** add "Pipelines" entry (group "Tools"), permission-filtered by `pipelines` key +
   feature flag. Add to Sidebar, BottomNav (mobile), and Command Palette.
-- **`/pipelines` — list page** (`PipelinesPage.tsx`): `<PageHeader>` + grid of pipeline cards
+- **`/pipelines` - list page** (`PipelinesPage.tsx`): `<PageHeader>` + grid of pipeline cards
   (name, color, icon, card count). Create/Edit/Archive dialogs. Uses design-system components
-  only (`Card`, `Button`, `StatTile`, `EmptyState`, skeletons) — no hardcoded hex.
-- **`/pipelines/:id` — board page** (`PipelineBoardPage.tsx`): Kanban columns = stages,
+  only (`Card`, `Button`, `StatTile`, `EmptyState`, skeletons) - no hardcoded hex.
+- **`/pipelines/:id` - board page** (`PipelineBoardPage.tsx`): Kanban columns = stages,
   draggable cards. **Reuse the drag-drop approach from `LeadPipelinePage`** for consistency.
   Inline stage management (add/rename/recolor/reorder) gated by `canWrite("pipelines")`.
   Per-column "add card". Board controls: text search by title + assignee filter.
@@ -232,14 +232,14 @@ DELETE /api/pipelines/cards/:cardId/followers/:userId  remove
 
 ## Testing
 
-- **Unit (server):** a pure helper module for the non-trivial logic — e.g.
+- **Unit (server):** a pure helper module for the non-trivial logic - e.g.
   `reorderPositions(orderedIds)` / `computeMovedCardPositions(...)` and the stage-delete guard
-  predicate — in `server/pipeline-helpers.ts` + `pipeline-helpers.test.ts`
+  predicate - in `server/pipeline-helpers.ts` + `pipeline-helpers.test.ts`
   (`npx tsx --test`). Cover: reorder produces contiguous positions; move recomputes source +
   destination ordering; delete-stage-with-cards rejected; tenant filter present.
 - **Manual (dev, `workspace-dev.jabnet.id` / `jabnet_fiber_dev`):**
   - As a mitra admin: create a pipeline, add 3 stages, add cards, drag between stages, reorder
-    — verify persistence + activity log entries.
+    - verify persistence + activity log entries.
   - Comments + followers: add a comment, add a follower → assignee/follower gets a notification.
   - Archive a pipeline → drops off the default list, visible under `?archived=1`.
   - Permission: a `read`-only user sees the board but cannot mutate; a `none` user sees no nav.
@@ -250,7 +250,7 @@ DELETE /api/pipelines/cards/:cardId/followers/:userId  remove
 
 ## Rollout
 
-1. Apply schema to **`jabnet_fiber_dev`** (Drizzle `db:push`) — additive only, no existing
+1. Apply schema to **`jabnet_fiber_dev`** (Drizzle `db:push`) - additive only, no existing
    tables altered.
 2. Deploy branch to `workspace-dev.jabnet.id`, run the manual checklist above.
 3. Only after dev sign-off: promote to prod `jabnet_fiber` per the standard cPanel deploy
@@ -267,11 +267,11 @@ viewing of another mitra's pipelines.
 
 ## Consistency with Memory
 
-- `project-multitenant-mitra` / `reference-tenant-isolation-gotchas` — every table `mitra_id`,
+- `project-multitenant-mitra` / `reference-tenant-isolation-gotchas` - every table `mitra_id`,
   resolved via `tenantContext`; no global queries. Use `getUserIdsInMitra` if listing
   assignable users.
-- `reference-collection-stages-roles` — `pipeline_stages` deliberately mirrors
+- `reference-collection-stages-roles` - `pipeline_stages` deliberately mirrors
   `collection_stages` (label/color/position) but **without** the `role` automation field;
   stage-driven automation is P4, not P1.
-- `reference-per-mitra-roles` — the new `pipelines` permission key flows through the existing
+- `reference-per-mitra-roles` - the new `pipelines` permission key flows through the existing
   per-mitra role + feature-gating machinery (`FEATURE_PERMISSIONS`, `server/feature-gate.ts`).

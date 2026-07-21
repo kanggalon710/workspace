@@ -1,5 +1,5 @@
 /**
- * v4.2.19: Broadcast Pelanggan — main hub
+ * v4.2.19: Broadcast Pelanggan - main hub
  *
  * 4 tabs:
  *   - Campaigns: list semua campaign + buat baru via wizard
@@ -136,9 +136,9 @@ export default function BroadcastPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // CAMPAIGNS TAB
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function CampaignsTab({ onOpenHistory }: { onOpenHistory: (id: number) => void }) {
   const qc = useQueryClient();
   const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
@@ -260,9 +260,9 @@ function CampaignsTab({ onOpenHistory }: { onOpenHistory: (id: number) => void }
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // TEMPLATES TAB
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function TemplatesTab({ onEdit }: { onEdit: (t: TemplateData) => void }) {
   const qc = useQueryClient();
   const { data: templates = [], isLoading } = useQuery<TemplateData[]>({
@@ -340,7 +340,7 @@ function TemplatesTab({ onEdit }: { onEdit: (t: TemplateData) => void }) {
           <DialogHeader>
             <DialogTitle>Kirim Test ke 1 Nomor</DialogTitle>
             <DialogDescription>
-              Test rendering template "{testTemplate?.name}" — placeholder akan di-fill dengan sample data.
+              Test rendering template "{testTemplate?.name}" - placeholder akan di-fill dengan sample data.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -367,9 +367,9 @@ function TemplatesTab({ onEdit }: { onEdit: (t: TemplateData) => void }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // AUDIENCES TAB
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function AudiencesTab() {
   const qc = useQueryClient();
   const { data: segments = [], isLoading } = useQuery<Segment[]>({
@@ -479,9 +479,9 @@ function AudiencesTab() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // HISTORY TAB
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function HistoryTab({ initialCampaignId }: { initialCampaignId: number | null }) {
   const [campaignId, setCampaignId] = useState<number | null>(initialCampaignId);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -560,13 +560,13 @@ function HistoryTab({ initialCampaignId }: { initialCampaignId: number | null })
                   )} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold truncate">{r.customerName ?? "—"}</span>
+                      <span className="font-semibold truncate">{r.customerName ?? "-"}</span>
                       <span className="font-mono text-muted-foreground">{r.phone}</span>
                     </div>
                     {r.errorMessage && <div className="text-rose-600 text-[10px] mt-0.5 truncate">{r.errorMessage}</div>}
                   </div>
                   <div className="text-[10px] text-muted-foreground tabular-nums shrink-0">
-                    {r.sentAt ? new Date(r.sentAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
+                    {r.sentAt ? new Date(r.sentAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "-"}
                   </div>
                 </div>
               ))}

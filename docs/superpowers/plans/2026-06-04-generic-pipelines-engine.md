@@ -17,7 +17,7 @@
 - Native DnD Kanban: `client/pages/LeadPipelinePage.tsx` (`draggable`, `onDragStart`, `onDragOver`, `onDrop`).
 - API client: `client/lib/api.ts:45-57` (`api.get/post/patch/delete`).
 
-**Rule (from spec):** All DB changes apply to **`jabnet_fiber_dev`** first (Drizzle `db:push`), verified on `workspace-dev.jabnet.id`, before any prod promotion. Tables are additive — no ALTER on existing tables.
+**Rule (from spec):** All DB changes apply to **`jabnet_fiber_dev`** first (Drizzle `db:push`), verified on `workspace-dev.jabnet.id`, before any prod promotion. Tables are additive - no ALTER on existing tables.
 
 ---
 
@@ -30,7 +30,7 @@
 | `server/pipeline-helpers.test.ts` | Unit tests for the above | Create |
 | `server/storage.ts` | All pipeline DB methods (pipelines/stages/cards/comments/activity/followers) | Modify |
 | `server/routes.ts` | REST endpoints + notification wiring on card events | Modify |
-| `client/lib/api.ts` | (no change — generic `api` client reused) | — |
+| `client/lib/api.ts` | (no change - generic `api` client reused) | - |
 | `client/hooks/usePipelines.ts` | TanStack Query hooks + mutations | Create |
 | `client/pages/PipelinesPage.tsx` | `/pipelines` list page (grid, create/edit/archive) | Create |
 | `client/pages/PipelineBoardPage.tsx` | `/pipelines/:id` Kanban board + stage mgmt + DnD | Create |
@@ -42,7 +42,7 @@
 
 ---
 
-## Task 1: Schema — tables, types, permission key, feature flag
+## Task 1: Schema - tables, types, permission key, feature flag
 
 **Files:**
 - Modify: `shared/schema.ts` (add tables near `collectionStages` ~line 444; add permission/feature entries ~lines 1121-1204)
@@ -52,7 +52,7 @@
 Add after the `collectionStages` block (~line 444). Use the same import style already present (`mysqlTable`, `int`, `varchar`, `text` are already imported):
 
 ```ts
-// ===== Generic Pipelines Engine (Phase 1) — separate from leads/collections =====
+// ===== Generic Pipelines Engine (Phase 1) - separate from leads/collections =====
 export const pipelines = mysqlTable("pipelines", {
   id: int("id").autoincrement().primaryKey(),
   mitraId: int("mitra_id").notNull().default(1),
@@ -229,14 +229,14 @@ test("canDeleteStage is true when stage is empty", () => {
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `npx tsx --test server/pipeline-helpers.test.ts`
-Expected: FAIL — `Cannot find module './pipeline-helpers.js'`.
+Expected: FAIL - `Cannot find module './pipeline-helpers.js'`.
 
 - [ ] **Step 3: Write the implementation**
 
 Create `server/pipeline-helpers.ts`:
 
 ```ts
-/** Pure helpers for the pipelines engine — no DB, fully unit-testable. */
+/** Pure helpers for the pipelines engine - no DB, fully unit-testable. */
 
 /** Given an ordered list of ids, assign contiguous 0-based positions. */
 export function reorderPositions(orderedIds: number[]): Array<{ id: number; position: number }> {
@@ -273,10 +273,10 @@ git commit -m "feat(pipelines): pure position/guard helpers with tests"
 
 ---
 
-## Task 3: Storage — pipelines CRUD
+## Task 3: Storage - pipelines CRUD
 
 **Files:**
-- Modify: `server/storage.ts` — add imports + a new `// ===== Pipelines =====` section (place near the collection-stage methods, ~line 1660)
+- Modify: `server/storage.ts` - add imports + a new `// ===== Pipelines =====` section (place near the collection-stage methods, ~line 1660)
 
 - [ ] **Step 1: Extend the schema imports in storage.ts**
 
@@ -295,7 +295,7 @@ Add a new section in the `DatabaseStorage` class (after the collection-stage met
 
 ```ts
   // ============================================================
-  // ===== Pipelines Engine (Phase 1) — tenant-scoped =====
+  // ===== Pipelines Engine (Phase 1) - tenant-scoped =====
   // ============================================================
 
   async listPipelines(includeArchived = false): Promise<Pipeline[]> {
@@ -376,7 +376,7 @@ git commit -m "feat(pipelines): storage CRUD for pipelines"
 
 ---
 
-## Task 4: Storage — stages CRUD + reorder + card-count
+## Task 4: Storage - stages CRUD + reorder + card-count
 
 **Files:**
 - Modify: `server/storage.ts` (append to the pipelines section)
@@ -431,7 +431,7 @@ Append in the pipelines section:
   async deleteStage(id: number): Promise<void> {
     const mitraId = getMitraId();
     const count = await this.countCardsInStage(id);
-    if (count > 0) throw new Error("Stage masih berisi kartu — pindahkan atau hapus kartu dulu");
+    if (count > 0) throw new Error("Stage masih berisi kartu - pindahkan atau hapus kartu dulu");
     await this.db.delete(pipelineStages)
       .where(and(eq(pipelineStages.id, id), eq(pipelineStages.mitraId, mitraId)));
   }
@@ -460,7 +460,7 @@ git commit -m "feat(pipelines): storage CRUD for stages + guarded delete"
 
 ---
 
-## Task 5: Storage — cards CRUD + move + activity logging
+## Task 5: Storage - cards CRUD + move + activity logging
 
 **Files:**
 - Modify: `server/storage.ts` (append to the pipelines section)
@@ -593,7 +593,7 @@ git commit -m "feat(pipelines): storage cards CRUD, move with reorder, activity 
 
 ---
 
-## Task 6: Storage — comments, followers, activity reads
+## Task 6: Storage - comments, followers, activity reads
 
 **Files:**
 - Modify: `server/storage.ts` (append to the pipelines section)
@@ -672,7 +672,7 @@ git commit -m "feat(pipelines): storage comments, followers, activity reads"
 
 ---
 
-## Task 7: Routes — pipelines + stages endpoints
+## Task 7: Routes - pipelines + stages endpoints
 
 **Files:**
 - Modify: `server/routes.ts` (add a new endpoint section; reuse `requirePermission`/`requireWritePermission` from lines 221-249)
@@ -761,7 +761,7 @@ Place in the main router section (alongside other `/api/...` route registrations
   });
 ```
 
-> **Note on route ordering:** register `/api/pipelines/reorder` BEFORE `/api/pipelines/:id` is matched for POST — they don't collide (different methods/paths), but keep `/reorder` and `/cards/...` literal segments mindful of Express param matching. Card routes (Task 8) use `/api/pipelines/cards/...` which must be registered so `cards` is not captured as `:id` on GET `/api/pipelines/:id`. Express matches in registration order — register the literal `cards` routes BEFORE `/api/pipelines/:id` GET, OR (cleaner) keep card routes on distinct paths as written (`/api/pipelines/cards/:cardId`) and register them before the `/api/pipelines/:id` GET handler. **Action: register Task 8 card routes immediately above the `GET /api/pipelines/:id` handler.**
+> **Note on route ordering:** register `/api/pipelines/reorder` BEFORE `/api/pipelines/:id` is matched for POST - they don't collide (different methods/paths), but keep `/reorder` and `/cards/...` literal segments mindful of Express param matching. Card routes (Task 8) use `/api/pipelines/cards/...` which must be registered so `cards` is not captured as `:id` on GET `/api/pipelines/:id`. Express matches in registration order - register the literal `cards` routes BEFORE `/api/pipelines/:id` GET, OR (cleaner) keep card routes on distinct paths as written (`/api/pipelines/cards/:cardId`) and register them before the `/api/pipelines/:id` GET handler. **Action: register Task 8 card routes immediately above the `GET /api/pipelines/:id` handler.**
 
 - [ ] **Step 2: Verify typecheck + build**
 
@@ -777,7 +777,7 @@ git commit -m "feat(pipelines): REST endpoints for pipelines + stages"
 
 ---
 
-## Task 8: Routes — cards + comments + followers (with notifications)
+## Task 8: Routes - cards + comments + followers (with notifications)
 
 **Files:**
 - Modify: `server/routes.ts` (register these card routes immediately ABOVE `GET /api/pipelines/:id`, per the route-ordering note in Task 7)
@@ -785,7 +785,7 @@ git commit -m "feat(pipelines): REST endpoints for pipelines + stages"
 - [ ] **Step 1: Find the existing notification helper**
 
 Run: `grep -n "createNotification\|notifyUser\|async function notify\|insertNotification" server/storage.ts server/routes.ts | head`
-Expected: a method like `storage.createNotification({ userId, type, title, body, ... })`. Use the exact signature you find. If the helper takes a `mitraId`, pass `req.authUser!.activeMitraId`. (Below assumes `storage.createNotification({ userId, type, title, message })` — adapt to the real signature.)
+Expected: a method like `storage.createNotification({ userId, type, title, body, ... })`. Use the exact signature you find. If the helper takes a `mitraId`, pass `req.authUser!.activeMitraId`. (Below assumes `storage.createNotification({ userId, type, title, message })` - adapt to the real signature.)
 
 - [ ] **Step 2: Add card/comment/follower endpoints + notification fan-out**
 
@@ -917,7 +917,7 @@ git commit -m "feat(pipelines): REST endpoints for cards, comments, followers + 
 
 ---
 
-## Task 9: Frontend — data hooks
+## Task 9: Frontend - data hooks
 
 **Files:**
 - Create: `client/hooks/usePipelines.ts`
@@ -995,7 +995,7 @@ export function usePipelineMutations(pipelineId?: number) {
 - [ ] **Step 2: Verify typecheck**
 
 Run: `npm run typecheck`
-Expected: PASS. (Confirm `@shared/schema` alias resolves — it's used elsewhere in client.)
+Expected: PASS. (Confirm `@shared/schema` alias resolves - it's used elsewhere in client.)
 
 - [ ] **Step 3: Commit**
 
@@ -1006,7 +1006,7 @@ git commit -m "feat(pipelines): client data hooks"
 
 ---
 
-## Task 10: Frontend — Pipelines list page
+## Task 10: Frontend - Pipelines list page
 
 **Files:**
 - Create: `client/pages/PipelinesPage.tsx`
@@ -1068,7 +1068,7 @@ export default function PipelinesPage() {
           ))}
         </div>
       )}
-      {/* Create dialog: minimal — name input + buttons. Use existing Dialog component. */}
+      {/* Create dialog: minimal - name input + buttons. Use existing Dialog component. */}
       {showCreate && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40" onClick={() => setShowCreate(false)}>
           <Card className="p-4 w-[min(28rem,calc(100vw-2rem))]" onClick={(e) => e.stopPropagation()}>
@@ -1112,7 +1112,7 @@ git commit -m "feat(pipelines): pipelines list page + route"
 
 ---
 
-## Task 11: Frontend — Kanban board page (stages + cards + DnD)
+## Task 11: Frontend - Kanban board page (stages + cards + DnD)
 
 **Files:**
 - Create: `client/pages/PipelineBoardPage.tsx`
@@ -1234,7 +1234,7 @@ Ensure `/pipelines/:id` is registered AFTER `/pipelines` (Wouter matches in orde
 - [ ] **Step 3: Verify typecheck + build**
 
 Run: `npm run typecheck && npm run build`
-Expected: PASS (CardDetailDrawer must exist — do Task 12 first OR stub it; recommended order: Task 12 then 11. If doing 11 first, temporarily comment the drawer usage and uncomment after Task 12.)
+Expected: PASS (CardDetailDrawer must exist - do Task 12 first OR stub it; recommended order: Task 12 then 11. If doing 11 first, temporarily comment the drawer usage and uncomment after Task 12.)
 
 - [ ] **Step 4: Commit**
 
@@ -1245,7 +1245,7 @@ git commit -m "feat(pipelines): kanban board page with native drag-drop"
 
 ---
 
-## Task 12: Frontend — Card detail drawer (fields, comments, activity, followers)
+## Task 12: Frontend - Card detail drawer (fields, comments, activity, followers)
 
 **Files:**
 - Create: `client/components/pipelines/CardDetailDrawer.tsx`
@@ -1326,7 +1326,7 @@ export function CardDetailDrawer({ cardId, pipelineId, onClose, writable }: {
 }
 ```
 
-(Followers add/remove UI: a simple user-picker can be added using the existing user list hook; for Phase 1 MVP, followers can be managed via the assignee field + the API — the picker is optional polish. If included, reuse the `Combobox` of users like other pages.)
+(Followers add/remove UI: a simple user-picker can be added using the existing user list hook; for Phase 1 MVP, followers can be managed via the assignee field + the API - the picker is optional polish. If included, reuse the `Combobox` of users like other pages.)
 
 - [ ] **Step 2: Verify typecheck + build**
 
@@ -1342,7 +1342,7 @@ git commit -m "feat(pipelines): card detail drawer (fields, comments, activity)"
 
 ---
 
-## Task 13: Nav wiring — Sidebar, BottomNav, Command Palette
+## Task 13: Nav wiring - Sidebar, BottomNav, Command Palette
 
 **Files:**
 - Modify: `client/components/layout/Sidebar.tsx`
@@ -1362,7 +1362,7 @@ In the Sidebar nav config (group "Tools"), add an entry mirroring an existing on
 { to: "/pipelines", label: "Pipelines", icon: Layers, permission: "pipelines" },
 ```
 
-(Import `Layers` from `lucide-react` if not present.) Permission-filtering is automatic via the existing `permission` field — confirm by checking how other items are filtered.
+(Import `Layers` from `lucide-react` if not present.) Permission-filtering is automatic via the existing `permission` field - confirm by checking how other items are filtered.
 
 - [ ] **Step 3: Add to Command Palette**
 
@@ -1396,7 +1396,7 @@ Read `upgradePermissionsV412` and confirm it iterates `ALL_PERMISSION_KEYS` (so 
 - [ ] **Step 2: Confirm feature-gating strips `pipelines` when disabled**
 
 Run: `grep -n "FEATURE_PERMISSIONS\|stripDisabled\|featureGate" server/feature-gate.ts`
-Confirm the new `pipelines` FEATURE_PERMISSIONS entry is consumed generically (it should be — the map is iterated). No code change expected.
+Confirm the new `pipelines` FEATURE_PERMISSIONS entry is consumed generically (it should be - the map is iterated). No code change expected.
 
 - [ ] **Step 3: Restart dev + verify**
 
@@ -1437,13 +1437,13 @@ Walk the spec's manual checklist:
 
 - [ ] **Step 4: Request code review**
 
-Use `superpowers:requesting-code-review` for a whole-implementation review before the user promotes to prod. Then STOP — the user pushes to dev and tests on `workspace-dev.jabnet.id`; prod promotion happens only after explicit user OK (platform rule).
+Use `superpowers:requesting-code-review` for a whole-implementation review before the user promotes to prod. Then STOP - the user pushes to dev and tests on `workspace-dev.jabnet.id`; prod promotion happens only after explicit user OK (platform rule).
 
 ---
 
 ## Self-Review Notes (author)
 
-- **Spec coverage:** pipelines/stages/cards CRUD (T3–T8), comments/activity/followers (T6,T8,T12), Kanban DnD (T11), permissions + feature gate (T1,T14), tenant isolation (every storage method via `getMitraId()`), notifications (T8), nav (T13), dev-first rollout (T8/T15). Out-of-scope items (custom fields, RBAC granularity, automation, attachments) intentionally absent.
+- **Spec coverage:** pipelines/stages/cards CRUD (T3-T8), comments/activity/followers (T6,T8,T12), Kanban DnD (T11), permissions + feature gate (T1,T14), tenant isolation (every storage method via `getMitraId()`), notifications (T8), nav (T13), dev-first rollout (T8/T15). Out-of-scope items (custom fields, RBAC granularity, automation, attachments) intentionally absent.
 - **Type consistency:** storage method names match route calls and hook calls (`moveCard`, `createCard`, `addComment`, `addFollower`, `archivePipeline`, etc.). Helper `computeInsertPosition` defined in T2, consumed in T5.
-- **Known adaptation points (flagged inline):** exact `storage.createNotification` signature (T8 Step 1), design-system import paths + `PageHeader` props (T10), nav-config shape (T13). These require reading one existing file each before finalizing — called out so the implementer verifies rather than guesses.
+- **Known adaptation points (flagged inline):** exact `storage.createNotification` signature (T8 Step 1), design-system import paths + `PageHeader` props (T10), nav-config shape (T13). These require reading one existing file each before finalizing - called out so the implementer verifies rather than guesses.
 - **Route ordering caveat** (T7/T8): literal `/api/pipelines/cards/...` routes must register before `GET /api/pipelines/:id` to avoid `cards` being captured as `:id`. Flagged explicitly.

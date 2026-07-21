@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, React 18, TanStack Query, Drizzle ORM (MySQL), `node:test` via `npx tsx --test`. Spec: `docs/superpowers/specs/2026-06-07-pipeline-field-registry-board-controls-design.md`.
 
-**Coding standards (apply to every task):** semantic HTML5 (`<fieldset>`/`<legend>`/`<label htmlFor>`/`<button type>`), DRY (one registry — no duplicated label/icon maps), component/SoC separation (UI thin, logic in the pure module), pure testable modules. Reuse design-system primitives (`Combobox`, `Input`, `Button`, `Switch`). See [[feedback-coding-standards]].
+**Coding standards (apply to every task):** semantic HTML5 (`<fieldset>`/`<legend>`/`<label htmlFor>`/`<button type>`), DRY (one registry - no duplicated label/icon maps), component/SoC separation (UI thin, logic in the pure module), pure testable modules. Reuse design-system primitives (`Combobox`, `Input`, `Button`, `Switch`). See [[feedback-coding-standards]].
 
 **Import-path conventions (this repo):**
 - Client/React → alias: `import { ... } from "@shared/pipelineFieldTypes"`.
@@ -125,7 +125,7 @@ test("compareCardsByField: numeric, date, text; direction; empties last", () => 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/pipelineFieldTypes.test.ts`
-Expected: FAIL — `Cannot find module './pipelineFieldTypes.js'`.
+Expected: FAIL - `Cannot find module './pipelineFieldTypes.js'`.
 
 - [ ] **Step 3: Write the registry module**
 
@@ -133,7 +133,7 @@ Create `shared/pipelineFieldTypes.ts`:
 
 ```ts
 /** Single source of truth for pipeline custom field-type metadata + pure decision helpers.
- *  No React, no DB — imported by client (picker, board) and server (validation, singleton guard). */
+ *  No React, no DB - imported by client (picker, board) and server (validation, singleton guard). */
 import type { PipelineFieldType, PipelineField } from "./schema.js";
 
 export interface FieldTypeMeta {
@@ -161,7 +161,7 @@ export const PIPELINE_FIELD_TYPE_REGISTRY: Record<PipelineFieldType, FieldTypeMe
   phone:       { type: "phone",       label: "Telepon",        description: "Nomor telepon",              group: "special", hasOptions: false, singleton: false, searchable: true,  filterable: false, sortable: false },
   url:         { type: "url",         label: "URL",            description: "Tautan web",                 group: "special", hasOptions: false, singleton: false, searchable: true,  filterable: false, sortable: false },
 };
-// NOTE: date.filterable=false on purpose — the board's existing date-range control covers date filtering,
+// NOTE: date.filterable=false on purpose - the board's existing date-range control covers date filtering,
 // so date is not offered again in the generic field filter. Slice D's Coordinate will be the first singleton:true.
 
 export function getFieldTypeMeta(type: string): FieldTypeMeta | undefined {
@@ -252,7 +252,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Singleton enforcement — server backstop (#7)
+## Task 2: Singleton enforcement - server backstop (#7)
 
 **Files:**
 - Modify: `server/routes.ts:4654-4660` (POST create-field handler)
@@ -359,7 +359,7 @@ In `server/routes.ts:4509`, change the values source from `getShowOnCardValues` 
   });
 ```
 
-(`getShowOnCardValues` stays in storage — it may still be used elsewhere; leave it.)
+(`getShowOnCardValues` stays in storage - it may still be used elsewhere; leave it.)
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -396,8 +396,8 @@ import { cn } from "@/lib/utils";
 
 /** Glyphs per field type (registry is React-free, so icons are defined here and reused by callers). */
 export const FIELD_TYPE_ICONS: Record<string, string> = {
-  text: "T", textarea: "¶", number: "#", currency: "Rp", date: "📅",
-  dropdown: "▾", multiselect: "☑", checkbox: "✓", user: "👤", phone: "☎", url: "🔗",
+  text: "T", textarea: "¶", number: "#", currency: "Rp", date: "",
+  dropdown: "▾", multiselect: "", checkbox: "✓", user: "", phone: "", url: "",
 };
 
 const GROUP_LABELS: Record<FieldTypeMeta["group"], string> = {
@@ -454,7 +454,7 @@ export function FieldTypePicker({
                   <span className="min-w-0">
                     <span className="block text-xs font-medium leading-tight truncate">{meta.label}</span>
                     <span className="block text-[10px] text-muted-foreground leading-tight">
-                      {allowed ? meta.description : "Sudah ada — hanya boleh 1 per pipeline"}
+                      {allowed ? meta.description : "Sudah ada - hanya boleh 1 per pipeline"}
                     </span>
                   </span>
                 </button>
@@ -538,7 +538,7 @@ import { toast } from "sonner";
               </FormField>
 ```
 
-(Leave the options `FormField`, the toggles block, and the "Tambah Field" button unchanged below this — `needsOptions` already gates the options input.)
+(Leave the options `FormField`, the toggles block, and the "Tambah Field" button unchanged below this - `needsOptions` already gates the options input.)
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -634,7 +634,7 @@ export function BoardFilters({
     search !== "" || preset !== "all" || assigneeId != null || filterFieldId != null || sortFieldId != null;
 ```
 
-(c) Inside the "Row 2 — filters" `<div className="flex items-center gap-2 flex-wrap">`, after the assignee `Combobox` block (line 88-97) and before the `preset === "custom"` block, add the filter + sort controls:
+(c) Inside the "Row 2 - filters" `<div className="flex items-center gap-2 flex-wrap">`, after the assignee `Combobox` block (line 88-97) and before the `preset === "custom"` block, add the filter + sort controls:
 
 ```tsx
         {filterable.length > 0 && onFilterField && (
@@ -681,7 +681,7 @@ export function BoardFilters({
         )}
 ```
 
-(d) Add the `FieldFilterValue` sub-component at the bottom of the file (SoC — type-aware value input):
+(d) Add the `FieldFilterValue` sub-component at the bottom of the file (SoC - type-aware value input):
 
 ```tsx
 function FieldFilterValue({
@@ -787,7 +787,7 @@ import { searchableFieldIds, cardMatchesFilter, compareCardsByField } from "@sha
   });
 ```
 
-(Ensure `useMemo` is imported from `react` — it is already used at line 33.)
+(Ensure `useMemo` is imported from `react` - it is already used at line 33.)
 
 (d) Add a sort helper for per-stage cards (after the `visible` block):
 
@@ -852,11 +852,11 @@ Expected: Vite client + esbuild server bundle succeed.
 - [ ] **Step 4: Manual checklist (record results)**
 
 Against the dev "Leads (Marketing)" pipeline (has phone/dropdown/number/date fields):
-- Open a board → **Field** → "Tambah Field Baru": every type, including **Telepon**, is visible immediately with no search box. ✅ (#3)
-- Board search box: typing a phone number / a dropdown value surfaces matching cards (not just title matches). ✅ (#8 searchable)
-- "Filter field…" → pick a dropdown field → pick a value → only matching cards remain; switching field resets the value; Reset clears it. ✅ (#8 filterable)
-- "Urutkan…" → pick a number/date field → cards in each stage reorder; ▲/▼ flips direction; clearing sort restores manual order; drag-reorder still persists. ✅ (#8 sortable)
-- (#7 singleton mechanism ships but has no current singleton type — verified by unit test; first real use is Slice D Coordinate.)
+- Open a board → **Field** → "Tambah Field Baru": every type, including **Telepon**, is visible immediately with no search box.  (#3)
+- Board search box: typing a phone number / a dropdown value surfaces matching cards (not just title matches).  (#8 searchable)
+- "Filter field…" → pick a dropdown field → pick a value → only matching cards remain; switching field resets the value; Reset clears it.  (#8 filterable)
+- "Urutkan…" → pick a number/date field → cards in each stage reorder; ▲/▼ flips direction; clearing sort restores manual order; drag-reorder still persists.  (#8 sortable)
+- (#7 singleton mechanism ships but has no current singleton type - verified by unit test; first real use is Slice D Coordinate.)
 
 - [ ] **Step 5: Final commit (only if the manual pass required any fixup; otherwise skip)**
 
@@ -874,4 +874,4 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - **Spec coverage:** #3 → Task 4 (always-visible picker). #7 → Task 2 (server) + Task 4 (client disable). #8 registry → Task 1; `singleton` → Tasks 2/4; `searchable`/`filterable`/`sortable` → Tasks 1/3/5. No DB migration (metadata is code-side). Multi-tenant/RBAC unchanged (Task 3 `getBoardCardValues` is mitra-scoped; routes keep existing guards).
 - **Type consistency:** helper names/signatures (`canAddType`, `getFieldTypeMeta`, `searchableFieldIds`, `filterableFields`, `sortableFields`, `cardMatchesFilter`, `compareCardsByField`, `FIELD_TYPE_ICONS`) are used identically across tasks. `PipelineCardWithValues.values` (`Record<number,string>`) matches helper signatures.
 - **date.filterable=false** is intentional (existing range control); documented in the registry.
-- **Known minor:** board search substring-matches a multiselect value's raw JSON string — still finds option text; acceptable per spec.
+- **Known minor:** board search substring-matches a multiselect value's raw JSON string - still finds option text; acceptable per spec.

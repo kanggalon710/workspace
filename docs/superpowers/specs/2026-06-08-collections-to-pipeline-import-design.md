@@ -1,56 +1,56 @@
-# Spec — Import `/collections` → `/pipelines` (JABNET snapshot)
+# Spec - Import `/collections` → `/pipelines` (JABNET snapshot)
 
 > Date: 2026-06-08 · Mitra: JABNET (mitra_id 1) · Mirrors the leads→pipeline import pattern.
 
 ## Goal
 
 One-off, idempotent (`--reset`) snapshot import of JABNET's collections (billing/penagihan)
-data into the generic pipelines engine — so `/pipelines` shows a **"Penagihan (Collections)"**
+data into the generic pipelines engine - so `/pipelines` shows a **"Penagihan (Collections)"**
 board with the same stages, cards, custom-field values, multi-assignee, comments (incl. photos),
 and audit activity as `/collections`.
 
-Source `collections` data is **not modified** — this is a read-only copy into pipeline tables.
+Source `collections` data is **not modified** - this is a read-only copy into pipeline tables.
 
 ## Decisions (confirmed)
 
-1. **Stages** — replicate the existing `collection_stages` rows (label, color, position) exactly.
+1. **Stages** - replicate the existing `collection_stages` rows (label, color, position) exactly.
    Fallback to 6 hardcoded defaults (`new/contacted/promised/issue/paid/written_off`) only if the
    table is empty for mitra 1.
-2. **Scope** — import ALL collections, including closed (`paid` / `written_off` / closed) — full history snapshot.
-3. **Assignee** — set `pipeline_cards.assignee_id` from `collections.assigned_to` (single), AND populate
+2. **Scope** - import ALL collections, including closed (`paid` / `written_off` / closed) - full history snapshot.
+3. **Assignee** - set `pipeline_cards.assignee_id` from `collections.assigned_to` (single), AND populate
    a custom **Assignee (multiple)** field from `collection_assignees` rows.
-4. **Photos** — decode base64 `collection_activities.photo_data` → write to filesystem via
+4. **Photos** - decode base64 `collection_activities.photo_data` → write to filesystem via
    `saveBase64Photo(slug, "collections", …)` → store relative `photo_path` on the comment.
 
 ## Components
 
-### 1. `server/uploads.ts` — additive
+### 1. `server/uploads.ts` - additive
 Add `"collections"` to the `FEATURES` whitelist. Photos land at
 `uploads/jabnet/collections/YYYY/MM/<activityId>-<8hex>.jpg`. No other change.
 
-### 2. `tools/collectionsToPipeline.ts` — pure, testable module
+### 2. `tools/collectionsToPipeline.ts` - pure, testable module
 Mirrors `tools/leadsToPipeline.ts`. DB-shape interfaces (snake_case, only fields read):
 `CollectionRow`, `CustomerLite`, `CollectionStageRow`, `CollectionActivityRow`.
 
 Exports:
 - `COLLECTION_PIPELINE_STAGES(stageRows: CollectionStageRow[]): {key,label,color,position}[]`
-  — map collection_stages ordered by position; fallback to `DEFAULT_COLLECTION_STAGES` if empty.
-- `DEFAULT_COLLECTION_STAGES` — the 6 defaults with sensible colors.
-- `COLLECTION_PIPELINE_FIELDS: FieldDef[]` — see table below. `FieldDef` extends the leads one with
+  - map collection_stages ordered by position; fallback to `DEFAULT_COLLECTION_STAGES` if empty.
+- `DEFAULT_COLLECTION_STAGES` - the 6 defaults with sensible colors.
+- `COLLECTION_PIPELINE_FIELDS: FieldDef[]` - see table below. `FieldDef` extends the leads one with
   `type: ... | "user"` and optional `config?: { multiple?: boolean }`.
 - `collectionToCard(col, customer, stageIdByKey, assigneeId): CardDraft`
-  — title = `customer.name` (fallback billing `customer_id`, fallback `"Pelanggan #<id>"`);
+  - title = `customer.name` (fallback billing `customer_id`, fallback `"Pelanggan #<id>"`);
     stage from `col.stage` (fallback first stage); priority `col.priority || "medium"`;
     createdAt = `col.created_at`; stageEnteredAt = `col.assigned_at ?? col.updated_at ?? col.created_at`.
-- `resolveAssignee(...)` — **imported from `./leadsToPipeline.js`** (DRY).
+- `resolveAssignee(...)` - **imported from `./leadsToPipeline.js`** (DRY).
 - `resolveMultiAssignees(rows: {user_id:number}[], validUserIds: Set<number>): number[]`
-  — dedup + keep only tenant-valid ids.
+  - dedup + keep only tenant-valid ids.
 - `collectionToFieldValues(col, customer): {fieldKey,value}[]`
-  — omit null/empty, stringify numbers, coordinate from customer lat/lng (both finite).
+  - omit null/empty, stringify numbers, coordinate from customer lat/lng (both finite).
 - `classifyCollectionActivity(type): "comment" | "activity"`
-  — comment: `note/call/whatsapp/visit`; everything else → activity
+  - comment: `note/call/whatsapp/visit`; everything else → activity
     (`stage_change/issue_set/promise_made/auto_opened/auto_closed/payment_detected/…`).
-- `collectionActivityToComment(act)` / `collectionActivityToActivity(act)` — mirror leads
+- `collectionActivityToComment(act)` / `collectionActivityToActivity(act)` - mirror leads
   (`[Label] content` body; audit detail passthrough).
 
 **Custom fields (`pipeline_fields`):**
@@ -81,7 +81,7 @@ service_complaint, billing_dispute, lainnya`.
 Multi-assignee value stored in `pipeline_card_values.value` as a JSON array string, e.g. `"[3,5]"`
 (matches slice-B multi-assignee validation).
 
-### 3. `tools/import-collections-to-pipeline.ts` — runner
+### 3. `tools/import-collections-to-pipeline.ts` - runner
 Mirrors `tools/import-leads-to-pipeline.ts`.
 - Constants: `MITRA_ID=1`, `PIPELINE_NAME="Penagihan (Collections)"`,
   `SENTINEL="[collections-import]"`, color `#F59E0B`, icon `banknote`.
@@ -98,7 +98,7 @@ Mirrors `tools/import-leads-to-pipeline.ts`.
 - Final tally log: cards, field-values, comments, photos written, base64-failed, activity rows,
   coordinates, assignees matched/default/unassigned.
 
-### 4. `tools/collectionsToPipeline.test.ts` — `node:test`
+### 4. `tools/collectionsToPipeline.test.ts` - `node:test`
 Covers pure helpers: stage mapping + empty fallback, field-values omits null/empty + coordinate
 emission, `classifyCollectionActivity` buckets, `resolveMultiAssignees` dedup/validity,
 `collectionToCard` title + stage fallback.

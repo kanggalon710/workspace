@@ -3,9 +3,9 @@
  * Sends offline conversion events back to Meta for ad optimization.
  *
  * Events sent:
- *   - "Lead" — when lead is created from ads (landing page / webhook)
- *   - "Schedule" — when lead is contacted / surveyed
- *   - "Purchase" — when lead converts to active customer (installation done)
+ *   - "Lead" - when lead is created from ads (landing page / webhook)
+ *   - "Schedule" - when lead is contacted / surveyed
+ *   - "Purchase" - when lead converts to active customer (installation done)
  *
  * Meta uses these events to find more people like those who actually became customers.
  * https://developers.facebook.com/docs/marketing-api/conversions-api
@@ -111,7 +111,7 @@ export async function sendConversionEvent(
 }
 
 /**
- * Send "Lead" event — when a new lead comes from ads/landing page
+ * Send "Lead" event - when a new lead comes from ads/landing page
  */
 export async function trackLead(config: MetaCapiConfig, data: {
   name: string; phone?: string | null; email?: string | null;
@@ -129,7 +129,7 @@ export async function trackLead(config: MetaCapiConfig, data: {
 }
 
 /**
- * Send "Purchase" event — when lead becomes active paying customer
+ * Send "Purchase" event - when lead becomes active paying customer
  */
 export async function trackPurchase(config: MetaCapiConfig, data: {
   name: string; phone?: string | null; email?: string | null;

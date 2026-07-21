@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql, { type Pool as MySQLPool } from "mysql2/promise";
 
 // FASE 1B (deferred refactor): legacy `this.sqlite` calls masih ada untuk backward-reference.
-// Jangan dipakai di runtime — semua `this.sqlite.*` akan throw error.
+// Jangan dipakai di runtime - semua `this.sqlite.*` akan throw error.
 // Lihat: docs handoff Phase 1B di CLAUDE.md.
 type SqliteCompatShim = {
   prepare: (sql: string) => never;
@@ -202,7 +202,7 @@ export interface BillingCustomerRecord {
   status_invoice: string;
   username_pppoe: string;
   type_pelanggan: string;
-  // v4.1.2 optional — whitelist fields untuk BillingSyncWorker
+  // v4.1.2 optional - whitelist fields untuk BillingSyncWorker
   due_date?: string | null;
   last_payment_date?: string | null;
   isolir_date?: string | null;
@@ -363,7 +363,7 @@ export interface IStorage {
   createCollectionActivity(data: InsertCollectionActivity): Promise<CollectionActivity>;
   getCollectionStats(): Promise<{ total: number; byStage: Record<string, number>; totalOverdue: number; avgAgeDays: number }>;
 
-  // Phase B multi-tenant — mitras + user_mitras membership
+  // Phase B multi-tenant - mitras + user_mitras membership
   listMitras(includeInactive?: boolean): Promise<Mitra[]>;
   getMitra(id: number): Promise<Mitra | undefined>;
   getMitraBySlug(slug: string): Promise<Mitra | undefined>;
@@ -393,7 +393,7 @@ export interface IStorage {
   setAssetCoverPhoto(assetType: string, assetId: number, photoId: number): Promise<void>;
   deleteAssetPhoto(photoId: number): Promise<boolean>;
   deleteAssetPhotosForAsset(assetType: string, assetId: number): Promise<void>;
-  // ODP photo gallery (delegator kompat — endpoint /api/odps/:id/photos)
+  // ODP photo gallery (delegator kompat - endpoint /api/odps/:id/photos)
   getOdpPhotosForOdp(odpId: number): Promise<OdpPhoto[]>;
   getOdpPhoto(photoId: number): Promise<OdpPhoto | undefined>;
   addOdpPhoto(input: { odpId: number; photoData: string; caption?: string | null; isCover?: boolean; userId: number }): Promise<OdpPhoto>;
@@ -407,7 +407,7 @@ export class DatabaseStorage implements IStorage {
   private db: ReturnType<typeof drizzle>;
   private pool: MySQLPool;
   /**
-   * Legacy compatibility shim — TIDAK functional di MySQL.
+   * Legacy compatibility shim - TIDAK functional di MySQL.
    * Semua `this.sqlite.prepare/exec/transaction` calls akan throw saat dipanggil.
    * Refactor lengkap di Phase 1B.
    */
@@ -415,7 +415,7 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     // Read MySQL connection from env (.env loaded by drizzle.config + server/index.ts).
-    // DB_SOCKET (Unix socket) preferred when set — workaround untuk mysql2 v3.22 TCP handshake
+    // DB_SOCKET (Unix socket) preferred when set - workaround untuk mysql2 v3.22 TCP handshake
     // hang issue di cPanel MySQL 8.0.42-cll-lve. Lihat CLAUDE.md gotcha #16.
     const socketPath = process.env.DB_SOCKET;
     this.pool = mysql.createPool({
@@ -444,8 +444,8 @@ export class DatabaseStorage implements IStorage {
         throw new Error("[storage] this.sqlite.transaction() tidak support di MySQL. Refactor pakai pool.getConnection() + beginTransaction(). Lihat Phase 1B handoff di CLAUDE.md.");
       },
     };
-    // ── Phase 1A: bootstrap dihapus. Schema dibuat lewat `drizzle-kit push`, data seed lewat tools/migrate-sqlite-to-mysql.mjs.
-    // ── Phase 1B (deferred): refactor ~89 raw sqlite calls + 114 .returning() calls. Lihat handoff di CLAUDE.md.
+    // -- Phase 1A: bootstrap dihapus. Schema dibuat lewat `drizzle-kit push`, data seed lewat tools/migrate-sqlite-to-mysql.mjs.
+    // -- Phase 1B (deferred): refactor ~89 raw sqlite calls + 114 .returning() calls. Lihat handoff di CLAUDE.md.
   }
 
   /**
@@ -474,7 +474,7 @@ export class DatabaseStorage implements IStorage {
         await this.pool.execute(`RENAME TABLE resellers TO mitras`);
         console.log("[mitra-migration] Renamed resellers -> mitras");
       } else if (!hasResellers && !hasMitras) {
-        // Fresh DB — create mitras minimally; full schema via drizzle-kit on first run
+        // Fresh DB - create mitras minimally; full schema via drizzle-kit on first run
         await this.pool.execute(`CREATE TABLE mitras (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -488,7 +488,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[mitra-migration] rename/create mitras: ${err.message}`);
     }
 
-    // Step 2: Add new columns to mitras (idempotent — errno 1060)
+    // Step 2: Add new columns to mitras (idempotent - errno 1060)
     const mitraCols: Array<[string, string]> = [
       ["slug",                  "VARCHAR(50) NULL"],
       ["display_name",          "TEXT NULL"],
@@ -576,7 +576,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[mitra-migration] seed JABNET: ${err.message}`);
     }
 
-    // ──────── Phase B additions ────────
+    // -------- Phase B additions --------
 
     // Step 5: Add users.active_mitra_id column (idempotent)
     try {
@@ -603,7 +603,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[mitra-migration] user_mitras: ${err.message}`);
     }
 
-    // Step 7: Backfill — HANYA user yatim (tanpa membership mitra apapun) di-assign ke mitra 1 (JABNET).
+    // Step 7: Backfill - HANYA user yatim (tanpa membership mitra apapun) di-assign ke mitra 1 (JABNET).
     // PENTING: cek "tidak punya membership SAMA SEKALI", BUKAN "tidak punya membership mitra 1".
     // Kalau cek mitra 1 saja, admin mitra lain (yang cuma punya membership mitra-nya sendiri) akan
     // dapat membership JABNET tiap restart → bisa switch ke JABNET lewat header (kebocoran tenant).
@@ -620,7 +620,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[mitra-migration] backfill user_mitras: ${err.message}`);
     }
 
-    // Step 8 (Phase F): mitra_integrations table — per-tenant override of app_settings keys
+    // Step 8 (Phase F): mitra_integrations table - per-tenant override of app_settings keys
     try {
       await this.pool.execute(`CREATE TABLE IF NOT EXISTS mitra_integrations (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -689,7 +689,7 @@ export class DatabaseStorage implements IStorage {
           console.log(`[index-migration] Created ${ix.name} on ${ix.table}`);
         }
       } catch (err: any) {
-        // Table might not exist yet (fresh DB) — log and continue
+        // Table might not exist yet (fresh DB) - log and continue
         console.warn(`[index-migration] Skipped ${ix.name}: ${err.message}`);
       }
     }
@@ -737,7 +737,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[photo-migration] odp_photos: ${err.message}`);
     }
 
-    // Galeri foto generik (odp/odc/pole). Sumber data tunggal — odp_photos di-migrasi ke sini.
+    // Galeri foto generik (odp/odc/pole). Sumber data tunggal - odp_photos di-migrasi ke sini.
     try {
       await this.pool.execute(`CREATE TABLE IF NOT EXISTS asset_photos (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -768,7 +768,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[photo-migration] asset_photos: ${err.message}`);
     }
 
-    // Chatwoot agent mapping (Batch 2c) — per-mitra user↔agent link.
+    // Chatwoot agent mapping (Batch 2c) - per-mitra user↔agent link.
     try {
       await this.pool.execute(`CREATE TABLE IF NOT EXISTS chatwoot_agent_links (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -786,7 +786,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[chatwoot-migration] chatwoot_agent_links: ${err.message}`);
     }
 
-    // LP1: Lead event bus — card link tracking.
+    // LP1: Lead event bus - card link tracking.
     try {
       await this.pool.execute(`CREATE TABLE IF NOT EXISTS lead_card_links (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -803,7 +803,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[leads-migration] lead_card_links: ${err.message}`);
     }
 
-    // Provision upload dirs per existing active mitra (idempotent — fs.mkdir recursive).
+    // Provision upload dirs per existing active mitra (idempotent - fs.mkdir recursive).
     try {
       const [rows]: any = await this.pool.execute(
         `SELECT slug FROM mitras WHERE is_active = 1 AND slug IS NOT NULL AND slug != ''`,
@@ -822,11 +822,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Loyalty edit/delete columns (v4.4.0) — idempotent.
+   * Loyalty edit/delete columns (v4.4.0) - idempotent.
    * Adds:
    *   - deleted_at (TEXT NULL) on customer_referrals, customer_discounts, point_redemptions for soft delete.
    *   - is_frozen / frozen_reason / frozen_at / frozen_by on customer_loyalty for admin freeze of reward issuance.
-   * Also fixes earlier deploys that created deleted_at/frozen_at as TIMESTAMP — converts to TEXT so
+   * Also fixes earlier deploys that created deleted_at/frozen_at as TIMESTAMP - converts to TEXT so
    * ISO-8601 strings (new Date().toISOString()) round-trip cleanly, matching the rest of the codebase
    * (createdAt, editedAt, ticket_comments.deleted_at all stored as TEXT).
    */
@@ -888,7 +888,7 @@ export class DatabaseStorage implements IStorage {
 
     // Fixup pass: convert pre-existing TIMESTAMP columns to TEXT so ISO-8601 writes succeed.
     // (Earlier builds of this migration used TIMESTAMP NULL; MySQL strict mode rejects
-    //  values like "2026-05-26T12:34:56.789Z" — only "YYYY-MM-DD HH:MM:SS" is accepted.)
+    //  values like "2026-05-26T12:34:56.789Z" - only "YYYY-MM-DD HH:MM:SS" is accepted.)
     const timestampToTextFixups: Array<{ table: string; column: string }> = [
       { table: "customer_referrals", column: "deleted_at" },
       { table: "customer_discounts", column: "deleted_at" },
@@ -1147,7 +1147,7 @@ export class DatabaseStorage implements IStorage {
     return (result as any).affectedRows > 0;
   }
 
-  /** Hapus semua foto satu aset (file + row) — dipakai saat aset dihapus. */
+  /** Hapus semua foto satu aset (file + row) - dipakai saat aset dihapus. */
   async deleteAssetPhotosForAsset(assetType: string, assetId: number): Promise<void> {
     const mitraId = getMitraId();
     const rows = await this.db.select({ photoPath: assetPhotos.photoPath }).from(assetPhotos)
@@ -1159,7 +1159,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(assetPhotos.assetType, assetType), eq(assetPhotos.assetId, assetId), eq(assetPhotos.mitraId, mitraId)));
   }
 
-  // ---- ODP Photos (delegator ke galeri generik — kompat endpoint /api/odps/:id/photos) ----
+  // ---- ODP Photos (delegator ke galeri generik - kompat endpoint /api/odps/:id/photos) ----
   private toOdpPhoto(p: AssetPhoto): OdpPhoto {
     return { id: p.id, mitraId: p.mitraId, odpId: p.assetId, photoPath: p.photoPath, caption: p.caption, uploadedBy: p.uploadedBy, isCover: p.isCover, createdAt: p.createdAt };
   }
@@ -1380,12 +1380,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * v4.1.2 — STRICT WHITELIST UPSERT untuk BillingSyncWorker.
+   * v4.1.2 - STRICT WHITELIST UPSERT untuk BillingSyncWorker.
    *
    * Berbeda dari upsertCustomerFromBilling yang respect manual_overrides,
    * method ini HANYA tulis 8 field kritis dan ignore semua field lain.
    * Field operasional (address, lat, lng, odp, package, phone, email, district, village)
-   * TIDAK pernah di-overwrite — local app is source of truth.
+   * TIDAK pernah di-overwrite - local app is source of truth.
    *
    * Return: diff dengan state transition untuk BillingSyncWorker:
    *   - became_suspended: active → isolir (trigger auto-open collection)
@@ -1394,7 +1394,7 @@ export class DatabaseStorage implements IStorage {
    *   - none: no relevant change
    */
   /**
-   * v4.1.3+: Full sync dari billing JABNET — billing adalah source of truth.
+   * v4.1.3+: Full sync dari billing JABNET - billing adalah source of truth.
    *
    * Field yang DI-SYNC (semua dari billing, overwrite setiap tick):
    *   name, phone, email, address, package, pppoeUsername, billingStatus,
@@ -1402,12 +1402,12 @@ export class DatabaseStorage implements IStorage {
    *   status (derived), dueDate, lastPaymentDate, isolirDate
    *
    * Field LOCAL ONLY (TIDAK pernah di-touch sync):
-   *   lat, lng — koordinat peta (FTTH Tools yang manage)
-   *   odpId, portNumber — ODP mapping (data jaringan, bukan billing)
-   *   ontSerialNumber — SN device (tidak ada di billing)
-   *   notes — catatan internal tim
-   *   pppoePassword, pppoeRouterId, pppoeMikrotikId, pppoeProfile — data MikroTik (managed by MikroTik integration)
-   *   leadId — traceability ke lead
+   *   lat, lng - koordinat peta (FTTH Tools yang manage)
+   *   odpId, portNumber - ODP mapping (data jaringan, bukan billing)
+   *   ontSerialNumber - SN device (tidak ada di billing)
+   *   notes - catatan internal tim
+   *   pppoePassword, pppoeRouterId, pppoeMikrotikId, pppoeProfile - data MikroTik (managed by MikroTik integration)
+   *   leadId - traceability ke lead
    */
   async upsertCustomerFromBillingWhitelist(data: BillingCustomerRecord): Promise<{
     action: 'created' | 'updated' | 'skipped';
@@ -1426,14 +1426,14 @@ export class DatabaseStorage implements IStorage {
                          : data.is_isolir ? "suspended" : "inactive";
 
     // ============ FIELD CLASSIFICATION ============
-    // CRITICAL billing fields — ALWAYS sync (billing API is source of truth):
+    // CRITICAL billing fields - ALWAYS sync (billing API is source of truth):
     //   billingStatus, isIsolir, billingPrice, dueDate, lastPaymentDate, isolirDate, status
-    // INFO fields — sync UNLESS local edit detected (preserve manual overrides):
+    // INFO fields - sync UNLESS local edit detected (preserve manual overrides):
     //   name, phone, email, address (pelanggan edit dari portal/CS update lokal)
-    // ASSIGNMENT fields — billing source of truth tapi rare:
+    // ASSIGNMENT fields - billing source of truth tapi rare:
     //   package, pppoeUsername, district, village, customerType, installDate
 
-    // Read manual_overrides JSON array (kalau ada) — list field name yang locked dari sync
+    // Read manual_overrides JSON array (kalau ada) - list field name yang locked dari sync
     let lockedFields: string[] = [];
     const existing = await this.getCustomerByBillingId(data.customer_id);
     if (existing && (existing as any).manualOverrides) {
@@ -1444,7 +1444,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const billingFields: Record<string, any> = {
-      // CRITICAL — selalu sync, tidak respect lock (billing source of truth)
+      // CRITICAL - selalu sync, tidak respect lock (billing source of truth)
       billingStatus: data.status_invoice,
       status,
       isIsolir: data.is_isolir ? 1 : 0,
@@ -1455,13 +1455,13 @@ export class DatabaseStorage implements IStorage {
       lastSyncAt: new Date().toISOString(),
       billingSyncSource: "billing.jabnet.id",
 
-      // INFO — respect lockedFields (admin/portal bisa override)
+      // INFO - respect lockedFields (admin/portal bisa override)
       name: lockedFields.includes("name") ? undefined : data.nama_lengkap,
       phone: lockedFields.includes("phone") ? undefined : (data.no_telepon ?? null),
       email: lockedFields.includes("email") ? undefined : (data.email ?? null),
       address: lockedFields.includes("address") ? undefined : (data.alamat_pemasangan ?? null),
 
-      // ASSIGNMENT — billing source of truth tapi cek lockedFields juga
+      // ASSIGNMENT - billing source of truth tapi cek lockedFields juga
       package: lockedFields.includes("package") ? undefined : (data.paket_layanan ?? null),
       pppoeUsername: lockedFields.includes("pppoeUsername") ? undefined : (data.username_pppoe ?? null),
       installDate: lockedFields.includes("installDate") ? undefined : (data.tgl_instalasi ?? null),
@@ -1470,7 +1470,7 @@ export class DatabaseStorage implements IStorage {
       customerType: lockedFields.includes("customerType") ? undefined : (data.type_pelanggan ?? null),
     };
 
-    // Strip undefined keys — biar Drizzle skip (tidak overwrite ke null)
+    // Strip undefined keys - biar Drizzle skip (tidak overwrite ke null)
     for (const k of Object.keys(billingFields)) {
       if (billingFields[k] === undefined) delete billingFields[k];
     }
@@ -1623,7 +1623,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Helper: open collection dari customer record (utk reconcile + manual trigger).
-   *  Idempotent — kalau sudah ada open, return existing tanpa create baru.
+   *  Idempotent - kalau sudah ada open, return existing tanpa create baru.
    *  initialStage default 'new' (Baru Isolir). Pakai 'suspend' kalau overdue tapi belum isolir. */
   async openCollectionFromCustomer(customerId: number, reason: string = "manual", initialStage?: string): Promise<Collection | null> {
     const mitraId = getMitraId();
@@ -1631,7 +1631,7 @@ export class DatabaseStorage implements IStorage {
     if (!c) return null;
     // Stage awal = role 'entry' mitra (fallback "new"). 3-role model: isolir & overdue sama-sama masuk entry.
     const entryStage = initialStage ?? (await this.getCollectionStageKeyByRole("entry")) ?? "new";
-    // Cek existing open collection — idempotent
+    // Cek existing open collection - idempotent
     const existing = await this.db.select().from(collections).where(and(
       eq(collections.customerId, customerId),
       eq(collections.mitraId, mitraId),
@@ -1715,7 +1715,7 @@ export class DatabaseStorage implements IStorage {
     return { advanced, details: details.slice(0, 100) };
   }
 
-  /** Sync health stats — untuk admin dashboard visibility */
+  /** Sync health stats - untuk admin dashboard visibility */
   async getSyncHealthStats(): Promise<{
     customersTotal: number;
     customersWithLastSync: number;
@@ -1917,7 +1917,7 @@ export class DatabaseStorage implements IStorage {
     return fallback[role];
   }
 
-  /** Set keys yang dianggap "terminal" (role paid/writeoff) — dipakai moveCollectionStage. */
+  /** Set keys yang dianggap "terminal" (role paid/writeoff) - dipakai moveCollectionStage. */
   private async getTerminalStageKeys(): Promise<Set<string>> {
     const mitraId = getMitraId();
     const rows = await this.db.select().from(collectionStages)
@@ -1929,7 +1929,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Seed pipeline default untuk 1 mitra. Mitra 1 dari konstanta DEFAULT_COLLECTION_STAGES;
-   *  mitra lain di-clone dari pipeline mitra 1 (template "ambil dari JABNET"). Idempotent —
+   *  mitra lain di-clone dari pipeline mitra 1 (template "ambil dari JABNET"). Idempotent -
    *  skip kalau mitra sudah punya stage. */
   async seedCollectionStagesForMitra(mitraId: number): Promise<number> {
     const existing = await withMitra(mitraId, () => this.getCollectionStages());
@@ -1956,7 +1956,7 @@ export class DatabaseStorage implements IStorage {
     return template.length;
   }
 
-  /** Terapkan ladder SOP churn→reaktivasi ke stages 1 mitra — IDEMPOTENT & aman untuk data lama.
+  /** Terapkan ladder SOP churn→reaktivasi ke stages 1 mitra - IDEMPOTENT & aman untuk data lama.
    *  - Tambah 2 stage delegasi (delegasi_cs, delegasi_marketing) bila belum ada, disisipkan
    *    setelah 'contacted'.
    *  - Set owner_division / sla_days / next_stage_key + label/color/position untuk key SOP yang
@@ -1998,7 +1998,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  /** Seed built-in pipeline templates for a mitra. Idempotent — skips if name+is_builtin=1 already exists. */
+  /** Seed built-in pipeline templates for a mitra. Idempotent - skips if name+is_builtin=1 already exists. */
   async seedBuiltinTemplates(mitraId: number): Promise<void> {
     const now = new Date().toISOString();
     for (const def of BUILTIN_TEMPLATES) {
@@ -2038,7 +2038,7 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
 
-  /** Kosongkan role tertentu (set ke 'none') untuk semua stage mitra aktif — supaya role unik. */
+  /** Kosongkan role tertentu (set ke 'none') untuk semua stage mitra aktif - supaya role unik. */
   private async clearCollectionStageRole(role: CollectionStageRole): Promise<void> {
     const mitraId = getMitraId();
     await this.db.update(collectionStages)
@@ -2058,7 +2058,7 @@ export class DatabaseStorage implements IStorage {
     if (data.label !== undefined) patch.label = data.label;
     if (data.color !== undefined) patch.color = data.color;
     if (data.role !== undefined) patch.role = data.role;
-    // SOP fields — null berarti "kosongkan" (dibedakan dari undefined = jangan sentuh).
+    // SOP fields - null berarti "kosongkan" (dibedakan dari undefined = jangan sentuh).
     if (data.ownerDivision !== undefined) patch.ownerDivision = data.ownerDivision || null;
     if (data.slaDays !== undefined) patch.slaDays = (data.slaDays == null || Number(data.slaDays) <= 0) ? null : Number(data.slaDays);
     if (data.nextStageKey !== undefined) patch.nextStageKey = data.nextStageKey || null;
@@ -2111,7 +2111,7 @@ export class DatabaseStorage implements IStorage {
         } as any);
       }
     } else {
-      // purge — hapus kartu beserta aktivitas + assignee
+      // purge - hapus kartu beserta aktivitas + assignee
       for (const c of cards) {
         await this.db.delete(collectionActivities).where(eq(collectionActivities.collectionId, c.id));
         await this.db.delete(collectionAssignees).where(and(eq(collectionAssignees.collectionId, c.id), eq(collectionAssignees.mitraId, mitraId)));
@@ -2123,7 +2123,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ============================================================
-  // ===== Pipelines Engine (Phase 1) — tenant-scoped =====
+  // ===== Pipelines Engine (Phase 1) - tenant-scoped =====
   // ============================================================
 
   async listPipelines(includeArchived = false): Promise<Pipeline[]> {
@@ -2275,7 +2275,7 @@ export class DatabaseStorage implements IStorage {
   async deleteStage(id: number): Promise<void> {
     const mitraId = getMitraId();
     const count = await this.countCardsInStage(id);
-    if (count > 0) throw new Error("Stage masih berisi kartu — pindahkan atau hapus kartu dulu");
+    if (count > 0) throw new Error("Stage masih berisi kartu - pindahkan atau hapus kartu dulu");
     await this.db.delete(pipelineStages)
       .where(and(eq(pipelineStages.id, id), eq(pipelineStages.mitraId, mitraId)));
   }
@@ -2697,7 +2697,7 @@ export class DatabaseStorage implements IStorage {
     return this.db.select().from(teams).where(and(...conds)).orderBy(asc(teams.name));
   }
 
-  /** Search All (gaya Cicle): cari tim + kartu board tim + dokumen tim — scoped keanggotaan.
+  /** Search All (gaya Cicle): cari tim + kartu board tim + dokumen tim - scoped keanggotaan.
    *  Kartu Rahasia hanya muncul untuk creator/penanggung jawab/admin. */
   async searchTeamspace(userId: number, q: string, opts?: { isAdmin?: boolean; limit?: number }): Promise<{
     teams: Array<{ id: number; name: string; color: string; icon: string | null; type: string }>;
@@ -2826,7 +2826,7 @@ export class DatabaseStorage implements IStorage {
 
     // Board tugas: pipeline milik tim (ikon/warna mengikuti tim).
     const pipeline = await this.createPipeline(
-      { name: `Tugas — ${data.name}`, description: `Board tugas tim ${data.name}`, color: data.color ?? "#8B5CF6", icon: data.icon ?? "ClipboardList" },
+      { name: `Tugas - ${data.name}`, description: `Board tugas tim ${data.name}`, color: data.color ?? "#8B5CF6", icon: data.icon ?? "ClipboardList" },
       userId,
     );
     await this.db.update(pipelines).set({ teamId })
@@ -2867,7 +2867,7 @@ export class DatabaseStorage implements IStorage {
     // Sinkronkan kosmetik board dengan tim.
     if (before.taskPipelineId && (data.name !== undefined || data.color !== undefined || data.icon !== undefined)) {
       const pipePatch: any = { updatedAt: patch.updatedAt };
-      if (data.name !== undefined) pipePatch.name = `Tugas — ${data.name}`;
+      if (data.name !== undefined) pipePatch.name = `Tugas - ${data.name}`;
       if (data.color !== undefined && data.color !== null) pipePatch.color = data.color;
       if (data.icon !== undefined && data.icon !== null) pipePatch.icon = data.icon;
       await this.db.update(pipelines).set(pipePatch)
@@ -2991,7 +2991,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  // ── Labels berwarna scoped per board (FR-413) ──
+  // -- Labels berwarna scoped per board (FR-413) --
 
   async listLabels(pipelineId: number): Promise<PipelineLabel[]> {
     const mitraId = getMitraId();
@@ -3069,7 +3069,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  // ── Checklist bertingkat (FR-406) ──
+  // -- Checklist bertingkat (FR-406) --
 
   async listChecklistsForCard(cardId: number): Promise<Array<CardChecklist & { items: CardChecklistItem[] }>> {
     const mitraId = getMitraId();
@@ -3175,7 +3175,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  // ── Ekstensi kartu (FR-405/409/414) ──
+  // -- Ekstensi kartu (FR-405/409/414) --
 
   async setCardCompleted(cardId: number, completed: boolean, userId: number): Promise<PipelineCard> {
     const mitraId = getMitraId();
@@ -3332,9 +3332,9 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
 
-  // ── Teamspace Fase 2: Chat Grup (FR-5xx) ──
+  // -- Teamspace Fase 2: Chat Grup (FR-5xx) --
 
-  /** Pesan chat tim, cursor pagination mundur (beforeId) — hasil urut ASC untuk render. */
+  /** Pesan chat tim, cursor pagination mundur (beforeId) - hasil urut ASC untuk render. */
   async listChatMessages(teamId: number, opts?: { beforeId?: number; limit?: number }): Promise<TeamChatMessage[]> {
     const mitraId = getMitraId();
     const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
@@ -3372,7 +3372,7 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
 
-  /** Soft delete — bubble tetap tampil sebagai "pesan dihapus". */
+  /** Soft delete - bubble tetap tampil sebagai "pesan dihapus". */
   async softDeleteChatMessage(id: number): Promise<void> {
     const mitraId = getMitraId();
     await this.db.update(teamChatMessages)
@@ -3399,7 +3399,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId), eq(teamMembers.mitraId, mitraId)));
   }
 
-  /** Read-by gaya Cicle: lastReadChatAt tiap anggota — client hitung siapa sudah baca pesan mana. */
+  /** Read-by gaya Cicle: lastReadChatAt tiap anggota - client hitung siapa sudah baca pesan mana. */
   async getChatReadStates(teamId: number): Promise<Array<{ userId: number; name: string; lastReadChatAt: string | null }>> {
     const mitraId = getMitraId();
     const rows = await this.db
@@ -3430,7 +3430,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  // ── Teamspace Fase 2: Jadwal (FR-7xx) ──
+  // -- Teamspace Fase 2: Jadwal (FR-7xx) --
 
   async listTeamEvents(teamId: number): Promise<TeamEvent[]> {
     const mitraId = getMitraId();
@@ -3528,7 +3528,7 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  // ── Teamspace Fase 2: Check-in (FR-8xx) ──
+  // -- Teamspace Fase 2: Check-in (FR-8xx) --
 
   async listCheckinQuestions(teamId: number): Promise<CheckinQuestion[]> {
     const mitraId = getMitraId();
@@ -3611,7 +3611,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  /** Jawab instance check-in — upsert per (question, user, responseDate). */
+  /** Jawab instance check-in - upsert per (question, user, responseDate). */
   async upsertCheckinResponse(questionId: number, userId: number, responseDate: string, responseText: string): Promise<CheckinResponse> {
     const mitraId = getMitraId();
     const now = new Date().toISOString();
@@ -3663,7 +3663,7 @@ export class DatabaseStorage implements IStorage {
     await this.pool.execute(`UPDATE checkin_questions SET last_sent_date = ? WHERE id = ?`, [dateStr, questionId]);
   }
 
-  // ── Teamspace Fase 2: Dokumen & File (FR-9xx) ──
+  // -- Teamspace Fase 2: Dokumen & File (FR-9xx) --
 
   async listTeamFolders(teamId: number): Promise<TeamFolder[]> {
     const mitraId = getMitraId();
@@ -3696,7 +3696,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(teamFolders.id, id), eq(teamFolders.mitraId, mitraId)));
   }
 
-  /** Hapus folder — ditolak bila masih ada isi (subfolder/dokumen/file aktif). */
+  /** Hapus folder - ditolak bila masih ada isi (subfolder/dokumen/file aktif). */
   async deleteTeamFolder(id: number): Promise<void> {
     const mitraId = getMitraId();
     const [subs, docs, files] = await Promise.all([
@@ -3705,7 +3705,7 @@ export class DatabaseStorage implements IStorage {
       this.db.select({ c: count() }).from(teamFiles).where(and(eq(teamFiles.folderId, id), eq(teamFiles.mitraId, mitraId), isNull(teamFiles.archivedAt))),
     ]);
     if (Number(subs[0]?.c ?? 0) + Number(docs[0]?.c ?? 0) + Number(files[0]?.c ?? 0) > 0) {
-      throw new Error("Folder masih berisi item — kosongkan dulu sebelum menghapus");
+      throw new Error("Folder masih berisi item - kosongkan dulu sebelum menghapus");
     }
     await this.db.delete(teamFolders).where(and(eq(teamFolders.id, id), eq(teamFolders.mitraId, mitraId)));
   }
@@ -3810,9 +3810,9 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(teamFiles.id, id), eq(teamFiles.mitraId, mitraId)));
   }
 
-  // ── Teamspace Fase 3: Ops stats terpadu (FR-1006) ──
+  // -- Teamspace Fase 3: Ops stats terpadu (FR-1006) --
 
-  /** Output operasional per user pada periode — pembeda utama vs Cicle: kinerja tugas
+  /** Output operasional per user pada periode - pembeda utama vs Cicle: kinerja tugas
    *  internal disandingkan dengan hasil ops nyata (tiket, lead, collection, canvassing). */
   async getOpsStatsForUsers(fromIso: string, toIso: string): Promise<Map<number, {
     ticketsResolved: number; leadsWon: number; collectionsClosed: number; canvassingReports: number;
@@ -3846,7 +3846,7 @@ export class DatabaseStorage implements IStorage {
     return map;
   }
 
-  // ── Teamspace Fase 3: Cheers (FR-1203) ──
+  // -- Teamspace Fase 3: Cheers (FR-1203) --
 
   async createCheer(fromUserId: number, toUserId: number, message: string, cardId?: number | null): Promise<Cheer> {
     const mitraId = getMitraId();
@@ -3862,7 +3862,7 @@ export class DatabaseStorage implements IStorage {
   // ==================== SDM / HRD Fase 1 (v5.1) ====================
 
   /** Registry karyawan: akun user DALAM mitra aktif + flag isEmployee.
-   *  QA BUG1: users tak punya kolom mitra_id — WAJIB filter via user_mitras
+   *  QA BUG1: users tak punya kolom mitra_id - WAJIB filter via user_mitras
    *  supaya HR tidak melihat staf tenant lain (cross-tenant PII leak). */
   async listEmployees(): Promise<Array<{ id: number; name: string; username: string; isActive: number | null; isEmployee: number; position: string | null; department: string | null; employeeId: string | null }>> {
     const inMitra = await this.getUserIdsInMitra(getMitraId());
@@ -3880,7 +3880,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(users).set({ isEmployee: isEmployee ? 1 : 0 }).where(eq(users.id, userId));
   }
 
-  /** Upsert kehadiran per user+tanggal (idempotent — HR bisa koreksi). */
+  /** Upsert kehadiran per user+tanggal (idempotent - HR bisa koreksi). */
   async upsertAttendance(rec: { userId: number; date: string; status: string; checkIn?: string | null; checkOut?: string | null; note?: string | null; createdBy: number }): Promise<void> {
     const mitraId = getMitraId();
     await this.pool.execute(
@@ -3941,7 +3941,7 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  // ── PRD-HR HR-1a: presensi ESS, shift, lokasi kantor, libur, saldo cuti ──
+  // -- PRD-HR HR-1a: presensi ESS, shift, lokasi kantor, libur, saldo cuti --
 
   async createAttendanceEvent(ev: { userId: number; date: string; kind: "in" | "out"; at: string; lat?: number | null; lng?: number | null; selfiePath?: string | null; ip?: string | null; withinRadius: boolean; approvalStatus: "approved" | "pending" }): Promise<HrAttendanceEvent> {
     const mitraId = getMitraId();
@@ -4067,7 +4067,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // ── HR-1b: profil karyawan, org unit, jabatan, lembur ──
+  // -- HR-1b: profil karyawan, org unit, jabatan, lembur --
 
   async getEmployeeProfile(userId: number): Promise<HrEmployeeProfile | undefined> {
     const mitraId = getMitraId();
@@ -4076,7 +4076,7 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  /** Upsert profil karyawan (wizard 3 langkah — partial patch aman). */
+  /** Upsert profil karyawan (wizard 3 langkah - partial patch aman). */
   async saveEmployeeProfile(userId: number, patch: Partial<HrEmployeeProfile>, updatedBy: number): Promise<HrEmployeeProfile> {
     const mitraId = getMitraId();
     const existing = await this.getEmployeeProfile(userId);
@@ -4163,7 +4163,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(hrLeaves.id, id), eq(hrLeaves.mitraId, mitraId)));
   }
 
-  // ── HR-2: komponen gaji + slip ──
+  // -- HR-2: komponen gaji + slip --
   async getSalaryComponent(userId: number): Promise<HrSalaryComponent | undefined> {
     const mitraId = getMitraId();
     const [row] = await this.db.select().from(hrSalaryComponents)
@@ -4190,7 +4190,7 @@ export class DatabaseStorage implements IStorage {
   async upsertPayslip(slip: { period: string; userId: number; detail: string; gross: number; totalAllowance: number; totalDeduction: number; takeHomePay: number; generatedBy: number }): Promise<void> {
     const mitraId = getMitraId();
     await this.pool.execute(
-      // QA H3: slip yang SUDAH dibayar bersifat immutable — regenerate periode
+      // QA H3: slip yang SUDAH dibayar bersifat immutable - regenerate periode
       // tidak menimpa angka/rincian slip paid (jaga integritas historis + cegah
       // corruption reimburse/kasbon). Hanya slip 'ready' yang diperbarui.
       `INSERT INTO hr_payslips (mitra_id, period, user_id, detail, gross, total_allowance, total_deduction, take_home_pay, status, generated_by, generated_at)
@@ -4222,14 +4222,14 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
   }
 
-  /** QA H2: tandai efek uang (kasbon/reimburse) sudah diterapkan — sekali seumur slip. */
+  /** QA H2: tandai efek uang (kasbon/reimburse) sudah diterapkan - sekali seumur slip. */
   async markPayslipEffectsApplied(id: number): Promise<void> {
     const mitraId = getMitraId();
     await this.db.update(hrPayslips).set({ effectsApplied: 1 })
       .where(and(eq(hrPayslips.id, id), eq(hrPayslips.mitraId, mitraId)));
   }
 
-  // ── FR-HR-7xx: kasbon + reimburse ──
+  // -- FR-HR-7xx: kasbon + reimburse --
   async createCashAdvance(rec: { userId: number; amount: number; months: number; reason?: string | null }): Promise<HrCashAdvance> {
     const mitraId = getMitraId();
     const monthly = Math.ceil(rec.amount / Math.max(1, rec.months));
@@ -4302,7 +4302,7 @@ export class DatabaseStorage implements IStorage {
   async addLocationPing(userId: number, lat: number, lng: number, accuracy?: number | null): Promise<void> {
     const mitraId = getMitraId();
     await this.db.insert(hrLocationPings).values({ mitraId, userId, at: new Date().toISOString(), lat, lng, accuracy: accuracy ?? null });
-    // Retensi 30 hari (NFR-HR-002) — bersihkan berkala secara murah (1% peluang per ping).
+    // Retensi 30 hari (NFR-HR-002) - bersihkan berkala secara murah (1% peluang per ping).
     if (Math.floor(lat * 1e6) % 100 === 0) {
       const cutoff = new Date(Date.now() - 30 * 86400_000).toISOString();
       await this.pool.execute(`DELETE FROM hr_location_pings WHERE mitra_id = ? AND at < ?`, [mitraId, cutoff]);
@@ -4359,7 +4359,7 @@ export class DatabaseStorage implements IStorage {
     const profiles = await this.db.select().from(hrEmployeeProfiles).where(eq(hrEmployeeProfiles.mitraId, mitraId));
     const tally = (vals: Array<string | null | undefined>) => {
       const m = new Map<string, number>();
-      for (const v of vals) { const k = (v && String(v).trim()) || "–"; m.set(k, (m.get(k) ?? 0) + 1); }
+      for (const v of vals) { const k = (v && String(v).trim()) || "-"; m.set(k, (m.get(k) ?? 0) + 1); }
       return [...m.entries()].map(([k, c]) => ({ k, c })).sort((a, b) => b.c - a.c);
     };
     const forEmp = profiles.filter((p) => empIds.has(p.userId));
@@ -4483,14 +4483,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** WORKER §14.4: upsert snapshot KPI Teamspace hari ini untuk SEMUA mitra ber-tim.
-   *  Dipanggil berkala — tulisan terakhir hari itu = keadaan end-of-day. */
+   *  Dipanggil berkala - tulisan terakhir hari itu = keadaan end-of-day. */
   async writeTeamspaceKpiSnapshots(): Promise<void> {
     const [mitraRows]: any = await this.pool.execute(`SELECT DISTINCT mitra_id AS mitraId FROM teams WHERE archived_at IS NULL`);
     const today = (() => { const d = new Date(); const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; })();
     const nowIso = new Date().toISOString();
     for (const row of mitraRows as any[]) {
       const mitraId = Number(row.mitraId);
-      // Ringkasan tugas seluruh tim mitra ini (query langsung — di luar tenant ctx).
+      // Ringkasan tugas seluruh tim mitra ini (query langsung - di luar tenant ctx).
       const [pipeRows]: any = await this.pool.execute(
         `SELECT task_pipeline_id AS pid FROM teams WHERE mitra_id = ? AND archived_at IS NULL AND task_pipeline_id IS NOT NULL`, [mitraId]);
       const pids = (pipeRows as any[]).map((r) => Number(r.pid));
@@ -4528,7 +4528,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // ── Penerima konten Rahasia (polymorphic, FR-1404) ──
+  // -- Penerima konten Rahasia (polymorphic, FR-1404) --
 
   async setContentRecipients(ownerType: string, ownerId: number, userIds: number[]): Promise<void> {
     await this.db.delete(contentRecipients)
@@ -4729,7 +4729,7 @@ export class DatabaseStorage implements IStorage {
     const pipe = await this.getPipeline(pipelineId);
     if (!pipe) return false;
     const eff = await this.getUserEffectivePermissionsAtMitra(userId, mitraId);
-    // "Admin" (per-mitra, isSystem) ikut full-access — mirror isPipelineAdmin di routes.
+    // "Admin" (per-mitra, isSystem) ikut full-access - mirror isPipelineAdmin di routes.
     if ((eff.roleName === "System-Admin" || eff.roleName === "Admin" || eff.roleName === "admin (legacy)") && eff.isSystem) return true;
     const restricted = (pipe as any).restricted === 1;
     if (!restricted) return ((eff.perms as any)["pipelines"] ?? "none") !== "none";
@@ -4755,7 +4755,7 @@ export class DatabaseStorage implements IStorage {
     try { const g = JSON.parse((row as any).cardFilter); return Array.isArray(g) && g.length ? g : null; } catch { return null; }
   }
 
-  /** All field values (not just showOnCard) keyed by cardId — for row-level filtering on the board. */
+  /** All field values (not just showOnCard) keyed by cardId - for row-level filtering on the board. */
   async getAllCardValuesForPipeline(pipelineId: number): Promise<Map<number, Record<number, string>>> {
     const mitraId = getMitraId();
     const fields = await this.db.select({ id: pipelineFields.id }).from(pipelineFields)
@@ -4826,7 +4826,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(leadCardLinks.mitraId, mitraId), eq(leadCardLinks.leadId, leadId)));
   }
 
-  /** Link untuk satu CARD (tenant-scoped) — null kalau kartu belum tertaut lead. */
+  /** Link untuk satu CARD (tenant-scoped) - null kalau kartu belum tertaut lead. */
   async getLeadCardLinkByCard(cardId: number): Promise<LeadCardLink | null> {
     const mitraId = getMitraId();
     const rows = await this.db.select().from(leadCardLinks)
@@ -4842,7 +4842,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  /** Card id (di pipeline tsb) yang punya value tertentu pada field tertentu — untuk dedup by phone. */
+  /** Card id (di pipeline tsb) yang punya value tertentu pada field tertentu - untuk dedup by phone. */
   async findCardIdsByFieldValue(pipelineId: number, fieldId: number, value: string): Promise<number[]> {
     const mitraId = getMitraId();
     const rows: any = (await this.db.execute(sql`
@@ -5027,7 +5027,7 @@ export class DatabaseStorage implements IStorage {
     return rows[0] ?? null;
   }
 
-  /** All fire rows for a rule, keyed by sourceCardId — batches the per-card getRuleFire in the
+  /** All fire rows for a rule, keyed by sourceCardId - batches the per-card getRuleFire in the
    *  time-trigger sweep (one query per rule instead of one per card). */
   async getRuleFiresForRule(ruleId: number): Promise<Map<number, PipelineRuleFire>> {
     const mitraId = getMitraId();
@@ -5056,7 +5056,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  /** ALL enabled time-trigger rules across every mitra (tenant-agnostic — caller scopes per row). */
+  /** ALL enabled time-trigger rules across every mitra (tenant-agnostic - caller scopes per row). */
   async listAllTimeRules(): Promise<PipelineRule[]> {
     return this.db.select().from(pipelineRules)
       .where(and(eq(pipelineRules.triggerType, "time"), eq(pipelineRules.enabled, 1)))
@@ -5087,7 +5087,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Snapshot a pipeline's full structure (stages + fields + rules+actions+fieldMaps) into a template.
-   *  fieldMaps are loaded per action using getActionFieldMaps(actionId) — the existing per-action reader. */
+   *  fieldMaps are loaded per action using getActionFieldMaps(actionId) - the existing per-action reader. */
   async createTemplateFromPipeline(pipelineId: number, data: { name: string; description?: string | null }, userId: number): Promise<PipelineTemplate> {
     const mitraId = getMitraId();
     const [pipe] = await this.db.select().from(pipelines).where(and(eq(pipelines.id, pipelineId), eq(pipelines.mitraId, mitraId)));
@@ -5237,7 +5237,7 @@ export class DatabaseStorage implements IStorage {
         );
       }
       // Update collections.assigned_to ke primary (= first/earliest assignee setelah update)
-      // Pakai MAX(assigned_at)/MIN logic — ambil yang earliest assigned_at sebagai primary
+      // Pakai MAX(assigned_at)/MIN logic - ambil yang earliest assigned_at sebagai primary
       const [primaryRows]: any = await conn.execute(
         `SELECT user_id FROM collection_assignees WHERE collection_id = ? AND mitra_id = ? ORDER BY assigned_at ASC LIMIT 1`,
         [collectionId, mitraId],
@@ -5255,7 +5255,7 @@ export class DatabaseStorage implements IStorage {
       conn.release();
     }
 
-    // Activity log (outside tx — fire-and-forget)
+    // Activity log (outside tx - fire-and-forget)
     await this.createCollectionActivity({
       collectionId,
       userId: byUserId,
@@ -5407,7 +5407,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== CUSTOMER PORTAL (v4.1.3) ====================
 
-  // TODO Phase G: caller must pass mitraId from URL slug — defaults to 1 for legacy compat
+  // TODO Phase G: caller must pass mitraId from URL slug - defaults to 1 for legacy compat
   async getCustomerByBillingCustomerId(customerIdStr: string, mitraId: number = 1): Promise<Customer | undefined> {
     const [row] = await this.db.select().from(customers).where(and(eq(customers.customerId, customerIdStr), eq(customers.mitraId, mitraId))).limit(1);
     return row;
@@ -5511,7 +5511,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async countOntRestartsLastHour(customerId: number): Promise<number> {
-    // auditLogs is a global table (no mitra_id) — no mitra filter here
+    // auditLogs is a global table (no mitra_id) - no mitra filter here
     const since = new Date(Date.now() - 3600_000).toISOString();
     const rows = await this.db
       .select({ count: sql<number>`count(*)` })
@@ -5524,7 +5524,7 @@ export class DatabaseStorage implements IStorage {
     return Number(rows[0]?.count ?? 0);
   }
 
-  // ==================== LOYALTY — JABNET SAHABAT (v4.1.9) ====================
+  // ==================== LOYALTY - JABNET SAHABAT (v4.1.9) ====================
   // Program resmi: 3 tier + 5 level (Perunggu/Perak/Emas/Platinum/Berlian)
   // Reward per referral sukses default: Voucher Indomaret Rp 50.000
   // Milestone bonus saat naik level.
@@ -5627,7 +5627,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.insert(customerLoyalty).values({
       customerId,
       mitraId,
-      referralCode: sahabatCode,         // legacy field — simpan sama
+      referralCode: sahabatCode,         // legacy field - simpan sama
       sahabatCode,
       sahabatTier: "pelanggan",
       sahabatLevel: "new",
@@ -5648,10 +5648,10 @@ export class DatabaseStorage implements IStorage {
     const { badge, months } = this.computeTenureBadge((customer as any).installDate);
     await this.db.update(customerLoyalty)
       .set({ tenureBadge: badge, tenureMonths: months, updatedAt: new Date().toISOString() })
-      .where(eq(customerLoyalty.customerId, customerId));  // customer_loyalty PK is customerId — no mitraId filter needed (unique per customer)
+      .where(eq(customerLoyalty.customerId, customerId));  // customer_loyalty PK is customerId - no mitraId filter needed (unique per customer)
   }
 
-  /** Evaluasi payment untuk customer — update streak + generate discount kalau milestone + kirim MPWA.
+  /** Evaluasi payment untuk customer - update streak + generate discount kalau milestone + kirim MPWA.
    *  Dipanggil dari BillingSyncWorker saat ada transition "payment_received".
    */
   async evaluatePaymentForLoyalty(
@@ -5662,7 +5662,7 @@ export class DatabaseStorage implements IStorage {
     const mitraId = getMitraId();
     const loyalty = await this.getOrCreateCustomerLoyalty(customerId);
 
-    // Guard idempotency — kalau paymentDate sudah diproses, skip
+    // Guard idempotency - kalau paymentDate sudah diproses, skip
     if (loyalty.lastPaymentEvaluatedDate === paymentDate) {
       return { streakChanged: false, newStreak: loyalty.onTimeStreak ?? 0 };
     }
@@ -5703,8 +5703,8 @@ export class DatabaseStorage implements IStorage {
     const milestones: Record<number, { value: number; desc: string; source: string }> = {
       3: { value: 5, desc: "Hadiah streak 3 bulan bayar tepat waktu", source: "streak_3" },
       6: { value: 10, desc: "Hadiah streak 6 bulan bayar tepat waktu", source: "streak_6" },
-      12: { value: 50, desc: "🎉 Anniversary! 12 bulan bayar tepat waktu", source: "streak_12" },
-      24: { value: 100, desc: "🏆 Pelanggan Setia! 24 bulan tanpa telat — GRATIS 1 bulan", source: "streak_24" },
+      12: { value: 50, desc: " Anniversary! 12 bulan bayar tepat waktu", source: "streak_12" },
+      24: { value: 100, desc: " Pelanggan Setia! 24 bulan tanpa telat - GRATIS 1 bulan", source: "streak_24" },
     };
     if (milestones[newStreak]) {
       const m = milestones[newStreak];
@@ -5744,7 +5744,7 @@ export class DatabaseStorage implements IStorage {
     return { streakChanged: true, newStreak, discountGenerated, milestoneKey };
   }
 
-  /** Refresh tenure months (legacy display) — tetap di-panggil BillingSyncWorker. */
+  /** Refresh tenure months (legacy display) - tetap di-panggil BillingSyncWorker. */
   async refreshTenureBadgeWithUpgradeCheck(customerId: number): Promise<{
     upgraded: boolean;
     fromBadge: string;
@@ -5753,7 +5753,7 @@ export class DatabaseStorage implements IStorage {
   }> {
     const customer = await this.getCustomer(customerId);
     if (!customer) return { upgraded: false, fromBadge: "tetangga", toBadge: "tetangga", months: 0 };
-    // customer_loyalty.customerId is PK — no mitra filter needed on select
+    // customer_loyalty.customerId is PK - no mitra filter needed on select
     const [loyalty] = await this.db.select().from(customerLoyalty).where(eq(customerLoyalty.customerId, customerId));
     const fromBadge = loyalty?.tenureBadge ?? "tetangga";
     const { badge, months } = this.computeTenureBadge((customer as any).installDate);
@@ -5815,31 +5815,31 @@ export class DatabaseStorage implements IStorage {
           source: "sahabat_perunggu",
           type: "voucher_indomaret",
           value: 200_000,
-          desc: "🥉 Naik level Perunggu (5 referral sukses) — Voucher Indomaret Rp 200.000 + Speed Boost 2x/minggu",
+          desc: " Naik level Perunggu (5 referral sukses) - Voucher Indomaret Rp 200.000 + Speed Boost 2x/minggu",
         },
         perak: {
           source: "sahabat_perak",
           type: "free_days",
           value: 365,
-          desc: "🥈 Naik level Perak (10 referral sukses) — Internet GRATIS 12 bulan + Sertifikat Mitra",
+          desc: " Naik level Perak (10 referral sukses) - Internet GRATIS 12 bulan + Sertifikat Mitra",
         },
         emas: {
           source: "sahabat_emas",
           type: "free_days",
           value: 730,
-          desc: "🥇 Naik level Emas (20 referral sukses) — Internet GRATIS 24 bulan + Upgrade speed 1 tier permanen",
+          desc: " Naik level Emas (20 referral sukses) - Internet GRATIS 24 bulan + Upgrade speed 1 tier permanen",
         },
         platinum: {
           source: "sahabat_platinum",
           type: "cash_bonus",
           value: 2_000_000,
-          desc: "💎 Naik level Platinum (30 referral sukses) — Internet GRATIS 36 bulan + Komisi cash Rp 2jt + Status Ambassador",
+          desc: " Naik level Platinum (30 referral sukses) - Internet GRATIS 36 bulan + Komisi cash Rp 2jt + Status Ambassador",
         },
         berlian: {
           source: "sahabat_berlian",
           type: "cash_bonus",
           value: 5_000_000,
-          desc: "👑 Naik level Berlian (50 referral sukses) — Internet GRATIS 60 bulan + Komisi cash Rp 5jt + Trainer program",
+          desc: " Naik level Berlian (50 referral sukses) - Internet GRATIS 60 bulan + Komisi cash Rp 5jt + Trainer program",
         },
       };
       const reward = rewards[toLevel];
@@ -5865,7 +5865,7 @@ export class DatabaseStorage implements IStorage {
           const milestoneInsertId = Number((milestoneInsertResult[0] as any).insertId);
           const [milestoneRow] = await this.db.select().from(customerDiscounts).where(eq(customerDiscounts.id, milestoneInsertId));
           milestoneDiscount = milestoneRow!;
-          console.log(`[Sahabat] ✓ Customer #${customerId} naik level ${fromLevel} → ${toLevel} (${count} ref) — milestone bonus generated`);
+          console.log(`[Sahabat] ✓ Customer #${customerId} naik level ${fromLevel} → ${toLevel} (${count} ref) - milestone bonus generated`);
         }
       }
     }
@@ -5873,7 +5873,7 @@ export class DatabaseStorage implements IStorage {
     return { upgraded, fromLevel, toLevel, count, milestoneDiscount };
   }
 
-  /** Atomic points adjust dengan reason — block kalau result < 0.
+  /** Atomic points adjust dengan reason - block kalau result < 0.
    *  Tulis row di point_transactions source='manual_adjust'. */
   async adjustSahabatPoints(
     customerId: number,
@@ -5940,7 +5940,7 @@ export class DatabaseStorage implements IStorage {
     return { from, to: level };
   }
 
-  /** Rename sahabatCode — validate regex + unique. Update referralCode legacy alias same value. */
+  /** Rename sahabatCode - validate regex + unique. Update referralCode legacy alias same value. */
   async setSahabatCode(
     customerId: number,
     newCode: string,
@@ -6010,7 +6010,7 @@ export class DatabaseStorage implements IStorage {
       .limit(options?.limit ?? 50);
   }
 
-  /** Edit discount — hanya status 'pending' yang boleh edit */
+  /** Edit discount - hanya status 'pending' yang boleh edit */
   async updateCustomerDiscount(
     id: number,
     patch: {
@@ -6038,7 +6038,7 @@ export class DatabaseStorage implements IStorage {
     return updated!;
   }
 
-  /** Soft delete discount — block 'applied' (uang sudah keluar) */
+  /** Soft delete discount - block 'applied' (uang sudah keluar) */
   async softDeleteCustomerDiscount(id: number): Promise<{ statusAtDelete: string }> {
     const mitraId = getMitraId();
     const [existing] = await this.db.select().from(customerDiscounts)
@@ -6132,7 +6132,7 @@ export class DatabaseStorage implements IStorage {
     return linked;
   }
 
-  /** Reward referral saat referee bayar pertama kali — SESUAI PROGRAM JABNET SAHABAT:
+  /** Reward referral saat referee bayar pertama kali - SESUAI PROGRAM JABNET SAHABAT:
    *    - Referrer: Voucher Indomaret Rp 50.000 per referral sukses (default option)
    *    - Referee: Welcome bonus 7 hari gratis
    *    - Increment totalSuccessfulReferrals referrer + trigger level refresh
@@ -6157,11 +6157,11 @@ export class DatabaseStorage implements IStorage {
     const expiresAt = new Date(Date.now() + 90 * 86400_000).toISOString();
 
     for (const r of rows) {
-      // Frozen guard — skip reward issuance kalau referrer freeze (admin manual action)
+      // Frozen guard - skip reward issuance kalau referrer freeze (admin manual action)
       const [referrerCheck] = await this.db.select().from(customerLoyalty)
         .where(eq(customerLoyalty.customerId, r.referrerCustomerId));
       if (referrerCheck && Number((referrerCheck as any).isFrozen ?? 0) === 1) {
-        console.log(`[Sahabat] ⏸ Referral #${r.id} skip reward — referrer #${r.referrerCustomerId} is frozen: ${(referrerCheck as any).frozenReason ?? "no reason"}`);
+        console.log(`[Sahabat] ⏸ Referral #${r.id} skip reward - referrer #${r.referrerCustomerId} is frozen: ${(referrerCheck as any).frozenReason ?? "no reason"}`);
         continue;
       }
 
@@ -6173,7 +6173,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(customerReferrals.id, r.id));
 
-      // 1. Referrer — Voucher Indomaret Rp 50.000 per referral sukses (program Sahabat default)
+      // 1. Referrer - Voucher Indomaret Rp 50.000 per referral sukses (program Sahabat default)
       try {
         await this.db.insert(customerDiscounts).values({
           customerId: r.referrerCustomerId,
@@ -6181,7 +6181,7 @@ export class DatabaseStorage implements IStorage {
           source: "ref_voucher_50k",
           discountType: "voucher_indomaret",
           discountValue: 50_000,
-          description: `Voucher Indomaret Rp 50.000 — referral ${r.refereeName || "tetangga"} sukses aktif`,
+          description: `Voucher Indomaret Rp 50.000 - referral ${r.refereeName || "tetangga"} sukses aktif`,
           eligibleForPeriod: period,
           status: "pending",
           expiresAt,
@@ -6189,7 +6189,7 @@ export class DatabaseStorage implements IStorage {
         } as any);
       } catch (e: any) { console.warn("[Sahabat] referrer voucher error:", e.message); }
 
-      // 2. Referee — Welcome bonus gratis 7 hari
+      // 2. Referee - Welcome bonus gratis 7 hari
       try {
         await this.db.insert(customerDiscounts).values({
           customerId,
@@ -6197,7 +6197,7 @@ export class DatabaseStorage implements IStorage {
           source: "referral_referee_welcome",
           discountType: "free_days",
           discountValue: 7,
-          description: `Welcome bonus — gratis 7 hari (daftar via referral Sahabat)`,
+          description: `Welcome bonus - gratis 7 hari (daftar via referral Sahabat)`,
           eligibleForPeriod: period,
           status: "pending",
           expiresAt,
@@ -6262,7 +6262,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  /** Edit manual referral entry — block kalau status sudah 'rewarded' */
+  /** Edit manual referral entry - block kalau status sudah 'rewarded' */
   async updateCustomerReferral(
     id: number,
     patch: { refereeName?: string | null; refereePhone?: string | null; notes?: string | null },
@@ -6284,7 +6284,7 @@ export class DatabaseStorage implements IStorage {
     return updated!;
   }
 
-  /** Soft delete manual referral — block kalau status sudah 'rewarded' */
+  /** Soft delete manual referral - block kalau status sudah 'rewarded' */
   async softDeleteCustomerReferral(id: number): Promise<{ statusAtDelete: string }> {
     const mitraId = getMitraId();
     const [existing] = await this.db.select().from(customerReferrals)
@@ -6300,7 +6300,7 @@ export class DatabaseStorage implements IStorage {
 
   // ====== LOYALTY ADMIN METHODS (staff dashboard) ======
 
-  /** Dashboard summary untuk staff — breakdown tier/level Sahabat + pending items */
+  /** Dashboard summary untuk staff - breakdown tier/level Sahabat + pending items */
   async getLoyaltyAdminSummary(): Promise<any> {
     const mitraId = getMitraId();
     const rows: any = ((await this.db.execute(sql`
@@ -6402,7 +6402,7 @@ export class DatabaseStorage implements IStorage {
     return (rows ?? []).map((r: any) => ({
       id: Number(r.id),
       customerId: Number(r.customerId),
-      customerName: r.customerName ?? "—",
+      customerName: r.customerName ?? "-",
       customerBillingId: r.customerBillingId ?? null,
       customerPhone: r.customerPhone ?? null,
       billingPrice: r.billingPrice != null ? Number(r.billingPrice) : null,
@@ -6472,7 +6472,7 @@ export class DatabaseStorage implements IStorage {
     const update: any = { sahabatTier: tier, updatedAt: new Date().toISOString() };
     // Kalau tier dinaikkan jadi rtrw atau desa dan belum ada contractSignedAt, set sekarang
     if ((tier === "rtrw" || tier === "desa")) {
-      // customer_loyalty PK is customerId — unique, no mitra filter needed
+      // customer_loyalty PK is customerId - unique, no mitra filter needed
       const [existing] = await this.db.select().from(customerLoyalty).where(eq(customerLoyalty.customerId, customerId));
       if (existing && !(existing as any).contractSignedAt) {
         update.contractSignedAt = new Date().toISOString();
@@ -6590,7 +6590,7 @@ export class DatabaseStorage implements IStorage {
     const byType: Record<string, { count: number; total: number }> = {};
     let issuedCount = 0, appliedCount = 0, pendingCount = 0;
     let issuedTotal = 0, appliedTotal = 0, pendingTotal = 0;
-    // Ambil detail untuk nilai total — butuh full rows
+    // Ambil detail untuk nilai total - butuh full rows
     const details: any = ((await this.db.execute(sql`
       SELECT discount_type, discount_value, status
       FROM customer_discounts
@@ -6640,7 +6640,7 @@ export class DatabaseStorage implements IStorage {
       registeredToRewardedPct: registered > 0 ? Math.round((rewarded / registered) * 100) : 0,
       overallConversionPct: invited > 0 ? Math.round((rewarded / invited) * 100) : 0,
     };
-    // Cohort by invite month — 6 last months
+    // Cohort by invite month - 6 last months
     const cohortRows: any = ((await this.db.execute(sql`
       SELECT
         substr(created_at, 1, 7) as month,
@@ -6702,7 +6702,7 @@ export class DatabaseStorage implements IStorage {
     for (const r of (rows1 ?? [])) {
       flags.push({
         referralId: r.refId,
-        referrerName: r.referrerName ?? "—",
+        referrerName: r.referrerName ?? "-",
         refereeName: r.refName,
         refereePhone: r.refPhone,
         reason: "HP referee sudah jadi customer existing",
@@ -6724,7 +6724,7 @@ export class DatabaseStorage implements IStorage {
     for (const r of (rows2 ?? [])) {
       flags.push({
         referralId: r.refId,
-        referrerName: r.referrerName ?? "—",
+        referrerName: r.referrerName ?? "-",
         refereeName: r.refName,
         refereePhone: r.refPhone,
         reason: "HP referee sama dengan HP referrer",
@@ -6745,7 +6745,7 @@ export class DatabaseStorage implements IStorage {
     for (const r of (rows3 ?? [])) {
       flags.push({
         referralId: r.refA,
-        referrerName: r.nameA ?? "—",
+        referrerName: r.nameA ?? "-",
         refereeName: r.nameB,
         refereePhone: null,
         reason: "Referral circle (A↔B saling refer)",
@@ -6756,7 +6756,7 @@ export class DatabaseStorage implements IStorage {
     return flags;
   }
 
-  /** Leaderboard Sahabat — urut by total referral sukses + streak sebagai tie-break */
+  /** Leaderboard Sahabat - urut by total referral sukses + streak sebagai tie-break */
   async getLoyaltyLeaderboard(limit: number = 20, sortBy: "referrals" | "streak" = "referrals"): Promise<any[]> {
     const mitraId = getMitraId();
     const orderClause = sortBy === "streak"
@@ -6787,7 +6787,7 @@ export class DatabaseStorage implements IStorage {
     `))[0] as any);
     return (rows ?? []).map((r: any) => ({
       customerId: Number(r.customerId),
-      customerName: r.customerName ?? "—",
+      customerName: r.customerName ?? "-",
       customerBillingId: r.customerBillingId ?? null,
       customerPhone: r.customerPhone ?? null,
       billingPrice: r.billingPrice != null ? Number(r.billingPrice) : null,
@@ -6845,7 +6845,7 @@ export class DatabaseStorage implements IStorage {
     return (rows ?? []).map((r: any) => ({
       id: Number(r.id),
       referrerCustomerId: Number(r.referrerCustomerId),
-      referrerName: r.referrerName ?? "—",
+      referrerName: r.referrerName ?? "-",
       referrerBillingId: r.referrerBillingId ?? null,
       referralCode: String(r.referralCode),
       refereePhone: r.refereePhone ?? null,
@@ -6865,9 +6865,9 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  /** Admin manual adjust streak — untuk dispute / correction */
+  /** Admin manual adjust streak - untuk dispute / correction */
   async adjustLoyaltyStreak(customerId: number, newStreak: number, reason: string, staffUserId: number): Promise<void> {
-    // customer_loyalty PK is customerId — WHERE on customerId is sufficient
+    // customer_loyalty PK is customerId - WHERE on customerId is sufficient
     await this.db.update(customerLoyalty)
       .set({ onTimeStreak: newStreak, updatedAt: new Date().toISOString() })
       .where(eq(customerLoyalty.customerId, customerId));
@@ -7052,9 +7052,9 @@ export class DatabaseStorage implements IStorage {
     return out;
   }
 
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
   //  POINTS & SPEED-ON-DEMAND (v4.2.2)
-  // ════════════════════════════════════════════════════════════
+  // ============================================================
 
   /**
    * Parse customer_id format MMYYNNNNN (5 digit month-year + 5 digit sequence)
@@ -7075,7 +7075,7 @@ export class DatabaseStorage implements IStorage {
     const fullYear = 2000 + yy;
     const joinDate = new Date(fullYear, mm - 1, 1);
     if (isNaN(joinDate.getTime())) return null;
-    if (joinDate.getTime() > Date.now() + 86400_000) return null; // future date — invalid
+    if (joinDate.getTime() > Date.now() + 86400_000) return null; // future date - invalid
     const now = new Date();
     const tenureMonths = (now.getFullYear() - fullYear) * 12 + (now.getMonth() - (mm - 1));
     return { joinDate: joinDate.toISOString(), tenureMonths: Math.max(0, tenureMonths) };
@@ -7133,7 +7133,7 @@ export class DatabaseStorage implements IStorage {
 
       if (grantedSet.has(c.id)) { skipped++; continue; }
 
-      // Earn idempotent — pakai tenureMonths sebagai refId untuk uniqueness
+      // Earn idempotent - pakai tenureMonths sebagai refId untuk uniqueness
       const tx = await this.earnPoints({
         customerId: c.id,
         amount: points,
@@ -7164,7 +7164,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Preview backfill (no insert) — buat admin lihat dulu sebelum execute.
+   * Preview backfill (no insert) - buat admin lihat dulu sebelum execute.
    */
   async previewInitialLoyaltyBackfill(): Promise<{
     eligibleCount: number;
@@ -7179,7 +7179,7 @@ export class DatabaseStorage implements IStorage {
     const byTier: Record<string, { count: number; pointsPerCustomer: number }> = {};
     const samples: any[] = [];
 
-    // Batched idempotency lookup — 1 query upfront instead of N
+    // Batched idempotency lookup - 1 query upfront instead of N
     const grantedRows = await this.db
       .select({ customerId: pointTransactions.customerId })
       .from(pointTransactions)
@@ -7226,7 +7226,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Atomic earn — increment balance + lifetimeEarned + insert transaction.
+   * Atomic earn - increment balance + lifetimeEarned + insert transaction.
    * Idempotent kalau dipanggil dengan refId yg sama (di-skip kalau sudah ada).
    */
   async earnPoints(data: {
@@ -7273,7 +7273,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Atomic redeem — deduct balance + lifetimeRedeemed + insert transaction + create redemption row.
+   * Atomic redeem - deduct balance + lifetimeRedeemed + insert transaction + create redemption row.
    * Throw kalau balance kurang.
    */
   async redeemPoints(data: {
@@ -7327,7 +7327,7 @@ export class DatabaseStorage implements IStorage {
     return redemption;
   }
 
-  /** Refund redemption — kembalikan points + tutup redemption sebagai rejected/cancelled. */
+  /** Refund redemption - kembalikan points + tutup redemption sebagai rejected/cancelled. */
   async refundRedemption(redemptionId: number, reason: string, byUserId: number, status: "rejected" | "cancelled"): Promise<PointRedemption> {
     const mitraId = getMitraId();
     const [r] = await this.db.select().from(pointRedemptions).where(and(eq(pointRedemptions.id, redemptionId), eq(pointRedemptions.mitraId, mitraId)));
@@ -7353,7 +7353,7 @@ export class DatabaseStorage implements IStorage {
       source: "refund_redemption",
       refId: r.id,
       balanceAfter: newBal,
-      notes: `Refund — ${status === "rejected" ? "rejected" : "cancelled"}: ${reason}`,
+      notes: `Refund - ${status === "rejected" ? "rejected" : "cancelled"}: ${reason}`,
       createdBy: byUserId,
       createdAt: now,
     } as any);
@@ -7369,7 +7369,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  /** Edit redemption — hanya status 'pending' (sebelum verify → MikroTik apply) */
+  /** Edit redemption - hanya status 'pending' (sebelum verify → MikroTik apply) */
   async updatePointRedemption(
     id: number,
     patch: { rewardKey?: string; rewardLabel?: string; speedMultiplier?: number; durationHours?: number; pointsCost?: number; notes?: string | null },
@@ -7394,7 +7394,7 @@ export class DatabaseStorage implements IStorage {
     return updated!;
   }
 
-  /** Soft delete redemption — block status 'active'.
+  /** Soft delete redemption - block status 'active'.
    *  Pending → auto-refund poin sebelum soft-delete.
    *  Cancelled/expired/rejected → langsung soft-delete (sudah di-refund saat lifecycle action). */
   async softDeletePointRedemption(
@@ -7406,7 +7406,7 @@ export class DatabaseStorage implements IStorage {
     const [existing] = await this.db.select().from(pointRedemptions)
       .where(and(eq(pointRedemptions.id, id), eq(pointRedemptions.mitraId, mitraId)));
     if (!existing) throw new Error("Redemption tidak ditemukan");
-    if (existing.status === "active") throw new Error("Redemption 'active' tidak bisa dihapus — cancel dulu untuk revert MikroTik");
+    if (existing.status === "active") throw new Error("Redemption 'active' tidak bisa dihapus - cancel dulu untuk revert MikroTik");
 
     let refunded = false;
     if (existing.status === "pending") {
@@ -7444,7 +7444,7 @@ export class DatabaseStorage implements IStorage {
     return { statusAtDelete: existing.status ?? "pending", refunded };
   }
 
-  /** Verify (activate) pending redemption — set status active + startAt + endAt + audit. */
+  /** Verify (activate) pending redemption - set status active + startAt + endAt + audit. */
   async verifyRedemption(redemptionId: number, byUserId: number, opts?: { notes?: string; originalPppProfile?: string; boostedPppProfile?: string }): Promise<PointRedemption> {
     const mitraId = getMitraId();
     const [r] = await this.db.select().from(pointRedemptions).where(and(eq(pointRedemptions.id, redemptionId), eq(pointRedemptions.mitraId, mitraId)));
@@ -7469,7 +7469,7 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Get redemptions yang sudah lewat endAt dan masih active (perlu di-revert).
-   * READ-ONLY — tidak mutate. Caller bertanggung-jawab panggil markRevertedAndExpired() per row
+   * READ-ONLY - tidak mutate. Caller bertanggung-jawab panggil markRevertedAndExpired() per row
    * setelah sukses revert MikroTik.
    */
   async getOverdueActiveRedemptions(): Promise<PointRedemption[]> {
@@ -7498,7 +7498,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Catat percobaan revert yang gagal — tetap status=active supaya retry next loop.
+   * Catat percobaan revert yang gagal - tetap status=active supaya retry next loop.
    * Increment revert_attempts + simpan error message untuk admin visibility.
    */
   async recordRevertFailure(redemptionId: number, errorMsg: string): Promise<number> {
@@ -7514,7 +7514,7 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Force-expire (admin override): set status=expired tanpa revert MikroTik.
-   * Untuk kasus extreme — admin sudah set profile manual lewat WinBox lalu mark sebagai selesai.
+   * Untuk kasus extreme - admin sudah set profile manual lewat WinBox lalu mark sebagai selesai.
    */
   async forceExpireRedemption(redemptionId: number, byUserId: number, reason: string): Promise<PointRedemption | undefined> {
     const mitraId = getMitraId();
@@ -7527,10 +7527,10 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  /** @deprecated — pakai getOverdueActiveRedemptions + per-row revert + markRevertedAndExpired */
+  /** @deprecated - pakai getOverdueActiveRedemptions + per-row revert + markRevertedAndExpired */
   async expireOverdueRedemptions(): Promise<PointRedemption[]> {
     const mitraId = getMitraId();
-    // Legacy method — kept for backwards compatibility tapi tidak revert MikroTik
+    // Legacy method - kept for backwards compatibility tapi tidak revert MikroTik
     // Code path baru di server/index.ts pakai split flow.
     const now = new Date().toISOString();
     const overdueRows: any = ((await this.db.execute(sql`
@@ -7545,7 +7545,7 @@ export class DatabaseStorage implements IStorage {
     return expired;
   }
 
-  /** List redemptions with filter — admin */
+  /** List redemptions with filter - admin */
   async getRedemptions(filter?: { status?: string; customerId?: number; limit?: number; includeDeleted?: boolean }): Promise<any[]> {
     const mitraId = getMitraId();
     const limit = filter?.limit ?? 200;
@@ -7817,9 +7817,9 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  /** Seed system segments — dipanggil di startup */
+  /** Seed system segments - dipanggil di startup */
   async seedDefaultBroadcastSegments(): Promise<void> {
-    // Boot-time seed — no HTTP context, so wrap with withMitra(1, ...) to inject tenant context
+    // Boot-time seed - no HTTP context, so wrap with withMitra(1, ...) to inject tenant context
     await withMitra(1, async () => {
       const { SYSTEM_SEGMENTS } = await import("./broadcast-audience.js");
       const existing = await this.listBroadcastSegments();
@@ -7842,7 +7842,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== v4.2.20: WhatsApp v2 (Multi-device + Resellers) ====================
 
-  // ── WA Devices ──
+  // -- WA Devices --
   async listWaDevices(filter?: { active?: boolean }): Promise<WaDevice[]> {
     const mitraId = getMitraId();
     if (filter?.active === true) {
@@ -7903,7 +7903,7 @@ export class DatabaseStorage implements IStorage {
     } as any).where(and(eq(waDevices.id, id), eq(waDevices.mitraId, mitraId)));
   }
 
-  // ── Resellers ──
+  // -- Resellers --
   async listResellers(filter?: { active?: boolean; search?: string }): Promise<Reseller[]> {
     let query: any = this.db.select().from(resellers);
     const conds: any[] = [];
@@ -7948,7 +7948,7 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // ──── v4.2.21: Device state (QR + connection + webhook) ────
+  // ---- v4.2.21: Device state (QR + connection + webhook) ----
   async patchWaDeviceState(id: number, patch: Partial<{
     connectionStatus: string;
     lastQrAt: string | null;
@@ -7964,13 +7964,13 @@ export class DatabaseStorage implements IStorage {
     } as any).where(and(eq(waDevices.id, id), eq(waDevices.mitraId, mitraId)));
   }
 
-  // NOTE: pre-auth webhook lookup — no mitra filter; caller wraps with withMitra after resolving device's mitra
+  // NOTE: pre-auth webhook lookup - no mitra filter; caller wraps with withMitra after resolving device's mitra
   async getWaDeviceByWebhookToken(token: string): Promise<WaDevice | undefined> {
     const [row] = await this.db.select().from(waDevices).where(eq(waDevices.webhookToken, token));
     return row;
   }
 
-  // ──── v4.2.21: WA Inbox (incoming messages dari webhook) ────
+  // ---- v4.2.21: WA Inbox (incoming messages dari webhook) ----
   async insertWaInboxMessage(data: InsertWaInboxMessage): Promise<WaInboxMessage> {
     const mitraId = getMitraId();
     const result = await this.db.insert(waInbox).values({ ...data, mitraId } as any);
@@ -8011,7 +8011,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(waInbox).set(patch as any).where(and(eq(waInbox.id, id), eq(waInbox.mitraId, mitraId)));
   }
 
-  // ──── v4.2.24: Phonebooks (custom contact lists) ────
+  // ---- v4.2.24: Phonebooks (custom contact lists) ----
   async listPhonebooks(): Promise<Array<Phonebook & { contactCount: number }>> {
     const mitraId = getMitraId();
     const [result] = await this.pool.execute(`
@@ -8310,7 +8310,7 @@ export class DatabaseStorage implements IStorage {
         key: "tagihan_reminder",
         name: "Reminder Tagihan",
         description: "Pengingat tagihan mendekati jatuh tempo (H-3 / H-1)",
-        content: "*JABNET FTTH — Pengingat Tagihan*\nHalo {nama},\nTagihan bulan ini: Rp *{amount}*\nJatuh tempo: {dueDate}\nMohon segera dibayar agar layanan tidak terputus.\nTerima kasih.",
+        content: "*JABNET FTTH - Pengingat Tagihan*\nHalo {nama},\nTagihan bulan ini: Rp *{amount}*\nJatuh tempo: {dueDate}\nMohon segera dibayar agar layanan tidak terputus.\nTerima kasih.",
         placeholders: JSON.stringify(["nama", "amount", "dueDate"]),
         category: "billing",
         isSystem: 1,
@@ -8320,7 +8320,7 @@ export class DatabaseStorage implements IStorage {
         key: "isolir_notif",
         name: "Notifikasi Isolir",
         description: "Pemberitahuan layanan diisolir karena belum bayar",
-        content: "*JABNET FTTH — Layanan Diisolir*\nHalo {nama},\nLayanan internet Anda telah diisolir karena belum menyelesaikan pembayaran tagihan sebesar Rp *{amount}*.\nSilakan hubungi CS via WhatsApp untuk info pembayaran.\nTerima kasih.",
+        content: "*JABNET FTTH - Layanan Diisolir*\nHalo {nama},\nLayanan internet Anda telah diisolir karena belum menyelesaikan pembayaran tagihan sebesar Rp *{amount}*.\nSilakan hubungi CS via WhatsApp untuk info pembayaran.\nTerima kasih.",
         placeholders: JSON.stringify(["nama", "amount"]),
         category: "billing",
         isSystem: 1,
@@ -8330,7 +8330,7 @@ export class DatabaseStorage implements IStorage {
         key: "bayar_confirmation",
         name: "Konfirmasi Pembayaran",
         description: "Konfirmasi layanan aktif kembali setelah pembayaran",
-        content: "*JABNET FTTH — Pembayaran Diterima*\nHalo {nama},\nPembayaran sebesar Rp *{amount}* telah kami terima. Layanan internet Anda sudah aktif kembali.\nTerima kasih atas kepercayaan Anda! 🙏",
+        content: "*JABNET FTTH - Pembayaran Diterima*\nHalo {nama},\nPembayaran sebesar Rp *{amount}* telah kami terima. Layanan internet Anda sudah aktif kembali.\nTerima kasih atas kepercayaan Anda! ",
         placeholders: JSON.stringify(["nama", "amount"]),
         category: "billing",
         isSystem: 1,
@@ -8340,7 +8340,7 @@ export class DatabaseStorage implements IStorage {
         key: "welcome_customer",
         name: "Welcome Pelanggan Baru",
         description: "Ucapan selamat datang pelanggan baru setelah instalasi",
-        content: "*Selamat Datang di JABNET FTTH!* 🎉\nHalo {nama},\nLayanan internet Anda telah terpasang dengan sukses.\nCustomer ID: *{customerId}*\nPaket: {package}\n\nUntuk self-service (cek tagihan, ganti WiFi password, dll), akses portal:\nhttps://portal.jabnet.id\n\nTerima kasih sudah memilih JABNET.",
+        content: "*Selamat Datang di JABNET FTTH!* \nHalo {nama},\nLayanan internet Anda telah terpasang dengan sukses.\nCustomer ID: *{customerId}*\nPaket: {package}\n\nUntuk self-service (cek tagihan, ganti WiFi password, dll), akses portal:\nhttps://portal.jabnet.id\n\nTerima kasih sudah memilih JABNET.",
         placeholders: JSON.stringify(["nama", "customerId", "package"]),
         category: "general",
         isSystem: 1,
@@ -8350,7 +8350,7 @@ export class DatabaseStorage implements IStorage {
         key: "ont_offline",
         name: "Notifikasi ONT Offline",
         description: "Alert ketika ONT pelanggan terdeteksi offline > 30 menit",
-        content: "*JABNET FTTH — Gangguan Koneksi*\nHalo {nama},\nKami mendeteksi perangkat ONT Anda offline sejak {offlineSince}.\nMohon coba:\n1. Cek lampu ONT\n2. Restart perangkat\n3. Hubungi CS jika masih offline\n\nTim teknis siap bantu 24/7.",
+        content: "*JABNET FTTH - Gangguan Koneksi*\nHalo {nama},\nKami mendeteksi perangkat ONT Anda offline sejak {offlineSince}.\nMohon coba:\n1. Cek lampu ONT\n2. Restart perangkat\n3. Hubungi CS jika masih offline\n\nTim teknis siap bantu 24/7.",
         placeholders: JSON.stringify(["nama", "offlineSince"]),
         category: "notification",
         isSystem: 1,
@@ -8359,9 +8359,9 @@ export class DatabaseStorage implements IStorage {
       // ===== JABNET SAHABAT v4.1.9 =====
       {
         key: "sahabat_invite_recorded",
-        name: "Sahabat — Referral Dicatat",
+        name: "Sahabat - Referral Dicatat",
         description: "Notifikasi ke pengundang saat referral baru di-input (by system portal atau manual admin)",
-        content: "✨ *JABNET SAHABAT — Referral Tercatat*\nHalo {nama},\n\nReferral kamu sudah kami catat:\n👤 *{refereeName}*{refereePhoneLine}\n\nLangkah berikutnya:\n• Tim akan follow-up saat {refereeName} daftar internet.\n• Kamu akan dikabari lagi saat beliau aktif ✅\n• Voucher Rp 50.000 cair saat pembayaran pertama masuk.\n\nKode Sahabat kamu: *{sahabatCode}*\nTotal referral tercatat: *{totalInvited}*\n\nMakasih sudah ajak tetangga 🙏",
+        content: " *JABNET SAHABAT - Referral Tercatat*\nHalo {nama},\n\nReferral kamu sudah kami catat:\n *{refereeName}*{refereePhoneLine}\n\nLangkah berikutnya:\n• Tim akan follow-up saat {refereeName} daftar internet.\n• Kamu akan dikabari lagi saat beliau aktif \n• Voucher Rp 50.000 cair saat pembayaran pertama masuk.\n\nKode Sahabat kamu: *{sahabatCode}*\nTotal referral tercatat: *{totalInvited}*\n\nMakasih sudah ajak tetangga ",
         placeholders: JSON.stringify(["nama", "refereeName", "refereePhoneLine", "sahabatCode", "totalInvited"]),
         category: "loyalty",
         isSystem: 1,
@@ -8369,9 +8369,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_invite_registered",
-        name: "Sahabat — Referee Terdaftar",
+        name: "Sahabat - Referee Terdaftar",
         description: "Notifikasi ke pengundang saat referee daftar / di-link ke customer",
-        content: "🎯 *JABNET SAHABAT — Tetangga Anda Daftar!*\nHalo {nama},\n\nKabar baik! *{refereeName}* sudah resmi terdaftar sebagai pelanggan JABNET 🎊\n\nSatu langkah lagi — tunggu pembayaran pertama beliau, dan *Voucher Indomaret Rp 50.000* langsung cair ke akun kamu.\n\n📊 Progress: *{totalSuccessful}* referral sukses\n📈 Level: *{level}*\n🎯 {nextInfo}\n\nKode Sahabat: *{sahabatCode}*",
+        content: " *JABNET SAHABAT - Tetangga Anda Daftar!*\nHalo {nama},\n\nKabar baik! *{refereeName}* sudah resmi terdaftar sebagai pelanggan JABNET \n\nSatu langkah lagi - tunggu pembayaran pertama beliau, dan *Voucher Indomaret Rp 50.000* langsung cair ke akun kamu.\n\n Progress: *{totalSuccessful}* referral sukses\n Level: *{level}*\n {nextInfo}\n\nKode Sahabat: *{sahabatCode}*",
         placeholders: JSON.stringify(["nama", "refereeName", "totalSuccessful", "level", "nextInfo", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8379,9 +8379,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_boost_activated",
-        name: "Speed Boost — Diaktivasi",
+        name: "Speed Boost - Diaktivasi",
         description: "Notif ke customer saat admin verify redemption Speed-on-Demand",
-        content: "🚀 *JABNET BOOST AKTIF*\nHalo {nama},\n\n⚡ *{rewardLabel}* sudah aktif sekarang!\n\n• Speed kamu di-boost *{speedMultiplier}×* lipat\n• Berlaku selama *{durationHours} jam*\n• Mulai: *{startAt}*\n• Selesai: *{endAt}*\n\nCoba speedtest sekarang dan rasakan bedanya 🔥\nSetelah {durationHours} jam, speed otomatis kembali normal.\n\n_Saldo point sisa: *{balance} pts*_",
+        content: " *JABNET BOOST AKTIF*\nHalo {nama},\n\n *{rewardLabel}* sudah aktif sekarang!\n\n• Speed kamu di-boost *{speedMultiplier}×* lipat\n• Berlaku selama *{durationHours} jam*\n• Mulai: *{startAt}*\n• Selesai: *{endAt}*\n\nCoba speedtest sekarang dan rasakan bedanya \nSetelah {durationHours} jam, speed otomatis kembali normal.\n\n_Saldo point sisa: *{balance} pts*_",
         placeholders: JSON.stringify(["nama", "rewardLabel", "speedMultiplier", "durationHours", "startAt", "endAt", "balance"]),
         category: "loyalty",
         isSystem: 1,
@@ -8389,9 +8389,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_boost_expired",
-        name: "Speed Boost — Selesai",
+        name: "Speed Boost - Selesai",
         description: "Notif ke customer saat boost expired (durasi habis)",
-        content: "✅ *JABNET BOOST SELESAI*\nHalo {nama},\n\n⚡ *{rewardLabel}* sudah selesai sesuai durasi.\nSpeed kamu kembali ke paket normal — *{normalPackage}*.\n\nSemoga boost-nya bermanfaat! Kumpulin point lagi untuk redeem boost berikutnya 🚀\n\nTotal point earned: *{lifetimeEarned} pts*\nSaldo aktif: *{balance} pts*",
+        content: " *JABNET BOOST SELESAI*\nHalo {nama},\n\n *{rewardLabel}* sudah selesai sesuai durasi.\nSpeed kamu kembali ke paket normal - *{normalPackage}*.\n\nSemoga boost-nya bermanfaat! Kumpulin point lagi untuk redeem boost berikutnya \n\nTotal point earned: *{lifetimeEarned} pts*\nSaldo aktif: *{balance} pts*",
         placeholders: JSON.stringify(["nama", "rewardLabel", "normalPackage", "lifetimeEarned", "balance"]),
         category: "loyalty",
         isSystem: 1,
@@ -8399,9 +8399,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_boost_rejected",
-        name: "Speed Boost — Ditolak",
+        name: "Speed Boost - Ditolak",
         description: "Notif ke customer saat redemption ditolak admin (point dikembalikan)",
-        content: "ℹ️ *JABNET BOOST — Permintaan Ditolak*\nHalo {nama},\n\nMohon maaf, permintaan boost *{rewardLabel}* tidak bisa diaktifkan saat ini.\n\nAlasan: _{reason}_\n\n💰 *{pointsCost} pts* sudah dikembalikan ke saldo kamu.\nSaldo sekarang: *{balance} pts*\n\nKamu bisa redeem ulang nanti atau hubungi CS untuk info lebih lanjut.",
+        content: "ℹ *JABNET BOOST - Permintaan Ditolak*\nHalo {nama},\n\nMohon maaf, permintaan boost *{rewardLabel}* tidak bisa diaktifkan saat ini.\n\nAlasan: _{reason}_\n\n *{pointsCost} pts* sudah dikembalikan ke saldo kamu.\nSaldo sekarang: *{balance} pts*\n\nKamu bisa redeem ulang nanti atau hubungi CS untuk info lebih lanjut.",
         placeholders: JSON.stringify(["nama", "rewardLabel", "reason", "pointsCost", "balance"]),
         category: "loyalty",
         isSystem: 1,
@@ -8409,9 +8409,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_monthly_statement",
-        name: "Sahabat — Statement Bulanan",
+        name: "Sahabat - Statement Bulanan",
         description: "Rekap bulanan referral + reward ke Sahabat aktif",
-        content: "📊 *JABNET SAHABAT — Statement {month}*\nHalo {nama},\n\nRingkasan program Sahabat bulan ini:\n\n📩 Invite baru: *{thisMonthInvited}*\n🎁 Reward cair: *{thisMonthRewarded}*\n🏆 Total referral sukses: *{totalSuccessful}*\n⭐ Level: *{level}*\n📍 Ranking: *{rank}*\n\nKode Sahabat: *{sahabatCode}*\n\nMakasih udah jadi bagian keluarga JABNET 🙏",
+        content: " *JABNET SAHABAT - Statement {month}*\nHalo {nama},\n\nRingkasan program Sahabat bulan ini:\n\n Invite baru: *{thisMonthInvited}*\n Reward cair: *{thisMonthRewarded}*\n Total referral sukses: *{totalSuccessful}*\n Level: *{level}*\n Ranking: *{rank}*\n\nKode Sahabat: *{sahabatCode}*\n\nMakasih udah jadi bagian keluarga JABNET ",
         placeholders: JSON.stringify(["nama", "month", "thisMonthInvited", "thisMonthRewarded", "totalSuccessful", "level", "rank", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8419,9 +8419,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_referral_rewarded",
-        name: "Sahabat — Referral Sukses",
+        name: "Sahabat - Referral Sukses",
         description: "Notifikasi saat tetangga yang diajak aktif & bayar → Voucher Indomaret Rp 50K",
-        content: "🎉 *JABNET SAHABAT — Referral Sukses!*\nHalo {nama},\n\n*{refereeName}* yang kamu ajak sudah resmi aktif di JABNET! Terima kasih sudah ajak tetangga 🙏\n\n🎁 *Voucher Indomaret Rp 50.000* sudah masuk ke akun kamu.\n\n📊 Total referral sukses: *{totalRefs}*\n📈 Level Sahabat: *{level}*\n🎯 {nextInfo}\n\nAjak lebih banyak — 5 referral = naik *Perunggu* dapat bonus Rp 200K + Speed Boost!\n\nKode Sahabat kamu: *{sahabatCode}*",
+        content: " *JABNET SAHABAT - Referral Sukses!*\nHalo {nama},\n\n*{refereeName}* yang kamu ajak sudah resmi aktif di JABNET! Terima kasih sudah ajak tetangga \n\n *Voucher Indomaret Rp 50.000* sudah masuk ke akun kamu.\n\n Total referral sukses: *{totalRefs}*\n Level Sahabat: *{level}*\n {nextInfo}\n\nAjak lebih banyak - 5 referral = naik *Perunggu* dapat bonus Rp 200K + Speed Boost!\n\nKode Sahabat kamu: *{sahabatCode}*",
         placeholders: JSON.stringify(["nama", "refereeName", "totalRefs", "level", "nextInfo", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8429,9 +8429,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_perunggu",
-        name: "Sahabat — Naik Level Perunggu",
+        name: "Sahabat - Naik Level Perunggu",
         description: "5 referral sukses → Perunggu: Voucher Rp 200K + Speed Boost",
-        content: "🥉 *SELAMAT! KAMU SAHABAT PERUNGGU* 🥉\nHalo {nama},\n\nKamu berhasil *ajak 5 tetangga* jadi pelanggan JABNET! 🎉\n\n🎁 Reward Perunggu:\n• *Voucher Indomaret Rp 200.000*\n• *Speed Boost 2x/minggu* (akhir pekan)\n• Status: Sahabat RT/RW resmi 🌟\n\n📈 Target berikutnya: *10 referral = Perak* (Internet GRATIS 12 BULAN!)\n\nKode Sahabat: *{sahabatCode}*\nCek detail di portal: https://portal.jabnet.id",
+        content: " *SELAMAT! KAMU SAHABAT PERUNGGU* \nHalo {nama},\n\nKamu berhasil *ajak 5 tetangga* jadi pelanggan JABNET! \n\n Reward Perunggu:\n• *Voucher Indomaret Rp 200.000*\n• *Speed Boost 2x/minggu* (akhir pekan)\n• Status: Sahabat RT/RW resmi \n\n Target berikutnya: *10 referral = Perak* (Internet GRATIS 12 BULAN!)\n\nKode Sahabat: *{sahabatCode}*\nCek detail di portal: https://portal.jabnet.id",
         placeholders: JSON.stringify(["nama", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8439,9 +8439,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_perak",
-        name: "Sahabat — Naik Level Perak",
+        name: "Sahabat - Naik Level Perak",
         description: "10 referral sukses → Perak: Internet gratis 12 bulan",
-        content: "🥈 *WOW, SAHABAT PERAK!* 🥈\nHalo {nama},\n\n*10 referral sukses* — kamu luar biasa! 👏\n\n🎁 Reward Perak:\n• *Internet GRATIS 12 BULAN* 🎊\n• Sertifikat Mitra resmi JABNET\n• Upgrade eligibility ke program RT/RW\n\n📈 Target berikutnya: *20 referral = Emas* (GRATIS 24 bulan + upgrade speed permanen!)\n\nKode Sahabat: *{sahabatCode}*\nHubungi CS untuk tanda tangan kontrak mitra resmi.",
+        content: " *WOW, SAHABAT PERAK!* \nHalo {nama},\n\n*10 referral sukses* - kamu luar biasa! \n\n Reward Perak:\n• *Internet GRATIS 12 BULAN* \n• Sertifikat Mitra resmi JABNET\n• Upgrade eligibility ke program RT/RW\n\n Target berikutnya: *20 referral = Emas* (GRATIS 24 bulan + upgrade speed permanen!)\n\nKode Sahabat: *{sahabatCode}*\nHubungi CS untuk tanda tangan kontrak mitra resmi.",
         placeholders: JSON.stringify(["nama", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8449,9 +8449,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_emas",
-        name: "Sahabat — Naik Level Emas",
+        name: "Sahabat - Naik Level Emas",
         description: "20 referral sukses → Emas: Internet gratis 24 bulan + upgrade speed permanen",
-        content: "🥇 *SAHABAT EMAS — KAMU JUARA!* 🥇\nHalo {nama},\n\n*20 referral sukses* — kamu top mitra RT/RW! 🏆\n\n🎁 Reward Emas:\n• *Internet GRATIS 24 BULAN* (2 tahun!)\n• *Upgrade speed 1 tier permanen*\n• Prioritas support VIP\n\n📈 Target: *30 referral = Platinum* (GRATIS 3 tahun + CASH Rp 2jt + Ambassador)!\n\nKode: *{sahabatCode}*",
+        content: " *SAHABAT EMAS - KAMU JUARA!* \nHalo {nama},\n\n*20 referral sukses* - kamu top mitra RT/RW! \n\n Reward Emas:\n• *Internet GRATIS 24 BULAN* (2 tahun!)\n• *Upgrade speed 1 tier permanen*\n• Prioritas support VIP\n\n Target: *30 referral = Platinum* (GRATIS 3 tahun + CASH Rp 2jt + Ambassador)!\n\nKode: *{sahabatCode}*",
         placeholders: JSON.stringify(["nama", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8459,9 +8459,9 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_platinum",
-        name: "Sahabat — Naik Level Platinum",
+        name: "Sahabat - Naik Level Platinum",
         description: "30 referral sukses → Platinum: gratis 36 bln + cash 2jt + Ambassador",
-        content: "💎 *SAHABAT PLATINUM — AMBASSADOR!* 💎\nHalo {nama},\n\n*30 referral sukses* — kamu legendaris! 🌟\n\n🎁 Reward Platinum:\n• *Internet GRATIS 36 BULAN* (3 tahun!)\n• *Komisi cash Rp 2.000.000*\n• Status *Ambassador JABNET*\n• Undangan event eksklusif mitra\n\n📈 Target akhir: *50 referral = Berlian* (GRATIS 5 tahun + CASH Rp 5jt + Trainer)!\n\nKode Sahabat: *{sahabatCode}*\nTim kami akan menghubungi untuk seremoni penyerahan reward 🎉",
+        content: " *SAHABAT PLATINUM - AMBASSADOR!* \nHalo {nama},\n\n*30 referral sukses* - kamu legendaris! \n\n Reward Platinum:\n• *Internet GRATIS 36 BULAN* (3 tahun!)\n• *Komisi cash Rp 2.000.000*\n• Status *Ambassador JABNET*\n• Undangan event eksklusif mitra\n\n Target akhir: *50 referral = Berlian* (GRATIS 5 tahun + CASH Rp 5jt + Trainer)!\n\nKode Sahabat: *{sahabatCode}*\nTim kami akan menghubungi untuk seremoni penyerahan reward ",
         placeholders: JSON.stringify(["nama", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
@@ -8469,20 +8469,20 @@ export class DatabaseStorage implements IStorage {
       },
       {
         key: "sahabat_berlian",
-        name: "Sahabat — Naik Level Berlian",
+        name: "Sahabat - Naik Level Berlian",
         description: "50 referral sukses → Berlian: gratis 60 bln + cash 5jt + Trainer",
-        content: "👑 *SAHABAT BERLIAN — LEGEND!* 👑\nHalo {nama},\n\n*50 REFERRAL SUKSES* — kamu ICON JABNET SAHABAT! 🏅\n\n🎁 Reward Berlian:\n• *Internet GRATIS 60 BULAN* (5 tahun!)\n• *Komisi cash Rp 5.000.000*\n• Status *Trainer program Sahabat*\n• Revenue share 15% untuk referral berikutnya (Ambassador status)\n\nKamu resmi jadi bagian elite JABNET. Terima kasih sudah percaya dan membangun bersama kami 🙏\n\nKode: *{sahabatCode}*",
+        content: " *SAHABAT BERLIAN - LEGEND!* \nHalo {nama},\n\n*50 REFERRAL SUKSES* - kamu ICON JABNET SAHABAT! \n\n Reward Berlian:\n• *Internet GRATIS 60 BULAN* (5 tahun!)\n• *Komisi cash Rp 5.000.000*\n• Status *Trainer program Sahabat*\n• Revenue share 15% untuk referral berikutnya (Ambassador status)\n\nKamu resmi jadi bagian elite JABNET. Terima kasih sudah percaya dan membangun bersama kami \n\nKode: *{sahabatCode}*",
         placeholders: JSON.stringify(["nama", "sahabatCode"]),
         category: "loyalty",
         isSystem: 1,
         createdAt: nowIso,
       },
-      // v4.2.17: CSAT survey template — kirim 24 jam setelah ticket close
+      // v4.2.17: CSAT survey template - kirim 24 jam setelah ticket close
       {
         key: "csat_survey",
-        name: "CSAT — Survey Pasca Resolusi",
+        name: "CSAT - Survey Pasca Resolusi",
         description: "Auto 24 jam setelah ticket close. Customer kasih rating 1-5 ke teknisi.",
-        content: "👋 Halo {nama},\n\nTerima kasih atas kepercayaan Anda menggunakan JABNET FTTH 🙏\n\nTiket *{ticketNumber}* sudah selesai dikerjakan oleh *{teknisi}*. Bagaimana pengalaman Anda?\n\n⭐ Beri rating + feedback singkat di:\n👉 {csatUrl}\n\nMasukan Anda sangat berarti untuk peningkatan layanan kami.\n\n— *Tim JABNET*",
+        content: " Halo {nama},\n\nTerima kasih atas kepercayaan Anda menggunakan JABNET FTTH \n\nTiket *{ticketNumber}* sudah selesai dikerjakan oleh *{teknisi}*. Bagaimana pengalaman Anda?\n\n Beri rating + feedback singkat di:\n {csatUrl}\n\nMasukan Anda sangat berarti untuk peningkatan layanan kami.\n\n- *Tim JABNET*",
         placeholders: JSON.stringify(["nama", "ticketNumber", "teknisi", "csatUrl"]),
         category: "ticket",
         isSystem: 1,
@@ -8490,7 +8490,7 @@ export class DatabaseStorage implements IStorage {
       },
     ];
 
-    // Boot-time seed — no HTTP context, so wrap with withMitra(1, ...) to inject tenant context
+    // Boot-time seed - no HTTP context, so wrap with withMitra(1, ...) to inject tenant context
     await withMitra(1, async () => {
       let seeded = 0;
       for (const t of defaults) {
@@ -8499,7 +8499,7 @@ export class DatabaseStorage implements IStorage {
           try {
             await this.createMpwaTemplate(t);
             seeded++;
-          } catch { /* race — safe */ }
+          } catch { /* race - safe */ }
         }
       }
       if (seeded > 0) {
@@ -8824,7 +8824,7 @@ export class DatabaseStorage implements IStorage {
   /**
    * Return user IDs that are members of a given mitra (via user_mitras join).
    * Used to scope /api/users + /api/roles for mitra admins (non-system-admin).
-   * Tidak pakai tenant context — caller pass mitraId eksplisit karena ini
+   * Tidak pakai tenant context - caller pass mitraId eksplisit karena ini
    * dipanggil dari endpoint user-management yang skip tenantContext middleware.
    */
   async getUserIdsInMitra(mitraId: number): Promise<Set<number>> {
@@ -9102,7 +9102,7 @@ export class DatabaseStorage implements IStorage {
       `);
       return Number((rows[0] as any[])[0]?.cnt ?? 0);
     } catch (e: any) {
-      // Column missing or join failed — return 0 so demote-guard doesn't false-block legit ops.
+      // Column missing or join failed - return 0 so demote-guard doesn't false-block legit ops.
       console.warn("[countSystemAdminsAtMitra1] failed, returning 0:", e?.message);
       return 0;
     }
@@ -9164,7 +9164,7 @@ export class DatabaseStorage implements IStorage {
   /**
    * Seed default mitra_integrations rows untuk mitra baru.
    * Semua key di-seed dengan value="" (empty string) sehingga getMitraSetting() TIDAK fallback
-   * ke app_settings JABNET — mitra baru lihat field KOSONG, bukan credentials JABNET.
+   * ke app_settings JABNET - mitra baru lihat field KOSONG, bukan credentials JABNET.
    * Kecuali `mpwa_url` yang di-set ke shared MPWA endpoint JABNET.
    * Pakai INSERT IGNORE so re-seeding aman (idempotent).
    */
@@ -9233,7 +9233,7 @@ export class DatabaseStorage implements IStorage {
     return Number(result?.[0]?.affectedRows ?? 0) > 0;
   }
 
-  /** Teamspace v5.0 Fase 1 — tim internal + board tugas di atas engine pipelines.
+  /** Teamspace v5.0 Fase 1 - tim internal + board tugas di atas engine pipelines.
    *  Konvensi codebase: CREATE TABLE IF NOT EXISTS + ADD COLUMN via information_schema
    *  check, semuanya additive & idempotent (aman re-run tiap startup). */
   private async runTeamspaceMigrations(): Promise<void> {
@@ -9319,7 +9319,7 @@ export class DatabaseStorage implements IStorage {
           KEY idx_card_checklist_items_checklist (checklist_id)
         )`,
       },
-      // ── Fase 2: Chat, Jadwal, Check-in, Dokumen & File ──
+      // -- Fase 2: Chat, Jadwal, Check-in, Dokumen & File --
       {
         name: "team_chat_messages",
         ddl: `CREATE TABLE IF NOT EXISTS team_chat_messages (
@@ -9716,7 +9716,7 @@ export class DatabaseStorage implements IStorage {
         )`,
       },
     ];
-    // v5.1.1: rule intake lead default — lead canvassing/marketing OTOMATIS jadi kartu
+    // v5.1.1: rule intake lead default - lead canvassing/marketing OTOMATIS jadi kartu
     // di pipeline leads tanpa perlu setup manual di menu Otomasi (idempotent: hanya
     // seed bila belum ada rule lead_created aktif sama sekali).
     try {
@@ -9749,7 +9749,7 @@ export class DatabaseStorage implements IStorage {
       if (!(pl as any[]).length) {
         const now = new Date().toISOString();
         const [ins]: any = await this.pool.execute(
-          `INSERT INTO pipelines (mitra_id, name, description, created_by, created_at) VALUES (1, 'Rekrutmen Kandidat', 'Pipeline kandidat pelamar (PRD-HR FR-HR-1003) — pindahkan kartu antar tahapan', 1, ?)`, [now]);
+          `INSERT INTO pipelines (mitra_id, name, description, created_by, created_at) VALUES (1, 'Rekrutmen Kandidat', 'Pipeline kandidat pelamar (PRD-HR FR-HR-1003) - pindahkan kartu antar tahapan', 1, ?)`, [now]);
         const pid = (ins as any).insertId;
         const stages: Array<[string, string]> = [["Lamaran Masuk", "#0EA5E9"], ["Screening", "#F59E0B"], ["Interview", "#8B5CF6"], ["Offer", "#10B981"], ["Diterima", "#22C55E"], ["Ditolak", "#94A3B8"]];
         for (let i = 0; i < stages.length; i++) {
@@ -9761,7 +9761,7 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (err: any) { console.warn(`[migration] seed rekrutmen: ${err.message}`); }
 
-    // QA H2: guard efek uang slip (kasbon/reimburse) — dijalankan sekali seumur slip
+    // QA H2: guard efek uang slip (kasbon/reimburse) - dijalankan sekali seumur slip
     try { await this.pool.execute(`ALTER TABLE hr_payslips ADD COLUMN effects_applied INT NOT NULL DEFAULT 0`); }
     catch (err: any) { if (err.errno !== 1060 && err.errno !== 1146) console.warn(`[migration] hr_payslips.effects_applied: ${err.message}`); }
 
@@ -9789,7 +9789,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Kolom baru pada tabel eksisting — cek via information_schema (pola p4cColAdds).
+    // Kolom baru pada tabel eksisting - cek via information_schema (pola p4cColAdds).
     const colAdds: Array<{ table: string; column: string; ddl: string }> = [
       { table: "pipelines", column: "team_id", ddl: "INT NULL" },
       { table: "pipeline_stages", column: "semantic_type", ddl: "VARCHAR(16) NULL" },
@@ -9805,7 +9805,7 @@ export class DatabaseStorage implements IStorage {
       { table: "announcements", column: "is_confidential", ddl: "INT DEFAULT 0" },
       { table: "announcements", column: "expires_at", ddl: "TEXT NULL" },
       { table: "users", column: "calendar_feed_token", ddl: "VARCHAR(64) NULL" },
-      // Fase 3 — tren KPI harian Teamspace (§14.4)
+      // Fase 3 - tren KPI harian Teamspace (§14.4)
       { table: "kpi_snapshots", column: "teamspace_tasks_total", ddl: "INT DEFAULT 0" },
       { table: "kpi_snapshots", column: "teamspace_tasks_done", ddl: "INT DEFAULT 0" },
       { table: "kpi_snapshots", column: "teamspace_tasks_overdue", ddl: "INT DEFAULT 0" },
@@ -9852,7 +9852,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[startup] runLoyaltyEditMigrations failed: ${e.message}`);
     }
 
-    // 0d. Phase B+C — auth scoping migration (2026-05-27)
+    // 0d. Phase B+C - auth scoping migration (2026-05-27)
     // Explicit column check (some MySQL builds choke on ADD COLUMN IF NOT EXISTS).
     try {
       const [rows]: any = await this.pool.execute(
@@ -9881,7 +9881,7 @@ export class DatabaseStorage implements IStorage {
     await this.seedDefaultMpwaTemplates();
 
     // v4.3.x: Backfill mitra_integrations defaults untuk mitra non-JABNET existing
-    // (idempotent — INSERT IGNORE). Mitra baru kena auto-seed via /api/mitras endpoint;
+    // (idempotent - INSERT IGNORE). Mitra baru kena auto-seed via /api/mitras endpoint;
     // ini handle mitra yang dibuat sebelum seeding existed (e.g. ASAKA mitra 3).
     try {
       const bf = await this.backfillMitraIntegrationDefaults();
@@ -9960,14 +9960,14 @@ export class DatabaseStorage implements IStorage {
         }
       }
       if (seededMitras > 0) console.log(`[migration] Seeded collection_stages for ${seededMitras} non-JABNET mitra(s)`);
-      // Terapkan ladder SOP (owner/sla/next + 2 stage delegasi) idempotent ke SEMUA mitra —
+      // Terapkan ladder SOP (owner/sla/next + 2 stage delegasi) idempotent ke SEMUA mitra -
       // aman untuk data lama: hanya menambah stage baru + set metadata key yang dikenal.
       await this.applyCollectionSopLadder(1);
       for (const m of (mitraRows as any[])) {
         try { await this.applyCollectionSopLadder(Number(m.id)); }
         catch (e: any) { console.warn(`[migration] SOP ladder mitra ${m.id}: ${e.message}`); }
       }
-      // Bersihkan emoji + artefak mojibake ("Lunas ?") dari label stage — tampilan profesional.
+      // Bersihkan emoji + artefak mojibake ("Lunas ?") dari label stage - tampilan profesional.
       try {
         const [allStageRows]: any = await this.pool.execute(`SELECT id, label FROM collection_stages`);
         const stripEmoji = (s: string) => s
@@ -9985,7 +9985,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] collection_stages setup failed: ${e.message}`);
     }
 
-    // kpi_snapshots — lazy daily KPI history for finance/subscriber trends
+    // kpi_snapshots - lazy daily KPI history for finance/subscriber trends
     try {
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS kpi_snapshots (
@@ -10010,7 +10010,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] kpi_snapshots setup failed: ${e.message}`);
     }
 
-    // Generic Pipelines Engine (Phase 1) — additive, tenant-scoped. Tables created here
+    // Generic Pipelines Engine (Phase 1) - additive, tenant-scoped. Tables created here
     // (codebase convention: new tables via CREATE TABLE IF NOT EXISTS on startup, not db:push).
     try {
       await this.db.execute(sql`
@@ -10128,7 +10128,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] pipelines engine setup failed: ${e.message}`);
     }
 
-    // Pipelines Phase 2 — custom fields (EAV). Additive, idempotent.
+    // Pipelines Phase 2 - custom fields (EAV). Additive, idempotent.
     try {
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS pipeline_fields (
@@ -10165,8 +10165,8 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] pipelines custom fields setup failed: ${e.message}`);
     }
 
-    // Pipelines Phase 3 — pipeline-level RBAC. Additive, idempotent.
-    // NOTE: this DB chokes on `ADD COLUMN IF NOT EXISTS` — use an explicit column check
+    // Pipelines Phase 3 - pipeline-level RBAC. Additive, idempotent.
+    // NOTE: this DB chokes on `ADD COLUMN IF NOT EXISTS` - use an explicit column check
     // (mirrors the user_mitras.role_id migration above). Keep column + table in SEPARATE
     // try/catch so a failure in one cannot skip the other.
     try {
@@ -10198,7 +10198,7 @@ export class DatabaseStorage implements IStorage {
     } catch (e: any) {
       console.warn(`[migration] pipeline_access setup failed: ${e.message}`);
     }
-    // Pipelines Phase 4a — automation rules. Additive, idempotent.
+    // Pipelines Phase 4a - automation rules. Additive, idempotent.
     try {
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS pipeline_rules (
@@ -10323,8 +10323,8 @@ export class DatabaseStorage implements IStorage {
       `);
     } catch (e: any) { console.warn(`[migration] pipeline_rule_field_maps setup failed: ${e.message}`); }
 
-    // Pipelines Phase 4b-1 — within-card actions + conditions. Additive, idempotent.
-    // This DB chokes on `ADD COLUMN IF NOT EXISTS` — explicit info_schema check per column.
+    // Pipelines Phase 4b-1 - within-card actions + conditions. Additive, idempotent.
+    // This DB chokes on `ADD COLUMN IF NOT EXISTS` - explicit info_schema check per column.
     const pipelineRuleColAdds: Array<{ column: string; ddl: string }> = [
       { column: "action_config", ddl: "TEXT NULL" },
       { column: "conditions", ddl: "TEXT NULL" },
@@ -10352,7 +10352,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] pipeline_rules relax target NOT NULL failed: ${e.message}`);
     }
 
-    // Pipelines Phase 4c — time-based trigger columns. Additive, idempotent.
+    // Pipelines Phase 4c - time-based trigger columns. Additive, idempotent.
     const p4cColAdds: Array<{ table: string; column: string; ddl: string }> = [
       { table: "pipeline_rules", column: "trigger_type", ddl: "VARCHAR(16) NOT NULL DEFAULT 'stage_enter'" },
       { table: "pipeline_rules", column: "trigger_config", ddl: "TEXT NULL" },
@@ -10378,7 +10378,7 @@ export class DatabaseStorage implements IStorage {
         console.warn(`[migration] ${table}.${column} add failed: ${e.message}`);
       }
     }
-    // Leads→pipeline import — photo evidence on card comments. Additive, idempotent.
+    // Leads→pipeline import - photo evidence on card comments. Additive, idempotent.
     try {
       const [rows]: any = await this.pool.execute(
         `SELECT COUNT(*) AS c FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'pipeline_card_comments' AND column_name = 'photo_path'`,
@@ -10407,7 +10407,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] backfill stage_entered_at skipped: ${e.message}`);
     }
 
-    // Pipelines Phase 4d-1 — multi-action: pipeline_rule_actions table + backfill + field-map index swap.
+    // Pipelines Phase 4d-1 - multi-action: pipeline_rule_actions table + backfill + field-map index swap.
     try {
       await this.pool.execute(`CREATE TABLE IF NOT EXISTS pipeline_rule_actions (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -10466,7 +10466,7 @@ export class DatabaseStorage implements IStorage {
     try { await this.pool.execute("ALTER TABLE pipeline_rule_field_maps ADD UNIQUE uniq_action_field_map_source (action_id, source_field_id)"); }
     catch (e: any) { /* already added */ }
 
-    // Pipelines Phase 5 — card_relations (entity links). Additive, idempotent.
+    // Pipelines Phase 5 - card_relations (entity links). Additive, idempotent.
     try {
       await this.pool.execute(`
         CREATE TABLE IF NOT EXISTS card_relations (
@@ -10486,7 +10486,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] card_relations create skipped: ${e.message}`);
     }
 
-    // Pipeline Templates (Phase 5) — reusable pipeline structure snapshots. Additive, idempotent.
+    // Pipeline Templates (Phase 5) - reusable pipeline structure snapshots. Additive, idempotent.
     try {
       await this.pool.execute(`
         CREATE TABLE IF NOT EXISTS pipeline_templates (
@@ -10513,7 +10513,7 @@ export class DatabaseStorage implements IStorage {
       console.warn(`[migration] pipeline_templates create skipped: ${e.message}`);
     }
 
-    // Teamspace v5.0 Fase 1 — teams + board tugas (additive, idempotent).
+    // Teamspace v5.0 Fase 1 - teams + board tugas (additive, idempotent).
     await this.runTeamspaceMigrations();
 
     // 2. Seed default admin user
@@ -10534,11 +10534,11 @@ export class DatabaseStorage implements IStorage {
       });
       const adminId = Number(adminInsert?.[0]?.insertId ?? 0);
       if (adminId > 0) await this.addUserToMitra(adminId, 1, true);
-      console.log("[JABNET FTTH] Admin user created — segera ganti password default!");
+      console.log("[JABNET FTTH] Admin user created - segera ganti password default!");
     } else {
-      // 3. Backfill roleId — HATI-HATI multi-tenant: users.role_id adalah fallback GLOBAL
+      // 3. Backfill roleId - HATI-HATI multi-tenant: users.role_id adalah fallback GLOBAL
       //    (dipakai computeAuthFlags untuk hitung isSystemAdmin di mitra 1). JANGAN set
-      //    System-Admin ke semua role='admin' — itu meng-escalate SETIAP admin mitra jadi
+      //    System-Admin ke semua role='admin' - itu meng-escalate SETIAP admin mitra jadi
       //    platform owner (bypass semua tenant scoping). Batasi ke platform owner asli saja.
       const adminRole = await this.getRoleByName("System-Admin", 1);
       const readOnlyRole = await this.getRoleByName("Read Only", 1);
@@ -10549,7 +10549,7 @@ export class DatabaseStorage implements IStorage {
           .where(sql`role = 'admin' AND role_id IS NULL AND (username IN ('yoga','admin') OR name LIKE '%Mikhail Yazid Bustomi%' OR name LIKE '%Bah Yus%')`);
       }
       // Untuk JABNET (mitra 1) members non-admin yang belum ada roleId, set ke Read Only agar
-      // tidak kosong. JANGAN sentuh user mitra lain — fallback global mereka harus tetap kosong
+      // tidak kosong. JANGAN sentuh user mitra lain - fallback global mereka harus tetap kosong
       // (permission diresolve dari membership role per-mitra, bukan dari role mitra 1).
       if (readOnlyRole) {
         await this.db
@@ -10578,7 +10578,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async seedDefaultRolesIfNeeded(): Promise<void> {
-    // === Phase B+C migration (2026-05-27) — idempotent, safe to re-run every startup ===
+    // === Phase B+C migration (2026-05-27) - idempotent, safe to re-run every startup ===
 
     // 1. Rename Administrator → System-Admin (no-op if already renamed or if DB is empty)
     try {
@@ -10598,7 +10598,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // 3. Preserve 4 known platform owners as System-Admin at mitra=1
-    // (runs after rename so sysAdminId resolves correctly — on fresh DB this block
+    // (runs after rename so sysAdminId resolves correctly - on fresh DB this block
     //  safely no-ops because users don't exist yet)
     try {
       const sysAdminResult: any = await this.db.execute(sql`SELECT id FROM roles WHERE name = 'System-Admin' LIMIT 1`);
@@ -10713,7 +10713,7 @@ export class DatabaseStorage implements IStorage {
         try {
           await this.db.insert(roles).values({ ...r, mitraId: 1 } as any);
           seededNames.push(r.name);
-        } catch (_) { /* likely race with unique index — safe ignore */ }
+        } catch (_) { /* likely race with unique index - safe ignore */ }
       }
     }
     if (seededNames.length > 0) {
@@ -10763,7 +10763,7 @@ export class DatabaseStorage implements IStorage {
       console.warn("[seed-roles] verification log:", (e as Error).message);
     }
 
-    // 6. v4.3.x TENANT-ISOLATE ROLES — tiap mitra ≠ 1 wajib punya Admin role sendiri,
+    // 6. v4.3.x TENANT-ISOLATE ROLES - tiap mitra ≠ 1 wajib punya Admin role sendiri,
     //    dan semua membership-nya harus mereferensikan role milik mitra itu (bukan role mitra lain).
     //    Memperbaiki data lama: mitra dibuat sebelum role per-mitra → admin-nya pakai Admin global (mitra 1).
     try {
@@ -10820,7 +10820,7 @@ export class DatabaseStorage implements IStorage {
           }
         }
 
-        // System-Admin/Admin: paksa SEMUA permission jadi "write" — akses penuh selalu (idempotent).
+        // System-Admin/Admin: paksa SEMUA permission jadi "write" - akses penuh selalu (idempotent).
         // Ini handle case dimana fitur baru ditambah dan admin role tidak otomatis di-upgrade.
         if (r.name === "System-Admin" || r.name === "Admin") {
           for (const key of ALL_PERMISSION_KEYS) {
@@ -10875,7 +10875,7 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.insert(roles).values({
       mitraId,
       name: "Admin",
-      description: "Akses penuh di satu mitra (intra-tenant). Role bawaan terkunci — tidak bisa diedit/dihapus oleh admin mitra.",
+      description: "Akses penuh di satu mitra (intra-tenant). Role bawaan terkunci - tidak bisa diedit/dihapus oleh admin mitra.",
       isSystem: 1,
       canSeeAllData: 0,
       permissions: this.buildPermsAllLevel("write"),
@@ -10910,7 +10910,7 @@ export class DatabaseStorage implements IStorage {
       if (data.canSeeAllData !== undefined && existing.name !== "System-Admin" && existing.name !== "Admin") allowed.canSeeAllData = data.canSeeAllData;
       allowed.updatedAt = new Date().toISOString();
       await this.db.update(roles).set(allowed).where(eq(roles.id, id));
-      invalidatePermCache();           // clear all — any user with this role affected
+      invalidatePermCache();           // clear all - any user with this role affected
       invalidatePermCacheAtMitra();    // clear per-mitra cache too
       const [row] = await this.db.select().from(roles).where(eq(roles.id, id));
       return row;
@@ -10919,7 +10919,7 @@ export class DatabaseStorage implements IStorage {
       ...data,
       updatedAt: new Date().toISOString(),
     }).where(eq(roles.id, id));
-    invalidatePermCache();           // clear all — any user with this role affected
+    invalidatePermCache();           // clear all - any user with this role affected
     invalidatePermCacheAtMitra();    // clear per-mitra cache too
     const [row] = await this.db.select().from(roles).where(eq(roles.id, id));
     return row;
@@ -10935,7 +10935,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(users).set({ roleId: null }).where(eq(users.roleId, id));
     await this.db.execute(sql`UPDATE user_mitras SET role_id = NULL WHERE role_id = ${id}`);
     await this.db.delete(roles).where(eq(roles.id, id));
-    invalidatePermCache();           // clear all — users that had this role are reassigned
+    invalidatePermCache();           // clear all - users that had this role are reassigned
     invalidatePermCacheAtMitra();    // clear per-mitra cache too
     return true;
   }
@@ -11106,9 +11106,9 @@ export class DatabaseStorage implements IStorage {
 
   // Helper: resolve effective permissions for a user in the context of a specific mitra.
   // Resolution order:
-  //   1. user_mitras.role_id for (userId, mitraId) — per-membership role
-  //   2. users.role_id — global default role
-  //   3. users.role text === "admin" — legacy fallback
+  //   1. user_mitras.role_id for (userId, mitraId) - per-membership role
+  //   2. users.role_id - global default role
+  //   3. users.role text === "admin" - legacy fallback
   async getUserEffectivePermissionsAtMitra(
     userId: number,
     mitraId: number
@@ -11187,7 +11187,7 @@ export class DatabaseStorage implements IStorage {
       return result;
     }
 
-    // We have a per-membership role_id — resolve it
+    // We have a per-membership role_id - resolve it
     const role = await this.getRoleById(roleId);
     if (role) {
       let parsed: Record<string, PermissionLevel> = {};
@@ -11202,7 +11202,7 @@ export class DatabaseStorage implements IStorage {
       return result;
     }
 
-    // role_id set but role row missing (orphan) — return empty
+    // role_id set but role row missing (orphan) - return empty
     const empty = { perms: {} as Record<string, PermissionLevel>, canSeeAllData: false, roleName: null, isSystem: false, roleId: null };
     return empty;
   }
@@ -11210,7 +11210,7 @@ export class DatabaseStorage implements IStorage {
   // ---- Audit Logs ----
   async createAuditLog(data: InsertAuditLog): Promise<void> {
     try {
-      // Use getMitraIdOrNull() ?? 1 — boot/seed code paths run outside request context
+      // Use getMitraIdOrNull() ?? 1 - boot/seed code paths run outside request context
       const mitraId = getMitraIdOrNull() ?? 1;
       await this.db.insert(auditLogs).values({ ...data, mitraId });
     } catch (err) {
@@ -11235,7 +11235,7 @@ export class DatabaseStorage implements IStorage {
     if (filter?.since) conds.push(sql`${auditLogs.createdAt} >= ${filter.since}`);
     if (filter?.excludeAutoSync !== false) {
       // Default: exclude billing sync worker auto logs (noisy) + semua portal customer entries
-      // (log internal fokus ke staff saja — portal pelanggan terpisah di audit_logs dengan username='(portal)')
+      // (log internal fokus ke staff saja - portal pelanggan terpisah di audit_logs dengan username='(portal)')
       conds.push(sql`NOT (${auditLogs.action} = 'SYNC' AND ${auditLogs.entityType} = 'billing' AND ${auditLogs.username} LIKE '(worker%')`);
       conds.push(sql`${auditLogs.username} != '(portal)'`);
     }
@@ -11278,7 +11278,7 @@ export class DatabaseStorage implements IStorage {
       .from(auditLogs)
       .where(sql`${auditLogs.mitraId} = ${mitraId} AND ${auditLogs.createdAt} >= ${since} AND ${auditLogs.userId} IS NOT NULL AND ${auditLogs.username} != '(portal)'`);
 
-    // Top users by action count (staff only — exclude worker + portal entries)
+    // Top users by action count (staff only - exclude worker + portal entries)
     // MAX() wraps non-aggregated cols supaya compatible dengan MySQL ONLY_FULL_GROUP_BY mode
     // (username/user_name selalu sama untuk user_id yang sama, jadi MAX() = ANY_VALUE() semantically)
     const topUsersRaw = ((await this.db.execute(sql`
@@ -11308,7 +11308,7 @@ export class DatabaseStorage implements IStorage {
       lastSeen: r.lastSeen ? String(r.lastSeen) : null,
     }));
 
-    // Top features (entity_type + action combos) — staff internal only
+    // Top features (entity_type + action combos) - staff internal only
     const topFeaturesRaw = ((await this.db.execute(sql`
       SELECT entity_type AS entityType, action, COUNT(*) AS count
       FROM audit_logs
@@ -11326,7 +11326,7 @@ export class DatabaseStorage implements IStorage {
       count: Number(r.count),
     }));
 
-    // Daily activity buckets — staff internal only
+    // Daily activity buckets - staff internal only
     const dailyRaw = ((await this.db.execute(sql`
       SELECT
         DATE(created_at) AS date,
@@ -11427,7 +11427,7 @@ export class DatabaseStorage implements IStorage {
     }
     const portUsage = { total: totalPortCapacity, used: totalPortUsed };
 
-    // Core feeder — hitung realtime dari cable_cores.status (bukan cables.usedCore yang stale)
+    // Core feeder - hitung realtime dari cable_cores.status (bukan cables.usedCore yang stale)
     const feederCableIds = allCables.filter(c => c.cableType === 'feeder').map(c => c.id);
     let coreFeederSisa = 0;
     if (feederCableIds.length > 0) {
@@ -11440,7 +11440,7 @@ export class DatabaseStorage implements IStorage {
       coreFeederSisa = Math.max(0, total - used);
     }
 
-    // 7 days ago growth calculation — pakai aggregate dari consolidated SQL
+    // 7 days ago growth calculation - pakai aggregate dari consolidated SQL
     const recentActive7d = Number(agg.recent_active_7d ?? 0);
     let rataPertumbuhanHarian = recentActive7d / 7;
 
@@ -11662,7 +11662,7 @@ export class DatabaseStorage implements IStorage {
       severity: r.severity ? String(r.severity) : "info",
       createdAt: String(r.createdAt),
       hasPhoto: Boolean(Number(r.hasPhoto)),
-      userName: r.userName ? String(r.userName) : "—",
+      userName: r.userName ? String(r.userName) : "-",
       userUsername: r.userUsername ? String(r.userUsername) : "",
       odpName: r.odpName ? String(r.odpName) : null,
       odpCode: r.odpCode ? String(r.odpCode) : null,
@@ -11838,8 +11838,8 @@ export class DatabaseStorage implements IStorage {
   // ---- Map Data ----
   // Light column projection: only fields actually consumed by MapPage.tsx +
   // MapInfoWindow.tsx are selected. This drops pppoe credentials,
-  // manualOverrides, notes, billing sync metadata, etc. — reducing
-  // customer payload ~80–85% (~800B → ~120B per row).
+  // manualOverrides, notes, billing sync metadata, etc. - reducing
+  // customer payload ~80-85% (~800B → ~120B per row).
   async getMapData(): Promise<MapData> {
     const mitraId = getMitraId();
     const [allPops, allOdcs, rawOdps, allCustomers, allPoles, allCables] = await Promise.all([
@@ -11950,7 +11950,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Tier 1: infra-only (POPs, ODCs, ODPs, Poles, Cables) — no customers.
+  // Tier 1: infra-only (POPs, ODCs, ODPs, Poles, Cables) - no customers.
   // Used by viewport-based map loading (Task C1).
   async getMapInfra(): Promise<{
     pops: any[]; odcs: any[]; odps: any[]; poles: any[]; cables: any[];
@@ -12209,7 +12209,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Advance ke stage berikutnya. Atomic — close stage saat ini + open stage baru + update tiket.
+   * Advance ke stage berikutnya. Atomic - close stage saat ini + open stage baru + update tiket.
    * @param toStage Key stage tujuan. Kalau null/undefined, auto-detect berikutnya berdasarkan sortOrder.
    * @returns updated ticket atau throw kalau invalid (stage ngga ada di kategori, requirement ngga terpenuhi, dll)
    */
@@ -12245,11 +12245,11 @@ export class DatabaseStorage implements IStorage {
     } else {
       const currentDef = ticket.currentStage ? this.findStageByKey(stages, ticket.currentStage) : null;
       if (currentDef?.isFinal) {
-        // Current adalah final — completion request, target = current
+        // Current adalah final - completion request, target = current
         target = currentDef;
       } else {
         target = this.nextStageDefault(stages, ticket.currentStage);
-        if (!target) throw new Error("Tidak ada stage berikutnya — tiket sudah di stage final");
+        if (!target) throw new Error("Tidak ada stage berikutnya - tiket sudah di stage final");
       }
     }
 
@@ -12322,7 +12322,7 @@ export class DatabaseStorage implements IStorage {
         ));
     }
 
-    // 2. Determine real target — kalau current stage adalah FINAL, ngga advance.
+    // 2. Determine real target - kalau current stage adalah FINAL, ngga advance.
     //    Kita cuma close transition dengan data + mark resolved.
     const currentStageDef = ticket.currentStage ? this.findStageByKey(stages, ticket.currentStage) : null;
     const completingFinalStage = currentStageDef?.isFinal === true && (!opts.toStage || opts.toStage === ticket.currentStage);
@@ -12343,7 +12343,7 @@ export class DatabaseStorage implements IStorage {
     const updateData: any = { updatedAt: now };
 
     if (completingFinalStage) {
-      // Tetap di final stage — mark resolved
+      // Tetap di final stage - mark resolved
       updateData.status = "resolved";
       updateData.resolvedAt = now;
       if (completionNote) updateData.resolution = completionNote;
@@ -12383,7 +12383,7 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Initialize tiket ke stage pertama (dipanggil saat tiket di-create atau saat di-dispatch).
-   * Idempotent — kalau current_stage sudah set, no-op.
+   * Idempotent - kalau current_stage sudah set, no-op.
    */
   async initializeTicketStage(ticketId: number, byUserId: number): Promise<void> {
     const ticket = await this.getTicket(ticketId);
@@ -12456,7 +12456,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * v4.2.7: Edit existing closed stage transition — supaya teknisi bisa koreksi data
+   * v4.2.7: Edit existing closed stage transition - supaya teknisi bisa koreksi data
    *         setelah submit (mis: ketik numeric salah, foto salah, dst).
    * Update note + evidenceId + lat + lng + metadata. Tidak ubah durasi atau stage flow.
    */
@@ -12595,7 +12595,7 @@ export class DatabaseStorage implements IStorage {
 
   // ====================  v4.2.18 (B.7 + C.1): Hold/Pause mechanism  ====================
 
-  /** Get active (ongoing) pause untuk tiket — kalau ada → ticket sedang on_hold */
+  /** Get active (ongoing) pause untuk tiket - kalau ada → ticket sedang on_hold */
   async getActivePause(ticketId: number): Promise<TicketPause | null> {
     const [row] = await this.db.select().from(ticketPauses)
       .where(and(eq(ticketPauses.ticketId, ticketId), sql`ended_at IS NULL`));
@@ -12650,7 +12650,7 @@ export class DatabaseStorage implements IStorage {
     return totalSec;
   }
 
-  /** v4.2.18 (P1.4): Edit history per stage — buat tampilkan badge "edited Nx" + popover */
+  /** v4.2.18 (P1.4): Edit history per stage - buat tampilkan badge "edited Nx" + popover */
   async getStageEditHistory(ticketId: number, stageKey?: string): Promise<TicketStageEditLog[]> {
     if (stageKey) {
       return this.db.select().from(ticketStageEditLog)
@@ -12705,7 +12705,7 @@ export class DatabaseStorage implements IStorage {
     const kk = (district && DatabaseStorage.DISTRICT_CODES[district]) || String(Math.floor(Math.random() * 10) + 1).padStart(2, "0");
 
     const prefix = `${yy}${mm}${cycle}${kk}`;
-    // Find max sequence for this prefix (scoped to mitra — IDs unique per mitra)
+    // Find max sequence for this prefix (scoped to mitra - IDs unique per mitra)
     const allCustomers = await this.db.select({ customerId: customers.customerId }).from(customers).where(eq(customers.mitraId, mitraId));
     let maxSeq = 0;
     for (const c of allCustomers) {
@@ -12765,7 +12765,7 @@ export class DatabaseStorage implements IStorage {
     return this.db.select().from(tickets).where(eq(tickets.mitraId, mitraId)).orderBy(desc(tickets.createdAt));
   }
   /**
-   * List tiket dengan filter + paginasi + enrich nama (customer/assignee) via JOIN —
+   * List tiket dengan filter + paginasi + enrich nama (customer/assignee) via JOIN -
    * supaya client tidak perlu menarik seluruh tabel customers/users untuk resolve nama,
    * dan tidak mengirim seluruh tabel tiket ke browser.
    */
@@ -12835,7 +12835,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
     // Atomic numbering: unique index (mitra_id, ticket_number) bikin race antar create
-    // bersamaan jadi error 1062 — retry dengan nomor berikutnya, bukan menulis duplikat.
+    // bersamaan jadi error 1062 - retry dengan nomor berikutnya, bukan menulis duplikat.
     let insertId = 0;
     for (let attempt = 0; ; attempt++) {
       if (!insertData.ticketNumber) insertData.ticketNumber = await this.getNextTicketNumber();
@@ -12907,7 +12907,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== TICKET CHECKPOINTS (v4.2.5) ====================
-  // Action-based — replace stage rigid. Teknisi tap action button = catat checkpoint.
+  // Action-based - replace stage rigid. Teknisi tap action button = catat checkpoint.
 
   /**
    * Tambah checkpoint baru untuk tiket. Auto-update status tiket berdasarkan action:
@@ -12989,7 +12989,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * Time tracking metrics dari checkpoints — auto-derive durations.
+   * Time tracking metrics dari checkpoints - auto-derive durations.
    * - travelMinutes: depart → arrive
    * - setupMinutes: arrive → start_work
    * - workMinutes: start_work → complete (minus pause durations)
@@ -13099,7 +13099,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.delete(chatwootKeywordRules).where(and(eq(chatwootKeywordRules.id, id), eq(chatwootKeywordRules.mitraId, mitraId)));
   }
 
-  // ── Chatwoot agent links (Batch 2c) — per-mitra user↔agent mapping ──
+  // -- Chatwoot agent links (Batch 2c) - per-mitra user↔agent mapping --
   async listChatwootAgentLinks(): Promise<ChatwootAgentLink[]> {
     const mitraId = getMitraId();
     return this.db.select().from(chatwootAgentLinks).where(eq(chatwootAgentLinks.mitraId, mitraId));
@@ -13154,7 +13154,7 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  /** NOTE: pre-auth webhook lookup — chatwoot calls this with just conversationId.
+  /** NOTE: pre-auth webhook lookup - chatwoot calls this with just conversationId.
    *  Caller wraps with withMitra after resolving link's mitra. */
   async getChatwootLinkByConversation(conversationId: string): Promise<ChatwootTicketLink | undefined> {
     const [row] = await this.db.select().from(chatwootTicketLinks).where(eq(chatwootTicketLinks.conversationId, conversationId));
@@ -13163,7 +13163,7 @@ export class DatabaseStorage implements IStorage {
 
   async findCustomerByPhone(phone: string): Promise<Customer | null> {
     const mitraId = getMitraId();
-    // Normalize phone — strip non-digits, try various formats
+    // Normalize phone - strip non-digits, try various formats
     const digits = phone.replace(/\D/g, "");
     if (!digits) return null;
     const candidates = [
@@ -13204,7 +13204,7 @@ export class DatabaseStorage implements IStorage {
       for (const tbl of childTables) {
         await conn.execute(`DELETE FROM ${tbl} WHERE ticket_id = ? AND mitra_id = ?`, [id, mitraId]);
       }
-      // Alarm jaringan adalah sumber tiket, bukan anak — putuskan referensinya, jangan dihapus.
+      // Alarm jaringan adalah sumber tiket, bukan anak - putuskan referensinya, jangan dihapus.
       await conn.execute(`UPDATE network_alarms SET ticket_id = NULL WHERE ticket_id = ? AND mitra_id = ?`, [id, mitraId]);
       await conn.execute(`DELETE FROM tickets WHERE id = ? AND mitra_id = ?`, [id, mitraId]);
       await conn.commit();
@@ -13272,7 +13272,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
-   * v4.2.18 (A.3): logActivity — structured helper untuk audit log.
+   * v4.2.18 (A.3): logActivity - structured helper untuk audit log.
    * Capture IP, user-agent, GPS dari request automatically.
    * Action enum: "ticket.created" | "ticket.assigned" | "ticket.priority_changed" |
    *              "stage.started" | "stage.completed" | "stage.edited" |
@@ -13334,7 +13334,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // v4.2.18 (C.4): SLA dashboard stats — compliance %, MTTR, breach trend (14 hari)
+  // v4.2.18 (C.4): SLA dashboard stats - compliance %, MTTR, breach trend (14 hari)
   async getSlaDashboardStats(): Promise<{
     complianceRate: number;        // % tiket resolved sebelum SLA breach (last 30 hari)
     mttrMinutes: number | null;    // mean time to resolution (last 30 hari)
@@ -13399,7 +13399,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Breach trend last 14 days — 1 query untuk seluruh window, bucket di JS
+    // Breach trend last 14 days - 1 query untuk seluruh window, bucket di JS
     // (sebelumnya 14 query sekuensial, satu per hari).
     const windowStart = dayStart(13);
     const windowEnd = dayStart(-1); // besok tengah malam → cakup hari ini penuh
@@ -13437,7 +13437,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // v4.2.16: Workload per teknisi — total tiket di-assign + breakdown per status
+  // v4.2.16: Workload per teknisi - total tiket di-assign + breakdown per status
   async getTechnicianWorkload(): Promise<Array<{
     userId: number; userName: string; userRole: string;
     totalAssigned: number; asLead: number; asHelper: number;
@@ -13496,14 +13496,14 @@ export class DatabaseStorage implements IStorage {
 
   // ====================  v4.2.17: CSAT (Customer Satisfaction)  ====================
 
-  /** Schedule CSAT survey 24 jam setelah ticket close. Idempotent — kalau sudah ada, no-op. */
+  /** Schedule CSAT survey 24 jam setelah ticket close. Idempotent - kalau sudah ada, no-op. */
   async scheduleCsatForTicket(ticketId: number): Promise<TicketCsat | null> {
     const mitraId = getMitraId();
     const existing = await this.db.select().from(ticketCsat).where(and(eq(ticketCsat.ticketId, ticketId), eq(ticketCsat.mitraId, mitraId)));
     if (existing.length > 0) return existing[0];
     const ticket = await this.getTicket(ticketId);
     if (!ticket || !ticket.customerId) return null;
-    // Resolve "lead" teknisi yang close — fallback ke assignedTo
+    // Resolve "lead" teknisi yang close - fallback ke assignedTo
     const team = await this.getTicketTeam(ticketId);
     const lead = team.find(m => m.role === "lead") ?? team[0];
     const resolvedBy = lead?.userId ?? ticket.assignedTo ?? null;
@@ -13541,7 +13541,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Get CSAT by token (public endpoint untuk customer respond).
-   * NOTE: public token lookup — no mitra filter; token is globally unique (UUID-like).
+   * NOTE: public token lookup - no mitra filter; token is globally unique (UUID-like).
    * Caller resolves ticket→mitra context from the returned row if needed. */
   async getCsatByToken(token: string): Promise<TicketCsat | null> {
     const [row] = await this.db.select().from(ticketCsat).where(eq(ticketCsat.token, token));
@@ -13549,10 +13549,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async submitCsatResponse(token: string, rating: number, feedback?: string): Promise<TicketCsat | null> {
-    // NOTE: public token lookup — no mitra filter; token is globally unique.
+    // NOTE: public token lookup - no mitra filter; token is globally unique.
     const csat = await this.getCsatByToken(token);
     if (!csat) return null;
-    if (csat.status === "responded") return csat; // already responded — idempotent
+    if (csat.status === "responded") return csat; // already responded - idempotent
     await this.db.update(ticketCsat).set({
       rating, feedback: feedback || null,
       respondedAt: new Date().toISOString(), status: "responded",
@@ -13700,7 +13700,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(networkAlarms.correlationKey, key), eq(networkAlarms.mitraId, mitraId), sql`resolved_at IS NULL`));
   }
 
-  /** Resolve alarms (mark resolved_at) — saat OLT report ONT online lagi. */
+  /** Resolve alarms (mark resolved_at) - saat OLT report ONT online lagi. */
   async resolveAlarmsByKey(key: string): Promise<number> {
     const now = new Date().toISOString();
     const ongoing = await this.findOngoingAlarmsByKey(key);
@@ -13768,7 +13768,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Find active key by prefix (used during verification before bcrypt compare).
-   *  NOTE: pre-auth lookup — no mitra filter; caller wraps with withMitra after resolving key's mitra. */
+   *  NOTE: pre-auth lookup - no mitra filter; caller wraps with withMitra after resolving key's mitra. */
   async findApiKeyCandidatesByPrefix(prefix: string): Promise<ApiKey[]> {
     return this.db.select().from(apiKeys).where(and(
       eq(apiKeys.keyPrefix, prefix),
@@ -13835,7 +13835,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteApiKey(id: number): Promise<void> {
     const mitraId = getMitraId();
-    // Hapus usage logs first (FK constraint) — scoped to mitra
+    // Hapus usage logs first (FK constraint) - scoped to mitra
     await this.db.delete(apiKeyUsageLogs).where(and(eq(apiKeyUsageLogs.apiKeyId, id), eq(apiKeyUsageLogs.mitraId, mitraId)));
     await this.db.delete(apiKeys).where(and(eq(apiKeys.id, id), eq(apiKeys.mitraId, mitraId)));
   }
@@ -13897,7 +13897,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async cleanupOldApiKeyLogs(olderThanDays: number = 30): Promise<number> {
-    // System cleanup — runs across all mitras intentionally (no mitra filter)
+    // System cleanup - runs across all mitras intentionally (no mitra filter)
     const cutoff = new Date(Date.now() - olderThanDays * 86400_000).toISOString();
     const rows: any = ((await this.db.execute(sql`
       SELECT COUNT(*) AS n FROM api_key_usage_logs WHERE created_at < ${cutoff}
@@ -13971,7 +13971,7 @@ export class DatabaseStorage implements IStorage {
       GROUP BY stage
     `))[0] as any);
 
-    // Top performers today (leads + collections activities) — wrap in subquery to avoid HAVING-without-GROUP-BY issue
+    // Top performers today (leads + collections activities) - wrap in subquery to avoid HAVING-without-GROUP-BY issue
     // Joined with user_mitras so we only count users assigned to current mitra
     const topStaff: any = ((await this.db.execute(sql`
       SELECT * FROM (
@@ -14044,13 +14044,13 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   // MARKETING DEEP API (untuk OpenClaude / BI)
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
 
-  /** ONE-SHOT overview untuk AI daily analysis — dense, include momentum vs previous period */
+  /** ONE-SHOT overview untuk AI daily analysis - dense, include momentum vs previous period */
   /**
-   * Marketing Daily Report — focused, structured per-day report untuk standup tim marketing.
+   * Marketing Daily Report - focused, structured per-day report untuk standup tim marketing.
    * Default: hari ini (00:00 - now). Bisa override via fromIso/toIso untuk hari spesifik.
    *
    * Return:
@@ -14066,11 +14066,11 @@ export class DatabaseStorage implements IStorage {
   async getMarketingDailyReport(fromIso: string, toIso: string): Promise<any> {
     const reportDate = new Date(fromIso);
     const dateLabel = reportDate.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    // Local date string (not UTC) — biar konsisten dengan label
+    // Local date string (not UTC) - biar konsisten dengan label
     const localDateStr = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, "0")}-${String(reportDate.getDate()).padStart(2, "0")}`;
     const monthStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), 1).toISOString();
 
-    // ── Summary KPI hari ini ──
+    // -- Summary KPI hari ini --
     const summaryRow: any = ((await this.db.execute(sql`
       SELECT
         (SELECT COUNT(*) FROM canvassing_sessions WHERE started_at >= ${fromIso} AND started_at <= ${toIso}) AS sessions_today,
@@ -14092,7 +14092,7 @@ export class DatabaseStorage implements IStorage {
     `))[0] as any);
     const s = summaryRow?.[0] ?? {};
 
-    // ── Per-canvasser breakdown today ──
+    // -- Per-canvasser breakdown today --
     const perCanvasser: any = ((await this.db.execute(sql`
       SELECT
         u.id, u.name, u.username,
@@ -14113,7 +14113,7 @@ export class DatabaseStorage implements IStorage {
       ORDER BY reports DESC, sessions DESC
     `))[0] as any);
 
-    // ── Per-sales breakdown today ──
+    // -- Per-sales breakdown today --
     const perSales: any = ((await this.db.execute(sql`
       SELECT
         u.id, u.name, u.username,
@@ -14133,7 +14133,7 @@ export class DatabaseStorage implements IStorage {
       ORDER BY leads_won DESC, activities DESC
     `))[0] as any);
 
-    // ── Hourly distribution (productivity heatmap) ──
+    // -- Hourly distribution (productivity heatmap) --
     const hourlyRows: any = ((await this.db.execute(sql`
       SELECT
         CAST(strftime('%H', created_at) AS INTEGER) AS hour,
@@ -14160,7 +14160,7 @@ export class DatabaseStorage implements IStorage {
       leads: Number(hourlyMap[h]?.leads ?? 0),
     }));
 
-    // ── Lead source breakdown today ──
+    // -- Lead source breakdown today --
     const leadsBySource: any = ((await this.db.execute(sql`
       SELECT source, COUNT(*) AS n
       FROM leads
@@ -14169,7 +14169,7 @@ export class DatabaseStorage implements IStorage {
       ORDER BY n DESC
     `))[0] as any);
 
-    // ── Lead pipeline snapshot (current state, not date-bound) ──
+    // -- Lead pipeline snapshot (current state, not date-bound) --
     const pipelineRows: any = ((await this.db.execute(sql`
       SELECT stage, COUNT(*) AS n FROM leads
       WHERE closed_at IS NULL OR closed_at = ''
@@ -14178,7 +14178,7 @@ export class DatabaseStorage implements IStorage {
     const pipeline: Record<string, number> = {};
     for (const r of (pipelineRows ?? [])) pipeline[r.stage] = Number(r.n);
 
-    // ── Top performer (highest combined activity) ──
+    // -- Top performer (highest combined activity) --
     let topPerformer: any = null;
     const allStaff = [
       ...((perCanvasser ?? []).map((s: any) => ({ ...s, role: "canvasser", score: Number(s.reports) + Number(s.sessions) * 2 }))),
@@ -14189,7 +14189,7 @@ export class DatabaseStorage implements IStorage {
       topPerformer = allStaff[0];
     }
 
-    // ── Coverage: districts dengan aktivitas hari ini ──
+    // -- Coverage: districts dengan aktivitas hari ini --
     const districts: any = ((await this.db.execute(sql`
       SELECT COALESCE(NULLIF(district, ''), '(belum diisi)') AS district, COUNT(*) AS leads
       FROM leads WHERE created_at >= ${fromIso} AND created_at <= ${toIso}
@@ -14329,7 +14329,7 @@ export class DatabaseStorage implements IStorage {
       LIMIT 5
     `))[0] as any);
 
-    // Red flags — rule-based insights untuk AI
+    // Red flags - rule-based insights untuk AI
     const redFlags: string[] = [];
     const greens: string[] = [];
     const pct = (a: number, b: number) => b > 0 ? ((a - b) / b * 100) : (a > 0 ? 100 : 0);
@@ -14351,7 +14351,7 @@ export class DatabaseStorage implements IStorage {
     }
     if (curr.avgLeadAgeDays > 14) redFlags.push(`Lead aging: rata-rata ${curr.avgLeadAgeDays.toFixed(0)} hari di pipeline (idealnya <10)`);
 
-    if (leadTrendPct > 25) greens.push(`Leads baru naik ${leadTrendPct.toFixed(0)}% — momentum bagus`);
+    if (leadTrendPct > 25) greens.push(`Leads baru naik ${leadTrendPct.toFixed(0)}% - momentum bagus`);
     if (convTrendPct > 50) greens.push(`Conversion meningkat ${convTrendPct.toFixed(0)}%`);
     if (referralTrendPct > 50) greens.push(`Program Sahabat ramai: invite naik ${referralTrendPct.toFixed(0)}%`);
 
@@ -14430,7 +14430,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  /** Canvassing sessions stats — aktif + rekap today/week */
+  /** Canvassing sessions stats - aktif + rekap today/week */
   async getCanvassingSessionsStats(fromIso: string, toIso: string): Promise<any> {
     const active: any = ((await this.db.execute(sql`
       SELECT s.id, s.user_id AS userId, u.name AS userName, s.name, s.area_description AS areaDescription,
@@ -14558,7 +14558,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  /** Leads attribution — source breakdown + conversion per source */
+  /** Leads attribution - source breakdown + conversion per source */
   async getLeadsAttribution(fromIso: string, toIso: string): Promise<any> {
     const bySource: any = ((await this.db.execute(sql`
       SELECT source,
@@ -14629,7 +14629,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  /** Coverage per district — penetration analysis
+  /** Coverage per district - penetration analysis
    *  Note: canvassing_logs tidak punya district column, jadi kita pakai leads.district
    *  sebagai proxy "activity" (karena lead dari canvassing juga simpan district). */
   async getMarketingCoverage(fromIso: string, toIso: string): Promise<any> {
@@ -14745,7 +14745,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  /** Sahabat referral funnel — invited → registered → rewarded */
+  /** Sahabat referral funnel - invited → registered → rewarded */
   async getSahabatFunnel(fromIso: string, toIso: string): Promise<any> {
     const rows: any = ((await this.db.execute(sql`
       SELECT
@@ -14802,7 +14802,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  /** Heatmap — lat/lng untuk GIS viz */
+  /** Heatmap - lat/lng untuk GIS viz */
   async getMarketingHeatmap(types: string[]): Promise<any> {
     const result: any = { points: [] };
     if (types.includes("prospects")) {
@@ -14836,9 +14836,9 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   // USER PRODUCTIVITY STATS (untuk user detail drawer)
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   async getUserProductivityStats(userId: number): Promise<any> {
     const since30 = new Date(Date.now() - 30 * 86400_000).toISOString();
     const since7 = new Date(Date.now() - 7 * 86400_000).toISOString();
@@ -14881,9 +14881,9 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   // NOTIFICATIONS
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
 
   async createNotification(data: {
     userId: number; type: string; title: string; message?: string;
@@ -14986,7 +14986,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.execute(sql`DELETE FROM notifications WHERE id = ${id} AND user_id = ${userId} AND mitra_id = ${mitraId}`);
   }
 
-  /** Cleanup: hapus notif > 30 hari (cross-tenant — system maintenance) */
+  /** Cleanup: hapus notif > 30 hari (cross-tenant - system maintenance) */
   async cleanupOldNotifications(daysToKeep = 30): Promise<number> {
     const cutoff = new Date(Date.now() - daysToKeep * 86400_000).toISOString();
     const rows: any = ((await this.db.execute(sql`SELECT COUNT(*) AS n FROM notifications WHERE created_at < ${cutoff}`))[0] as any);
@@ -14995,9 +14995,9 @@ export class DatabaseStorage implements IStorage {
     return n;
   }
 
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   // ANNOUNCEMENTS
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
 
   /** BUG-004: pengumuman milik SATU tim (announcements.team_id = teamId), terbaru dulu.
    *  Terpisah dari changelog company-wide (team_id NULL). */
@@ -15093,9 +15093,9 @@ export class DatabaseStorage implements IStorage {
     await this.db.delete(announcements).where(and(eq(announcements.id, id), eq(announcements.mitraId, mitraId)));
   }
 
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
   // BUG REPORTS
-  // ════════════════════════════════════════════════════════════════
+  // ================================================================
 
   async listBugReports(filter?: { status?: string; severity?: string; reportedBy?: number; assignedTo?: number; limit?: number }): Promise<any[]> {
     const mitraId = getMitraId();

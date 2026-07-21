@@ -1,8 +1,8 @@
-# Spec — SP3a: Collection Engine (config executor)
+# Spec - SP3a: Collection Engine (config executor)
 
 > Date: 2026-06-10 · Mitra-scoped · Sub-project 3a of the "Collection Parameters in Pipeline Engine" epic.
 > Build on `dev`. Hybrid architecture. Depends on SP1 + SP2 (merged).
-> Target: pipeline 7 "Penagihan (Collections)" for JABNET — built generically for all tenants.
+> Target: pipeline 7 "Penagihan (Collections)" for JABNET - built generically for all tenants.
 
 ## Goal
 
@@ -11,7 +11,7 @@ snapshots: enter overdue customers into collection, age cards through stages by 
 and close on payment. Also completes SP1's deferred `collection_status`/`writeoff_status` variables.
 
 After SP3a, configuring a pipeline as a collection pipeline (SP2) makes it run automatically on each billing
-sync — no per-rule wiring required for the common case.
+sync - no per-rule wiring required for the common case.
 
 ## Decisions (confirmed in brainstorming)
 
@@ -23,10 +23,10 @@ sync — no per-rule wiring required for the common case.
 2. **Entry modes implemented:** `create`, `create_if_not_exists`, `move`. (`reopen` → SP4 with cycles.)
 3. **Engine moves fire stage-enter automations** (so the user's notify/linked/move rules still run). Loop-safe:
    the engine runs once per sync and mutates via storage directly; it dispatches stage-enter automations the
-   same way the move endpoint does — it is not itself re-triggered.
+   same way the move endpoint does - it is not itself re-triggered.
 4. **Per-card priority: pay > write-off > aging.**
 
-## 1. Complete SP1 variables — `shared/collectionMetrics.ts` + storage
+## 1. Complete SP1 variables - `shared/collectionMetrics.ts` + storage
 
 - Extend `COLLECTION_ATTRS` with two text attrs: `collection_status`, `writeoff_status`.
 - `CollectionSnapshot` gains `collectionStatus: string | null` and `writeoffStatus: string | null`.
@@ -35,7 +35,7 @@ sync — no per-rule wiring required for the common case.
   - `cardStageId === cfg.writeoffStageId` → `{ "writeoff", "1" }`.
   - `cardStageId === cfg.paidStageId` → `{ "paid", "0" }`.
   - otherwise (any other stage of an enabled collection pipeline) → `{ "in_collection", "0" }`.
-- `attrValue`/`compareAttr` already handle text attrs — they cover the two new keys once present on the
+- `attrValue`/`compareAttr` already handle text attrs - they cover the two new keys once present on the
   snapshot.
 - `getCardCollectionSnapshot(cardId)` (storage) additionally loads the card's pipeline `collection_config`
   and folds `resolveCollectionStatus(card.stageId, cfg)` into the returned snapshot. When the card has a
@@ -43,7 +43,7 @@ sync — no per-rule wiring required for the common case.
   NOTE: this means a card with NO `sourceCustomerId` still returns `null` (unchanged); the status additions
   only enrich snapshots that already exist.
 
-## 2. Pure decision module — `shared/collectionEngine.ts` (no I/O, unit-tested)
+## 2. Pure decision module - `shared/collectionEngine.ts` (no I/O, unit-tested)
 
 ```ts
 import { type CollectionSnapshot, isPaidStatus } from "./collectionMetrics.js";
@@ -83,7 +83,7 @@ Tests (`shared/collectionEngine.test.ts`): `decideEntry` (disabled/below-thresho
 3 modes with/without an active card); `decideCardLifecycle` (pay wins over writeoff+age; writeoff move_stage
 vs custom_rule; age via stageForOverdue; already-at-target → none; no-config write-off threshold → skips).
 
-## 3. Storage — `server/storage.ts`
+## 3. Storage - `server/storage.ts`
 
 ```ts
 // ALL cards of a pipeline that carry a source_customer_id (one query; the engine derives the active vs
@@ -92,9 +92,9 @@ getCardsWithCustomer(pipelineId: number): Promise<PipelineCard[]>;
 ```
 Reuses existing: `getCollectionConfig` (SP2), `getCustomers`, `createCard`, `moveCard`, `getRuleById`/
 `listRules`, `setCardValues`. All mitra-scoped. (If no `getRuleById` exists, the engine filters `listRules(P)`
-by id — confirmed at plan time.)
+by id - confirmed at plan time.)
 
-## 4. Engine — `server/collection-engine.ts` → `runCollectionEngine()`
+## 4. Engine - `server/collection-engine.ts` → `runCollectionEngine()`
 
 Runs in the current tenant context (like `runBillingIntakeRules`). Returns
 `{ entered: number; aged: number; writtenOff: number; paidClosed: number }`.
@@ -106,10 +106,10 @@ for each pipeline P with collection_config.enabled = 1:
   customers = getCustomers()                          // current tenant
   snapByCustomer = Map(customerId → buildCollectionSnapshot(customer, now))   // SP1 pure, no per-card DB
   allCards = getCardsWithCustomer(P)                  // every P card with a source_customer_id
-  // "active" = not terminal (not at paid/writeoff stage) — used by the entry pass's hasActiveCard test
+  // "active" = not terminal (not at paid/writeoff stage) - used by the entry pass's hasActiveCard test
   activeByCustomer = Map(sourceCustomerId → card  for cards whose stageId ∉ {paidStageId, writeoffStageId})
 
-  // (a) Lifecycle pass — over ALL cards-with-customer (includes paid/writeoff so a just-paid card can be re-evaluated)
+  // (a) Lifecycle pass - over ALL cards-with-customer (includes paid/writeoff so a just-paid card can be re-evaluated)
   for card in allCards:
      snap = snapByCustomer.get(card.sourceCustomerId); if !snap: continue
      d = decideCardLifecycle(snap, cfg, stageMap, card.stageId)
@@ -121,7 +121,7 @@ for each pipeline P with collection_config.enabled = 1:
                        count writtenOff
         "none":        nothing
 
-  // (b) Entry pass — overdue customers without an active card
+  // (b) Entry pass - overdue customers without an active card
   for customer where snapshot.daysOverdue >= cfg.entryThresholdDays && !isPaid && !activeByCustomer.has(id):
      e = decideEntry(snap, cfg, /*hasActiveCard*/ false)
      if e.create: createCard(P, { stageId: entryStageId, title, sourceCustomerId }) ; dispatch stage-enter automations; entered++
@@ -151,14 +151,14 @@ try {
 ```
 
 ## 6. Testing
-- `shared/collectionEngine.test.ts` + `collectionMetrics` status additions (`resolveCollectionStatus`) — `npx tsx --test`.
+- `shared/collectionEngine.test.ts` + `collectionMetrics` status additions (`resolveCollectionStatus`) - `npx tsx --test`.
 - Storage `getActiveCollectionCards`, engine glue, worker wiring: typecheck + build + manual on dev.
 
 ## 7. Manual acceptance (on dev, pipeline 7 / JABNET)
-Pre: SP2 config set (entry 7d/create_if_not_exists/entry+paid stage; write-off 180d→Write Off; mapping 1–7→FU1 … 61–90→Isolir, 181–∞→Write Off).
+Pre: SP2 config set (entry 7d/create_if_not_exists/entry+paid stage; write-off 180d→Write Off; mapping 1-7→FU1 … 61-90→Isolir, 181-∞→Write Off).
 1. A customer 10 days overdue, no card → after a billing "Sync Now", a collection card is created at the entry
    stage, then aged to the FU1/FU2 stage matching 10 days.
-2. Customer ages to 20 days → next sync moves the card to the 15–30 stage (FU3). Stage-enter rules on that
+2. Customer ages to 20 days → next sync moves the card to the 15-30 stage (FU3). Stage-enter rules on that
    stage fire (e.g. notify).
 3. Customer reaches 185 days → card moves to Write Off (or the custom rule runs).
 4. Customer pays (billingStatus lunas) → next sync moves the card to the paid stage. Pay beats write-off/aging.

@@ -60,12 +60,12 @@ export function StageColumn({
   onStageDragStart?: (id: number) => void;
   onStageDrop?: (targetId: number) => void;
   onMoveStage?: (id: number, dir: -1 | 1) => void;
-  /** Selection mode — show checkboxes on cards and stage header. */
+  /** Selection mode - show checkboxes on cards and stage header. */
   selectMode?: boolean;
   selectedIds?: Set<number>;
   onToggleCard?: (id: number) => void;
   onToggleStage?: (ids: number[], on: boolean) => void;
-  /** Untuk quick-move BoardCard — daftar stage + callback stabil (diteruskan apa adanya). */
+  /** Untuk quick-move BoardCard - daftar stage + callback stabil (diteruskan apa adanya). */
   stages?: { id: number; label: string; color: string | null }[];
   onMoveCard?: (cardId: number, stageId: number) => void;
 }) {
@@ -104,7 +104,7 @@ export function StageColumn({
         else onDropStage(stage.id);
       }}
     >
-      {/* Stage header — band berwarna (warna stage), teks & chip kontras-responsif */}
+      {/* Stage header - band berwarna (warna stage), teks & chip kontras-responsif */}
       <div
         className="flex items-center gap-1.5 mb-3 px-2 py-2 rounded-lg shrink-0 shadow-elev-sm"
         style={{ backgroundColor: color, color: headerText }}
@@ -287,7 +287,7 @@ export function StageColumn({
         </div>
       )}
 
-      {/* Cards — per-column vertical scroll */}
+      {/* Cards - per-column vertical scroll */}
       <div
         ref={listRef}
         className="flex-1 overflow-y-auto column-scrollbar space-y-2 pr-1 min-h-0"

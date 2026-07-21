@@ -1,4 +1,4 @@
-# Spec — Card File/Photo Attachments (SP1 of Advanced Pipeline Automation)
+# Spec - Card File/Photo Attachments (SP1 of Advanced Pipeline Automation)
 
 > Date: 2026-06-09 · Mitra-scoped · First sub-project of the Advanced Pipeline Automation epic.
 > Driving AC: "/pipeline supports foto/file upload" (acceptance #1).
@@ -19,7 +19,7 @@ master-card / cross-card sync defers to a later sub-project (needs `master_card_
 4. **Allowed types:** `jpg, png, webp, pdf, docx, xlsx, zip`. **Cap 25 MB/file** (post client-compression
    for images).
 5. **Image storage rules** (delegated): images client-compressed before upload (reuse
-   `client/lib/imageCompress.ts`) — longest edge ≤1920px, ~82% quality, PNG-with-alpha kept as PNG;
+   `client/lib/imageCompress.ts`) - longest edge ≤1920px, ~82% quality, PNG-with-alpha kept as PNG;
    documents stored as-is.
 
 ## 1. Storage layout + multi-tenant isolation
@@ -40,7 +40,7 @@ uploads/<mitra-slug>/pipeline/YYYY/MM/<cardId>-<8hex>.<ext>
 - `UPLOADS_READ_ONLY=true` (dev default) → writes rejected with an explicit error (existing behavior in
   `saveBase64Photo`; new file helper honors the same flag).
 
-## 2. `server/uploads.ts` generalization (additive — photo helpers untouched)
+## 2. `server/uploads.ts` generalization (additive - photo helpers untouched)
 
 ```ts
 // Stream an uploaded file (already a Buffer assembled by busboy under the size cap) to the per-mitra
@@ -59,7 +59,7 @@ export async function streamFile(
 `buildRelativePath` hardcodes `.jpg`, so a sibling helper is added). `streamPhoto` stays for the photo
 flows; `streamFile` is the generalized version used here.
 
-## 3. Pure validation module — `shared/attachmentRules.ts` (no I/O, unit-tested)
+## 3. Pure validation module - `shared/attachmentRules.ts` (no I/O, unit-tested)
 
 ```ts
 export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
@@ -76,7 +76,7 @@ export const ATTACHMENT_TYPES: { ext: string; mime: string; kind: "image" | "fil
 
 // Lowercased, last-segment extension; "" if none.
 export function fileExt(name: string): string;
-// Validate by extension (mime is advisory — browsers lie). Returns the matched type or an error.
+// Validate by extension (mime is advisory - browsers lie). Returns the matched type or an error.
 export function validateAttachment(name: string, sizeBytes: number):
   | { ok: true; ext: string; mime: string; kind: "image" | "file" }
   | { ok: false; error: string };
@@ -131,10 +131,10 @@ All under the main router (tenant context + capability helpers available). Reuse
 Busboy: stream each file part into a capped buffer; abort + 413 if it exceeds 25 MB; reject
 disallowed extensions before writing. No temp files. The `/raw` endpoint is reachable by `<img>`/`<a>`
 tags: `authMiddleware` already falls back from the `Authorization` header to the **`ftth_session`
-cookie** (routes.ts:184-190) — the same mechanism that makes the comment-photo `<img>` work — so `/raw`
+cookie** (routes.ts:184-190) - the same mechanism that makes the comment-photo `<img>` work - so `/raw`
 authenticates with no extra work. No token in the URL.
 
-## 6. Frontend — `CardDetailModal`
+## 6. Frontend - `CardDetailModal`
 
 New **"Lampiran"** section (distinct from the comment thread):
 - Multi-file picker + drag-drop dropzone. Images run through `compressImage()` before the multipart POST;
@@ -146,7 +146,7 @@ New **"Lampiran"** section (distinct from the comment thread):
 - Per-item delete button shown only when `attachment.uploaded_by === currentUser.id || isPipelineAdmin`.
 - Empty state; loading skeleton; gated so it renders read-only when the user lacks `cards`.
 - Hook(s) in `usePipelines.ts`: `useCardAttachments(cardId)` (list), `useUploadAttachments(cardId)`
-  (multipart mutation w/ FormData), `useDeleteAttachment()` — invalidate the list on success.
+  (multipart mutation w/ FormData), `useDeleteAttachment()` - invalidate the list on success.
 
 Uses design-system components only; no hardcoded hex; semantic HTML.
 
@@ -174,7 +174,7 @@ file name) so the card timeline shows file activity. Reuses the existing activit
 
 ## Out of scope
 
-- Master-card attachments + sync-to-linked-card (needs `master_card_id` — SP2+).
+- Master-card attachments + sync-to-linked-card (needs `master_card_id` - SP2+).
 - Server-side image transforms/thumbnails (compression is client-side).
-- Virus scanning, external object storage (S3/R2) — revisit if cPanel disk pressure appears.
+- Virus scanning, external object storage (S3/R2) - revisit if cPanel disk pressure appears.
 - Inline preview for docx/xlsx (download only; PDFs open in-browser).

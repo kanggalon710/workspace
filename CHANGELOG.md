@@ -1,60 +1,60 @@
-# JABNET FTTH Asset Manager — Changelog
+# JABNET FTTH Asset Manager - Changelog
 
 Semua perubahan signifikan, perbaikan bug, dan fitur baru dicatat di sini.
-Format: `[Versi] - Tanggal — Ringkasan`
+Format: `[Versi] - Tanggal - Ringkasan`
 
 ---
 
-## [v5.0.0] - 2026-07-17 — Teamspace Fase 3 + pelengkap Fase 2: LENGKAP (pengganti Cicle penuh)
+## [v5.0.0] - 2026-07-17 - Teamspace Fase 3 + pelengkap Fase 2: LENGKAP (pengganti Cicle penuh)
 
-### Added — Fase 3
+### Added - Fase 3
 - **Laporan Kinerja terpadu** (FR-10xx + FR-1006, `/teamspace/performance`):
   - Skor deterministik 0-100 per anggota (`shared/performanceScore`, 7 test): bobot
-    on-time 40 / penyelesaian 25 / check-in 15 / ops 20 — configurable via
+    on-time 40 / penyelesaian 25 / check-in 15 / ops 20 - configurable via
     `app_settings.teamspace_score_weights`; bintang 1-5 + label; AI TIDAK menilai
   - Scope 3 tingkat: supervisor lihat semua · manager lihat timnya · member lihat dirinya
   - **Output ops disandingkan** (pembeda vs Cicle): tiket resolved, lead won,
     collection closed, laporan canvassing per user per periode
   - Donut distribusi status, on-time rate, cycle time, **Kemungkinan Penghambat**
-    (> `teamspace_stuck_threshold_days`, default 40 — configurable, klik → buka kartu)
+    (> `teamspace_stuck_threshold_days`, default 40 - configurable, klik → buka kartu)
   - **Saran AI** (FR-1004): 1 paragraf via Claude API (`claude-haiku-4-5`), prompt
     angka-aktual anti-halusinasi, cache 24 jam; aktifkan via `teamspace_ai_enabled`
     + `anthropic_api_key` di app_settings
 - **Cheers** (FR-1203, `/teamspace/cheers`): kirim apresiasi + notifikasi, kotak
   diterima/dikirim, leaderboard 30 hari
 - **KPI snapshot harian** (§14.4): kolom teamspace di `kpi_snapshots`, di-upsert
-  worker tiap 30 menit — dasar grafik tren
+  worker tiap 30 menit - dasar grafik tren
 - **Open API scope `teamspace:read`** (FR-16xx): `/api/public/v1/teamspace/tasks`
   + `/teamspace/performance` untuk n8n/BI/AI (kartu Rahasia dikecualikan)
 
-### Added — pelengkap Fase 2
+### Added - pelengkap Fase 2
 - **Pengumuman bertarget** (FR-601..603): penerima terpilih (notifikasi hanya ke
-  mereka), toggle **Rahasia** (staff lain tidak melihat sama sekali — filter
+  mereka), toggle **Rahasia** (staff lain tidak melihat sama sekali - filter
   server-side), **Selesai otomatis** (1/3/7 hari, status expired dianotasi)
 - **View Kalender tugas** (FR-411): grid bulanan di Semua Tugas, kartu mini per
   tanggal tenggat dengan dot warna tim, klik → buka kartu
-- **Recurring card** (FR-408) "Ulangi": harian/mingguan/bulanan per kartu — saat
+- **Recurring card** (FR-408) "Ulangi": harian/mingguan/bulanan per kartu - saat
   ditandai selesai, instance baru dibuat otomatis (checklist di-reset, tenggat
   digeser month-anchored, rule terbawa) + notifikasi
 
 ### Verifikasi
 - typecheck 0 error · **426/426 unit test** (41 test Teamspace) · build produksi sukses
 - Backlog tersisa (non-blocking): nested team tree UI, pencarian ⌘K konten
-  Teamspace, voice note, Tiptap editor, WA digest — lihat PRD §3 Fase 3 opsional
+  Teamspace, voice note, Tiptap editor, WA digest - lihat PRD §3 Fase 3 opsional
 
 ---
 
-## [v5.0.0-fase2] - 2026-07-17 — Teamspace Fase 2: Chat, Jadwal, Check-in, Dokumen & File
+## [v5.0.0-fase2] - 2026-07-17 - Teamspace Fase 2: Chat, Jadwal, Check-in, Dokumen & File
 
 ### Added
 - **Chat Grup per tim** (FR-5xx): bubble WA-style + lampiran (gambar inline / file chip,
   validasi 25MB), panel Media (tab Media/Dokumen), unread badge di daftar tim & tab,
   hapus pesan (pengirim/manager, soft delete), polling 5s pause-on-blur
 - **Jadwal tim** (FR-7xx): kalender **2 bulan berdampingan** gaya Cicle, event dengan
-  pengulangan (harian/mingguan/bulanan — `shared/eventRecurrence`, monthly anchor-safe),
+  pengulangan (harian/mingguan/bulanan - `shared/eventRecurrence`, monthly anchor-safe),
   peserta + notifikasi, toggle Rahasia (hanya peserta/pembuat), **feed iCal/webcal**
   per tim via token personal revocable (`calendar.ics?feedToken=`) untuk Google/Apple Calendar
-- **Pertanyaan / Check-in rutin** (FR-8xx): jadwal per hari (Senin–Minggu) + jam,
+- **Pertanyaan / Check-in rutin** (FR-8xx): jadwal per hari (Senin-Minggu) + jam,
   penerima terpilih, toggle Rahasia (jawaban hanya ke pembuat/manager), jawab inline,
   rekap per tanggal + completion rate; **worker scheduler** tick 60s (dedup harian,
   tahan downtime) mengirim notifikasi in-app + **WhatsApp via MPWA**
@@ -64,58 +64,58 @@ Format: `[Versi] - Tanggal — Ringkasan`
   Rahasia via penerima terpilih (`content_recipients` polymorphic), arsip dokumen/file,
   streaming download terproteksi
 - **TeamPage ber-tab** (FR-305): Ringkasan · Tugas · Chat · Jadwal · Pertanyaan ·
-  Dokumen — mengikuti `enabledViews` tim, deep-link `?tab=`
+  Dokumen - mengikuti `enabledViews` tim, deep-link `?tab=`
 - Permission keys baru: `team_chat`, `team_schedule`, `team_checkins`, `team_docs`
 - shared murni + unit test: `checkinSchedule` (9 test), `eventRecurrence` + builder
   iCal RFC5545 (8 test)
 
 ### Notes
-- Sisa Fase 2 (pengumuman bertarget+expiry — kolom DB sudah siap, view Kalender tugas,
+- Sisa Fase 2 (pengumuman bertarget+expiry - kolom DB sudah siap, view Kalender tugas,
   recurring card, nested team, pencarian ⌘K konten) + Fase 3 menyusul sesuai PRD §3
 - Verifikasi: typecheck 0 error · 419/419 unit test · build produksi sukses
 
 ---
 
-## [v5.0.0-fase1] - 2026-07-17 — Teamspace Fase 1: Tim + Board Tugas (PRD-JABNET-TEAMSPACE.md)
+## [v5.0.0-fase1] - 2026-07-17 - Teamspace Fase 1: Tim + Board Tugas (PRD-JABNET-TEAMSPACE.md)
 
 ### Added
 - **Modul Teamspace** (kolaborasi tim internal, pengganti Cicle):
   - **Tim & anggota**: tabel `teams` + `team_members` (role manager/member per tim), CRUD via `/api/teamspace/teams*`, guard "manager terakhir tidak bisa dihapus", arsip tim
-  - **Board tugas per tim** di atas engine pipelines eksisting — pipeline milik tim (`pipelines.team_id`) di-provision otomatis saat tim dibuat dengan 4 list gaya Cicle: "To Do List / Dikerjakan / Selesai / Batal" (+ `semantic_type` per stage untuk laporan kinerja)
-  - **RBAC 3 lapis** (`shared/teamAccess.ts`, 13 unit test): admin → manager per tim → creator → member+permission key; kapabilitas board tim diresolusi via keanggotaan di `getPipelineCapabilities` — isolasi dua arah dengan pipeline ops
+  - **Board tugas per tim** di atas engine pipelines eksisting - pipeline milik tim (`pipelines.team_id`) di-provision otomatis saat tim dibuat dengan 4 list gaya Cicle: "To Do List / Dikerjakan / Selesai / Batal" (+ `semantic_type` per stage untuk laporan kinerja)
+  - **RBAC 3 lapis** (`shared/teamAccess.ts`, 13 unit test): admin → manager per tim → creator → member+permission key; kapabilitas board tim diresolusi via keanggotaan di `getPipelineCapabilities` - isolasi dua arah dengan pipeline ops
   - **Checklist bertingkat** pada kartu (FR-406) dengan progress bar + badge board
-  - **Label berwarna scoped per board** (FR-413) — palet 36 warna, picker + create inline di modal kartu
-  - **Kartu**: tandai Selesai (`is_completed`/`completed_at` — dasar on-time rate), edit tenggat (datetime), **Rahasiakan** (`is_private` — hanya creator/assignee/follower/admin, enforced server-side di semua jalur baca), **Arsipkan** + daftar arsip, **Salin** (duplicate berikut label/checklist/assignee/values)
+  - **Label berwarna scoped per board** (FR-413) - palet 36 warna, picker + create inline di modal kartu
+  - **Kartu**: tandai Selesai (`is_completed`/`completed_at` - dasar on-time rate), edit tenggat (datetime), **Rahasiakan** (`is_private` - hanya creator/assignee/follower/admin, enforced server-side di semua jalur baca), **Arsipkan** + daftar arsip, **Salin** (duplicate berikut label/checklist/assignee/values)
   - **Move permission per list** (FR-403): `pipeline_stages.move_permission` + enforcement di endpoint move (stage asal & tujuan)
   - **Semua Tugas** (`/teamspace/tasks`, FR-412): agregasi lintas tim batched (anti-N+1), view List + Tabel, filter nama/label/tim/kategori tanggal/"Tugas saya", 4 KPI tile
   - **Halaman**: TeamListPage (grid tim + buat tim), TeamPage (ringkasan hub + kelola anggota), AllTasksPage; group sidebar "Teamspace"; board tim di `/teamspace/boards/:id` (reuse PipelineBoardPage)
   - **Permission keys baru** group "Teamspace": `teams`, `team_tasks` + feature flag `teamspace` (auto-grant via migrasi permission eksisting)
-- Migrasi startup idempotent `runTeamspaceMigrations()` (CREATE TABLE IF NOT EXISTS + ADD COLUMN via information_schema — konvensi codebase)
+- Migrasi startup idempotent `runTeamspaceMigrations()` (CREATE TABLE IF NOT EXISTS + ADD COLUMN via information_schema - konvensi codebase)
 
 ### Changed
-- Gerbang fitur endpoint pipeline menerima key `pipelines` ATAU `team_tasks` (`requirePipelinesFeature`) — keamanan per-pipeline tetap di resolusi kapabilitas
+- Gerbang fitur endpoint pipeline menerima key `pipelines` ATAU `team_tasks` (`requirePipelinesFeature`) - keamanan per-pipeline tetap di resolusi kapabilitas
 - `GET /api/pipelines` menyembunyikan pipeline milik tim dari daftar ops (non-regresi pipeline leads/collections)
-- `listCards` menyembunyikan kartu terarsip (kartu ops lama selalu `archived_at` NULL — perilaku tak berubah)
+- `listCards` menyembunyikan kartu terarsip (kartu ops lama selalu `archived_at` NULL - perilaku tak berubah)
 - `GET /api/pipelines/:id/cards` di-enrich `labels` + `checklistProgress` (batched)
 - Link notifikasi kartu board tim mengarah ke `/teamspace/boards/:id`
 
 ### Notes
 - Fase 2 (Chat, Pengumuman bertarget, Jadwal+iCal, Check-in via WA, Dokumen, view Kalender, recurring, nested team) dan Fase 3 (Laporan Kinerja+AI, Cheers, API scope) menyusul sesuai PRD §3
-- Belum dideploy ke produksi — jalankan `npm run db` migration otomatis saat startup pertama
+- Belum dideploy ke produksi - jalankan `npm run db` migration otomatis saat startup pertama
 
 ---
 
-## [v4.2.8] - 2026-04-27 — Integration Audit & Auto-Pair ONT
+## [v4.2.8] - 2026-04-27 - Integration Audit & Auto-Pair ONT
 
 ### Added
-- **KPI strip "Status Integrasi PPPoE & ONT"** di CustomersPage — 4 tile (Lengkap/PPPoE saja/ONT saja/Belum dihubungkan) + sub-row PPPoE & ONT online/offline counts, semua clickable filter
+- **KPI strip "Status Integrasi PPPoE & ONT"** di CustomersPage - 4 tile (Lengkap/PPPoE saja/ONT saja/Belum dihubungkan) + sub-row PPPoE & ONT online/offline counts, semua clickable filter
 - **Filter dropdown "Integrasi"** dengan 8 opsi: all/fully/pppoe_only/ont_only/none/pppoe_online/pppoe_offline/ont_online/ont_offline
-- **Tombol "⚡ Audit & Auto-Pair ONT"** di header KPI strip — buka dialog fuzzy match audit
+- **Tombol " Audit & Auto-Pair ONT"** di header KPI strip - buka dialog fuzzy match audit
 - **IntegrationAuditDialog component** dengan: 4 KPI summary, filter pills (Semua/≥90/≥80/≥70%), per-customer candidate list dengan multiple match strategies, bulk select, apply pairing
 - **4 fuzzy match strategy**: alphanumeric strip (95%), leading zero strip (92%), substring (80%), Levenshtein (70%)
 - **Endpoint baru**:
-  - `GET /api/customers/integration-audit` — fuzzy match analysis dengan 8s timeout untuk GenieACS fetch
-  - `POST /api/customers/auto-pair-ont` — bulk save ontSerialNumber ke customer DB
+  - `GET /api/customers/integration-audit` - fuzzy match analysis dengan 8s timeout untuk GenieACS fetch
+  - `POST /api/customers/auto-pair-ont` - bulk save ontSerialNumber ke customer DB
 - **Pre-fill auto-select** semua kandidat ≥90% saat dialog buka
 
 ### Changed
@@ -123,28 +123,28 @@ Format: `[Versi] - Tanggal — Ringkasan`
 - `clearAllFilters` + `activeFilterCount` + reset-page useEffect include `filterIntegration`
 
 ### Fixed
-- Audit endpoint timeout — GenieACS fetch dibungkus `Promise.race` dengan 8s timeout supaya UI ngga gantung kalau host lambat
+- Audit endpoint timeout - GenieACS fetch dibungkus `Promise.race` dengan 8s timeout supaya UI ngga gantung kalau host lambat
 - `cn` import + duplicate `useQueryClient` import di CustomersPage
 
 ---
 
-## [v4.2.7] - 2026-04-26 — Stage Advance Bug Fix + Pixel-Match Polish
+## [v4.2.7] - 2026-04-26 - Stage Advance Bug Fix + Pixel-Match Polish
 
 ### Fixed
-- **CRITICAL BUG**: Stage tidak advance setelah teknisi tap "Selesaikan Stage" — stuck di stage yang sama
+- **CRITICAL BUG**: Stage tidak advance setelah teknisi tap "Selesaikan Stage" - stuck di stage yang sama
   - FE: hanya kirim `toStage` kalau stage isFinal, otherwise biarkan backend auto-advance
   - Backend: detect completingFinalStage (current=final & toStage=current) → close transition + mark resolved, ngga insert duplicate
   - Note/evidence/GPS sekarang attach ke CLOSING transition (data hasil), bukan entering baru
 - `nextStageDefault` ngga lagi throw saat current = final (fallback ke current as completion target)
-- React hooks order error di TechnicianWorkPage (useMemo setelah early return) — pindah hooks ke atas guard
-- Pulse ring + 28x28 dot custom yang tidak match design — revert ke 24x24 dengan number, no pulse ring (mobile teknisi)
-- Customer card padding inconsistent (`p-3.5` mix Tailwind) — replace dengan inline `padding: 14`
-- Header padding kebalik (16x12 vs design 12x16) — fix exact
+- React hooks order error di TechnicianWorkPage (useMemo setelah early return) - pindah hooks ke atas guard
+- Pulse ring + 28x28 dot custom yang tidak match design - revert ke 24x24 dengan number, no pulse ring (mobile teknisi)
+- Customer card padding inconsistent (`p-3.5` mix Tailwind) - replace dengan inline `padding: 14`
+- Header padding kebalik (16x12 vs design 12x16) - fix exact
 
 ### Changed
 - TechnicianWorkPage refactor jadi **inline styles literal** dari design source untuk minimize translation gap
 - Stage row tint background pakai opacity 14% (8% literal dari `tpl.color + '08'` design)
-- Pulse ring animation dipertahankan hanya di PortalTrackerPage (customer-facing) — sesuai design
+- Pulse ring animation dipertahankan hanya di PortalTrackerPage (customer-facing) - sesuai design
 
 ### Verified End-to-End
 - Stage 1 → 2 → 3 → 4 → 5 → 6 (final) advance flow tested via API + mobile UI
@@ -153,15 +153,15 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v4.2.6] - 2026-04-26 — Jabnet Work Order Design System
+## [v4.2.6] - 2026-04-26 - Jabnet Work Order Design System
 
 ### Added
-- **Implementasi design "Jabnet Work Order"** — pixel-close dari Claude Design handoff (claude.ai/design)
+- **Implementasi design "Jabnet Work Order"** - pixel-close dari Claude Design handoff (claude.ai/design)
 - **6 workflow presets aligned dengan design**: psb (8 stages), gangguan (6), preventive (6), relokasi (6), upgrade (4), dismantle (4)
-- **Stage `fields` array** — replace requires* booleans, support 10 field types: photo, checklist, notes, numeric, speedtest, barcode, signature, gps, eta, rating
+- **Stage `fields` array** - replace requires* booleans, support 10 field types: photo, checklist, notes, numeric, speedtest, barcode, signature, gps, eta, rating
 - **TechnicianWorkPage two-screen flow**:
   - Screen 1: Stages list dengan progress dot + customer card + Navigasi/Phone CTA
-  - Screen 2: Stage Execution — header gradient kategori + FieldCards conditional sesuai field types + Save Draft + Selesaikan Stage (emerald)
+  - Screen 2: Stage Execution - header gradient kategori + FieldCards conditional sesuai field types + Save Draft + Selesaikan Stage (emerald)
 - **FieldCard components**: photo grid (3-cell + camera button), numeric input dengan unit pill + status indicator, barcode mono input + check, speedtest dark card 3-col, checklist tap-to-toggle, gps auto-capture, signature input + TTD area, rating 5-star, notes textarea
 - **Customer Tracker page** `/portal/track/:ticketId`:
   - Hero gradient navy→blue dengan headline status dinamis
@@ -169,7 +169,7 @@ Format: `[Versi] - Tanggal — Ringkasan`
   - Vertical timeline dengan pulse-ring animation di stage aktif
   - Update card dengan thumbnail foto preview
   - Chat overlay WhatsApp-style (mock untuk demo)
-- **Backend endpoint** `GET /api/portal/tickets/:id/track` — full tracking data (ticket + stages + transitions + evidence + lead technician)
+- **Backend endpoint** `GET /api/portal/tickets/:id/track` - full tracking data (ticket + stages + transitions + evidence + lead technician)
 - **JABNET design tokens** di `client/index.css`:
   - `--jbn-navy/orange/success/warning/danger/info` + bg variants
   - `--jbn-cat-*` per-kategori stage colors
@@ -180,24 +180,24 @@ Format: `[Versi] - Tanggal — Ringkasan`
 - Nama kategori default: warna disesuaikan dengan design palette (PSB navy #1e40af, Gangguan red, Preventive sky, Relokasi violet, Upgrade emerald, Dismantle slate)
 
 ### Schema Migrations (auto-run startup)
-- `WorkflowStage.fields` — new optional array property (typed `StageFieldType`)
+- `WorkflowStage.fields` - new optional array property (typed `StageFieldType`)
 - Auto-re-apply 6 preset workflow ke ticket_categories existing (kalau belum punya v4.2.6 fields format)
 
 ---
 
-## [v4.2.5] - 2026-04-26 — Action-Based Ticketing + Chatwoot
+## [v4.2.5] - 2026-04-26 - Action-Based Ticketing + Chatwoot
 
-### Added — Action-Based Checkpoints (replace rigid stages)
+### Added - Action-Based Checkpoints (replace rigid stages)
 - **8 action button** per tiket: depart/arrive/start_work/progress/pause/resume/escalate/complete + note
 - **`ticket_checkpoints` table** (replaces stage rigid model)
 - **Time metrics auto-derive**: travel = depart→arrive, setup = arrive→start_work, work = start_work→complete (minus pauses)
-- **Smart action highlighting** di mobile UX — action paling relevan di-highlight primary, lainnya secondary/muted
+- **Smart action highlighting** di mobile UX - action paling relevan di-highlight primary, lainnya secondary/muted
 - **State machine adaptive**: depart hilang setelah departed, resume muncul cuma kalau lagi paused
 - **Endpoint baru**:
-  - `POST /api/tickets/:id/checkpoint` — log action dengan validation requirement
-  - `GET /api/tickets/:id/timeline` — checkpoints + time metrics
+  - `POST /api/tickets/:id/checkpoint` - log action dengan validation requirement
+  - `GET /api/tickets/:id/timeline` - checkpoints + time metrics
 
-### Added — Chatwoot Integration
+### Added - Chatwoot Integration
 - **Webhook receiver** `POST /api/integrations/chatwoot/webhook` (public, HMAC-verified)
 - **Auto-create tiket** dari conversation_created event berdasarkan keyword matching
 - **Customer phone matching** dengan multi-format normalization (+62/0/8/62/raw)
@@ -231,12 +231,12 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v4.2.13] - 2026-04-29 — Customer Portal Domain Split
+## [v4.2.13] - 2026-04-29 - Customer Portal Domain Split
 
 ### Added
-- **Customer Portal pindah ke `portal.jabnet.id`** — domain dedicated terpisah dari staff workspace
-- **Frontend domain detection** di `App.tsx` — saat hostname=portal.jabnet.id, routing dibatasi ke `/portal/*` saja, sidebar staff disembunyikan
-- **Backend host guard** middleware — block staff API dari portal domain (return 404)
+- **Customer Portal pindah ke `portal.jabnet.id`** - domain dedicated terpisah dari staff workspace
+- **Frontend domain detection** di `App.tsx` - saat hostname=portal.jabnet.id, routing dibatasi ke `/portal/*` saja, sidebar staff disembunyikan
+- **Backend host guard** middleware - block staff API dari portal domain (return 404)
 - **Nginx vhost** `portal.jabnet.id` reverse proxy ke `localhost:3002`
 - **SSL Let's Encrypt** via certbot untuk portal.jabnet.id
 - Domain lama `fiber-tools.arkanova.id/portal/*` tetap accessible (backward compatible)
@@ -246,33 +246,33 @@ Format: `[Versi] - Tanggal — Ringkasan`
 - **SahabatKitDialog** QR code default ke `portal.jabnet.id`
 
 ### Fixed
-- (v4.2.12 carryover) Parser GenieACS WAN Connections — iterate `WANPPPConnection.1-4` + `WANIPConnection.1-4` (ZTE F660 register PPPoE di slot `.2`)
-- (v4.2.11 carryover) Parser GenieACS PPPoE detection — prioritas `VirtualParameters.pppoeUsername`, lalu nested 8×4
+- (v4.2.12 carryover) Parser GenieACS WAN Connections - iterate `WANPPPConnection.1-4` + `WANIPConnection.1-4` (ZTE F660 register PPPoE di slot `.2`)
+- (v4.2.11 carryover) Parser GenieACS PPPoE detection - prioritas `VirtualParameters.pppoeUsername`, lalu nested 8×4
 - (v4.2.10 carryover) PON Serial Number derivation dari `VirtualParameters.PonMac`
-- (v4.2.9 carryover) Search di Perangkat ONT — kirim search query ke backend (filter cross-page)
+- (v4.2.9 carryover) Search di Perangkat ONT - kirim search query ke backend (filter cross-page)
 
 ---
 
-## [v4.2.4] - 2026-04-26 — Ticketing Workflow Stages
+## [v4.2.4] - 2026-04-26 - Ticketing Workflow Stages
 
 ### Added
-- **Workflow stages flexible per kategori** — JSON array di `ticket_categories.workflow_stages` (key/label/icon/color/requiresPhoto/requiresGps/requiresNote/requiresSignature/slaMinutes/isFinal/sortOrder)
-- **4 preset workflow**: gangguan, install, migrasi, survey — auto-seed + auto-backfill kategori existing
-- **Per-stage time tracking** — table `ticket_stage_transitions` log enteredAt/exitedAt/durationSec/note/evidenceId/GPS
-- **TechnicianWorkPage rewrite total** — vertical timeline + big sticky CTA + bottom sheet advance dengan camera-first capture
-- **Quick actions di customer card mobile**: 📞 Telepon · WA · 🗺 Navigate (Google Maps directions)
+- **Workflow stages flexible per kategori** - JSON array di `ticket_categories.workflow_stages` (key/label/icon/color/requiresPhoto/requiresGps/requiresNote/requiresSignature/slaMinutes/isFinal/sortOrder)
+- **4 preset workflow**: gangguan, install, migrasi, survey - auto-seed + auto-backfill kategori existing
+- **Per-stage time tracking** - table `ticket_stage_transitions` log enteredAt/exitedAt/durationSec/note/evidenceId/GPS
+- **TechnicianWorkPage rewrite total** - vertical timeline + big sticky CTA + bottom sheet advance dengan camera-first capture
+- **Quick actions di customer card mobile**:  Telepon · WA ·  Navigate (Google Maps directions)
 - **Live SLA countdown banner** mobile + admin (gradual color hijau→merah)
-- **Admin workflow preview** — expand kategori untuk lihat semua stage + Apply Preset button
+- **Admin workflow preview** - expand kategori untuk lihat semua stage + Apply Preset button
 - **Admin SLA badge** di list view (kolom status) + detail dialog header
-- **Admin workflow timeline** di detail dialog — vertical progress dengan per-stage durasi
+- **Admin workflow timeline** di detail dialog - vertical progress dengan per-stage durasi
 - **Endpoint baru**:
-  - `GET /api/tickets/:id/workflow` — stages + transitions + SLA countdown
-  - `POST /api/tickets/:id/advance-stage` — validate requirement, atomic state machine
-  - `GET /api/tickets/:id/stage-transitions` — per-stage history
-  - `GET /api/odps/:id/active-tickets` — active tickets + past resolution patterns di ODP
+  - `GET /api/tickets/:id/workflow` - stages + transitions + SLA countdown
+  - `POST /api/tickets/:id/advance-stage` - validate requirement, atomic state machine
+  - `GET /api/tickets/:id/stage-transitions` - per-stage history
+  - `GET /api/odps/:id/active-tickets` - active tickets + past resolution patterns di ODP
 
 ### Changed
-- **Disciplined state machine** — advance stage validate per-stage requirement (no more free-form status update)
+- **Disciplined state machine** - advance stage validate per-stage requirement (no more free-form status update)
 - **Auto-SLA deadline** saat create tiket (was: never set despite field existing)
 - **Auto-status derive** dari stage: stage isFinal → status=resolved, advance dari open/assigned → in_progress
 - **Customer card mobile** redesign jadi 3-column quick actions (Telepon/WA/Map)
@@ -280,7 +280,7 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ### Fixed
 - `slaDeadline` field tidak pernah di-calculate di create ticket (existing bug)
-- Status transitions tidak pernah ada validation (existing gap — bisa jump status)
+- Status transitions tidak pernah ada validation (existing gap - bisa jump status)
 - TechnicianWorkPage UX sulit dipakai mobile teknisi lapangan (redesign total)
 
 ### Schema Migrations (auto-run startup)
@@ -292,18 +292,18 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v4.2.3] - 2026-04-26 — Boost Auto-Rollback Safety
+## [v4.2.3] - 2026-04-26 - Boost Auto-Rollback Safety
 
 ### Added
-- **Atomic revert flow**: worker dedicated 60 detik di `server/index.ts` — revert MikroTik DULU, baru mark expired
+- **Atomic revert flow**: worker dedicated 60 detik di `server/index.ts` - revert MikroTik DULU, baru mark expired
 - **Retry mechanism**: kalau revert gagal, status tetap `active`, increment `revertAttempts`, retry next loop
 - **Critical alert**: log `CRITICAL` setelah 10× gagal berturut-turut
 - **Schema columns** di `point_redemptions`: `reverted_at`, `revert_error`, `revert_attempts`
 - **Admin health UI**: alert banner di tab Speed Boost menampilkan redemption gagal revert + tombol Force Expire
 - **Force Expire button**: muncul di redemption stuck (revertAttempts > 0), wajib alasan untuk audit
 - **Endpoint baru**:
-  - `GET /api/loyalty/admin/points/redemptions/health` — list redemption dengan revert issues
-  - `POST /api/loyalty/admin/points/redemptions/:id/force-expire` — admin override
+  - `GET /api/loyalty/admin/points/redemptions/health` - list redemption dengan revert issues
+  - `POST /api/loyalty/admin/points/redemptions/:id/force-expire` - admin override
 
 ### Changed
 - Verify dialog reminder: "auto-revert belum tersedia" → "✓ Auto-MikroTik aktif"
@@ -314,11 +314,11 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ### Fixed
 - **CRITICAL**: Customer dapat boost gratis selamanya kalau MikroTik offline saat expire (status DB di-mark expired tanpa revert profile)
-- WA notif `sahabat_boost_expired` tidak lagi false-positive — hanya kirim setelah revert benar-benar sukses
+- WA notif `sahabat_boost_expired` tidak lagi false-positive - hanya kirim setelah revert benar-benar sukses
 
 ---
 
-## [v4.2.2] - 2026-04-26 — Speed-on-Demand & Marketing Daily Insights
+## [v4.2.2] - 2026-04-26 - Speed-on-Demand & Marketing Daily Insights
 
 ### Added
 - **Speed-on-Demand point system**: customer earn point dari bayar tepat waktu/early, tukar untuk speed boost sementara (2× / 3× lipat 6 / 24 jam)
@@ -343,7 +343,7 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v4.0.0] - 2026-04-14 — Field Service Management, Permissions & Full Workflow
+## [v4.0.0] - 2026-04-14 - Field Service Management, Permissions & Full Workflow
 
 ### Highlights
 - Work Order Enhancement: tim teknisi (senior+junior), GPS check-in/out, foto evidence, checklist, MTTR tracking
@@ -413,7 +413,7 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v3.1.0] - 2026-04-12 — GenieACS, Marketing Ads & Workflow Finalisasi
+## [v3.1.0] - 2026-04-12 - GenieACS, Marketing Ads & Workflow Finalisasi
 
 ### Highlights
 - Integrasi GenieACS TR-069 untuk manajemen perangkat ONT/CPE
@@ -476,7 +476,7 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v3.0.0] - 2026-04-10 — MikroTik Billing Integration, Work Order & Workflow Automation
+## [v3.0.0] - 2026-04-10 - MikroTik Billing Integration, Work Order & Workflow Automation
 
 ### Highlights
 - Integrasi penuh MikroTik RouterOS API (binary protocol) untuk billing & PPPoE
@@ -547,60 +547,60 @@ Format: `[Versi] - Tanggal — Ringkasan`
 
 ---
 
-## [v2.6.0] - 2026-04-09 — Profil Pengguna, Manajemen Tim Scalable & Coverage Publik
+## [v2.6.0] - 2026-04-09 - Profil Pengguna, Manajemen Tim Scalable & Coverage Publik
 
 ### Highlights
 
 Rilis ini memperkuat **manajemen tim/HR** dan **self-service profil**, memindahkan **Cek Coverage ke halaman publik** (tanpa login), serta merapikan keseluruhan sidebar dan navigasi.
 
-### Halaman Profil Saya (BARU) — `/profile`
+### Halaman Profil Saya (BARU) - `/profile`
 
 - Halaman profil pribadi yang dapat diakses oleh **semua role** dengan mengklik kartu user di sidebar.
 - **Hero card** dengan cover gradient + avatar mengambang, badge role/status/jabatan/cabang, dan deskripsi role.
 - **4 stat strip**: Tanggal Bergabung · Login Terakhir · Cabang · **Persentase Kelengkapan Profil** (progress bar berwarna).
 - **Data Pribadi** (editable sendiri): Nama, Email, No. HP/WhatsApp, Tanggal Lahir, Alamat, Kontak Darurat.
 - **Data Tim & Jabatan** (read-only, dikelola admin): Employee ID, Jabatan, Departemen, Cabang, Tanggal Bergabung Tim, Role Sistem.
-- **Catatan dari Admin** — section khusus muncul jika admin menambahkan catatan.
+- **Catatan dari Admin** - section khusus muncul jika admin menambahkan catatan.
 - **Ubah Password** dengan password strength meter 4-kriteria (panjang, huruf besar, huruf kecil, angka), validasi server-side, dan kemampuan toggle visibility.
 
-### Manajemen User — Total Redesign untuk Skalabilitas
+### Manajemen User - Total Redesign untuk Skalabilitas
 
 **Backend (`/api/users` POST/PUT)**:
 - 11 field HR baru: `email`, `phone`, `employeeId`, `position`, `department`, `branch`, `address`, `joinDate`, `birthDate`, `emergencyContact`, `notes`.
 - Validasi email & nomor HP (regex) di server.
-- Auto migration `ALTER TABLE` di startup — tidak perlu reset DB.
+- Auto migration `ALTER TABLE` di startup - tidak perlu reset DB.
 - Endpoint baru `PATCH /api/auth/me` (self-service) dan `POST /api/auth/change-password`.
 
 **Frontend (`UsersPage`)**:
 - **4 stat cards** di header: Total User, Akun Aktif, Nonaktif, Administrator.
-- **Role distribution chips** interaktif — klik untuk quick filter per role.
+- **Role distribution chips** interaktif - klik untuk quick filter per role.
 - **Filter bar lengkap**: search multi-field, filter role, filter status, sort (nama/terbaru/login/role), toggle Grid ↔ Table view.
 - **Grid view** (UserCard) dengan info padat per user.
 - **Table view** responsif dengan kolom adaptif per breakpoint.
 - **Detail dialog**: hero card + grid Data Pribadi/Tim + metadata + catatan admin + toolbar aksi.
-- **Create/Edit dialog dengan 3 tab**: Akun & Akses · Data Pribadi · Data Tim — semua field HR bisa diisi dari satu tempat.
+- **Create/Edit dialog dengan 3 tab**: Akun & Akses · Data Pribadi · Data Tim - semua field HR bisa diisi dari satu tempat.
 - **Self-protection**: admin tidak bisa menonaktifkan/menghapus akun sendiri.
 
-### Cek Coverage — Sekarang PUBLIK (`/coverage-check`)
+### Cek Coverage - Sekarang PUBLIK (`/coverage-check`)
 
-- **Dipindahkan ke luar ProtectedRouter** — bisa diakses tanpa login oleh tim sales, customer, atau pihak ketiga.
+- **Dipindahkan ke luar ProtectedRouter** - bisa diakses tanpa login oleh tim sales, customer, atau pihak ketiga.
 - Endpoint `/api/coverage-check` dipindah ke **sebelum auth guard**.
 - **`PublicShell` wrapper** baru dengan link "Login Staff".
 - **Marker pin merah** (SVG teardrop) menggantikan circle marker biru sebelumnya.
 - Link akses ditambahkan di **halaman login** dengan copy profesional.
 
-### Sidebar — Refactor & Polishing
+### Sidebar - Refactor & Polishing
 
 - **User card di sidebar sekarang clickable** → membuka `/profile` dengan active state styling.
-- **Frozen footer dihilangkan** — kartu user, Dark Mode, dan Logout sekarang scrollable bersama nav.
+- **Frozen footer dihilangkan** - kartu user, Dark Mode, dan Logout sekarang scrollable bersama nav.
 - ChevronRight indicator pada user card sebagai affordance navigasi.
 - "Cek Coverage" dihapus dari menu navigasi (sudah pindah ke public).
 
 ### Bug Fixes
 
-- **Peta Jaringan blank** — fixed `no such column "district"` (POPs) dan `no such column "is_static"` (Customers) dengan auto migration di `storage.ts`.
+- **Peta Jaringan blank** - fixed `no such column "district"` (POPs) dan `no such column "is_static"` (Customers) dengan auto migration di `storage.ts`.
 - **Endpoint `/api/auth/me`** sekarang mengembalikan profil lengkap dari storage.
-- **Build production** — fix esbuild bundling Vite ke output server. Build script sekarang pakai ESM output (`dist/index.mjs`) dengan `--packages=external`.
+- **Build production** - fix esbuild bundling Vite ke output server. Build script sekarang pakai ESM output (`dist/index.mjs`) dengan `--packages=external`.
 
 ### Schema Changes (auto-migrated)
 
@@ -629,15 +629,15 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ---
 
-## [v2.5.0] - 2026-04-07 — Cek Lokasi Coverage (Tool Internal CS)
+## [v2.5.0] - 2026-04-07 - Cek Lokasi Coverage (Tool Internal CS)
 
-### 🧭 Fitur Baru: Halaman Cek Coverage untuk Customer Service
+###  Fitur Baru: Halaman Cek Coverage untuk Customer Service
 
 **Tujuan**: Memberi tim Customer Service tool internal untuk dengan cepat mengecek apakah suatu lokasi calon pelanggan tercover jaringan FTTH JABNET dan ODP mana yang harus dipakai. Halaman ini diakses **setelah login**, bukan publik.
 
 > **Catatan iterasi**: Fitur ini awalnya didesain sebagai tool publik di halaman login (untuk calon pelanggan self-service), tapi setelah review dianggap lebih cocok sebagai **tool internal CS**. Endpoint publik dan form pendaftaran lead anonymous dihapus, fitur direlokasi ke halaman terproteksi `/coverage-check` dengan informasi yang jauh lebih kaya.
 
-### ✨ UI: `CoverageCheckPage` (`/coverage-check`)
+###  UI: `CoverageCheckPage` (`/coverage-check`)
 
 - **4 metode input lokasi target** (semua bisa dipakai):
   1. **Klik di peta interaktif** Google Maps (paling intuitif)
@@ -651,24 +651,24 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Auto-pan & zoom ke lokasi target setelah cek
 
 - **Panel hasil** (3 card stack):
-  1. **Verdict** — 4 status warna:
-     - 🟢 `covered` (≤ 250 m + port available)
-     - 🟡 `covered_full` (≤ 250 m tapi penuh)
-     - 🟠 `marginal` (250–500 m)
-     - 🔴 `out_of_coverage` (> 500 m)
-  2. **ODP Terbaik (Rekomendasi)** — ODP terdekat yang masih punya port available + active:
+  1. **Verdict** - 4 status warna:
+     -  `covered` (≤ 250 m + port available)
+     -  `covered_full` (≤ 250 m tapi penuh)
+     -  `marginal` (250-500 m)
+     -  `out_of_coverage` (> 500 m)
+  2. **ODP Terbaik (Rekomendasi)** - ODP terdekat yang masih punya port available + active:
      - Nama, kode, alamat, kecamatan/desa, splitter type, status
      - Badge kapasitas (port tersedia / total)
      - **Estimasi power budget** otomatis dihitung dari jarak: total loss (dB), RX power (dBm), status (ok/warning/fail)
      - Asumsi yang dipakai: feeder loss + splitter ODP + 2 splice + 2 connector
-  3. **Top 5 ODP terdekat** — list tabular berisi alternatif:
+  3. **Top 5 ODP terdekat** - list tabular berisi alternatif:
      - Ranking nomor (#1 highlighted), nama + kode + jarak
      - Progress bar utilization (hijau/amber/merah)
      - Badge "in-radius" jika dalam coverage 250 m
 
 - **Layout responsive**: 12-column grid (peta 7 kolom + panel 5 kolom di desktop, stack di mobile)
 
-### 🔧 Backend Changes (`server/routes.ts`)
+###  Backend Changes (`server/routes.ts`)
 
 - **Endpoint baru `POST /api/coverage-check`** (auth-protected, semua role login)
   - Input: `{ lat, lng }`
@@ -688,45 +688,45 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 - **Konstanta `COVERAGE_RADIUS_METERS = 250`** (drop cable standar FTTH)
 
-### 🗑️ Perubahan dari iterasi sebelumnya yang dihapus
+###  Perubahan dari iterasi sebelumnya yang dihapus
 
-- ❌ Section "Cek Lokasi Coverage FTTH" di `LoginPage.tsx` (revert ke versi original — login form saja)
-- ❌ `POST /api/public/check-coverage` (replaced dengan `/api/coverage-check` auth-protected)
-- ❌ `POST /api/public/leads` (lead form anonymous tidak diperlukan untuk tool internal)
-- ❌ Rate limiting publik (`publicRateBuckets`, `checkPublicRateLimit`) — tidak relevan karena auth-protected
-- ❌ Bounding box geografis (`PUBLIC_LAT_RANGE`, `PUBLIC_LNG_RANGE`) — internal user bisa cek dimanapun
-- ❌ Exception `/public/` di global auth guard
+-  Section "Cek Lokasi Coverage FTTH" di `LoginPage.tsx` (revert ke versi original - login form saja)
+-  `POST /api/public/check-coverage` (replaced dengan `/api/coverage-check` auth-protected)
+-  `POST /api/public/leads` (lead form anonymous tidak diperlukan untuk tool internal)
+-  Rate limiting publik (`publicRateBuckets`, `checkPublicRateLimit`) - tidak relevan karena auth-protected
+-  Bounding box geografis (`PUBLIC_LAT_RANGE`, `PUBLIC_LNG_RANGE`) - internal user bisa cek dimanapun
+-  Exception `/public/` di global auth guard
 
-### 📁 File yang berubah
+###  File yang berubah
 
 | File | Perubahan |
 |---|---|
-| `client/pages/CoverageCheckPage.tsx` | **NEW** — halaman tool internal |
+| `client/pages/CoverageCheckPage.tsx` | **NEW** - halaman tool internal |
 | `client/pages/LoginPage.tsx` | Revert ke versi original (hapus section coverage check) |
 | `client/App.tsx` | Tambah lazy import + route `/coverage-check` |
 | `client/components/layout/Sidebar.tsx` | Tambah menu "Cek Coverage" di group UTAMA (icon Compass, tanpa role restriction) |
 | `server/routes.ts` | Hapus 2 endpoint publik, tambah `POST /api/coverage-check` |
 | `CHANGELOG.md` | Update entry v2.5.0 dengan pivot |
 
-### 🔒 Akses
+###  Akses
 
 - Group `UTAMA` di Sidebar (tanpa role restriction) → semua role login bisa akses (admin, operator, marketing, marketing_spv, viewer)
 - Endpoint `/api/coverage-check` di-protect oleh global auth guard
 
 ---
 
-## [v2.4.2] - 2026-04-07 — Customer Field Protection from Billing Sync
+## [v2.4.2] - 2026-04-07 - Customer Field Protection from Billing Sync
 
-### 🛡️ Fitur Baru: Proteksi Field Manual
+###  Fitur Baru: Proteksi Field Manual
 
-**Masalah yang dipecahkan**: Sebelumnya, setiap kali sync billing dijalankan, semua field pelanggan (alamat, koordinat, kecamatan, desa, dll) akan ditimpa data dari billing JABNET — termasuk perbaikan manual yang sudah dilakukan operator.
+**Masalah yang dipecahkan**: Sebelumnya, setiap kali sync billing dijalankan, semua field pelanggan (alamat, koordinat, kecamatan, desa, dll) akan ditimpa data dari billing JABNET - termasuk perbaikan manual yang sudah dilakukan operator.
 
 **Solusi**: Sistem auto-detect field-level protection.
 
 - **Auto-Detect Manual Override**
   - Saat user mengedit pelanggan via FTTH Tools, sistem otomatis mendeteksi field mana yang berbeda dari data billing
   - Field yang diubah otomatis ditandai sebagai "manual override" dan disimpan di kolom baru `manual_overrides` (JSON array)
-  - Tidak perlu klik checkbox atau lock manual — cukup edit, otomatis terlindungi
+  - Tidak perlu klik checkbox atau lock manual - cukup edit, otomatis terlindungi
 
 - **Sync Billing Sekarang Aman**
   - Saat sync billing, sistem akan **skip** field yang sudah ditandai sebagai manual override
@@ -734,10 +734,10 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Field yang dilindungi: nama, telepon, email, alamat, lat, lng, paket, kecamatan, desa/kelurahan, jenis pelanggan
 
 - **UI Indikator Lock**
-  - Icon gembok 🔒 di samping nama pelanggan yang memiliki field dilindungi
+  - Icon gembok  di samping nama pelanggan yang memiliki field dilindungi
   - Hover tooltip: list field yang dilindungi
   - Banner di atas tabel: "X pelanggan memiliki field yang dilindungi"
-  - Filter "🔒 Field Dilindungi" di filter Khusus
+  - Filter " Field Dilindungi" di filter Khusus
 
 - **Tombol Buka Proteksi (Unlock)**
   - Icon unlock di tabel row untuk pelanggan yang memiliki proteksi
@@ -746,33 +746,33 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Berguna untuk reset ke data billing jika edit manual sudah tidak diperlukan
 
 - **Info Panel di Form Edit**
-  - Saat tidak ada lock: panel biru info "Proteksi Sync Otomatis" — menjelaskan field yang diedit akan otomatis dilindungi
+  - Saat tidak ada lock: panel biru info "Proteksi Sync Otomatis" - menjelaskan field yang diedit akan otomatis dilindungi
   - Saat ada lock: panel kuning menampilkan badge field yang dilindungi + cara reset
 
-### 🔧 Backend Changes
+###  Backend Changes
 
 - **Schema**: Tambah kolom `manual_overrides TEXT` di tabel `customers` (auto-migration)
 - **`storage.updateCustomer()`**: Auto-detect changed billing-synced fields, append ke manualOverrides
 - **`storage.upsertCustomerFromBilling()`**: Skip field yang ada di manualOverrides saat update
 - **`storage.clearCustomerOverrides()`**: Method baru untuk reset overrides (semua atau spesifik)
-- **API baru**: `POST /api/customers/:id/clear-overrides` — buka proteksi field
+- **API baru**: `POST /api/customers/:id/clear-overrides` - buka proteksi field
 
-### 📋 Flow Lengkap
+###  Flow Lengkap
 
 1. Operator sync billing → 700 pelanggan masuk dengan data billing
 2. Operator edit alamat pelanggan #123 di FTTH Tools (alamat di billing salah/tidak lengkap)
 3. Sistem otomatis mark `address` sebagai manual override untuk pelanggan #123
 4. Besok operator sync billing lagi → semua field pelanggan #123 di-update **kecuali** alamat (karena sudah dilindungi)
 5. Status billing, harga, isolir, dll tetap update normal
-6. Jika nanti billing alamatnya benar, operator klik 🔓 unlock → sync berikutnya alamat akan ditimpa lagi
+6. Jika nanti billing alamatnya benar, operator klik  unlock → sync berikutnya alamat akan ditimpa lagi
 
 ---
 
-## [v2.4.1] - 2026-04-06 — Customer Filters, District View & Pagination
+## [v2.4.1] - 2026-04-06 - Customer Filters, District View & Pagination
 
-### ✨ Fitur Baru
+###  Fitur Baru
 
-- **Halaman Pelanggan — Filter Komprehensif**
+- **Halaman Pelanggan - Filter Komprehensif**
   - Filter Kecamatan: dropdown semua kecamatan dari data pelanggan aktual, dengan jumlah pelanggan
   - Filter Desa/Kelurahan: cascading dari kecamatan terpilih
   - Filter Jenis Pelanggan: Rumahan / Bisnis
@@ -794,7 +794,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - **Pagination**
   - Pilihan 25 / 50 / 100 / 200 per halaman (default 50)
   - Navigasi halaman: first, prev, page numbers, next, last
-  - Info "Menampilkan X–Y dari Z"
+  - Info "Menampilkan X-Y dari Z"
   - Auto-reset ke halaman 1 saat filter berubah
 
 - **Sorting Tabel**
@@ -813,7 +813,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Kolom "Kecamatan / Desa" terpisah di tabel
   - Badge jenis pelanggan (Rumahan/Bisnis) di kolom nama
 
-### 🎨 UI/UX
+###  UI/UX
 - Layout filter: panel 4-kolom grid, compact & responsive
 - Quick filter pills: badge kecamatan/desa aktif di search bar
 - Active filter count badge pada tombol Filter
@@ -821,9 +821,9 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ---
 
-## [v2.4] - 2026-04-06 — Deep Bug Fix, Analytics ODP Distance & Business Decision
+## [v2.4] - 2026-04-06 - Deep Bug Fix, Analytics ODP Distance & Business Decision
 
-### ✨ Fitur Baru
+###  Fitur Baru
 
 - **Halaman Keputusan Bisnis** (`/marketing/bisnis`)
   - Analisis laporan lapangan untuk strategi marketing
@@ -848,12 +848,12 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Daftar laporan terbaru dengan ODP name + jarak
   - Export ringkasan dashboard ke CSV
 
-- **Kontak halaman** — Tombol export CSV di header
+- **Kontak halaman** - Tombol export CSV di header
 
-### 🐛 Bug Fix Kritis
+###  Bug Fix Kritis
 
 - **Canvassing tidak muncul di desktop web**
-  - Root cause: CSS height chain break — `h-full` dengan `absolute inset-0` child tidak mendapat tinggi
+  - Root cause: CSS height chain break - `h-full` dengan `absolute inset-0` child tidak mendapat tinggi
   - Fix: Root div diubah ke `flex-1 min-h-0` + parent Layout `flex flex-col` untuk fullscreen pages
   - Layout.tsx: Tambah `flex flex-col` class untuk halaman fullscreen
 
@@ -862,13 +862,13 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Fix: Tambah `overflow-y-auto max-h-[90vh]` pada form container
 
 - **Data lead & laporan tidak muncul di analytics/sidebar**
-  - Root cause: Filter `todayLeads` menggunakan UTC date string (`toISOString().slice(0,10)`) — di Indonesia (UTC+7) tanggal bisa berbeda
-  - Fix: Ganti ke session-scoped filtering — `sessionLeads` filter berdasarkan `createdAt >= mySession.startedAt`
+  - Root cause: Filter `todayLeads` menggunakan UTC date string (`toISOString().slice(0,10)`) - di Indonesia (UTC+7) tanggal bisa berbeda
+  - Fix: Ganti ke session-scoped filtering - `sessionLeads` filter berdasarkan `createdAt >= mySession.startedAt`
   - `sessionLogs` sudah difilter server-side by `sessionId`
 
 - **Peta snapping back saat re-render**
   - Root cause: Controlled `center` prop memaksa map kembali ke posisi awal setiap render
-  - Fix: Uncontrolled center — `center={undefined}`, set via `onLoad` callback + `mapRef`
+  - Fix: Uncontrolled center - `center={undefined}`, set via `onLoad` callback + `mapRef`
 
 - **Timer durasi sesi tidak update**
   - Root cause: `setInterval` tanpa state update → UI tidak re-render
@@ -891,7 +891,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Fix: Gunakan `null` explicitly: `closedAt: (stage === "won" || stage === "lost") ? now : null`
 
 - **Lead creation: lat/lng/odpId falsy check salah**
-  - Root cause: `lat || null` — koordinat `0` dianggap falsy
+  - Root cause: `lat || null` - koordinat `0` dianggap falsy
   - Fix: `lat != null ? Number(lat) : null`
 
 - **Canvassing session end: tidak ada ownership check**
@@ -900,7 +900,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - **Marketing SPV tidak bisa lihat semua sesi**
   - Fix: `marketing_spv` diperlakukan sebagai supervisor di sessions list
 
-### 🎨 UI/UX
+###  UI/UX
 - Sidebar: Tambah menu "Keputusan Bisnis" (TrendingUp icon) di group Marketing Tools
 - Bottom Nav: Tambah "Keputusan Bisnis" di submenu Marketing Tools
 - FieldReportForm: Hapus stale `!title` check di useEffect
@@ -910,11 +910,11 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ---
 
-## [v2.3] - 2026-04-03 — Marketing CRM: Canvassing + Lead Pipeline
+## [v2.3] - 2026-04-03 - Marketing CRM: Canvassing + Lead Pipeline
 
-### ✨ Fitur Baru
+###  Fitur Baru
 
-- **Role `marketing`** — User baru dengan akses khusus Marketing Tools (Canvassing, Lead Pipeline, Prospect Finder). Tidak bisa akses aset jaringan/core management.
+- **Role `marketing`** - User baru dengan akses khusus Marketing Tools (Canvassing, Lead Pipeline, Prospect Finder). Tidak bisa akses aset jaringan/core management.
 
 - **Canvassing** (`/canvassing`)
   - Peta full-screen (Google Maps) dengan session management
@@ -951,9 +951,9 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Auto-created saat server start (CREATE TABLE IF NOT EXISTS)
   - Indexes untuk performa query leads + activities
 
-- **API helper `api.patch()`** — tambah method PATCH di `client/lib/api.ts`
+- **API helper `api.patch()`** - tambah method PATCH di `client/lib/api.ts`
 
-### 🧭 Sidebar Restructure
+###  Sidebar Restructure
   - Group baru: **MARKETING TOOLS** (hanya admin + marketing)
   - Items: Canvassing (MapPinned), Lead Pipeline (ListChecks), Prospect Finder (Search)
   - Group TOOLS & ASET JARINGAN: hanya admin + operator
@@ -961,9 +961,9 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ---
 
-## [v2.2] - 2026-04-03 — Prospect Finder + Auth & UI Finalisasi
+## [v2.2] - 2026-04-03 - Prospect Finder + Auth & UI Finalisasi
 
-### ✨ Fitur Baru
+###  Fitur Baru
 - **Prospect Finder** (`/prospects`)
   - Temukan calon pelanggan di sekitar infrastruktur (ODP/ODC/POP) via Google Places API (New)
   - Filter berdasarkan 5 kategori: Korporat, Pendidikan, Kesehatan, Komersial, Pemerintah
@@ -973,63 +973,63 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Export hasil ke CSV
   - Sidebar navigation item "Prospect Finder" dengan ikon Crosshair
 
-### 🐛 Bug Fix
-- **Login twice bug** — setelah login berhasil, halaman kadang balik ke login lagi karena race condition antara `setLocation("/")` dan state update React. Fix: `LoginPage` sekarang render `<Redirect to="/" />` saat user sudah terisi, tanpa `setLocation`.
-- **Blank setelah update/restart** — app tampil kosong/tidak bisa diklik jika token di localStorage tidak sinkron dengan server. Fix: token divalidasi ke `/api/auth/me` saat startup.
-- **Tidak redirect ke login saat 401** — semua request API yang return 401 kini otomatis dispatch event `auth:unauthorized` → AuthContext langsung clear session → redirect ke login.
-- **Layer peta reset saat navigasi** — layer visibility (ODP on/off, Pelanggan, dll) kembali ke default setiap kali user pindah halaman. Fix: state layer disimpan ke `localStorage` dan dimuat kembali saat kembali ke peta.
-- **Prospect Finder: unsupported place types** — tipe `clinic`, `office`, `corporate_office`, `preschool`, `hotel` tidak valid di Places API (New). Fix: diganti ke tipe yang didukung (`doctor`, `accounting`, `lodging`, dll).
-- **Prospect Finder: API key referrer blocked** — request dari backend tidak memiliki header `Referer`. Fix: tambah header `Referer: APP_URL` pada semua request ke Google Places API.
+###  Bug Fix
+- **Login twice bug** - setelah login berhasil, halaman kadang balik ke login lagi karena race condition antara `setLocation("/")` dan state update React. Fix: `LoginPage` sekarang render `<Redirect to="/" />` saat user sudah terisi, tanpa `setLocation`.
+- **Blank setelah update/restart** - app tampil kosong/tidak bisa diklik jika token di localStorage tidak sinkron dengan server. Fix: token divalidasi ke `/api/auth/me` saat startup.
+- **Tidak redirect ke login saat 401** - semua request API yang return 401 kini otomatis dispatch event `auth:unauthorized` → AuthContext langsung clear session → redirect ke login.
+- **Layer peta reset saat navigasi** - layer visibility (ODP on/off, Pelanggan, dll) kembali ke default setiap kali user pindah halaman. Fix: state layer disimpan ke `localStorage` dan dimuat kembali saat kembali ke peta.
+- **Prospect Finder: unsupported place types** - tipe `clinic`, `office`, `corporate_office`, `preschool`, `hotel` tidak valid di Places API (New). Fix: diganti ke tipe yang didukung (`doctor`, `accounting`, `lodging`, dll).
+- **Prospect Finder: API key referrer blocked** - request dari backend tidak memiliki header `Referer`. Fix: tambah header `Referer: APP_URL` pada semua request ke Google Places API.
 
-### 🔒 Security & Hardening
+###  Security & Hardening
 - Session cookie diperketat: `secure: true` (production), `httpOnly: true`, `sameSite: "lax"`
 - Warning log saat `SESSION_SECRET` tidak diset di production
 - TypeScript: `next: Function` → `next: NextFunction` di authMiddleware
 
-### 🎨 UI/UX
-- **Sidebar collapsible** — tombol `◀` di header sidebar untuk menyembunyikan sidebar (desktop), map jadi full-width. State tersimpan di `localStorage`. Tab `▶` muncul di tepi kiri untuk expand kembali.
-- **Popup/InfoWindow redesign** — layout simetris dengan aksen warna full-width di atas, tombol X di dalam container, stat cards rapi, port bar lebih prominent.
-- **InfoWindow CSS override** — hapus semua padding/background default Google Maps, sembunyikan tombol X native Google Maps, gunakan close button custom di dalam popup.
-- **ODP marker warna gradasi usage** — warna marker dan header popup mengikuti persentase port terpakai: Merah (0%=kosong) → Orange (1-33%) → Kuning (34-66%) → Hijau (67-99%) → Biru (100%=penuh). Berlaku di marker, label, popup, dan progress bar.
+###  UI/UX
+- **Sidebar collapsible** - tombol `◀` di header sidebar untuk menyembunyikan sidebar (desktop), map jadi full-width. State tersimpan di `localStorage`. Tab `▶` muncul di tepi kiri untuk expand kembali.
+- **Popup/InfoWindow redesign** - layout simetris dengan aksen warna full-width di atas, tombol X di dalam container, stat cards rapi, port bar lebih prominent.
+- **InfoWindow CSS override** - hapus semua padding/background default Google Maps, sembunyikan tombol X native Google Maps, gunakan close button custom di dalam popup.
+- **ODP marker warna gradasi usage** - warna marker dan header popup mengikuti persentase port terpakai: Merah (0%=kosong) → Orange (1-33%) → Kuning (34-66%) → Hijau (67-99%) → Biru (100%=penuh). Berlaku di marker, label, popup, dan progress bar.
 
-### ⚙️ Config & DevOps
+###  Config & DevOps
 - File `.env.example` lengkap dengan dokumentasi setiap variabel
 - `APP_URL` dan `GOOGLE_MAPS_API_KEY` baca dari environment variable
 - React Query retry: tidak retry untuk error 401/403 agar tidak hang
 
 ---
 
-## [v2.0] - 2026-03-28 — Security Overhaul & Core Management
+## [v2.0] - 2026-03-28 - Security Overhaul & Core Management
 
-### ✨ Fitur Baru
-- **Core Management** — OTB Manager, Bestray, Splitter, Core Manager, Koneksi Core
-- **Splitter Chain** — visualisasi hierarki splitter dari POP → ODC → ODP
-- **Power Budget Calculator** — kalkulasi link budget FTTH
-- **Export/Import** — export data aset ke CSV/Excel
-- **Log Aktivitas** — audit log semua aksi user (login, CRUD aset)
-- **Manajemen User** — CRUD user, role admin/operator
+###  Fitur Baru
+- **Core Management** - OTB Manager, Bestray, Splitter, Core Manager, Koneksi Core
+- **Splitter Chain** - visualisasi hierarki splitter dari POP → ODC → ODP
+- **Power Budget Calculator** - kalkulasi link budget FTTH
+- **Export/Import** - export data aset ke CSV/Excel
+- **Log Aktivitas** - audit log semua aksi user (login, CRUD aset)
+- **Manajemen User** - CRUD user, role admin/operator
 
-### 🔒 Security
+###  Security
 - Password hashing ganti dari SHA-256 (tanpa salt) ke **bcrypt cost 12**
 - Auto-upgrade hash lama ke bcrypt saat login berhasil (zero-downtime migration)
 - Rate limiting login: 5 percobaan / 5 menit → lockout 15 menit
-- Token sesi menggunakan `randomBytes(48)` — tidak lagi predictable
+- Token sesi menggunakan `randomBytes(48)` - tidak lagi predictable
 - Validasi password: minimal 8 karakter, huruf besar, huruf kecil, angka
 - Validasi username: 3-30 karakter, alphanumeric
 - Hapus hint kredensial default dari halaman login
 - Password admin default dari env var `ADMIN_DEFAULT_PASSWORD`
 - Global auth guard: semua `/api/*` (kecuali login) wajib token valid
 
-### 🐛 Bug Fix
+###  Bug Fix
 - Map page blank setelah brute-force test mengunci akun di memory
 - Vite HMR stale cache menyebabkan MapPage tidak update
 - Panel z-index conflict: utility buttons tertutup panel layer
 
 ---
 
-## [v1.0] - 2026-03-25 — Initial Release
+## [v1.0] - 2026-03-25 - Initial Release
 
-### ✨ Fitur Awal
+###  Fitur Awal
 - Dashboard statistik jaringan
 - Peta interaktif Google Maps dengan marker POP, ODC, ODP, Pelanggan, Tiang, Kabel
 - CRUD aset: POP, ODC, ODP, Pelanggan, Tiang, Kabel

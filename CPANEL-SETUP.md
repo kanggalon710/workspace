@@ -1,4 +1,4 @@
-# cPanel Setup — fiber-jabnet @ workspace.jabnet.id
+# cPanel Setup - fiber-jabnet @ workspace.jabnet.id
 
 Setup khusus project ini (JABNET Workspace MySQL port) di cPanel user `jabnet`.
 Pola umum cPanel deploy: lihat [CPANEL-CONVENTIONS.md](CPANEL-CONVENTIONS.md).
@@ -93,9 +93,9 @@ cPanel → Software → Setup Node.js App → Create Application:
   - `NODE_ENV` = `production`
   - `JABNET_PRIVATE_ROOT` = `/home/jabnet/private/fiber-jabnet`
 
-**Penting:** klik **Create** tapi JANGAN klik "Run NPM Install" dulu — repo belum di-clone.
+**Penting:** klik **Create** tapi JANGAN klik "Run NPM Install" dulu - repo belum di-clone.
 
-Catat juga "Enter to the virtual environment" command yang muncul di UI — bentuknya seperti:
+Catat juga "Enter to the virtual environment" command yang muncul di UI - bentuknya seperti:
 ```bash
 source /home/jabnet/nodevenv/repositories/fiber-jabnet/20/bin/activate && cd /home/jabnet/repositories/fiber-jabnet
 ```
@@ -134,7 +134,7 @@ GOOGLE_MAPS_API_KEY=     # ← copy dari prod existing kalau ada
 COVERAGE_API_KEY=
 SESSION_SECRET=          # ← `openssl rand -hex 32` generated
 ADMIN_DEFAULT_PASSWORD=Admin@1234
-# Workers default DISABLED — avoid dual-write dgn prod existing 103.194.46.164
+# Workers default DISABLED - avoid dual-write dgn prod existing 103.194.46.164
 WORKERS_ENABLED=false
 BILLING_SYNC_ENABLED=false
 TRAFFIC_SNAPSHOT_ENABLED=false
@@ -214,7 +214,7 @@ du -sh /home/jabnet/private/fiber-jabnet/uploads/
 ls /home/jabnet/private/fiber-jabnet/uploads/jabnet/canvassing/
 ```
 
-Script idempotent — aman re-run, hanya proses row yang belum punya `photo_path`.
+Script idempotent - aman re-run, hanya proses row yang belum punya `photo_path`.
 
 Setelah 24-48 jam observasi (verify foto-foto lama masih render di UI), DROP kolom `photo_data`:
 ```sql
@@ -231,7 +231,7 @@ curl -I https://workspace.jabnet.id/
 
 # Auth ping
 curl -I https://workspace.jabnet.id/api/auth/me
-# Expect: 401 (belum login) — kalau 500, ada error, cek logs.
+# Expect: 401 (belum login) - kalau 500, ada error, cek logs.
 
 # Cek logs aplikasi:
 # cPanel UI → Setup Node.js App → klik app → "View Application Log"
@@ -240,18 +240,18 @@ curl -I https://workspace.jabnet.id/api/auth/me
 
 ---
 
-## ⚠️ Phase 1B — Storage.ts Refactor (Belum Dikerjakan)
+##  Phase 1B - Storage.ts Refactor (Belum Dikerjakan)
 
 Sebelum aplikasi bisa benar-benar serve traffic, file `server/storage.ts` butuh refactor:
 
 | Item | Count | Status |
 |---|---|---|
-| `.returning()` calls (tidak supported di MySQL Drizzle) | 114 | ❌ TODO |
-| Raw `sqlite.prepare/exec/transaction` calls | 89 | ❌ TODO (akan throw runtime error) |
-| Constructor bootstrap (CREATE TABLE, ALTER, seed) | 1402 lines | ✅ removed (Phase 1A) |
-| Schema port (`shared/schema.ts`) | 65 tables | ✅ done (Phase 1A) |
-| Migration script | — | ✅ done (Phase 1A) |
-| Deploy infrastructure (GHA, env, docs) | — | ✅ done (Phase 1A) |
+| `.returning()` calls (tidak supported di MySQL Drizzle) | 114 |  TODO |
+| Raw `sqlite.prepare/exec/transaction` calls | 89 |  TODO (akan throw runtime error) |
+| Constructor bootstrap (CREATE TABLE, ALTER, seed) | 1402 lines |  removed (Phase 1A) |
+| Schema port (`shared/schema.ts`) | 65 tables |  done (Phase 1A) |
+| Migration script | - |  done (Phase 1A) |
+| Deploy infrastructure (GHA, env, docs) | - |  done (Phase 1A) |
 
 **Pattern refactor `.returning()`:**
 
@@ -267,7 +267,7 @@ const [row] = await this.db.select().from(pops).where(eq(pops.id, insertId));
 return row!;
 ```
 
-Estimasi effort Phase 1B: **14–19 jam fokus engineering**.
+Estimasi effort Phase 1B: **14-19 jam fokus engineering**.
 
 ---
 
@@ -275,18 +275,18 @@ Estimasi effort Phase 1B: **14–19 jam fokus engineering**.
 
 ```
 laptop                       GitHub                cPanel
-──────                       ──────                ──────
+------                       ------                ------
 edit code
-git push origin main  ──►    GHA build
+git push origin main  --►    GHA build
                              (npm ci, build)
-                             force-push → deploy ──► branch updated
-                                                         │
+                             force-push → deploy --► branch updated
+                                                         |
                                                          ▼
-                                  ◄── klik "Update from Remote" di Git VC
-                                                         │
+                                  ◄-- klik "Update from Remote" di Git VC
+                                                         |
                                                          ▼
-                                  ◄── klik Restart Application di Node.js App
-                                                         │
+                                  ◄-- klik Restart Application di Node.js App
+                                                         |
                                                          ▼
                                                     site live
 ```
@@ -307,7 +307,7 @@ Total manual step: 3 klik (Update + Restart + verify).
 | 500 saat `/api/*` | View Application Log → biasanya MySQL connection (cek `.env` DB_*) atau `.returning()` runtime error (Phase 1B belum dikerjakan) |
 | 404 saat root | Apache → Setup Node.js App belum di-Create atau URL salah |
 | `Cannot find module 'mysql2'` | `npm install --production` belum dijalankan |
-| `Access denied for user` | MySQL user privilege bukan ALL — cek phpMyAdmin |
+| `Access denied for user` | MySQL user privilege bukan ALL - cek phpMyAdmin |
 | GHA build fail | Cek Actions tab di GitHub, paling sering: lockfile drift atau env var hilang |
 | Git VC pull fail | Deploy key SSH tidak terdaftar / typo URL clone (pakai SSH bukan HTTPS) |
 
@@ -325,17 +325,17 @@ Total manual step: 3 klik (Update + Restart + verify).
 
 ---
 
-## 🔀 Domain Switch: fiber.jabnet.id → workspace.jabnet.id (domain-only)
+##  Domain Switch: fiber.jabnet.id → workspace.jabnet.id (domain-only)
 
 Ganti URL public tanpa rename dir/repo. Internal naming tetap `fiber-jabnet`. Disrupsi: **~5 menit**
 (app restart). Aman dilakukan saat traffic rendah.
 
 ### Prasyarat (sudah selesai)
-- ✅ DNS A record `workspace.jabnet.id` → IP cPanel
-- ✅ Subdomain `workspace.jabnet.id` dibuat di cPanel (apapun docroot-nya — akan di-override
+-  DNS A record `workspace.jabnet.id` → IP cPanel
+-  Subdomain `workspace.jabnet.id` dibuat di cPanel (apapun docroot-nya - akan di-override
   saat re-bind Node.js App di Step 1)
 
-### Step 1 — Re-bind Node.js App ke domain baru
+### Step 1 - Re-bind Node.js App ke domain baru
 
 cPanel UI: **Setup Node.js App** → klik app fiber-jabnet → **Edit**:
 - **Application URL**: ganti `fiber.jabnet.id` → `workspace.jabnet.id`
@@ -346,7 +346,7 @@ cPanel UI: **Setup Node.js App** → klik app fiber-jabnet → **Edit**:
 
 > Catatan: kalau Subdomain workspace.jabnet.id yang sudah dibuat punya docroot `repositories/workspace.jabnet.id` (folder kosong), cPanel umumnya akan **update docroot Subdomain** otomatis mengikuti Application Root saat re-bind. Kalau tidak (tergantung versi cPanel), buka **Domains** → edit Subdomain `workspace.jabnet.id` → ganti Document Root jadi `repositories/fiber-jabnet`. Folder kosong `repositories/workspace.jabnet.id` boleh dihapus setelahnya: `rmdir ~/repositories/workspace.jabnet.id`.
 
-### Step 2 — Update `APP_URL` di `.env`
+### Step 2 - Update `APP_URL` di `.env`
 
 ```bash
 ssh -i ~/.ssh/access-jabnet-cpanel jabnet@103.194.47.165
@@ -368,7 +368,7 @@ Restart Node.js App lagi supaya env baru ke-load:
 touch /home/jabnet/repositories/fiber-jabnet/tmp/restart.txt
 ```
 
-### Step 3 — `.htaccess` 301 redirect dari fiber.jabnet.id
+### Step 3 - `.htaccess` 301 redirect dari fiber.jabnet.id
 
 Kalau Subdomain `fiber.jabnet.id` masih ada di cPanel (untuk backward-compat bookmark / link lama):
 
@@ -382,9 +382,9 @@ RewriteEngine On
 RewriteRule ^(.*)$ https://workspace.jabnet.id/$1 [R=301,L]
 ```
 
-> ⚠️ **HATI-HATI**: kalau docroot Subdomain `fiber.jabnet.id` MASIH sama dengan `repositories/fiber-jabnet` (Application Root), JANGAN tulis .htaccess redirect di situ — akan override Passenger directives + bikin app crash. Solusi: di cPanel UI ganti dulu Subdomain `fiber.jabnet.id`'s Document Root ke folder terpisah (mis. `~/public_html/fiber-redirect/`), buat folder itu, baru tulis `.htaccess` redirect di sana.
+>  **HATI-HATI**: kalau docroot Subdomain `fiber.jabnet.id` MASIH sama dengan `repositories/fiber-jabnet` (Application Root), JANGAN tulis .htaccess redirect di situ - akan override Passenger directives + bikin app crash. Solusi: di cPanel UI ganti dulu Subdomain `fiber.jabnet.id`'s Document Root ke folder terpisah (mis. `~/public_html/fiber-redirect/`), buat folder itu, baru tulis `.htaccess` redirect di sana.
 
-### Step 4 — Verifikasi
+### Step 4 - Verifikasi
 
 ```bash
 # Domain baru harus 200
@@ -399,7 +399,7 @@ curl -I https://fiber.jabnet.id/login
 Di browser: buka `https://workspace.jabnet.id/login` → login → cek dashboard, /map, /odps (foto baru
 masih jalan karena foto disimpan path relatif `jabnet/canvassing/...`, bukan absolute URL).
 
-### Step 5 — Update integrasi external yang point ke URL lama
+### Step 5 - Update integrasi external yang point ke URL lama
 
 | System | Update |
 |---|---|
@@ -423,6 +423,6 @@ masih jalan karena foto disimpan path relatif `jabnet/canvassing/...`, bukan abs
 Setelah confirm tidak ada complain + 301 redirect log <5% peak traffic:
 1. cPanel **Domains** → klik `fiber.jabnet.id` → **Remove**
 2. DNS registrar: hapus A record `fiber.jabnet.id`
-3. (Tidak perlu code change — internal naming `fiber-jabnet` di-keep selamanya, atau ganti
+3. (Tidak perlu code change - internal naming `fiber-jabnet` di-keep selamanya, atau ganti
    nanti via runbook terpisah kalau benar-benar diperlukan)
 

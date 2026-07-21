@@ -93,7 +93,7 @@ export function useSendChatwootMessage(conversationId: number | null) {
   });
 }
 
-/** Kirim balasan dengan lampiran (tanpa optimistic — refetch setelah sukses). */
+/** Kirim balasan dengan lampiran (tanpa optimistic - refetch setelah sukses). */
 export function useSendChatwootAttachment(conversationId: number | null) {
   const qc = useQueryClient();
   return useMutation({

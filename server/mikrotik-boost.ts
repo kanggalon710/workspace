@@ -1,6 +1,6 @@
 /**
  * MikroTik Boost Integration (v4.2.3)
- * ──────────────────────────────────
+ * ----------------------------------
  * Auto-apply / auto-revert PPP profile saat customer redeem Speed-on-Demand boost.
  *
  * Flow:
@@ -18,12 +18,12 @@
  *     b. Disconnect session lagi
  *
  * Settings:
- *  - mikrotik_boost_auto_activate ("true"|"false") — default true
- *  - mikrotik_boost_profile_pattern — default "{base}-boost-{multiplier}x"
+ *  - mikrotik_boost_auto_activate ("true"|"false") - default true
+ *  - mikrotik_boost_profile_pattern - default "{base}-boost-{multiplier}x"
  *    Pattern variables:
  *      {base} = current profile name (e.g. "MOON-30M")
  *      {multiplier} = numeric multiplier (2 or 3)
- *  - mikrotik_boost_profile_map (JSON, optional override) — explicit mapping
+ *  - mikrotik_boost_profile_map (JSON, optional override) - explicit mapping
  *    Format: { "MOON": { "2": "MOON-BOOST-2X", "3": "MOON-BOOST-3X" } }
  *
  * Fallback:
@@ -190,7 +190,7 @@ export async function applyBoost(
       }
     } catch (e: any) {
       console.warn(`[Boost] disconnect session error: ${e.message}`);
-      // Tidak fail — secret sudah ke-update, customer akan dapat profile baru saat re-connect natural
+      // Tidak fail - secret sudah ke-update, customer akan dapat profile baru saat re-connect natural
     }
 
     return {

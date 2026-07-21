@@ -1,30 +1,30 @@
-# Development Environment Setup — `dev.workspace.jabnet.id`
+# Development Environment Setup - `dev.workspace.jabnet.id`
 
-> **Goal**: Domain dev terpisah (`dev.workspace.jabnet.id`) dengan DB sendiri, di-mirror dari prod tiap 24 jam. Testing/experiment bebas — semua perubahan dev di-reset ke prod state setiap jam 02:00 WIB.
+> **Goal**: Domain dev terpisah (`dev.workspace.jabnet.id`) dengan DB sendiri, di-mirror dari prod tiap 24 jam. Testing/experiment bebas - semua perubahan dev di-reset ke prod state setiap jam 02:00 WIB.
 
 ## Arsitektur
 
 ```
 PROD (workspace.jabnet.id)              DEV (dev.workspace.jabnet.id)
-├─ App: /home/jabnet/fiber-jabnet/   ├─ App: /home/jabnet/dev-fiber-jabnet/
-├─ DB:  jabnet_fiber                 ├─ DB:  jabnet_fiber_dev
-├─ Env: /home/jabnet/private/        ├─ Env: /home/jabnet/private/
-│       fiber-jabnet/config/.env     │       fiber-jabnet-dev/config/.env
-├─ Uploads: /home/jabnet/private/    ├─ Uploads: SYMLINK → prod uploads/
-│           fiber-jabnet/uploads/    │           (read-only via env flag)
-├─ Branch: main                      ├─ Branch: dev
-└─ MPWA + billing: ENABLED           └─ MPWA + billing: DISABLED (env flag)
++- App: /home/jabnet/fiber-jabnet/   +- App: /home/jabnet/dev-fiber-jabnet/
++- DB:  jabnet_fiber                 +- DB:  jabnet_fiber_dev
++- Env: /home/jabnet/private/        +- Env: /home/jabnet/private/
+|       fiber-jabnet/config/.env     |       fiber-jabnet-dev/config/.env
++- Uploads: /home/jabnet/private/    +- Uploads: SYMLINK → prod uploads/
+|           fiber-jabnet/uploads/    |           (read-only via env flag)
++- Branch: main                      +- Branch: dev
++- MPWA + billing: ENABLED           +- MPWA + billing: DISABLED (env flag)
 ```
 
 **Daily flow (02:00 WIB):**
 1. cron jalan `mirror-prod-to-dev.sh`
 2. `mysqldump jabnet_fiber` → restore ke `jabnet_fiber_dev` (drop+recreate tables)
-3. Touch `dev-fiber-jabnet/tmp/restart.txt` — Passenger reload dev app
-4. Dev startup migrations jalan idempotent — apply schema diff kalau dev branch punya kolom baru
+3. Touch `dev-fiber-jabnet/tmp/restart.txt` - Passenger reload dev app
+4. Dev startup migrations jalan idempotent - apply schema diff kalau dev branch punya kolom baru
 
 **Workflow developer:**
 - Push code ke `dev` branch → GHA build → cPanel dev repo `Update from Remote` → Restart
-- Test di `dev.workspace.jabnet.id` bebas — DB akan reset 02:00 WIB besok
+- Test di `dev.workspace.jabnet.id` bebas - DB akan reset 02:00 WIB besok
 - Saat siap merge ke prod: `git checkout main && git merge dev && git push origin main` → cPanel prod update
 
 ---
@@ -68,7 +68,7 @@ chmod 700 ~/private/fiber-jabnet-dev/config   # secret protect
 
 ### 1.4 Uploads Symlink (Read-Only via env flag)
 
-Dev membaca foto dari prod uploads (symlink) — writes dicegah via `UPLOADS_READ_ONLY=true` env. Risk: kalau env flag dilupakan, dev upload bisa pollute prod folder. Code di `server/uploads.ts` enforce dengan throw error eksplisit.
+Dev membaca foto dari prod uploads (symlink) - writes dicegah via `UPLOADS_READ_ONLY=true` env. Risk: kalau env flag dilupakan, dev upload bisa pollute prod folder. Code di `server/uploads.ts` enforce dengan throw error eksplisit.
 
 ```bash
 ln -s /home/jabnet/private/fiber-jabnet/uploads /home/jabnet/private/fiber-jabnet-dev/uploads
@@ -104,7 +104,7 @@ git push -u origin dev
 
 Setelah push pertama, GHA workflow auto-trigger build dan create branch `deploy-dev` di GitHub (orphan, built artifacts only).
 
-### 2.2 cPanel Git Version Control — Clone Deploy-Dev Branch
+### 2.2 cPanel Git Version Control - Clone Deploy-Dev Branch
 
 cPanel → **Git Version Control** → **Create**:
 - **Clone URL**: `git@github.com:Yoga723/ftth-tools.git` (atau HTTPS dengan PAT)
@@ -183,7 +183,7 @@ openssl rand -hex 32
 Sebelum first start, copy prod ke dev biar ada data realistic:
 ```bash
 bash ~/scripts/mirror-prod-to-dev.sh
-# (atau jalankan manual sekali — script ada di Phase 4)
+# (atau jalankan manual sekali - script ada di Phase 4)
 ```
 
 ### 3.4 Start Dev App
@@ -225,8 +225,8 @@ chmod +x ~/scripts/mirror-prod-to-dev.sh
 ```bash
 bash ~/scripts/mirror-prod-to-dev.sh
 # expected:
-# [2026-05-27 14:30:00] [mirror] START — jabnet_fiber → jabnet_fiber_dev
-# [2026-05-27 14:30:08] [mirror] DONE — dev restart triggered
+# [2026-05-27 14:30:00] [mirror] START - jabnet_fiber → jabnet_fiber_dev
+# [2026-05-27 14:30:08] [mirror] DONE - dev restart triggered
 ```
 
 Cek dev DB punya tabel:
@@ -281,7 +281,7 @@ cPanel → **Git Version Control** → repo `ftth-tools-dev` → **Manage** → 
 Setelah pull, restart app:
 - **Setup Node.js App** → **Restart App**
 
-Atau via SSH (lebih cepat — pull built artifacts langsung, no rebuild needed):
+Atau via SSH (lebih cepat - pull built artifacts langsung, no rebuild needed):
 ```bash
 cd ~/dev-fiber-jabnet
 git pull origin deploy-dev
@@ -297,7 +297,7 @@ touch tmp/restart.txt
 Lewat **Pull Request** untuk dapat checkpoint review + build verify di GHA sebelum production update.
 
 ```bash
-# Local — pastikan dev clean dan up-to-date
+# Local - pastikan dev clean dan up-to-date
 git checkout dev
 git push origin dev
 
@@ -328,7 +328,7 @@ GHA auto-build prod **dan** auto-buka PR backflow `main → dev` (lewat `.github
 
 ### Schema Drift: Dev Branch Ada Kolom Baru, Prod Belum
 
-Setelah mirror jalan (data prod restore ke dev), dev startup migrations apply schema diff via `IF NOT EXISTS` / `INFORMATION_SCHEMA` checks. Idempotent — no error.
+Setelah mirror jalan (data prod restore ke dev), dev startup migrations apply schema diff via `IF NOT EXISTS` / `INFORMATION_SCHEMA` checks. Idempotent - no error.
 
 Example: kalau dev branch punya `ALTER TABLE customers ADD COLUMN credit_score INT`, setelah mirror table kembali tanpa kolom itu, dev app restart akan re-add kolomnya. Data hilang (semua row credit_score jadi NULL) tapi schema benar.
 
@@ -377,13 +377,13 @@ bash ~/scripts/mirror-prod-to-dev.sh
 
 ### Restore Prod Dari Dev (Reverse Direction)
 
-**JANGAN**. Mirror script one-way (prod → dev). Kalau perlu copy data dari dev ke prod, dump explicit + selective restore — itu major operation yang wajib ada user explicit approval.
+**JANGAN**. Mirror script one-way (prod → dev). Kalau perlu copy data dari dev ke prod, dump explicit + selective restore - itu major operation yang wajib ada user explicit approval.
 
 ---
 
 ## Security Notes
 
-- Dev DB punya copy real customer data (nama, alamat, phone) — treat sebagai sensitive sama dengan prod
+- Dev DB punya copy real customer data (nama, alamat, phone) - treat sebagai sensitive sama dengan prod
 - Akses dev URL: pertimbangkan IP allowlist via `.htaccess` di dev app root kalau perlu lebih ketat
 - Session secret dev terpisah → token dev tidak valid di prod (good)
 - MPWA + billing dimatikan via env → tidak ada outbound network call ke customer/billing system

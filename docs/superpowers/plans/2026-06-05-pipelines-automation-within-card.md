@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let an automation rule, when a card enters its trigger stage, act on the *same* card — set a custom field, move the card to another stage in the same pipeline, or (re)assign it — and gate any rule (new actions and the existing `create_card`) behind an optional AND-list of field conditions.
+**Goal:** Let an automation rule, when a card enters its trigger stage, act on the *same* card - set a custom field, move the card to another stage in the same pipeline, or (re)assign it - and gate any rule (new actions and the existing `create_card`) behind an optional AND-list of field conditions.
 
-**Architecture:** Approach A — extend the flat `pipeline_rules` row (no new tables): widen the `action_type` enum and add nullable `action_config` (JSON) + `conditions` (JSON) text columns. The legacy `create_card` columns + `pipeline_rule_field_maps` table are untouched, so every existing rule keeps working. One action per rule. Within-card mutations go through `storage` directly (never the routes), so the automation service is not re-invoked — loop-safe by the same mechanism as P4a. Conditions are evaluated at trigger time only.
+**Architecture:** Approach A - extend the flat `pipeline_rules` row (no new tables): widen the `action_type` enum and add nullable `action_config` (JSON) + `conditions` (JSON) text columns. The legacy `create_card` columns + `pipeline_rule_field_maps` table are untouched, so every existing rule keeps working. One action per rule. Within-card mutations go through `storage` directly (never the routes), so the automation service is not re-invoked - loop-safe by the same mechanism as P4a. Conditions are evaluated at trigger time only.
 
 **Tech Stack:** Drizzle ORM (MySQL dialect), Express 5, `sendSuccess`/`sendError` envelope, TanStack Query 5, React 18, shadcn/ui, Tailwind. Pure helpers unit-tested with `node:test` via `npx tsx --test`.
 
@@ -12,10 +12,10 @@
 
 ---
 
-### Task 1: Schema — widen action enum, add columns + condition/config types
+### Task 1: Schema - widen action enum, add columns + condition/config types
 
 **Files:**
-- Modify: `shared/schema.ts` — `pipelineRules` table def (~586-603) + type exports (~630-632)
+- Modify: `shared/schema.ts` - `pipelineRules` table def (~586-603) + type exports (~630-632)
 
 - [ ] **Step 1: Add the two nullable columns to `pipelineRules`**
 
@@ -59,12 +59,12 @@ export type MoveStageConfig = { stageId: number };
 export type AssignConfig = { assigneeId: number | null };
 ```
 
-Leave `export type PipelineRule = typeof pipelineRules.$inferSelect;` as-is — `targetPipelineId`/`targetStageId` now infer as `number | null`, and `actionConfig`/`conditions` as `string | null`.
+Leave `export type PipelineRule = typeof pipelineRules.$inferSelect;` as-is - `targetPipelineId`/`targetStageId` now infer as `number | null`, and `actionConfig`/`conditions` as `string | null`.
 
 - [ ] **Step 3: Verify typecheck**
 
 Run: `npm run typecheck`
-Expected: PASS (0 errors). If errors appear in `pipeline-automation.ts` about `targetPipelineId` being possibly null, that's expected — Task 5 fixes the service. For this task, confirm the errors are ONLY the now-`number|null` target columns in `pipeline-automation.ts` / `storage.ts` createRule; do not fix them here.
+Expected: PASS (0 errors). If errors appear in `pipeline-automation.ts` about `targetPipelineId` being possibly null, that's expected - Task 5 fixes the service. For this task, confirm the errors are ONLY the now-`number|null` target columns in `pipeline-automation.ts` / `storage.ts` createRule; do not fix them here.
 
 > Note: if `npm run typecheck` reports nothing fixable in this task's files, proceed. The follow-on tasks (4, 5) resolve the nullability fallout in storage + service.
 
@@ -77,10 +77,10 @@ git commit -m "feat(pipelines): widen rule action enum + action_config/condition
 
 ---
 
-### Task 2: Startup migration — add columns + relax NOT NULL
+### Task 2: Startup migration - add columns + relax NOT NULL
 
 **Files:**
-- Modify: `server/storage.ts` — automation migration block (after the `pipeline_rule_field_maps` `CREATE TABLE`, ~6515) and the `pipeline_rules` `CREATE TABLE` DDL (~6469-6486)
+- Modify: `server/storage.ts` - automation migration block (after the `pipeline_rule_field_maps` `CREATE TABLE`, ~6515) and the `pipeline_rules` `CREATE TABLE` DDL (~6469-6486)
 
 - [ ] **Step 1: Allow NULL on the two target columns in the CREATE TABLE DDL (fresh installs)**
 
@@ -98,8 +98,8 @@ In the `CREATE TABLE IF NOT EXISTS pipeline_rules (...)` block (~6469), change t
 Immediately AFTER the `pipeline_rule_field_maps` try/catch block (the line `} catch (e: any) { console.warn(`[migration] pipeline_rule_field_maps setup failed: ${e.message}`); }`, ~6515) and BEFORE the `// 2. Seed default admin user` comment, insert:
 
 ```ts
-    // Pipelines Phase 4b-1 — within-card actions + conditions. Additive, idempotent.
-    // This DB chokes on `ADD COLUMN IF NOT EXISTS` — explicit info_schema check per column.
+    // Pipelines Phase 4b-1 - within-card actions + conditions. Additive, idempotent.
+    // This DB chokes on `ADD COLUMN IF NOT EXISTS` - explicit info_schema check per column.
     const pipelineRuleColAdds: Array<{ column: string; ddl: string }> = [
       { column: "action_config", ddl: "TEXT NULL" },
       { column: "conditions", ddl: "TEXT NULL" },
@@ -131,7 +131,7 @@ Immediately AFTER the `pipeline_rule_field_maps` try/catch block (the line `} ca
 - [ ] **Step 2b: Verify build**
 
 Run: `npm run build`
-Expected: PASS (esbuild bundles `dist/index.mjs`). The migration SQL is plain strings — no type surface — so success here means it's syntactically wired in.
+Expected: PASS (esbuild bundles `dist/index.mjs`). The migration SQL is plain strings - no type surface - so success here means it's syntactically wired in.
 
 - [ ] **Step 3: Commit**
 
@@ -142,7 +142,7 @@ git commit -m "feat(pipelines): startup migration for action_config/conditions +
 
 ---
 
-### Task 3: Pure helpers — conditions + config parsing (TDD)
+### Task 3: Pure helpers - conditions + config parsing (TDD)
 
 **Files:**
 - Modify: `server/pipeline-automation-helpers.ts`
@@ -239,7 +239,7 @@ test("parseConditions: valid array, malformed → [], filters bad entries", () =
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: FAIL — `evaluateConditions`, `parseActionConfig`, `parseConditions` are not exported; the updated `matchStageEnterRules` test fails because the current filter still requires `actionType === "create_card"`.
+Expected: FAIL - `evaluateConditions`, `parseActionConfig`, `parseConditions` are not exported; the updated `matchStageEnterRules` test fails because the current filter still requires `actionType === "create_card"`.
 
 - [ ] **Step 3: Implement the helpers**
 
@@ -327,10 +327,10 @@ git commit -m "feat(pipelines): evaluateConditions + parseActionConfig/parseCond
 
 ---
 
-### Task 4: Storage — persist actionType / actionConfig / conditions
+### Task 4: Storage - persist actionType / actionConfig / conditions
 
 **Files:**
-- Modify: `server/storage.ts` — `createRule` (~2185) + `updateRule` (~2200)
+- Modify: `server/storage.ts` - `createRule` (~2185) + `updateRule` (~2200)
 
 - [ ] **Step 1: Extend `createRule` signature + insert**
 
@@ -357,7 +357,7 @@ Replace the `createRule` method (from `async createRule(` through its closing `r
   }
 ```
 
-You will need `PipelineRuleActionType` imported in `storage.ts`. Find the existing import of `PipelineRule`/`PipelineRuleFieldMap` from `../shared/schema...` and add `PipelineRuleActionType` to it. (Grep: `grep -n "PipelineRuleFieldMap" server/storage.ts` — add the type to that same import statement.)
+You will need `PipelineRuleActionType` imported in `storage.ts`. Find the existing import of `PipelineRule`/`PipelineRuleFieldMap` from `../shared/schema...` and add `PipelineRuleActionType` to it. (Grep: `grep -n "PipelineRuleFieldMap" server/storage.ts` - add the type to that same import statement.)
 
 - [ ] **Step 2: Extend `updateRule` signature + patch**
 
@@ -388,7 +388,7 @@ Replace the `updateRule` method (from `async updateRule(` through its closing `r
 - [ ] **Step 3: Verify typecheck**
 
 Run: `npm run typecheck`
-Expected: 0 errors in `storage.ts`. (The only remaining error, if any, is in `server/pipeline-automation.ts` create_card branch about `targetPipelineId` being `number | null` — Task 5 fixes it.)
+Expected: 0 errors in `storage.ts`. (The only remaining error, if any, is in `server/pipeline-automation.ts` create_card branch about `targetPipelineId` being `number | null` - Task 5 fixes it.)
 
 - [ ] **Step 4: Commit**
 
@@ -399,7 +399,7 @@ git commit -m "feat(pipelines): createRule/updateRule persist actionType/actionC
 
 ---
 
-### Task 5: Service — dispatch within-card actions + evaluate conditions
+### Task 5: Service - dispatch within-card actions + evaluate conditions
 
 **Files:**
 - Modify: `server/pipeline-automation.ts` (full rewrite of the file)
@@ -439,12 +439,12 @@ export async function runStageEnterAutomations(card: PipelineCard, actorId: numb
       if (rule.actionType === "create_card") {
         const targetStages = await storage.listStages(rule.targetPipelineId!);
         if (!targetStages.some((s) => s.id === rule.targetStageId)) {
-          console.warn(`[automation] rule ${rule.id}: target stage ${rule.targetStageId} no longer exists — skipped`);
+          console.warn(`[automation] rule ${rule.id}: target stage ${rule.targetStageId} no longer exists - skipped`);
         } else {
           const assigneeId = (rule.copyAssignee && card.assigneeId && await storage.canUserAccessPipeline(card.assigneeId, rule.targetPipelineId!))
             ? card.assigneeId : null;
           if (rule.copyAssignee && card.assigneeId && assigneeId === null) {
-            console.warn(`[automation] rule ${rule.id}: assignee ${card.assigneeId} lacks access to pipeline ${rule.targetPipelineId} — created unassigned`);
+            console.warn(`[automation] rule ${rule.id}: assignee ${card.assigneeId} lacks access to pipeline ${rule.targetPipelineId} - created unassigned`);
           }
           const newCard = await storage.createCard(rule.targetPipelineId!, {
             stageId: rule.targetStageId!,
@@ -469,7 +469,7 @@ export async function runStageEnterAutomations(card: PipelineCard, actorId: numb
           await storage.setCardValues(card.id, [{ fieldId: cfg.fieldId, value: cfg.value }]);
           acted = true;
         } else {
-          console.warn(`[automation] rule ${rule.id}: set_field config invalid or field missing — skipped`);
+          console.warn(`[automation] rule ${rule.id}: set_field config invalid or field missing - skipped`);
         }
       } else if (rule.actionType === "move_stage") {
         const cfg = parseActionConfig("move_stage", rule.actionConfig) as { stageId: number } | null;
@@ -478,19 +478,19 @@ export async function runStageEnterAutomations(card: PipelineCard, actorId: numb
           await storage.moveCard(card.id, cfg.stageId, undefined, actorId);
           acted = true;
         } else {
-          console.warn(`[automation] rule ${rule.id}: move_stage config invalid, stage missing, or no-op — skipped`);
+          console.warn(`[automation] rule ${rule.id}: move_stage config invalid, stage missing, or no-op - skipped`);
         }
       } else if (rule.actionType === "assign") {
         const cfg = parseActionConfig("assign", rule.actionConfig) as { assigneeId: number | null } | null;
         if (cfg) {
           if (cfg.assigneeId != null && !(await storage.canUserAccessPipeline(cfg.assigneeId, card.pipelineId))) {
-            console.warn(`[automation] rule ${rule.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} — skipped`);
+            console.warn(`[automation] rule ${rule.id}: assignee ${cfg.assigneeId} lacks access to pipeline ${card.pipelineId} - skipped`);
           } else {
             await storage.updateCard(card.id, { assigneeId: cfg.assigneeId }, actorId);
             acted = true;
           }
         } else {
-          console.warn(`[automation] rule ${rule.id}: assign config invalid — skipped`);
+          console.warn(`[automation] rule ${rule.id}: assign config invalid - skipped`);
         }
       }
 
@@ -521,10 +521,10 @@ git commit -m "feat(pipelines): automation service dispatches set_field/move_sta
 
 ---
 
-### Task 6: Routes — validate new actions + conditions; enrich GET
+### Task 6: Routes - validate new actions + conditions; enrich GET
 
 **Files:**
-- Modify: `server/routes.ts` — `GET` (~4595), `POST` (~4634), `PATCH` (~4649) rules handlers; add a `validateConditions` helper near `validateRuleFieldMaps`
+- Modify: `server/routes.ts` - `GET` (~4595), `POST` (~4634), `PATCH` (~4649) rules handlers; add a `validateConditions` helper near `validateRuleFieldMaps`
 
 - [ ] **Step 1: Add a `validateConditions` helper**
 
@@ -656,7 +656,7 @@ Replace the entire `router.patch("/api/pipelines/:id/rules/:ruleId", ...)` handl
   });
 ```
 
-> Note: the enable/disable toggle PATCH still sends only `{enabled}` — `actionType`/`actionConfig`/`conditions` stay `undefined`, so `updateRule` leaves them untouched. The P4a-ext invariant (toggle doesn't disturb maps) is preserved.
+> Note: the enable/disable toggle PATCH still sends only `{enabled}` - `actionType`/`actionConfig`/`conditions` stay `undefined`, so `updateRule` leaves them untouched. The P4a-ext invariant (toggle doesn't disturb maps) is preserved.
 
 - [ ] **Step 5: Enrich the GET handler with new-action + condition labels**
 
@@ -750,7 +750,7 @@ git commit -m "feat(pipelines): rule endpoints validate within-card actions+cond
 
 ---
 
-### Task 7: Client hooks — extend `RuleWithMaps`
+### Task 7: Client hooks - extend `RuleWithMaps`
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts` (~3, ~13-17)
@@ -786,7 +786,7 @@ All new fields are optional, so mutation-return shapes / cached payloads keep ty
 - [ ] **Step 2: Verify typecheck**
 
 Run: `npm run typecheck`
-Expected: 0 errors. (`PipelineRuleActionType` is imported for use by the dialog in Task 9; if typecheck flags it as unused here, that's fine — it's re-exported via the import and consumed next task. If your linter errors on unused, leave it; tsc `noUnusedLocals` is off for imports used elsewhere — verify the command passes.)
+Expected: 0 errors. (`PipelineRuleActionType` is imported for use by the dialog in Task 9; if typecheck flags it as unused here, that's fine - it's re-exported via the import and consumed next task. If your linter errors on unused, leave it; tsc `noUnusedLocals` is off for imports used elsewhere - verify the command passes.)
 
 > If `npm run typecheck` errors that `PipelineRuleActionType` is unused, remove it from this import and import it directly in `PipelineRulesDialog.tsx` instead (Task 9 Step 1 already imports from `@shared/schema`).
 
@@ -846,7 +846,7 @@ export function ConditionsBuilder({
   return (
     <div className="space-y-2">
       <div className="text-xs font-semibold text-muted-foreground">
-        Syarat (opsional) — semua harus terpenuhi (DAN)
+        Syarat (opsional) - semua harus terpenuhi (DAN)
       </div>
       {value.map((row, i) => (
         <div key={i} className="flex items-center gap-1">
@@ -891,7 +891,7 @@ export function ConditionsBuilder({
 - [ ] **Step 2: Verify typecheck**
 
 Run: `npm run typecheck`
-Expected: 0 errors. (Component is not yet imported anywhere — that's fine; it compiles standalone.)
+Expected: 0 errors. (Component is not yet imported anywhere - that's fine; it compiles standalone.)
 
 - [ ] **Step 3: Commit**
 
@@ -902,7 +902,7 @@ git commit -m "feat(pipelines): ConditionsBuilder component for rule IF layer (P
 
 ---
 
-### Task 9: Dialog — action-type selector + per-type form + conditions (write side)
+### Task 9: Dialog - action-type selector + per-type form + conditions (write side)
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -1147,10 +1147,10 @@ git commit -m "feat(pipelines): rule dialog action-type selector + per-type fiel
 
 ---
 
-### Task 10: Dialog — summary line + detail panel for new actions (read side)
+### Task 10: Dialog - summary line + detail panel for new actions (read side)
 
 **Files:**
-- Modify: `client/components/pipelines/PipelineRulesDialog.tsx` — rule list summary (~184-209) + detail panel (~233-276)
+- Modify: `client/components/pipelines/PipelineRulesDialog.tsx` - rule list summary (~184-209) + detail panel (~233-276)
 
 - [ ] **Step 1: Add an action-summary helper**
 
@@ -1178,7 +1178,7 @@ In the collapsed summary `<span className="flex-1 min-w-0 text-sm leading-snug">
                             {actionSummary(r)}
 ```
 
-Keep the trailing badges (`copyAssignee`, `titleTemplate`, `+N field`, `nonaktif`) as-is — they are harmless for non-create_card rules because those fields are null/empty. Additionally, after the existing `{r.fieldMaps && r.fieldMaps.length > 0 && (...)}` badge, add a conditions badge:
+Keep the trailing badges (`copyAssignee`, `titleTemplate`, `+N field`, `nonaktif`) as-is - they are harmless for non-create_card rules because those fields are null/empty. Additionally, after the existing `{r.fieldMaps && r.fieldMaps.length > 0 && (...)}` badge, add a conditions badge:
 
 ```tsx
                             {r.conditions && r.conditions.length > 0 && (
@@ -1188,7 +1188,7 @@ Keep the trailing badges (`copyAssignee`, `titleTemplate`, `+N field`, `nonaktif
 
 - [ ] **Step 3: Make the detail panel action-aware**
 
-In the detail panel (`{expanded && (<div className="border-t ...">`, ~233-276), replace the three create_card-specific sections — "Target", "Judul kartu baru", and "Salin assignee" (the three `<div>` blocks spanning ~239-258) — with a single action-aware block, and replace the "Pemetaan field" section so it only renders for create_card. The detail panel's inner content should become:
+In the detail panel (`{expanded && (<div className="border-t ...">`, ~233-276), replace the three create_card-specific sections - "Target", "Judul kartu baru", and "Salin assignee" (the three `<div>` blocks spanning ~239-258) - with a single action-aware block, and replace the "Pemetaan field" section so it only renders for create_card. The detail panel's inner content should become:
 
 ```tsx
                         <div className="border-t border-border/60 bg-muted/20 px-3 py-3 text-xs space-y-2.5">
@@ -1228,7 +1228,7 @@ In the detail panel (`{expanded && (<div className="border-t ...">`, ~233-276), 
                               <div>
                                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mb-0.5">Salin assignee</div>
                                 {r.copyAssignee === 1
-                                  ? <div>Ya <span className="text-muted-foreground">— hanya jika penerima punya akses ke pipeline target</span></div>
+                                  ? <div>Ya <span className="text-muted-foreground">- hanya jika penerima punya akses ke pipeline target</span></div>
                                   : <div>Tidak</div>}
                               </div>
                               <div>
@@ -1273,7 +1273,7 @@ git commit -m "feat(pipelines): rule summary + detail panel render set_field/mov
 - [ ] **Step 1: Run the whole helper test suite**
 
 Run: `npx tsx --test server/pipeline-automation-helpers.test.ts`
-Expected: PASS — all `matchStageEnterRules`, `buildTargetTitle`, `pickMappedValues`, `shapeRuleFieldMaps`, `evaluateConditions`, `parseActionConfig`, `parseConditions` tests green.
+Expected: PASS - all `matchStageEnterRules`, `buildTargetTitle`, `pickMappedValues`, `shapeRuleFieldMaps`, `evaluateConditions`, `parseActionConfig`, `parseConditions` tests green.
 
 - [ ] **Step 2: Typecheck + build**
 

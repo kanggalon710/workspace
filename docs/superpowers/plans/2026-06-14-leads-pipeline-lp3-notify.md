@@ -1,8 +1,8 @@
-# LP3 — Notify Action for Lead Rules — Implementation Plan
+# LP3 - Notify Action for Lead Rules - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Lead rules dapat mengirim notifikasi (bell + webhook) saat cocok, menyertai create/update/reopen kartu — menutup gap "Send Notification" (#11). DRY: ekstrak `NotifyConfigFields` UI + pure serialize/hydrate helpers, dipakai bersama rule kartu.
+**Goal:** Lead rules dapat mengirim notifikasi (bell + webhook) saat cocok, menyertai create/update/reopen kartu - menutup gap "Send Notification" (#11). DRY: ekstrak `NotifyConfigFields` UI + pure serialize/hydrate helpers, dipakai bersama rule kartu.
 
 **Architecture:** Notify disimpan di lead `triggerConfig.notify` (NotifyConfig). `runLeadNotify` di intake reuse `createNotification` + exported `postPipelineWebhook`. Pure `shared/notifyConfig.ts` (draft↔config) dipakai oleh serialisasi rule kartu DAN lead (DRY). UI `<NotifyConfigFields>` diekstrak dari RuleActionEditor + dipakai di sub-form lead.
 
@@ -68,7 +68,7 @@ test("round-trip config→draft→config", () => {
 });
 ```
 
-- [ ] **Step 2: Run — expect fail**
+- [ ] **Step 2: Run - expect fail**
 
 Run: `npx tsx --test shared/notifyConfig.test.ts` → FAIL (module missing).
 
@@ -131,7 +131,7 @@ export function notifyDraftToConfig(d: NotifyDraft): { ok: true; config: NotifyC
 }
 ```
 
-- [ ] **Step 4: Run — expect pass**
+- [ ] **Step 4: Run - expect pass**
 
 Run: `npx tsx --test shared/notifyConfig.test.ts` → 4 pass. `npx tsc --noEmit` → 0 errors.
 
@@ -188,7 +188,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Server — export webhook + runLeadNotify + validate
+## Task 3: Server - export webhook + runLeadNotify + validate
 
 **Files:**
 - Modify: `server/pipeline-automation.ts` (~line 23)
@@ -244,14 +244,14 @@ async function runLeadNotify(notify: NotifyConfig, lead: IntakeLead, cardId: num
   }
 }
 ```
-In `runLeadIntake`, inside the per-rule `try` block, AFTER the create/update/reopen decision branches complete (i.e., at the end of the try, before the `} catch`), add — tracking the resulting card id:
+In `runLeadIntake`, inside the per-rule `try` block, AFTER the create/update/reopen decision branches complete (i.e., at the end of the try, before the `} catch`), add - tracking the resulting card id:
 ```ts
       if (cfg.notify) {
         const notifyCardId = decision === "create" ? createdCardId : (existingCardId ?? null);
         await runLeadNotify(cfg.notify, lead, notifyCardId, rule, actorId);
       }
 ```
-> NOTE on `createdCardId`: the create branch builds `card` — capture its id. The simplest: declare `let createdCardId: number | null = null;` near the top of the loop body, and in the create branch set `createdCardId = card.id;` right after `createCard`. Then the notify line above resolves the card id for the payload. If the implementer finds the existing branch structure already exposes the new card via a variable, reuse it; otherwise add the `createdCardId` capture.
+> NOTE on `createdCardId`: the create branch builds `card` - capture its id. The simplest: declare `let createdCardId: number | null = null;` near the top of the loop body, and in the create branch set `createdCardId = card.id;` right after `createCard`. Then the notify line above resolves the card id for the payload. If the implementer finds the existing branch structure already exposes the new card via a variable, reuse it; otherwise add the `createdCardId` capture.
 
 - [ ] **Step 3: Validate notify in routes.ts lead branch**
 
@@ -361,11 +361,11 @@ export function NotifyConfigFields({
   );
 }
 ```
-> Confirm import specifiers (`@/components/ui/switch`, `form-field`, etc.) against RuleActionEditor's existing imports — copy exactly.
+> Confirm import specifiers (`@/components/ui/switch`, `form-field`, etc.) against RuleActionEditor's existing imports - copy exactly.
 
 - [ ] **Step 2: Refactor RuleActionEditor to use it**
 
-In `client/components/pipelines/RuleActionEditor.tsx`, replace the entire `{value.actionType === "notify" && ( ... )}` block (the JSX from `<div className="space-y-2">` through its closing — currently ~lines 399-450) with:
+In `client/components/pipelines/RuleActionEditor.tsx`, replace the entire `{value.actionType === "notify" && ( ... )}` block (the JSX from `<div className="space-y-2">` through its closing - currently ~lines 399-450) with:
 ```tsx
       {value.actionType === "notify" && (
         <NotifyConfigFields
@@ -378,7 +378,7 @@ In `client/components/pipelines/RuleActionEditor.tsx`, replace the entire `{valu
       )}
 ```
 Add import: `import { NotifyConfigFields } from "./NotifyConfigFields";`
-(`ActionDraft` already has the NotifyDraft fields as a superset, so `value` satisfies `NotifyDraft` structurally; `patch` accepts `Partial<ActionDraft>` ⊇ `Partial<NotifyDraft>`. If tsc complains about excess-property/structural mismatch, pass an explicit subset object + a wrapping onChange — but structural typing should accept it.)
+(`ActionDraft` already has the NotifyDraft fields as a superset, so `value` satisfies `NotifyDraft` structurally; `patch` accepts `Partial<ActionDraft>` ⊇ `Partial<NotifyDraft>`. If tsc complains about excess-property/structural mismatch, pass an explicit subset object + a wrapping onChange - but structural typing should accept it.)
 
 - [ ] **Step 3: Build + typecheck**
 
@@ -395,7 +395,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 5: ruleFormState — DRY action notify + lead notify draft
+## Task 5: ruleFormState - DRY action notify + lead notify draft
 
 **Files:**
 - Modify: `client/components/pipelines/ruleFormState.ts`
@@ -461,7 +461,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 6: PipelineRulesDialog — notify section in lead sub-form
+## Task 6: PipelineRulesDialog - notify section in lead sub-form
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineRulesDialog.tsx`
@@ -493,7 +493,7 @@ Inside the `{triggerType.startsWith("lead_") && ( ... )}` block, after the Condi
           />
         </fieldset>
 ```
-(`staffUsers` from `useAssignableUsers` is already in the dialog — confirm the variable name; LP1/RuleActionEditor use it.)
+(`staffUsers` from `useAssignableUsers` is already in the dialog - confirm the variable name; LP1/RuleActionEditor use it.)
 
 - [ ] **Step 3: Build + typecheck**
 
@@ -532,11 +532,11 @@ Buat rule `lead_converted` (entry stage di pipeline Instalasi) + Notifikasi bell
 
 - [ ] **Step 5: Update memory**
 
-Update `memory/project-leads-pipeline-integration.md`: LP3 DONE on dev — notify (bell+webhook) untuk lead rule via triggerConfig.notify + runLeadNotify; DRY NotifyConfigFields + notifyConfig helpers (refactor RuleActionEditor). Conversion bundle (#11) kini lengkap kecuali move-existing (LP3b). Add commit range.
+Update `memory/project-leads-pipeline-integration.md`: LP3 DONE on dev - notify (bell+webhook) untuk lead rule via triggerConfig.notify + runLeadNotify; DRY NotifyConfigFields + notifyConfig helpers (refactor RuleActionEditor). Conversion bundle (#11) kini lengkap kecuali move-existing (LP3b). Add commit range.
 
 ---
 
-## Self-Review (penulis plan — sudah dijalankan)
+## Self-Review (penulis plan - sudah dijalankan)
 
 **Spec coverage:** §triggerConfig.notify→T2; §runLeadNotify (bell+creator/user/assignee + webhook)→T3; §export postPipelineWebhook→T3; §validate notify→T3; §NotifyConfigFields shared + RuleActionEditor refactor→T4; §ruleFormState DRY + lead notify→T5; §lead sub-form section→T6; §pure helpers tested→T1; §best-effort/tenant→T3 (try/catch, withMitra LP1, tenant-scoped createNotification). AC1-6 covered.
 

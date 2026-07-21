@@ -1,4 +1,4 @@
-/** Pure helpers for pipeline custom fields — no DB, fully unit-testable. */
+/** Pure helpers for pipeline custom fields - no DB, fully unit-testable. */
 import { parseCoordinate } from "../shared/pipelineFieldTypes.js";
 
 export type Validation = { ok: true } | { ok: false; error: string };

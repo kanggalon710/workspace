@@ -14,7 +14,7 @@ interface ErrorBoundaryState {
 }
 
 /**
- * ErrorBoundary — catches React errors in the subtree and shows a recovery UI.
+ * ErrorBoundary - catches React errors in the subtree and shows a recovery UI.
  * Prevents the entire app from crashing when a single page throws.
  *
  * @example

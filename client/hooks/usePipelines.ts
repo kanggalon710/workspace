@@ -25,7 +25,7 @@ export type RuleActionView = {
   fieldMaps: RuleFieldMap[];
 };
 export type RuleWithMaps = Omit<PipelineRule, "triggerConfig"> & {
-  // P4b-1 within-card conditions (server-enriched) — P4d-3: grouped
+  // P4b-1 within-card conditions (server-enriched) - P4d-3: grouped
   conditions?: { groups: RuleConditionWithLabel[][] };
   // P4c time triggers (server-enriched)
   triggerConfig?: TimeTriggerConfig | null;
@@ -303,7 +303,7 @@ export function useRoles() {
   });
 }
 
-// ── Collections engine-mode toggle (collections → pipeline cutover) ──────────
+// -- Collections engine-mode toggle (collections → pipeline cutover) ----------
 export type CollectionsEngineMode = "legacy" | "pipeline";
 export type CollectionsEngineModeData = { mode: CollectionsEngineMode; pipelineId: number | null };
 
@@ -378,7 +378,7 @@ export function useUploadAttachments(cardId: number) {
       }
       const res = await fetch(`/api/pipelines/cards/${cardId}/attachments`, {
         method: "POST",
-        headers: { ...getAuthHeaders() }, // NO Content-Type — browser sets multipart boundary
+        headers: { ...getAuthHeaders() }, // NO Content-Type - browser sets multipart boundary
         body: form,
       });
       const json = await res.json();

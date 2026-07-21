@@ -32,7 +32,7 @@ interface AuthUser {
   /** Field opsional lain dari /auth/me. */
   canSeeAllData?: boolean;
   roleId?: number | null;
-  /** Phase B multi-tenant — current active mitra + memberships. */
+  /** Phase B multi-tenant - current active mitra + memberships. */
   activeMitraId?: number;
   activeMitra?: MitraSummary | null;
   mitraMemberships?: MitraSummary[];
@@ -49,9 +49,9 @@ interface AuthContextType {
   canWrite: (key: string) => boolean;
   /** Refresh user state dari server (misal setelah update profile). Pakai ini instead of merging partial manually. */
   refreshUser: () => Promise<void>;
-  /** Merge partial update ke cached user — dipakai setelah PATCH profile. */
+  /** Merge partial update ke cached user - dipakai setelah PATCH profile. */
   updateCachedUser: (patch: Partial<AuthUser> & Record<string, any>) => void;
-  /** Phase B multi-tenant — switch active mitra (validates membership server-side). */
+  /** Phase B multi-tenant - switch active mitra (validates membership server-side). */
   switchMitra: (mitraId: number) => Promise<void>;
 }
 
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {
-        // Network error — keep stored session, server might be temporarily down
+        // Network error - keep stored session, server might be temporarily down
         setUser(parsed);
       })
       .finally(() => {
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Listen for global 401 events from apiFetch
   useEffect(() => {
     const handle = () => {
-      // Ignore 401s that fire during the initial startup validation window —
+      // Ignore 401s that fire during the initial startup validation window -
       // background queries may fire before the token is confirmed valid.
       if (isValidatingRef.current) return;
       clearAuth();
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearAuth();
   };
 
-  // Permission helpers — check per-key access level.
+  // Permission helpers - check per-key access level.
   // Admin roles always pass. Otherwise consult permLevels map first,
   // then fall back to legacy permissions array for read checks.
   const canRead = useCallback(
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // to clear any tenant-scoped TanStack Query caches.
     await refreshUser();
     if (typeof window !== "undefined") {
-      // Soft reload — TanStack QueryClient.clear() also works but page reload is more reliable
+      // Soft reload - TanStack QueryClient.clear() also works but page reload is more reliable
       window.location.reload();
     }
   }, [refreshUser]);

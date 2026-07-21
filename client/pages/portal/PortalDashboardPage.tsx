@@ -25,7 +25,7 @@ import {
 
 type Tab = "overview" | "traffic" | "billing" | "wifi" | "tickets" | "loyalty" | "points";
 
-// v4.2.14: feature flag — Tagihan di-hide sementara karena belum integrasi
+// v4.2.14: feature flag - Tagihan di-hide sementara karena belum integrasi
 const FEATURE_BILLING_ENABLED = false;
 
 const TAB_DEFS = [
@@ -38,9 +38,9 @@ const TAB_DEFS = [
   { key: "loyalty", label: "Sahabat", icon: Award },
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 // Main page
-// ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------
 export default function PortalDashboardPage() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, isLoading: authLoading, customer, logout, apiFetch } = usePortalAuth();
@@ -102,12 +102,12 @@ export default function PortalDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-6 relative">
-      {/* ── Decorative gradient band (mobile only) ── */}
+      {/* -- Decorative gradient band (mobile only) -- */}
       <div className="md:hidden absolute top-0 left-0 right-0 h-64 bg-mesh" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-sidebar/95 via-sidebar/70 to-background" />
       </div>
 
-      {/* ── Premium header ── */}
+      {/* -- Premium header -- */}
       <header className="relative z-20 md:sticky md:top-0 md:bg-gradient-to-r md:from-sidebar md:via-sidebar md:to-sidebar/95 md:text-white md:shadow-elev-md md:border-b md:border-white/5">
         <div className="max-w-5xl mx-auto px-4 md:px-6 pt-5 md:pt-0 pb-3 md:pb-0 md:h-16 flex items-center justify-between gap-3">
           {/* Brand + greeting (mobile) / brand (desktop) */}
@@ -192,7 +192,7 @@ export default function PortalDashboardPage() {
         </div>
       </header>
 
-      {/* ── Content ── */}
+      {/* -- Content -- */}
       <main className="relative max-w-5xl mx-auto px-4 md:px-6 py-3 md:py-6">
         {tab === "overview" && <OverviewTab me={me} billing={billing} loyalty={loyalty} meLoading={meLoading} onRefresh={() => refetchMe()} setTab={setTab} firstName={firstName} />}
         {tab === "traffic" && <TrafficTab traffic={traffic} pppoeOnline={pppoeOnline} apiFetch={apiFetch} />}
@@ -203,7 +203,7 @@ export default function PortalDashboardPage() {
         {tab === "loyalty" && <LoyaltyTab apiFetch={apiFetch} qc={qc} />}
       </main>
 
-      {/* ── Premium mobile bottom nav ── */}
+      {/* -- Premium mobile bottom nav -- */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/85 backdrop-blur-xl border-t border-border/60"
         style={{
@@ -251,9 +251,9 @@ export default function PortalDashboardPage() {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // OVERVIEW TAB
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, firstName }: any) {
   if (meLoading || !me) return <LoadingState />;
 
@@ -270,7 +270,7 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
 
   return (
     <div className="space-y-4 md:space-y-5">
-      {/* Alerts — v4.2.14: hide payment-related alerts saat billing belum integrasi */}
+      {/* Alerts - v4.2.14: hide payment-related alerts saat billing belum integrasi */}
       {isIsolir && (
         <AlertCard
           variant="danger"
@@ -293,7 +293,7 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
         />
       )}
 
-      {/* Hero — Status connection */}
+      {/* Hero - Status connection */}
       <section className={`grid grid-cols-1 ${FEATURE_BILLING_ENABLED ? "md:grid-cols-3" : "md:grid-cols-1"} gap-3 md:gap-4`}>
         <Card className={`${FEATURE_BILLING_ENABLED ? "md:col-span-2" : ""} relative overflow-hidden`}>
           <div
@@ -324,8 +324,8 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
             </div>
 
             <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MiniStat icon={<Globe className="h-3.5 w-3.5" />} label="IP" value={pppoe.ipAddress || "—"} mono />
-              <MiniStat icon={<Signal className="h-3.5 w-3.5" />} label="Router" value={pppoe.routerName || "—"} />
+              <MiniStat icon={<Globe className="h-3.5 w-3.5" />} label="IP" value={pppoe.ipAddress || "-"} mono />
+              <MiniStat icon={<Signal className="h-3.5 w-3.5" />} label="Router" value={pppoe.routerName || "-"} />
               <MiniStat
                 icon={<Zap className="h-3.5 w-3.5" />}
                 label="ONT"
@@ -335,14 +335,14 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
               <MiniStat
                 icon={<Activity className="h-3.5 w-3.5" />}
                 label="RX Power"
-                value={ont.rxPower ? `${ont.rxPower} dBm` : "—"}
+                value={ont.rxPower ? `${ont.rxPower} dBm` : "-"}
                 tone={ont.rxPower ? (parseFloat(ont.rxPower) > -25 ? "good" : parseFloat(ont.rxPower) > -28 ? "warn" : "bad") : "muted"}
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Billing quick card — v4.2.14: hide saat billing belum integrasi */}
+        {/* Billing quick card - v4.2.14: hide saat billing belum integrasi */}
         {FEATURE_BILLING_ENABLED && (
           <Card className="relative overflow-hidden">
             <div className={`absolute top-0 left-0 right-0 h-1 ${isOverdue ? "bg-rose-500" : isDueSoon ? "bg-amber-500" : "bg-sky-500"}`} />
@@ -352,7 +352,7 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
                   Tagihan
                 </span>
                 <Badge variant="secondary" className="text-[10px]">
-                  {billing?.billingStatus ?? "—"}
+                  {billing?.billingStatus ?? "-"}
                 </Badge>
               </div>
               <div className="text-3xl font-bold tracking-tight">
@@ -386,9 +386,9 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
         <CardContent className="p-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <IdentityField label="Customer ID" value={customer.customerId} mono />
-            <IdentityField label="Paket Layanan" value={customer.package || "—"} />
-            <IdentityField label="Nomor HP" value={customer.phone || "—"} mono />
-            <IdentityField label="PPPoE Username" value={customer.pppoeUsername || "—"} mono />
+            <IdentityField label="Paket Layanan" value={customer.package || "-"} />
+            <IdentityField label="Nomor HP" value={customer.phone || "-"} mono />
+            <IdentityField label="PPPoE Username" value={customer.pppoeUsername || "-"} mono />
           </div>
           {customer.address && (
             <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
@@ -480,10 +480,10 @@ function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab, first
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // TRAFFIC TAB
-// ═════════════════════════════════════════════════════════════════════
-// ─── Byte / speed formatters ─────────────────────────────────────
+// =====================================================================
+// --- Byte / speed formatters -------------------------------------
 /** Format bytes → "XX.X MB" atau "X.XX GB" atau "X.XX TB" otomatis */
 function fmtBytes(bytes: number): string {
   if (!bytes || bytes < 0) return "0 MB";
@@ -513,7 +513,7 @@ function fmtSpeed(bytesPerSec: number): string {
 }
 
 function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
-  // ─ Live realtime polling ─
+  // - Live realtime polling -
   const [livePrev, setLivePrev] = useState<{ ts: number; bytesIn: number; bytesOut: number } | null>(null);
   const [liveNow, setLiveNow] = useState<{ ts: number; bytesIn: number; bytesOut: number } | null>(null);
   // Ref menyimpan nilai terbaru supaya closure di interval tidak stale
@@ -577,7 +577,7 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
     upload: Math.round((s.bytesOut ?? 0) / 1024 / 1024),
   })), [snapshots]);
 
-  // Early return — SETELAH semua hooks dipanggil
+  // Early return - SETELAH semua hooks dipanggil
   if (!traffic) return <LoadingState />;
   const live = traffic.live ?? {};
 
@@ -589,7 +589,7 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
 
   return (
     <div className="space-y-4 md:space-y-5">
-      {/* LIVE SPEED — realtime current bandwidth */}
+      {/* LIVE SPEED - realtime current bandwidth */}
       {pppoeOnline && (
         <Card className="overflow-hidden">
           <CardContent className="p-5 md:p-6">
@@ -613,7 +613,7 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
                   <TrendingUp className="h-3 w-3" /> Download
                 </div>
                 <div className="text-2xl md:text-3xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums mt-1">
-                  {liveSpeed ? fmtSpeed(liveSpeed.dl) : "—"}
+                  {liveSpeed ? fmtSpeed(liveSpeed.dl) : "-"}
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/40 dark:to-amber-900/20 border border-amber-200/50 dark:border-amber-900/50">
@@ -621,7 +621,7 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
                   <TrendingUp className="h-3 w-3 rotate-180" /> Upload
                 </div>
                 <div className="text-2xl md:text-3xl font-bold text-amber-700 dark:text-amber-300 tabular-nums mt-1">
-                  {liveSpeed ? fmtSpeed(liveSpeed.ul) : "—"}
+                  {liveSpeed ? fmtSpeed(liveSpeed.ul) : "-"}
                 </div>
               </div>
             </div>
@@ -654,8 +654,8 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
 
           {pppoeOnline ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <BigStat icon={<Globe className="h-4 w-4" />} label="IP Address" value={live.ipAddress || "—"} mono tone="sky" />
-              <BigStat icon={<Signal className="h-4 w-4" />} label="Router" value={live.routerName || "—"} tone="sky" />
+              <BigStat icon={<Globe className="h-4 w-4" />} label="IP Address" value={live.ipAddress || "-"} mono tone="sky" />
+              <BigStat icon={<Signal className="h-4 w-4" />} label="Router" value={live.routerName || "-"} tone="sky" />
               <BigStat icon={<TrendingUp className="h-4 w-4" />} label="Download Sesi" value={fmtBytes(live.bytesIn ?? 0)} tone="emerald" />
               <BigStat icon={<TrendingUp className="h-4 w-4 rotate-180" />} label="Upload Sesi" value={fmtBytes(live.bytesOut ?? 0)} tone="amber" />
             </div>
@@ -737,9 +737,9 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // BILLING TAB
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function BillingTab({ billing, customer }: any) {
   if (!billing) return <LoadingState />;
 
@@ -760,16 +760,16 @@ function BillingTab({ billing, customer }: any) {
               <div className="text-4xl font-bold tracking-tight mt-1">
                 Rp {(billing.billingPrice ?? 0).toLocaleString("id-ID")}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">per bulan · {billing.package || "—"}</div>
+              <div className="text-xs text-muted-foreground mt-1">per bulan · {billing.package || "-"}</div>
             </div>
             <BillingStatusBadge status={billing.billingStatus} isOverdue={isOverdue} />
           </div>
 
           {/* Timeline mini */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-5 border-t">
-            <DataField label="Jatuh Tempo" value={dueDate ? dueDate.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "—"} meta={daysUntilDue !== null ? (isOverdue ? `telat ${Math.abs(daysUntilDue)} hari` : `${daysUntilDue} hari lagi`) : undefined} metaTone={isOverdue ? "danger" : daysUntilDue !== null && daysUntilDue <= 7 ? "warn" : "muted"} />
+            <DataField label="Jatuh Tempo" value={dueDate ? dueDate.toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "-"} meta={daysUntilDue !== null ? (isOverdue ? `telat ${Math.abs(daysUntilDue)} hari` : `${daysUntilDue} hari lagi`) : undefined} metaTone={isOverdue ? "danger" : daysUntilDue !== null && daysUntilDue <= 7 ? "warn" : "muted"} />
             <DataField label="Pembayaran Terakhir" value={billing.lastPaymentDate ? new Date(billing.lastPaymentDate).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "Belum ada"} />
-            <DataField label="Tanggal Instalasi" value={billing.installDate ? new Date(billing.installDate).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "—"} />
+            <DataField label="Tanggal Instalasi" value={billing.installDate ? new Date(billing.installDate).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "-"} />
           </div>
 
           {billing.isIsolir && (
@@ -778,7 +778,7 @@ function BillingTab({ billing, customer }: any) {
               <div>
                 <div className="font-semibold text-sm text-rose-700 dark:text-rose-300">Layanan Diisolir</div>
                 <div className="text-xs text-rose-600/80 dark:text-rose-400 mt-0.5">
-                  Sejak {billing.isolirDate ? new Date(billing.isolirDate).toLocaleDateString("id-ID") : "—"}. Setelah pembayaran, layanan aktif kembali dalam 1×24 jam.
+                  Sejak {billing.isolirDate ? new Date(billing.isolirDate).toLocaleDateString("id-ID") : "-"}. Setelah pembayaran, layanan aktif kembali dalam 1×24 jam.
                 </div>
               </div>
             </div>
@@ -814,9 +814,9 @@ function BillingTab({ billing, customer }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // WIFI TAB
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function WifiTab({ apiFetch, me, qc }: any) {
   const ontMatched = me?.ont?.matched === true;
   const pppoeOnline = me?.pppoe?.online === true;
@@ -1022,7 +1022,7 @@ function WifiInterfaceCard({ iface, onUpdated, apiFetch }: any) {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nama WiFi</div>
-              <div className="font-mono text-sm font-semibold truncate">{iface.ssid || "—"}</div>
+              <div className="font-mono text-sm font-semibold truncate">{iface.ssid || "-"}</div>
             </div>
             <Button size="sm" variant="ghost" className="text-sky-600 dark:text-sky-400 hover:text-sky-700" onClick={() => { setEditMode("ssid"); setNewSsid(iface.ssid ?? ""); }}>
               <Edit3 className="h-3.5 w-3.5 mr-1" /> Ubah
@@ -1062,7 +1062,7 @@ function WifiInterfaceCard({ iface, onUpdated, apiFetch }: any) {
               <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Password</div>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-sm font-semibold truncate">
-                  {iface.password ? (showPw ? iface.password : "•".repeat(Math.min(12, iface.password.length || 8))) : "—"}
+                  {iface.password ? (showPw ? iface.password : "•".repeat(Math.min(12, iface.password.length || 8))) : "-"}
                 </span>
                 {iface.password && (
                   <button type="button" onClick={() => setShowPw(!showPw)} className="text-muted-foreground hover:text-foreground">
@@ -1081,9 +1081,9 @@ function WifiInterfaceCard({ iface, onUpdated, apiFetch }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // TICKETS TAB
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function TicketsTab({ tickets, apiFetch, qc }: any) {
   const [formOpen, setFormOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -1198,9 +1198,9 @@ function TicketsTab({ tickets, apiFetch, qc }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
-// POINTS TAB — Speed-on-Demand (Telco Premium)
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
+// POINTS TAB - Speed-on-Demand (Telco Premium)
+// =====================================================================
 function PointsTab({ apiFetch, qc }: any) {
   const { data: points, isLoading } = useQuery<any>({
     queryKey: ["portal-points"],
@@ -1306,7 +1306,7 @@ function PointsTab({ apiFetch, qc }: any) {
 
   return (
     <div className="space-y-4 md:space-y-5">
-      {/* ═══ Celebration banner — boost just activated ═══ */}
+      {/* === Celebration banner - boost just activated === */}
       {activatedToast && (
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-elev-lg animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(circle at 90% 10%, rgba(255,255,255,0.5), transparent 40%), radial-gradient(circle at 10% 90%, rgba(250,204,21,0.4), transparent 50%)" }} />
@@ -1333,7 +1333,7 @@ function PointsTab({ apiFetch, qc }: any) {
         </div>
       )}
 
-      {/* ═══ Hero balance — Telco premium dark ═══ */}
+      {/* === Hero balance - Telco premium dark === */}
       <Card className="overflow-hidden border-0 shadow-elev-lg">
         <div className="relative bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white">
           {/* Mesh/grid overlay */}
@@ -1357,7 +1357,7 @@ function PointsTab({ apiFetch, qc }: any) {
               <div className="text-[10px] uppercase tracking-wider text-white/50 font-mono">Speed-on-Demand</div>
             </div>
 
-            {/* Balance — premium typography */}
+            {/* Balance - premium typography */}
             <div className="space-y-1">
               <div className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">Saldo Point</div>
               <div className="flex items-baseline gap-2">
@@ -1366,7 +1366,7 @@ function PointsTab({ apiFetch, qc }: any) {
                 </div>
                 <div className="text-sm font-semibold text-white/70 uppercase tracking-wider">pts</div>
               </div>
-              <div className="text-xs text-white/60 mt-1">Tukar untuk speed boost — atau simpan untuk reward selanjutnya</div>
+              <div className="text-xs text-white/60 mt-1">Tukar untuk speed boost - atau simpan untuk reward selanjutnya</div>
             </div>
 
             {/* Lifetime stats */}
@@ -1388,7 +1388,7 @@ function PointsTab({ apiFetch, qc }: any) {
         </div>
       </Card>
 
-      {/* ═══ Active boost — live countdown ═══ */}
+      {/* === Active boost - live countdown === */}
       {active && (
         <Card className="overflow-hidden border-emerald-300/60 dark:border-emerald-900 shadow-elev-md">
           <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white p-5 relative">
@@ -1414,15 +1414,15 @@ function PointsTab({ apiFetch, qc }: any) {
                 <div className="h-full bg-white rounded-full transition-all" style={{ width: `${activeProgress}%` }} />
               </div>
               <div className="flex items-center justify-between text-[10px] text-white/80 mt-1.5">
-                <span>Mulai {active.startAt ? new Date(active.startAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
-                <span>Sampai {active.endAt ? new Date(active.endAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                <span>Mulai {active.startAt ? new Date(active.startAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}</span>
+                <span>Sampai {active.endAt ? new Date(active.endAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}</span>
               </div>
             </div>
           </div>
         </Card>
       )}
 
-      {/* ═══ Earn rules — clean cards ═══ */}
+      {/* === Earn rules - clean cards === */}
       <Card>
         <CardContent className="p-5 md:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -1463,7 +1463,7 @@ function PointsTab({ apiFetch, qc }: any) {
         </CardContent>
       </Card>
 
-      {/* ═══ Catalog — speed boost cards (telco style) ═══ */}
+      {/* === Catalog - speed boost cards (telco style) === */}
       <Card>
         <CardContent className="p-5 md:p-6">
           <div className="flex items-center justify-between mb-4">
@@ -1548,7 +1548,7 @@ function PointsTab({ apiFetch, qc }: any) {
         </CardContent>
       </Card>
 
-      {/* ═══ Recent redemptions ═══ */}
+      {/* === Recent redemptions === */}
       {redemptions.length > 0 && (
         <Card>
           <CardContent className="p-5 md:p-6">
@@ -1585,7 +1585,7 @@ function PointsTab({ apiFetch, qc }: any) {
         </Card>
       )}
 
-      {/* ═══ Point ledger ═══ */}
+      {/* === Point ledger === */}
       {history.length > 0 && (
         <Card>
           <CardContent className="p-5 md:p-6">
@@ -1622,7 +1622,7 @@ function PointsTab({ apiFetch, qc }: any) {
         </Card>
       )}
 
-      {/* ═══ Confirm dialog ═══ */}
+      {/* === Confirm dialog === */}
       <Dialog open={!!confirmReward} onOpenChange={(o) => !o && setConfirmReward(null)}>
         <DialogContent className="max-w-sm p-0 overflow-hidden">
           <div className={`p-5 text-white ${confirmReward?.speedMultiplier === 3 ? "bg-gradient-to-br from-violet-600 to-fuchsia-600" : "bg-gradient-to-br from-sky-500 to-blue-600"}`}>
@@ -1669,9 +1669,9 @@ function PointsTab({ apiFetch, qc }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
-// LOYALTY TAB — JABNET SAHABAT
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
+// LOYALTY TAB - JABNET SAHABAT
+// =====================================================================
 function LoyaltyTab({ apiFetch, qc }: any) {
   const { data: loyalty, isLoading } = useQuery<any>({
     queryKey: ["portal-loyalty"],
@@ -1711,7 +1711,7 @@ function LoyaltyTab({ apiFetch, qc }: any) {
   const sahabatCode = sahabat?.code ?? "-";
   const pendingDiscounts = (discounts ?? []).filter((d: any) => d.status === "pending");
 
-  const shareText = `Halo! Yuk berlangganan JABNET FTTH — internet fiber cepat & stabil di Garut.
+  const shareText = `Halo! Yuk berlangganan JABNET FTTH - internet fiber cepat & stabil di Garut.
 
 Pakai kode *${sahabatCode}* saat daftar → kamu dapat gratis 7 hari, saya dapat Voucher Indomaret Rp 50.000.
 
@@ -1813,7 +1813,7 @@ https://fiber-tools.arkanova.id/coverage-check`;
           ) : (
             <div className="relative z-10 mt-6 p-4 rounded-xl bg-white/15 backdrop-blur text-xs">
               <StarIcon className="h-4 w-4 inline mr-1" />
-              <strong>Status Ambassador aktif</strong> — 15% revenue share untuk semua referral selanjutnya.
+              <strong>Status Ambassador aktif</strong> - 15% revenue share untuk semua referral selanjutnya.
             </div>
           )}
         </div>
@@ -1873,7 +1873,7 @@ https://fiber-tools.arkanova.id/coverage-check`;
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-sm truncate">{d.description}</div>
                       <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-2">
-                        <span>Periode {d.eligibleForPeriod ?? "—"}</span>
+                        <span>Periode {d.eligibleForPeriod ?? "-"}</span>
                         {d.expiresAt && <span>· Expires {new Date(d.expiresAt).toLocaleDateString("id-ID")}</span>}
                       </div>
                     </div>
@@ -2033,9 +2033,9 @@ https://fiber-tools.arkanova.id/coverage-check`;
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // SHARED COMPONENTS
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function LoadingState() {
   return (
     <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
@@ -2204,7 +2204,7 @@ function BillingStatusBadge({ status, isOverdue }: { status: string; isOverdue: 
   const cfg = isOverdue ? { label: "TERLAMBAT", cls: "bg-rose-100 text-rose-700 border-rose-200" } :
               status === "lunas" || status === "paid" ? { label: "LUNAS", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" } :
               status === "isolir" ? { label: "ISOLIR", cls: "bg-rose-100 text-rose-700 border-rose-200" } :
-              { label: (status ?? "—").toUpperCase(), cls: "bg-sky-100 text-sky-700 border-sky-200" };
+              { label: (status ?? "-").toUpperCase(), cls: "bg-sky-100 text-sky-700 border-sky-200" };
   return (
     <div className={`inline-flex items-center px-3 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider ${cfg.cls}`}>
       {cfg.label}

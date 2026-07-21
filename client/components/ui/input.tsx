@@ -6,7 +6,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   leftIcon?: React.ReactNode;
   /** Icon or button rendered on the right inside the input. */
   rightIcon?: React.ReactNode;
-  /** Error state — red border + destructive focus ring. */
+  /** Error state - red border + destructive focus ring. */
   error?: boolean;
   /** Size variant. */
   inputSize?: "sm" | "md" | "lg";

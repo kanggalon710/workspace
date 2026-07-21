@@ -17,7 +17,7 @@ export function ConversationListItem({ c, active, onClick }: {
         <ConversationStatusBadge status={c.status} />
       </div>
       <div className="flex items-center justify-between gap-2 mt-0.5">
-        <span className="text-xs text-muted-foreground truncate">{c.lastMessage || "—"}</span>
+        <span className="text-xs text-muted-foreground truncate">{c.lastMessage || "-"}</span>
         {c.unread > 0 && (
           <span className="text-[10px] font-bold rounded-full bg-primary text-primary-foreground px-1.5 py-0.5">
             {c.unread}

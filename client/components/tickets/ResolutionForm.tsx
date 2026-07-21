@@ -93,7 +93,7 @@ export function ResolutionForm({
           onChange={(e) => { setCode(e.target.value); emit({ resolutionCode: e.target.value }); }}
           className="w-full px-3 py-2 rounded-md border bg-background text-sm"
         >
-          <option value="">— Pilih kategori solusi —</option>
+          <option value="">- Pilih kategori solusi -</option>
           {RESOLUTION_CODES.map(c => (
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}

@@ -232,7 +232,7 @@ export default function NomorWhatsappPage() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // v4.2.21: MPWA Device Status Modal
 //
 // PENTING: Connection ke WhatsApp di-manage di MPWA panel (mpwa.jabnet.id).
@@ -241,8 +241,8 @@ export default function NomorWhatsappPage() {
 // 1. Cek status koneksi (live dari /info-devices)
 // 2. Setup webhook URL untuk terima pesan masuk
 // 3. Tools: check-number, test send
-// 4. Reconnect via QR (HANYA kalau device disconnect — opsional fallback)
-// ─────────────────────────────────────────────────────────────────
+// 4. Reconnect via QR (HANYA kalau device disconnect - opsional fallback)
+// -----------------------------------------------------------------
 function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: () => void }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"status" | "webhook" | "tools" | "reconnect">("status");
@@ -339,7 +339,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tabs — default Status */}
+        {/* Tabs - default Status */}
         <div className="flex gap-1 border-b">
           {([
             { key: "status", label: "Status", icon: Info },
@@ -418,7 +418,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
                 </Button>
               </div>
 
-              {/* v4.2.21: MPWA response error banner — kalau refresh balikin status: false */}
+              {/* v4.2.21: MPWA response error banner - kalau refresh balikin status: false */}
               {infoMut.data && (infoMut.data as any).status === false && (
                 <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs text-rose-900">
                   <div className="font-bold flex items-center gap-1.5 mb-1">
@@ -458,7 +458,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
                 <div className="rounded-md border bg-muted/10 p-3">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Detail dari MPWA</div>
                   <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                    <div><dt className="text-muted-foreground inline">Status MPWA:</dt> <dd className="inline font-mono">{info.status ?? "—"}</dd></div>
+                    <div><dt className="text-muted-foreground inline">Status MPWA:</dt> <dd className="inline font-mono">{info.status ?? "-"}</dd></div>
                     <div><dt className="text-muted-foreground inline">Webhook:</dt> <dd className="inline font-mono text-[10px] break-all">{info.webhook || "(belum diset)"}</dd></div>
                     {info.reply_when && <div><dt className="text-muted-foreground inline">Reply Mode:</dt> <dd className="inline font-mono">{info.reply_when}</dd></div>}
                     {info.reject_call != null && <div><dt className="text-muted-foreground inline">Reject Call:</dt> <dd className="inline font-mono">{info.reject_call ? "Yes" : "No"}</dd></div>}
@@ -548,7 +548,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
           {tab === "tools" && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider">Check Number — Verifikasi Nomor WhatsApp</label>
+                <label className="text-xs font-bold uppercase tracking-wider">Check Number - Verifikasi Nomor WhatsApp</label>
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     type="tel"
@@ -585,7 +585,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
             </div>
           )}
 
-          {/* Reconnect Tab — opsional fallback kalau device disconnect */}
+          {/* Reconnect Tab - opsional fallback kalau device disconnect */}
           {tab === "reconnect" && (
             <div className="space-y-3">
               {isConnected ? (
@@ -606,7 +606,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
               ) : (
                 <>
                   <div className="rounded-md bg-amber-50/40 border border-amber-200 px-3 py-2 text-xs text-amber-900 leading-snug">
-                    <strong> Reconnect via QR — opsional</strong><br />
+                    <strong> Reconnect via QR - opsional</strong><br />
                     Idealnya reconnect dilakukan langsung di <strong>mpwa.jabnet.id</strong> (panel resmi).
                     Tool ini cuma alternatif kalau Anda mau request QR dari sini tanpa buka panel MPWA.
                   </div>
@@ -667,9 +667,9 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 // Form Tambah / Edit
-// ─────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------
 function DeviceForm({ device, onBack }: { device: WaDevice | null; onBack: () => void }) {
   const qc = useQueryClient();
   const isEdit = !!device;
@@ -780,7 +780,7 @@ function DeviceForm({ device, onBack }: { device: WaDevice | null; onBack: () =>
           disabled={isEdit}
           className="w-full px-3 py-2 rounded-md border bg-background text-sm"
         >
-          <option value="">— Pilih provider —</option>
+          <option value="">- Pilih provider -</option>
           <optgroup label="Unofficial (6 provider)">
             {unofficial.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
           </optgroup>
@@ -890,7 +890,7 @@ function DeviceForm({ device, onBack }: { device: WaDevice | null; onBack: () =>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Kirim Test ke 1 Nomor</DialogTitle>
-            <DialogDescription>Test koneksi device "{device?.name}" — kirim pesan test ke nomor tujuan.</DialogDescription>
+            <DialogDescription>Test koneksi device "{device?.name}" - kirim pesan test ke nomor tujuan.</DialogDescription>
           </DialogHeader>
           <Input
             type="tel"

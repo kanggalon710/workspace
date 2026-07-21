@@ -20,7 +20,7 @@ const STATUSES: { key: "open" | "pending" | "resolved"; label: string }[] = [
   { key: "resolved", label: "Selesai" },
 ];
 
-/** Kontrol status + assign (Batch 2e) — self-hide tanpa izin write / Chatwoot mati. */
+/** Kontrol status + assign (Batch 2e) - self-hide tanpa izin write / Chatwoot mati. */
 function ConversationControls({ conversation }: { conversation: ConversationSummary }) {
   const { canWrite } = useAuth();
   const writeOk = canWrite("chatwoot");
@@ -73,7 +73,7 @@ function dayLabel(iso: string | null): string {
   return new Date(iso).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
-/** Composer balasan — self-hide bila Chatwoot mati/tak terkonfigurasi atau tanpa izin write. */
+/** Composer balasan - self-hide bila Chatwoot mati/tak terkonfigurasi atau tanpa izin write. */
 function MessageComposer({ conversationId }: { conversationId: number }) {
   const { canWrite } = useAuth();
   const { data: status } = useChatwootStatus();
@@ -161,7 +161,7 @@ function MessageComposer({ conversationId }: { conversationId: number }) {
             aria-label="Canned response"
             className="absolute bottom-full mb-1 left-0 right-0 z-20 max-h-56 overflow-y-auto rounded-lg border border-border bg-popover shadow-elev-md py-1"
           >
-            <li className="px-3 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">Canned response — ↑↓ pilih, ⏎/Tab sisip, Esc tutup</li>
+            <li className="px-3 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">Canned response - ↑↓ pilih, ⏎/Tab sisip, Esc tutup</li>
             {cannedMatches.map((c, i) => (
               <li key={c.id} role="option" aria-selected={i === safeIdx}>
                 <button

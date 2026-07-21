@@ -21,7 +21,7 @@ export interface BusinessHoursConfig {
 }
 
 export const DEFAULT_BUSINESS_HOURS: BusinessHoursConfig = {
-  enabled: false, // OFF by default — opt-in
+  enabled: false, // OFF by default - opt-in
   schedule: {
     0: [],                                                // Sunday off
     1: [{ start: "08:00", end: "17:00" }],
@@ -35,7 +35,7 @@ export const DEFAULT_BUSINESS_HOURS: BusinessHoursConfig = {
   tzOffsetHours: 7,
 };
 
-// ── Internal helpers ──
+// -- Internal helpers --
 
 function dateInTz(ms: number, tzOffsetHours: number): Date {
   return new Date(ms + tzOffsetHours * 3600_000);

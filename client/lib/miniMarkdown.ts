@@ -10,7 +10,7 @@ export function miniMarkdown(src: string): string {
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, "<code>$1</code>")
-    // link hanya http/https (href aman dari javascript:) — dijalankan sebelum list agar tidak bentrok
+    // link hanya http/https (href aman dari javascript:) - dijalankan sebelum list agar tidak bentrok
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
     .replace(/^- (.*)$/gm, "<li>$1</li>")
     .replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, "<ul>$1</ul>")

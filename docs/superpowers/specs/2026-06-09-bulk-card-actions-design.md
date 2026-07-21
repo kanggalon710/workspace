@@ -1,12 +1,12 @@
-# Spec — Bulk Card Actions on /pipelines
+# Spec - Bulk Card Actions on /pipelines
 
-> Date: 2026-06-09 · Mitra-scoped · New feature after the Advanced Pipeline Automation epic (SP1–SP3b).
+> Date: 2026-06-09 · Mitra-scoped · New feature after the Advanced Pipeline Automation epic (SP1-SP3b).
 > Build on `dev`. Mobile-first. Reuses the `UsersPage` bulk pattern + existing per-card guards.
 
 ## Goal
 
-Select many cards on `/pipelines` and apply one mass operation — assign, move stage, set a custom field,
-add/remove a tag, or delete — server-side, permission- and tenant-safe, with per-card partial-success
+Select many cards on `/pipelines` and apply one mass operation - assign, move stage, set a custom field,
+add/remove a tag, or delete - server-side, permission- and tenant-safe, with per-card partial-success
 reporting and audit. Speeds up managing the dozens of cards created by billing_sync / automation.
 
 ## Decisions (confirmed)
@@ -17,9 +17,9 @@ reporting and audit. Speeds up managing the dozens of cards created by billing_s
    event per card.
 3. **One server endpoint**, synchronous, **cap 200 cards/op** (no async queue in v1).
 4. **Selection is client-side** over the already-loaded card set (the board fetches all of a pipeline's
-   cards — no pagination), covering manual / whole-stage / all-filtered.
+   cards - no pagination), covering manual / whole-stage / all-filtered.
 
-## 1. Selection — `PipelineBoardPage` + `StageColumn`
+## 1. Selection - `PipelineBoardPage` + `StageColumn`
 
 Reuse the `UsersPage` pattern: `const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())`.
 - Checkbox on each card (in `StageColumn`'s card render); a **bulk-select mode** toggle so checkboxes don't
@@ -31,7 +31,7 @@ Reuse the `UsersPage` pattern: `const [selectedIds, setSelectedIds] = useState<S
 - Selection survives filter changes only for still-visible cards (prune `selectedIds` to visible on
   filter change, to avoid acting on hidden cards the user can't see).
 
-## 2. Pure module — `shared/bulkCardOps.ts` (no I/O, unit-tested)
+## 2. Pure module - `shared/bulkCardOps.ts` (no I/O, unit-tested)
 
 ```ts
 export type BulkOp = "assign" | "move" | "set_field" | "add_tag" | "remove_tag" | "delete";
@@ -54,9 +54,9 @@ export function applyTagChange(existingTags: string[], op: "add_tag" | "remove_t
 ```
 
 `tags` is `pipeline_cards.tags` (text JSON array today). `applyTagChange` dedupes on add, no-ops if absent
-on remove — pure + tested.
+on remove - pure + tested.
 
-## 3. Server endpoint — `POST /api/pipelines/:id/cards/bulk`
+## 3. Server endpoint - `POST /api/pipelines/:id/cards/bulk`
 
 Body: `{ op: BulkOp, cardIds: number[], payload?: object, runAutomation?: boolean, overwrite?: boolean }`.
 
@@ -64,10 +64,10 @@ Flow (`server/routes.ts`, helper in a focused function to keep the route thin):
 1. `requireWritePermission(req,res,"pipelines")` + `requirePipelineView(req,res,pid)`.
 2. `validateBulkRequest(op, cardIds, payload)` → 400 on bad shape/over-cap.
 3. For `set_field`: resolve field access once via `fieldAccessForRequest(req, pid, fields)`; the target
-   field must be `edit` for the role (else the whole op is 403 — it's a single field for all cards).
+   field must be `edit` for the role (else the whole op is 403 - it's a single field for all cards).
    Validate `payload.value` with `validateFieldValue(field.type, value, options, {multiple})`.
 4. **Per card** (loop, each in try/catch → never aborts the batch):
-   - `card = await storage.getCard(id)` — skip+report `"tidak ditemukan"` if null **or** `card.pipelineId !== pid` (tenant/pipeline guard).
+   - `card = await storage.getCard(id)` - skip+report `"tidak ditemukan"` if null **or** `card.pipelineId !== pid` (tenant/pipeline guard).
    - capability: `assign` → `assign` cap; `move`/`set_field`/`add_tag`/`remove_tag`/`delete` → `cards` cap
      (same as each op's single-card endpoint). Fail → skip+report `"akses ditolak"`.
    - `requireCardAccess`-equivalent (row-level): if the requester's card filter excludes it → skip+report `"tidak ditemukan"` (hide existence).
@@ -77,14 +77,14 @@ Flow (`server/routes.ts`, helper in a focused function to keep the route thin):
      - set_field → if `overwrite===false` and the card already has a non-empty value for the field, skip+report `"sudah terisi"`; else `storage.setCardValues(id, [{fieldId, value}])` + `logCardActivity(id, actor, "edited")`
      - add_tag/remove_tag → read card.tags, `applyTagChange`, `storage.updateCard(id, { tags }, actor)`
      - delete → `storage.deleteCard(id)`
-   - if `runAutomation`: dispatch the matching event AFTER the mutation — move → `runStageEnterAutomations(updatedCard, actor)`; assign → `dispatchCardEvent("assignee_changed", updatedCard, actor)`; set_field → `dispatchCardEvent("field_updated", updatedCard, actor, { changedFieldIds: [fieldId] })`. (delete/tags → no event.) Wrapped so an automation error on one card doesn't fail that card's op.
+   - if `runAutomation`: dispatch the matching event AFTER the mutation - move → `runStageEnterAutomations(updatedCard, actor)`; assign → `dispatchCardEvent("assignee_changed", updatedCard, actor)`; set_field → `dispatchCardEvent("field_updated", updatedCard, actor, { changedFieldIds: [fieldId] })`. (delete/tags → no event.) Wrapped so an automation error on one card doesn't fail that card's op.
    - success → push to `succeeded`.
 5. Respond `sendSuccess(res, { processed, succeeded: succeeded.length, failed: [{ cardId, reason }] })`.
 
 All `storage` calls are `getMitraId()`-scoped → no cross-tenant. Automation, when enabled, runs through the
 same loop-safe engine (storage-direct mutations already happened; dispatch is the normal event path).
 
-## 4. Client — bulk action bar + op dialogs + result
+## 4. Client - bulk action bar + op dialogs + result
 
 - `client/components/pipelines/BulkActionBar.tsx`: shows count + buttons (Assign, Pindah Stage, Set Field,
   Tag, Hapus) filtered by capability (`caps`), + a "Jalankan otomasi" switch (default off), + Batal.
@@ -93,12 +93,12 @@ same loop-safe engine (storage-direct mutations already happened; dispatch is th
   tag → tag input; delete → confirm.
 - Hook `useBulkCardAction(pipelineId)` → `POST .../cards/bulk`; on success invalidate the cards query +
   clear selection + show a result toast/dialog: "18 sukses · 2 gagal" with the per-card reasons.
-- Cap UX: if `selectedIds.size > 200`, disable apply + show "Maks 200 kartu per aksi — persempit pilihan".
+- Cap UX: if `selectedIds.size > 200`, disable apply + show "Maks 200 kartu per aksi - persempit pilihan".
 
 ## 5. Permission & tenant (summary)
 
 - Endpoint gated by `pipelines` write + pipeline view; each card re-checked for capability + row-level +
-  (set_field) field-perm. Inaccessible cards are **skipped and reported**, never block the batch — matches
+  (set_field) field-perm. Inaccessible cards are **skipped and reported**, never block the batch - matches
   the "show accessible, skip the rest" requirement.
 - Everything mitra-scoped; cardIds outside the pipeline/tenant resolve to "not found".
 
@@ -106,7 +106,7 @@ same loop-safe engine (storage-direct mutations already happened; dispatch is th
 
 Each op logs a per-card `pipeline_card_activity` entry (storage `moveCard`/`updateCard` already do;
 `set_field`/tags add an explicit `logCardActivity`). The actor + timestamp + type are recorded per affected
-card — satisfies the audit requirement (old→new value is captured for move/assign by the existing logs).
+card - satisfies the audit requirement (old→new value is captured for move/assign by the existing logs).
 
 ## 7. Testing
 
@@ -127,4 +127,4 @@ card — satisfies the audit requirement (old→new value is captured for move/a
 
 ## Out of scope
 - Archive cards; async job queue; bulk secondary-assignee; "trigger only a specific rule"; drag-multiple
-  (the Move dialog covers multi-move — drag-select is a later nicety).
+  (the Move dialog covers multi-move - drag-select is a later nicety).

@@ -1,8 +1,8 @@
-# Spec — Pipelines Resource-Level RBAC (Phase 3)
+# Spec - Pipelines Resource-Level RBAC (Phase 3)
 
 > **Date:** 2026-06-04
 > **Status:** Approved design, ready for implementation plan.
-> **Program:** "Customizable Multi-Tenant Pipeline / Kanban" — Phase 3 of 6.
+> **Program:** "Customizable Multi-Tenant Pipeline / Kanban" - Phase 3 of 6.
 > **Builds on:** Phase 1 (engine) + Phase 2 (custom fields).
 
 ## Goal
@@ -10,14 +10,14 @@
 Let admins control **which roles can access each pipeline, and at what level (view/edit)**.
 Default behaviour is unchanged (opt-in): a pipeline is open to anyone with the `pipelines`
 permission until its owner toggles "Batasi akses" and grants specific roles. Pipeline-level
-only — stage-level and field-level access are out of scope for P3.
+only - stage-level and field-level access are out of scope for P3.
 
 ## Key Decisions (from brainstorming)
 
 - **Granularity: pipeline-level, role-based.** Not stage/field/per-user (deferred / out of scope).
 - **Opt-in restriction.** Per-pipeline `restricted` flag; OFF (default) = current behaviour
   (the mitra `pipelines` permLevel governs); ON = only explicitly-granted roles get access.
-- **Approach A** — `restricted` flag on `pipelines` + a `pipeline_access` join table
+- **Approach A** - `restricted` flag on `pipelines` + a `pipeline_access` join table
   `(pipeline, role) → view|edit`. Rejected: encoding grants in the role `permissions` JSON
   (pollutes/!scales); per-user ACL (more overhead, user chose role-based).
 - **Levels:** `view` (read board+cards) and `edit` (mutate). `none` = no row / no access.
@@ -82,7 +82,7 @@ A request-scoped memo avoids re-loading the same pipeline within one request.
 ### `req.authUser.effectiveRoleId` (integration point)
 `getUserEffectivePermissionsAtMitra(userId, mitraId)` currently returns
 `{perms, canSeeAllData, roleName, isSystem}`. Extend it to also return `roleId` (the resolved
-per-mitra role id — from `user_mitras.role_id`, falling back to the global `users.role_id`).
+per-mitra role id - from `user_mitras.role_id`, falling back to the global `users.role_id`).
 `authMiddleware` sets `req.authUser.effectiveRoleId = eff.roleId`. This is the per-mitra role,
 distinct from the existing global `req.authUser.roleId`.
 
@@ -103,7 +103,7 @@ the pipeline block with the finer resolver (the module-entry key check stays):
 New endpoints (gated: `edit` on the pipeline OR admin):
 - `GET  /api/pipelines/:id/access` → `{ restricted: boolean, grants: [{roleId, level}] }`.
 - `PUT  /api/pipelines/:id/access` → body `{ restricted: boolean, grants: [{roleId, level}] }`
-  — sets `restricted` + replaces all grants for the pipeline (delete-then-insert in a txn-ish
+  - sets `restricted` + replaces all grants for the pipeline (delete-then-insert in a txn-ish
   loop; validate `level ∈ {view,edit}` and roleId belongs to the mitra). Responds `sendSuccess`.
 
 All responses use `sendSuccess` (envelope). All storage tenant-scoped via `getMitraId()`.
@@ -117,19 +117,19 @@ All responses use `sendSuccess` (envelope). All storage tenant-scoped via `getMi
 
 ## Frontend (`client/`)
 - **`usePipelineAccess(pipelineId)`** + `setAccess` mutation (`PUT .../access`).
-- **`PipelineAccessDialog`** (`client/components/pipelines/PipelineAccessDialog.tsx`) — opened
+- **`PipelineAccessDialog`** (`client/components/pipelines/PipelineAccessDialog.tsx`) - opened
   from the board/list when the caller has `edit`: a "Batasi akses" `Switch` + the mitra's roles
   (from `GET /roles`) each with a none/view/edit selector (segmented control or `Combobox`).
   Saves via `setAccess`. Design-system components.
-- **List page** — server already filters; add a small "Terbatas" `StatusBadge` on
+- **List page** - server already filters; add a small "Terbatas" `StatusBadge` on
   `restricted` pipelines. An "Akses" affordance per pipeline (or inside the board).
-- **Board** — derive `writable` from the pipeline's resolved `level` (`edit`), not the global
+- **Board** - derive `writable` from the pipeline's resolved `level` (`edit`), not the global
   `canWrite("pipelines")`; `view`-only users see a read-only board (existing read-only paths).
   Show the "Akses" button only when `level === "edit"`.
 - Hooks read the caller's `level` off the pipeline detail/list responses.
 
 ## Testing
-- Unit (`server/pipeline-access-helpers.test.ts`): `resolvePipelineLevel` full matrix — admin
+- Unit (`server/pipeline-access-helpers.test.ts`): `resolvePipelineLevel` full matrix - admin
   bypass; unrestricted maps key (write/read/none); restricted uses grant (edit/view); restricted
   + no grant → none. `npx tsx --test`.
 - Manual on dev (`jabnet_fiber_dev`; restart to ALTER + create table): create a pipeline,
@@ -144,11 +144,11 @@ Stage-level access (who can view/move into-out-of a stage); field-level visibili
 (non-role) ACLs; per-action grants beyond view/edit; pipeline ownership transfer.
 
 ## Consistency with Memory
-- [[project-pipelines-engine]] — P3 of the 6-phase program.
-- [[reference-api-response-envelope]] — all new endpoints use `sendSuccess`; reviews check shape.
-- [[reference-tenant-isolation-gotchas]] — every access query filters `mitra_id` via `getMitraId()`;
+- [[project-pipelines-engine]] - P3 of the 6-phase program.
+- [[reference-api-response-envelope]] - all new endpoints use `sendSuccess`; reviews check shape.
+- [[reference-tenant-isolation-gotchas]] - every access query filters `mitra_id` via `getMitraId()`;
   grants are role-scoped and the effective role is resolved per-mitra (not the global role).
-- [[reference-per-mitra-roles]] — `pipeline_access.role_id` references per-mitra roles; admin/
+- [[reference-per-mitra-roles]] - `pipeline_access.role_id` references per-mitra roles; admin/
   System-Admin bypass mirrors the existing permission gates.
 - New table/column via startup `CREATE TABLE IF NOT EXISTS` / `ALTER TABLE ADD COLUMN IF NOT
   EXISTS` (codebase convention), not `db:push`.

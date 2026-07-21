@@ -1,8 +1,8 @@
-# Conditional / Row-level Permissions (Phase 3b-iii) — Implementation Plan
+# Conditional / Row-level Permissions (Phase 3b-iii) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Per (restricted pipeline × role) card filter — a role sees/acts on a card only if its field values + stage match the role's condition; non-matching cards are invisible and un-actionable.
+**Goal:** Per (restricted pipeline × role) card filter - a role sees/acts on a card only if its field values + stage match the role's condition; non-matching cards are invisible and un-actionable.
 
 **Architecture:** A pure resolver decides whether a filter applies (admin/creator/open → none) and evaluates it via the Phase-4 condition engine. The filter is stored on the per-role `pipeline_access` grant. A centralized `requireCardAccess` guard + a list filter are applied at every card-access path. The access dialog adds a per-role card-filter builder.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Pure module — resolveCardFilter + cardPassesFilter
+### Task 1: Pure module - resolveCardFilter + cardPassesFilter
 
 **Files:**
 - Create: `shared/cardRowFilter.ts`
@@ -60,7 +60,7 @@ test("cardPassesFilter: stage source", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/cardRowFilter.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -90,7 +90,7 @@ export function cardPassesFilter(filter: FieldRuleCondition[][] | null, ctx: Fie
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/cardRowFilter.test.ts`
-Expected: PASS — all 5 tests.
+Expected: PASS - all 5 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -101,7 +101,7 @@ git commit -m "feat(pipelines): pure card row-filter resolver"
 
 ---
 
-### Task 2: Schema + storage — cardFilter on grants + full-values reader
+### Task 2: Schema + storage - cardFilter on grants + full-values reader
 
 **Files:**
 - Modify: `shared/schema.ts`, `server/storage.ts`
@@ -110,7 +110,7 @@ git commit -m "feat(pipelines): pure card row-filter resolver"
 
 In `shared/schema.ts`, add to the `pipelineAccess` table columns:
 ```ts
-  cardFilter: text("card_filter"), // JSON FieldRuleCondition[][] — restricts which cards this role sees
+  cardFilter: text("card_filter"), // JSON FieldRuleCondition[][] - restricts which cards this role sees
 ```
 
 - [ ] **Step 2: Migration**
@@ -123,7 +123,7 @@ In `server/storage.ts` `p4cColAdds` array, add:
 - [ ] **Step 3: getPipelineAccess / setPipelineAccess carry cardFilter**
 
 In `server/storage.ts`:
-- `getPipelineAccess` — add `cardFilter` to each grant:
+- `getPipelineAccess` - add `cardFilter` to each grant:
   ```ts
       grants: rows.map((r) => ({
         roleId: r.roleId,
@@ -132,7 +132,7 @@ In `server/storage.ts`:
       })),
   ```
   and widen the return type to include `cardFilter: any | null` on each grant.
-- `setPipelineAccess` — widen the `grants` param to `{ roleId: number; capabilities: PipelineCapability[]; cardFilter?: any | null }[]` and in the insert add:
+- `setPipelineAccess` - widen the `grants` param to `{ roleId: number; capabilities: PipelineCapability[]; cardFilter?: any | null }[]` and in the insert add:
   ```ts
         cardFilter: g.cardFilter && Array.isArray(g.cardFilter) && g.cardFilter.length ? JSON.stringify(g.cardFilter) : null,
   ```
@@ -149,7 +149,7 @@ Add to `server/storage.ts` (import `FieldRuleCondition` type from `../shared/fie
     try { const g = JSON.parse((row as any).cardFilter); return Array.isArray(g) && g.length ? g : null; } catch { return null; }
   }
 
-  /** All field values (not just showOnCard) keyed by cardId — for row-level filtering on the board. */
+  /** All field values (not just showOnCard) keyed by cardId - for row-level filtering on the board. */
   async getAllCardValuesForPipeline(pipelineId: number): Promise<Map<number, Record<number, string>>> {
     const mitraId = getMitraId();
     const fields = await this.db.select({ id: pipelineFields.id }).from(pipelineFields)
@@ -178,7 +178,7 @@ git commit -m "feat(pipelines): pipeline_access.cardFilter + full-values reader 
 
 ---
 
-### Task 3: Server enforcement — centralized requireCardAccess at every card path
+### Task 3: Server enforcement - centralized requireCardAccess at every card path
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -215,7 +215,7 @@ async function requireCardAccess(req: Request, res: Response, card: { id: number
 }
 ```
 
-- [ ] **Step 2: Board list — filter cards**
+- [ ] **Step 2: Board list - filter cards**
 
 In `GET /api/pipelines/:id/cards` (it already loads `cards` + `valuesByCard` via `getBoardCardValues`, and applies the 3b-i hidden-stripping). Add row-filtering BEFORE the existing value-stripping/return: resolve the filter once, load full values, drop non-matching cards. Read the current handler; insert after `cards`/`valuesByCard` are obtained and before the response map:
 ```ts
@@ -231,25 +231,25 @@ In `GET /api/pipelines/:id/cards` (it already loads `cards` + `valuesByCard` via
 ```
 Then build the response from `visibleCards` instead of `cards` (keep the existing field-perm hidden-stripping on `valuesByCard`).
 
-- [ ] **Step 3: Single-card routes — add requireCardAccess**
+- [ ] **Step 3: Single-card routes - add requireCardAccess**
 
 Add `if (!(await requireCardAccess(req, res, card))) return;` immediately AFTER the card is fetched and its
 existing pipeline-capability/permission gate passes, in EACH of these handlers (use the handler's actual
-card variable — `card` or `cardForGuard`; read each):
-- `GET /api/pipelines/cards/:cardId` (detail) — after `requirePipelineView`.
-- `PATCH /api/pipelines/cards/:cardId` — after the capability gate (uses `cardForGuard`).
-- `POST /api/pipelines/cards/:cardId/move` — after the gate (`cardForGuard`).
-- `DELETE /api/pipelines/cards/:cardId` — after the gate.
-- `PUT /api/pipelines/cards/:cardId/values` — after the gate (`card`).
-- `GET` + `POST /api/pipelines/cards/:cardId/comments` — after the gate (`card`).
-- `DELETE /api/pipelines/cards/comments/:id` — it resolves comment → card; after fetching that card.
-- `GET` + `POST /api/pipelines/cards/:cardId/followers` + `DELETE /api/pipelines/cards/:cardId/followers/:userId` — after the gate.
-- `GET` + `POST /api/pipelines/cards/:cardId/relations` + `DELETE /api/pipelines/cards/:cardId/relations/:relationId` — after the gate.
-(The card object in each has `id`, `pipelineId`, `stageId` — `requireCardAccess` needs those three.)
+card variable - `card` or `cardForGuard`; read each):
+- `GET /api/pipelines/cards/:cardId` (detail) - after `requirePipelineView`.
+- `PATCH /api/pipelines/cards/:cardId` - after the capability gate (uses `cardForGuard`).
+- `POST /api/pipelines/cards/:cardId/move` - after the gate (`cardForGuard`).
+- `DELETE /api/pipelines/cards/:cardId` - after the gate.
+- `PUT /api/pipelines/cards/:cardId/values` - after the gate (`card`).
+- `GET` + `POST /api/pipelines/cards/:cardId/comments` - after the gate (`card`).
+- `DELETE /api/pipelines/cards/comments/:id` - it resolves comment → card; after fetching that card.
+- `GET` + `POST /api/pipelines/cards/:cardId/followers` + `DELETE /api/pipelines/cards/:cardId/followers/:userId` - after the gate.
+- `GET` + `POST /api/pipelines/cards/:cardId/relations` + `DELETE /api/pipelines/cards/:cardId/relations/:relationId` - after the gate.
+(The card object in each has `id`, `pipelineId`, `stageId` - `requireCardAccess` needs those three.)
 
-Do NOT add it to `POST /api/pipelines/:id/cards` (create — no card yet).
+Do NOT add it to `POST /api/pipelines/:id/cards` (create - no card yet).
 
-- [ ] **Step 4: Export — filter cards**
+- [ ] **Step 4: Export - filter cards**
 
 In `GET /api/pipelines/:id/cards/export`, after `cards` + field-access are computed and before building
 rows, drop non-matching cards:
@@ -262,19 +262,19 @@ rows, drop non-matching cards:
         }))
       : cards;
 ```
-NOTE: `await` inside `.filter` does not work — instead, when `rowFilter` is set, build `exportCards` with a
+NOTE: `await` inside `.filter` does not work - instead, when `rowFilter` is set, build `exportCards` with a
 for-loop (fetch values per card, push if it passes). Implement it as a loop, not an async `.filter`. Then
 iterate `exportCards` to build CSV rows.
 
-- [ ] **Step 5: relations/search — filter card results**
+- [ ] **Step 5: relations/search - filter card results**
 
 In `GET /api/pipelines/relations/search`, when `type === "card"`, after `searchRelatableEntities` returns
 results, drop cards the requester can't access. Each card result has `id` + `pipelineId`? The search
 returns `{ id, label, subtitle, pipelineId? }` for cards. For each card result, resolve its pipeline's
 filter and check (cache filters per pipelineId to avoid refetch). If a result lacks the data needed to
-check (no pipelineId), be conservative and drop it when ANY filter could apply — but since card results
+check (no pipelineId), be conservative and drop it when ANY filter could apply - but since card results
 include `pipelineId`, fetch the card (`storage.getCard`) for `stageId` + values and run `requireCardAccess`
-logic inline (without sending 404 — just exclude). Implement a small inline filter loop over card results.
+logic inline (without sending 404 - just exclude). Implement a small inline filter loop over card results.
 (Cap is ~20, so per-result fetch is fine.)
 
 - [ ] **Step 6: Verify typecheck + build**
@@ -291,7 +291,7 @@ git commit -m "feat(pipelines): enforce row-level card access at all card paths"
 
 ---
 
-### Task 4: Frontend — per-role card filter in PipelineAccessDialog
+### Task 4: Frontend - per-role card filter in PipelineAccessDialog
 
 **Files:**
 - Modify: `client/components/pipelines/PipelineAccessDialog.tsx`
@@ -318,7 +318,7 @@ empty) in the grant payload. Add a hint: "Kosong = role ini melihat semua kartu.
 In `server/routes.ts`, the `PUT /api/pipelines/:id/access` handler maps the body grants to
 `storage.setPipelineAccess(...)`. Ensure it passes `cardFilter` through per grant (read the handler; add
 `cardFilter: g.cardFilter ?? null` to the mapped grant objects). (Storage already persists it from Task 2.)
-Also extend the access validation if it validates grant shape — accept the `cardFilter` array.
+Also extend the access validation if it validates grant shape - accept the `cardFilter` array.
 
 - [ ] **Step 4: Verify typecheck + build**
 
@@ -338,18 +338,18 @@ git commit -m "feat(pipelines): per-role card filter editor in access dialog"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/cardRowFilter.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Coverage audit** — Run: `grep -n "requireCardAccess\|getCardFilterForRequest\|cardPassesFilter" server/routes.ts` and confirm EVERY single-card route (detail/patch/move/delete/values/comments×3/followers×3/relations×3) plus board + export + search reference the guard/filter. List any card route that mutates/returns a card WITHOUT it.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/cardRowFilter.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Coverage audit** - Run: `grep -n "requireCardAccess\|getCardFilterForRequest\|cardPassesFilter" server/routes.ts` and confirm EVERY single-card route (detail/patch/move/delete/values/comments×3/followers×3/relations×3) plus board + export + search reference the guard/filter. List any card route that mutates/returns a card WITHOUT it.
 
 ---
 
 ## Self-Review
 
 - **Spec coverage:** resolver + evaluator → Task 1. `cardFilter` storage + accessors + full-values reader → Task 2. Centralized `requireCardAccess` + `getCardFilterForRequest` applied to detail + all mutations + sub-resources + board + export + search; create excluded → Task 3 (enumerated). Editor per-role filter + payload + route passthrough → Task 4. Tests → Task 1 + Task 5 (incl. a coverage audit grep). All covered.
-- **Placeholders:** Tasks 1–2 + 5 are full code. Tasks 3–4 give exact insertion points + the precise guard line for each enumerated route and flag the async-`.filter` pitfall (use a for-loop) — appropriate for spreading one guard across many existing handlers. Task 5 adds a grep audit to catch a missed route.
+- **Placeholders:** Tasks 1-2 + 5 are full code. Tasks 3-4 give exact insertion points + the precise guard line for each enumerated route and flag the async-`.filter` pitfall (use a for-loop) - appropriate for spreading one guard across many existing handlers. Task 5 adds a grep audit to catch a missed route.
 - **Type consistency:** `resolveCardFilter`/`cardPassesFilter` (Task 1) consumed by `getCardFilterForRequest`/`requireCardAccess` (Task 3). `getCardFilterForRole`/`getAllCardValuesForPipeline` (Task 2) used in Task 3. `requireCardAccess(req, res, card{id,pipelineId,stageId})` matches the card objects in the handlers. The `FieldRuleCondition[][]` filter type threads from `fieldRules.ts` through storage → resolver → guard. `cardFilter` grant field added consistently in get/setPipelineAccess (Task 2) + dialog payload (Task 4) + access route passthrough (Task 4 Step 3).
 
 ## Deploy note
-One additive column (`pipeline_access.card_filter`) via startup `p4cColAdds` — no manual SQL. Purely additive + back-compat: grants without a `cardFilter`, open pipelines, admins/creators are unfiltered (current behavior). Reuses the Phase-4 condition engine + the access dialog already shown for restricted pipelines.
+One additive column (`pipeline_access.card_filter`) via startup `p4cColAdds` - no manual SQL. Purely additive + back-compat: grants without a `cardFilter`, open pipelines, admins/creators are unfiltered (current behavior). Reuses the Phase-4 condition engine + the access dialog already shown for restricted pipelines.

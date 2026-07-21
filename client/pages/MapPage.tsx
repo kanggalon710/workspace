@@ -516,7 +516,7 @@ export default function MapPage() {
 
   const { isLoaded } = useGoogleMaps();
 
-  // ── Core state ──
+  // -- Core state --
   const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
   const [mapType, setMapType] = useState<"roadmap" | "satellite" | "hybrid" | "terrain">("roadmap");
   const [selectedInfo, setSelectedInfo] = useState<{ type: string; data: any; position: { lat: number; lng: number } } | null>(null);
@@ -538,10 +538,10 @@ export default function MapPage() {
   const [showCableForm, setShowCableForm] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [selectedCable, setSelectedCable] = useState<{ id: number; name: string } | null>(null);
-  // ODP mini-dashboard panel (lazy detail + ACS) — menggantikan InfoWindow ODP
+  // ODP mini-dashboard panel (lazy detail + ACS) - menggantikan InfoWindow ODP
   const [odpPanel, setOdpPanel] = useState<{ id: number; data: any } | null>(null);
 
-  // ── Snap state ──
+  // -- Snap state --
   const [snapEnabled, setSnapEnabled] = useState(false);
   const [snapPreview, setSnapPreview] = useState<SnapResult | null>(null);
   const [odpFullDetail, setOdpFullDetail] = useState(() => {
@@ -553,7 +553,7 @@ export default function MapPage() {
   });
   const mouseMoveTimer = useRef<number | null>(null);
 
-  // ── Viewport bbox debounce (tier-2 customer fetch) ──
+  // -- Viewport bbox debounce (tier-2 customer fetch) --
   const bboxDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMapIdle = useCallback(() => {
@@ -582,15 +582,15 @@ export default function MapPage() {
     };
   }, []);
 
-  // ── UI panel state ──
+  // -- UI panel state --
   const [showSearch, setShowSearch] = useState(false);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [showMapType, setShowMapType] = useState(false);
 
-  // ── Mobile bottom sheet state ──
+  // -- Mobile bottom sheet state --
   const [mobileInfoSheet, setMobileInfoSheet] = useState(false);
 
-  // ── Dark mode detection ──
+  // -- Dark mode detection --
   const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
   const toggleLayer = (key: string) => setLayers((prev) => {
@@ -612,7 +612,7 @@ export default function MapPage() {
     if (!isMarketing) localStorage.setItem("map_odpFullDetail", String(val));
   };
 
-  // ── Detect mobile ──
+  // -- Detect mobile --
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -673,7 +673,7 @@ export default function MapPage() {
     } catch { return []; }
   };
 
-  // ── Map click handler ──
+  // -- Map click handler --
   const handleMapClick = useCallback(async (e: google.maps.MapMouseEvent) => {
     if (readOnly) return; // marketing OR viewing another mitra: view-only, no drawing
     if (!drawMode || !e.latLng) return;
@@ -832,7 +832,7 @@ export default function MapPage() {
     }, 30);
   }, [snapEnabled, drawMode, data, snapPreview]);
 
-  // ── Fit bounds ──
+  // -- Fit bounds --
   const fitAllBounds = useCallback(() => {
     if (!mapRef || !data) return;
     const bounds = new google.maps.LatLngBounds();
@@ -845,7 +845,7 @@ export default function MapPage() {
     if (count > 0) mapRef.fitBounds(bounds, 50);
   }, [mapRef, data]);
 
-  // ── Search fly-to ──
+  // -- Search fly-to --
   const handleSearchResultClick = useCallback((result: { lat?: number | null; lng?: number | null; type: string; id: number }) => {
     if (!mapRef || !result.lat || !result.lng) return;
     mapRef.panTo({ lat: result.lat, lng: result.lng });
@@ -902,14 +902,14 @@ export default function MapPage() {
 
   return (
     <div className={`${isMobile ? "" : "space-y-2"}`}>
-      {/* Header — hidden on mobile */}
+      {/* Header - hidden on mobile */}
       {!isMobile && (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Peta Jaringan</h1>
             <p className="text-muted-foreground text-sm">
               {isMarketing
-                ? "Tampilan ODP — klik marker untuk info detail"
+                ? "Tampilan ODP - klik marker untuk info detail"
                 : drawMode
                   ? drawMode === "cable"
                     ? "Klik pada peta untuk menambah titik jalur kabel"
@@ -954,7 +954,7 @@ export default function MapPage() {
             <MarkerClusterer options={{ maxZoom: 15, gridSize: 60, zoomOnClick: true }}>
               {(clusterer) => (
                 <>
-                  {/* ── POP markers ── */}
+                  {/* -- POP markers -- */}
                   {layers.pop && data.pops.filter((p) => p.lat && p.lng).map((pop) => (
                     <Marker
                       key={`pop-${pop.id}`}
@@ -967,7 +967,7 @@ export default function MapPage() {
                     />
                   ))}
 
-                  {/* ── ODC markers + labels ── */}
+                  {/* -- ODC markers + labels -- */}
                   {layers.odc && data.odcs.filter((o) => o.lat && o.lng).map((odc) => (
                     <React.Fragment key={`odc-${odc.id}`}>
                       <Marker
@@ -1015,7 +1015,7 @@ export default function MapPage() {
                     );
                   })}
 
-                  {/* ── Pole markers ── */}
+                  {/* -- Pole markers -- */}
                   {layers.pole && data.poles.filter((p) => p.lat && p.lng).map((pole) => (
                     <Marker
                       key={`pole-${pole.id}`}
@@ -1028,7 +1028,7 @@ export default function MapPage() {
                     />
                   ))}
 
-                  {/* ── Customer markers (now inside clusterer for joint clustering) ── */}
+                  {/* -- Customer markers (now inside clusterer for joint clustering) -- */}
                   {layers.customer && data.customers.filter((c) => c.lat && c.lng).map((cust) => {
                     const isStatic = cust.isStatic === 1;
                     const colorConfig = isStatic ? ASSET_COLORS.customerStatic : ASSET_COLORS.customer;
@@ -1052,7 +1052,7 @@ export default function MapPage() {
               )}
             </MarkerClusterer>
 
-            {/* ── Cable polylines ── */}
+            {/* -- Cable polylines -- */}
             {layers.cable && data.cables.map((cable) => {
               const path = parsePath(cable.pathCoordinates);
               if (path.length < 2) return null;
@@ -1061,7 +1061,7 @@ export default function MapPage() {
               );
             })}
 
-            {/* ── Hierarchy lines ── */}
+            {/* -- Hierarchy lines -- */}
             {showHierarchyLines && layers.odc && data.odcs.filter(o => o.lat && o.lng && o.popId).map(odc => {
               const pop = data.pops.find(p => p.id === odc.popId);
               if (!pop?.lat || !pop?.lng) return null;
@@ -1078,7 +1078,7 @@ export default function MapPage() {
               return <Polyline key={`link-cust-${cust.id}`} path={[{ lat: cust.lat!, lng: cust.lng! }, { lat: odp.lat!, lng: odp.lng! }]} options={{ strokeColor: "#A855F7", strokeWeight: 1, strokeOpacity: 0.3, icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 2 }, offset: "0", repeat: "10px" }] }} />;
             })}
 
-            {/* ── Cable drawing preview ── */}
+            {/* -- Cable drawing preview -- */}
             {drawMode === "cable" && cablePoints.length >= 2 && (
               <Polyline path={cablePoints.map(([lat, lng]) => ({ lat, lng }))} options={{ strokeColor: "#F97316", strokeWeight: 3, strokeOpacity: 0.9, icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 }, offset: "0", repeat: "20px" }] }} />
             )}
@@ -1086,7 +1086,7 @@ export default function MapPage() {
               <Marker key={`draw-${i}`} position={{ lat, lng }} icon={dotIcon("#F97316", "#EA580C", 6)} clickable={false} zIndex={10} />
             ))}
 
-            {/* ── Snap preview ── */}
+            {/* -- Snap preview -- */}
             {snapEnabled && snapPreview && drawMode && drawMode !== "cable" && (
               <>
                 <Marker position={snapPreview.point} icon={{ path: 0 as any, scale: 14, fillColor: CABLE_COLORS[snapPreview.cableType] || "#F97316", fillOpacity: 0.2, strokeColor: CABLE_COLORS[snapPreview.cableType] || "#F97316", strokeWeight: 1.5, strokeOpacity: 0.6 }} zIndex={19} clickable={false} />
@@ -1099,7 +1099,7 @@ export default function MapPage() {
               </>
             )}
 
-            {/* ── InfoWindow (Desktop) ── */}
+            {/* -- InfoWindow (Desktop) -- */}
             {selectedInfo && !isMobile && (
               <InfoWindow position={selectedInfo.position} onCloseClick={() => setSelectedInfo(null)}>
                 <MapInfoWindowContent
@@ -1143,7 +1143,7 @@ export default function MapPage() {
           </GoogleMap>
         )}
 
-        {/* ── Tier-2 customer fetch loading indicator ── */}
+        {/* -- Tier-2 customer fetch loading indicator -- */}
         {customersLoading && bbox && (
           <div className="absolute bottom-4 right-4 z-50 bg-card/95 backdrop-blur rounded-md px-3 py-1.5 text-xs flex items-center gap-2 shadow-md">
             <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1151,7 +1151,7 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* ════════════════ JABNET MITRA SELECTOR (owner only) ════════════════ */}
+        {/* ================ JABNET MITRA SELECTOR (owner only) ================ */}
         {isJabnetRoot && (
           <MapMitraSelector
             mitraOptions={mitraOptions}
@@ -1163,7 +1163,7 @@ export default function MapPage() {
           />
         )}
 
-        {/* ════════════════ DESKTOP TOOLBAR ════════════════ */}
+        {/* ================ DESKTOP TOOLBAR ================ */}
         {!readOnly && (
           <MapToolbar
             drawMode={drawMode as AssetType | null}
@@ -1181,7 +1181,7 @@ export default function MapPage() {
           />
         )}
 
-        {/* ════════════════ SEARCH BAR ════════════════ */}
+        {/* ================ SEARCH BAR ================ */}
         <MapSearchBar
           visible={showSearch}
           onClose={() => setShowSearch(false)}
@@ -1195,7 +1195,7 @@ export default function MapPage() {
           data={data}
         />
 
-        {/* ════════════════ LAYER PANEL ════════════════ */}
+        {/* ================ LAYER PANEL ================ */}
         <MapLayerPanel
           visible={showLayerPanel}
           onClose={() => setShowLayerPanel(false)}
@@ -1209,7 +1209,7 @@ export default function MapPage() {
           onToggleOdpDetail={() => toggleOdpDetail(!odpFullDetail)}
         />
 
-        {/* ════════════════ MAP TYPE SELECTOR ════════════════ */}
+        {/* ================ MAP TYPE SELECTOR ================ */}
         <MapTypeSelector
           visible={showMapType}
           onClose={() => setShowMapType(false)}
@@ -1217,13 +1217,13 @@ export default function MapPage() {
           onSelect={(t) => setMapType(t as any)}
         />
 
-        {/* ════════════════ CAMERA CONTROLS ════════════════ */}
+        {/* ================ CAMERA CONTROLS ================ */}
         <MapCameraControls
           mapRef={mapRef}
           onFitBounds={fitAllBounds}
         />
 
-        {/* ════════════════ MOBILE FAB (hidden for marketing) ════════════════ */}
+        {/* ================ MOBILE FAB (hidden for marketing) ================ */}
         {!readOnly && (
           <FABSpeedDial
             drawMode={drawMode as AssetType | null}
@@ -1232,7 +1232,7 @@ export default function MapPage() {
           />
         )}
 
-        {/* ════════════════ MOBILE UTILITY BUTTONS (Search, Layer, Map Type) ════════════════ */}
+        {/* ================ MOBILE UTILITY BUTTONS (Search, Layer, Map Type) ================ */}
         {isMobile && (isMarketing || !drawMode) && (
           <MapUtilityButtons
             onSearchClick={() => { setShowSearch(v => !v); setShowLayerPanel(false); setShowMapType(false); }}
@@ -1241,7 +1241,7 @@ export default function MapPage() {
           />
         )}
 
-        {/* ════════════════ QUICK FORM OVERLAY ════════════════ */}
+        {/* ================ QUICK FORM OVERLAY ================ */}
         {quickForm && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 max-w-[90vw]">
             <AssetQuickForm
@@ -1264,7 +1264,7 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* ════════════════ CABLE FORM OVERLAY ════════════════ */}
+        {/* ================ CABLE FORM OVERLAY ================ */}
         {showCableForm && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 max-w-[90vw]">
             <CableQuickForm
@@ -1276,7 +1276,7 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* ════════════════ STATUS BAR (draw mode) ════════════════ */}
+        {/* ================ STATUS BAR (draw mode) ================ */}
         {drawMode && !isMobile && (
           <div className="absolute bottom-8 right-4 z-10">
             <Badge
@@ -1295,7 +1295,7 @@ export default function MapPage() {
         )}
       </div>
 
-      {/* ════════════════ MOBILE INFO BOTTOM SHEET ════════════════ */}
+      {/* ================ MOBILE INFO BOTTOM SHEET ================ */}
       {isMobile && selectedInfo && (
         <BottomSheet
           open={mobileInfoSheet}
@@ -1348,7 +1348,7 @@ export default function MapPage() {
         <CableDetailPanel cableId={selectedCable.id} cableName={selectedCable.name} onClose={() => setSelectedCable(null)} />
       )}
 
-      {/* ODP mini-dashboard — lazy detail + ACS (menggantikan InfoWindow ODP) */}
+      {/* ODP mini-dashboard - lazy detail + ACS (menggantikan InfoWindow ODP) */}
       {odpPanel && (
         <OdpDetailPanel
           odpId={odpPanel.id}

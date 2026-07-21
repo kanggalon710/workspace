@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
 import { DIVISIONS } from "@/lib/divisions";
 
-// ─── Types ───
+// --- Types ---
 type NavItem = {
   label: string;
   path?: string;             // optional: kalau ada children, path bisa kosong (parent collapsible)
@@ -24,7 +24,7 @@ type NavItem = {
   permission?: string;
   requireSystemAdmin?: boolean;  // true = hanya JABNET system admin yang lihat item ini
   children?: NavItem[];      // v4.2.20: support nested submenu (1 level)
-  hub?: boolean;             // v5.1: item Beranda divisi — tidak membuat group visible sendirian
+  hub?: boolean;             // v5.1: item Beranda divisi - tidak membuat group visible sendirian
 };
 type NavGroup = {
   key: string;           // unique key for state tracking
@@ -35,13 +35,13 @@ type NavGroup = {
   items: NavItem[];
 };
 
-// ─── Navigation Structure (v5.1: berbasis DIVISI — sumber: client/lib/divisions.ts) ───
+// --- Navigation Structure (v5.1: berbasis DIVISI - sumber: client/lib/divisions.ts) ---
 const divisionGroups: NavGroup[] = DIVISIONS.map((d) => ({
   key: `div-${d.key}`,
   label: d.short,
   icon: d.icon,
   items: [
-    // Item hub selalu lolos filter izin — group tetap disembunyikan bila TIDAK ada
+    // Item hub selalu lolos filter izin - group tetap disembunyikan bila TIDAK ada
     // modul lain yang visible (lihat filter hub-only di visibleGroups).
     { label: `Beranda ${d.short}`, path: `/divisi/${d.key}`, icon: d.icon, hub: true },
     ...(d.modules as NavItem[]),
@@ -80,7 +80,7 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-// ─── Favorit + persist state (localStorage, per-browser) ───
+// --- Favorit + persist state (localStorage, per-browser) ---
 const FAV_KEY = "jabnet_nav_favorites";
 const EXP_KEY = "jabnet_nav_expanded";
 
@@ -91,12 +91,12 @@ function loadJson<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 function saveJson(key: string, value: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage penuh/blocked — abaikan */ }
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage penuh/blocked - abaikan */ }
 }
 
 type FlatLeaf = { label: string; path: string; icon: any; groupLabel: string };
 
-/** Flatten semua leaf (termasuk nested children) yang visible — dipakai filter & Favorit. */
+/** Flatten semua leaf (termasuk nested children) yang visible - dipakai filter & Favorit. */
 function flattenLeaves(groups: NavGroup[]): FlatLeaf[] {
   const out: FlatLeaf[] = [];
   for (const g of groups) {
@@ -111,10 +111,10 @@ function flattenLeaves(groups: NavGroup[]): FlatLeaf[] {
   return out;
 }
 
-// ─── Helpers ───
+// --- Helpers ---
 function isPathActive(location: string, path: string): boolean {
   if (path === "/") return location === "/";
-  // Exact match only — prevents /canvassing matching /canvassing/history
+  // Exact match only - prevents /canvassing matching /canvassing/history
   return location === path;
 }
 
@@ -127,7 +127,7 @@ function findActiveGroup(location: string, groups: NavGroup[]): string | null {
   return null;
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 export function Sidebar() {
   const [location, setLocation] = useLocation();
   const [darkMode, setDarkMode] = useState(() =>
@@ -136,7 +136,7 @@ export function Sidebar() {
   const { user, logout, canRead } = useAuth();
   const { collapsed, toggle, mobileOpen, setMobileOpen } = useSidebar();
 
-  // ── Collapsible state: set of expanded group keys (persist per-browser) ──
+  // -- Collapsible state: set of expanded group keys (persist per-browser) --
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const saved = loadJson<string[]>(EXP_KEY, []);
     const active = findActiveGroup(location, navGroups);
@@ -144,7 +144,7 @@ export function Sidebar() {
   });
   useEffect(() => { saveJson(EXP_KEY, [...expanded]); }, [expanded]);
 
-  // ── Favorit (pin) + quick filter ──
+  // -- Favorit (pin) + quick filter --
   const [favorites, setFavorites] = useState<string[]>(() => loadJson<string[]>(FAV_KEY, []));
   const toggleFavorite = useCallback((path: string) => {
     setFavorites((prev) => {
@@ -257,7 +257,7 @@ export function Sidebar() {
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Logo — refined enterprise header */}
+      {/* Logo - refined enterprise header */}
       <div className="px-4 py-4 border-b border-white/10 relative overflow-hidden">
         {/* Subtle gradient accent */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
@@ -307,7 +307,7 @@ export function Sidebar() {
 
       {/* Navigation (fully scrollable) */}
       <nav className="flex-1 p-3 overflow-y-auto space-y-1">
-        {/* ── Hasil filter (flat, semua grup) ── */}
+        {/* -- Hasil filter (flat, semua grup) -- */}
         {filteredLeaves && (
           <div className="space-y-0.5">
             {filteredLeaves.length === 0 ? (
@@ -318,7 +318,7 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* ── Favorit (pinned, persist per-browser) ── */}
+        {/* -- Favorit (pinned, persist per-browser) -- */}
         {!filteredLeaves && favLeaves.length > 0 && (
           <div>
             <p className="text-[10px] uppercase text-amber-300/70 px-3 mb-1 font-semibold tracking-wider flex items-center gap-1.5">
@@ -345,7 +345,7 @@ export function Sidebar() {
           return (
             <div key={group.key}>
               {isCollapsible ? (
-                /* ── Collapsible group header ── */
+                /* -- Collapsible group header -- */
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.key)}
@@ -375,13 +375,13 @@ export function Sidebar() {
                   )} />
                 </button>
               ) : (
-                /* ── Non-collapsible group label ── */
+                /* -- Non-collapsible group label -- */
                 <p className="text-[10px] uppercase text-white/40 px-3 mb-1 font-semibold tracking-wider">
                   {group.label}
                 </p>
               )}
 
-              {/* ── Child items (animated expand/collapse) ── */}
+              {/* -- Child items (animated expand/collapse) -- */}
               <div
                 className={cn(
                   "overflow-hidden transition-all duration-200 ease-in-out",
@@ -454,7 +454,7 @@ export function Sidebar() {
                         </div>
                       );
                     }
-                    // ── Leaf item (no children) ──
+                    // -- Leaf item (no children) --
                     if (!item.path) return null;
                     const isActive = isPathActive(location, item.path);
                     const isFav = favorites.includes(item.path);
@@ -492,7 +492,7 @@ export function Sidebar() {
           );
         })}
 
-        {/* ── User Info + Actions ── */}
+        {/* -- User Info + Actions -- */}
         <div className="mt-3 pt-3 border-t border-white/10 space-y-1">
           {user && (() => {
             const isProfileActive = location === "/profile";
@@ -547,7 +547,7 @@ export function Sidebar() {
             </button>
           )}
 
-          {/* ── Version footer ── */}
+          {/* -- Version footer -- */}
           <div className="flex items-center justify-between gap-2 px-3 pt-3 mt-2 border-t border-white/5">
             <div className="flex items-center gap-1.5 text-[10px] text-white/40">
               <span className="inline-flex h-1.5 w-1.5 rounded-full bg-success pulse-ring-success" />
@@ -564,7 +564,7 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay — hamburger lives in TopBar */}
+      {/* Mobile overlay - hamburger lives in TopBar */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-[60] bg-black/60 md:hidden backdrop-blur-sm"
@@ -583,7 +583,7 @@ export function Sidebar() {
         {sidebarContent}
       </aside>
 
-      {/* Desktop expand button — visible only when collapsed */}
+      {/* Desktop expand button - visible only when collapsed */}
       {collapsed && (
         <button
           onClick={toggle}

@@ -1,5 +1,5 @@
 /**
- * Traffic Snapshot Worker — capture PPP active session bytes setiap N menit untuk grafik 24h
+ * Traffic Snapshot Worker - capture PPP active session bytes setiap N menit untuk grafik 24h
  * portal pelanggan. Lightweight loop yang query Mikrotik dan insert ke traffic_snapshots.
  */
 import { storage } from "./storage.js";
@@ -79,12 +79,12 @@ class TrafficSnapshotWorker {
       } catch {}
 
       // Skip actual collection if storage doesn't have addTrafficSnapshot method
-      // (graceful degradation — feature only works if schema supports it)
+      // (graceful degradation - feature only works if schema supports it)
       if (typeof (storage as any).addTrafficSnapshot !== "function") {
         return { skipped: true, reason: "addTrafficSnapshot not in storage" };
       }
       // For each active router, fetch PPP active sessions, snapshot bytes
-      // (intentionally lightweight — full implementation would require mikrotik integration)
+      // (intentionally lightweight - full implementation would require mikrotik integration)
       this.status.lastResult = { snapshots, cleaned, durationMs: Date.now() - started };
       return this.status.lastResult;
     } catch (e: any) {

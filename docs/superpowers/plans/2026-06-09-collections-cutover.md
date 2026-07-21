@@ -1,8 +1,8 @@
-# Collections → Pipeline Cutover (Phase 7) — Implementation Plan
+# Collections → Pipeline Cutover (Phase 7) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A reversible per-mitra toggle that moves collections onto the pipeline engine — pipeline-mode skips the legacy collection auto-open/reconcile (the `billing_sync` rule handles it) and redirects `/collections` to the pipeline board; default `legacy` keeps current behavior.
+**Goal:** A reversible per-mitra toggle that moves collections onto the pipeline engine - pipeline-mode skips the legacy collection auto-open/reconcile (the `billing_sync` rule handles it) and redirects `/collections` to the pipeline board; default `legacy` keeps current behavior.
 
 **Architecture:** A pure mode parser + two `app_settings` keys. The billing worker gates its legacy collection blocks on the mode. A small GET/PUT endpoint reads/sets the toggle. `/integrations` exposes the switch; the `/collections` page redirects in pipeline-mode. Old code stays dormant (flip back = full restore).
 
@@ -46,7 +46,7 @@ test("legacyCollectionsActive", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/collectionsMode.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -69,7 +69,7 @@ export function legacyCollectionsActive(mode: CollectionsEngineMode): boolean {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/collectionsMode.test.ts`
-Expected: PASS — all 3 tests.
+Expected: PASS - all 3 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -80,7 +80,7 @@ git commit -m "feat(collections): pure engine-mode helper"
 
 ---
 
-### Task 2: Worker gate — skip legacy collection logic in pipeline-mode
+### Task 2: Worker gate - skip legacy collection logic in pipeline-mode
 
 **Files:**
 - Modify: `server/billing-sync-worker.ts`
@@ -101,7 +101,7 @@ must only run in legacy mode. Read the mode once just before the Phase-2 block a
       // Collections cutover: in pipeline-mode the billing_sync rule handles auto-open; skip legacy.
       const collectionsMode = parseCollectionsMode(await storage.getMitraSetting("collections_engine_mode"));
       if (legacyCollectionsActive(collectionsMode)) {
-        // ── Phase 2: Collection threshold triggers (overdue days + auto-writeoff) ──
+        // -- Phase 2: Collection threshold triggers (overdue days + auto-writeoff) --
         const collectionEnabled = (await storage.getSetting("collection_enabled")) !== "false";
         if (collectionEnabled) {
           const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
@@ -112,7 +112,7 @@ must only run in legacy mode. Read the mode once just before the Phase-2 block a
           await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
           await storage.setSetting("collection_trigger_last_opened", String(collectionResults.opened), "collection");
         }
-        // ── Phase 3: Reconciliation pass — auto-fix customer<->collection drift ──
+        // -- Phase 3: Reconciliation pass - auto-fix customer<->collection drift --
         try {
           const reconcile = await storage.reconcileCollectionState();
           if (reconcile.fixesApplied > 0) {
@@ -127,10 +127,10 @@ must only run in legacy mode. Read the mode once just before the Phase-2 block a
         console.log(`[BillingSyncWorker] collections pipeline-mode: legacy auto-open/reconcile dilewati`);
       }
 ```
-IMPORTANT: this is a wrap, not a rewrite — READ the current Phase-2 + Phase-3 blocks (around lines 296–325)
+IMPORTANT: this is a wrap, not a rewrite - READ the current Phase-2 + Phase-3 blocks (around lines 296-325)
 and move them verbatim inside the `if (legacyCollectionsActive(...))` branch, preserving every existing
 line (including the full Phase-3 try/catch body and any code between the two blocks). Do NOT alter
-`runBillingIntakeRules` (the `billing_sync` intake) — it stays AFTER this gated section and runs in both
+`runBillingIntakeRules` (the `billing_sync` intake) - it stays AFTER this gated section and runs in both
 modes.
 
 - [ ] **Step 3: Verify typecheck + build**
@@ -147,7 +147,7 @@ git commit -m "feat(collections): skip legacy auto-open/reconcile in pipeline-mo
 
 ---
 
-### Task 3: Routes — engine-mode GET/PUT
+### Task 3: Routes - engine-mode GET/PUT
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -196,10 +196,10 @@ git commit -m "feat(collections): engine-mode GET/PUT endpoint"
 
 ---
 
-### Task 4: Frontend — /integrations toggle + /collections redirect
+### Task 4: Frontend - /integrations toggle + /collections redirect
 
 **Files:**
-- Modify: `client/hooks/usePipelines.ts` (or wherever a small shared hook fits) — add the engine-mode hooks
+- Modify: `client/hooks/usePipelines.ts` (or wherever a small shared hook fits) - add the engine-mode hooks
 - Modify: `client/pages/IntegrationPage.tsx`
 - Modify: `client/pages/CollectionPipelinePage.tsx`
 
@@ -257,18 +257,18 @@ git commit -m "feat(collections): engine-mode toggle UI + /collections redirect"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/collectionsMode.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "collectionsMode\|collections_engine_mode\|engine-mode" server/ shared/ client/ | sort` → expect shared module + test, worker, routes, hooks, integrations + collections pages.
-- [ ] **Step 5: Default-safe check** — Confirm with `grep -n "collections_engine_mode" server/billing-sync-worker.ts` that the worker reads the per-mitra setting and that absence → `legacy` (via `parseCollectionsMode`), i.e. no behavior change until an admin flips the toggle.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/collectionsMode.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "collectionsMode\|collections_engine_mode\|engine-mode" server/ shared/ client/ | sort` → expect shared module + test, worker, routes, hooks, integrations + collections pages.
+- [ ] **Step 5: Default-safe check** - Confirm with `grep -n "collections_engine_mode" server/billing-sync-worker.ts` that the worker reads the per-mitra setting and that absence → `legacy` (via `parseCollectionsMode`), i.e. no behavior change until an admin flips the toggle.
 
 ---
 
 ## Self-Review
 
-- **Spec coverage:** pure mode helper → Task 1. Worker gate (skip Phase-2+3 in pipeline-mode, keep billing_sync intake) → Task 2. GET/PUT engine-mode endpoint with validation → Task 3. /integrations toggle + /collections redirect → Task 4. Runbook is docs-only (in the spec) — no code task. Testing → Task 1 + Task 5. All covered.
-- **Placeholders:** Tasks 1–3 + 5 are full code. Task 2 is an explicit wrap-don't-rewrite of existing blocks (the engineer moves verbatim lines inside the `if`). Task 4 integrates into existing pages with concrete hooks + behavior described and instructs reading them.
+- **Spec coverage:** pure mode helper → Task 1. Worker gate (skip Phase-2+3 in pipeline-mode, keep billing_sync intake) → Task 2. GET/PUT engine-mode endpoint with validation → Task 3. /integrations toggle + /collections redirect → Task 4. Runbook is docs-only (in the spec) - no code task. Testing → Task 1 + Task 5. All covered.
+- **Placeholders:** Tasks 1-3 + 5 are full code. Task 2 is an explicit wrap-don't-rewrite of existing blocks (the engineer moves verbatim lines inside the `if`). Task 4 integrates into existing pages with concrete hooks + behavior described and instructs reading them.
 - **Type consistency:** `parseCollectionsMode`/`legacyCollectionsActive`/`CollectionsEngineMode` (Task 1) consumed in Task 2 (worker) + Task 3 (route). The endpoint shape `{ mode, pipelineId }` matches the hooks (Task 4) and the page's redirect logic. `setMitraSetting`/`getMitraSetting` signatures match the calls.
 
 ## Deploy note

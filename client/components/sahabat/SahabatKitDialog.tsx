@@ -90,9 +90,9 @@ async function renderFlyerToCanvas(
 
   // Reward boxes (3 item)
   const rewards = [
-    ["🎁", "Voucher Indomaret", "Rp 50.000"],
-    ["🥇", "Milestone Bonus", "Rp 200K–5jt"],
-    ["🌐", "Internet GRATIS", "12–60 bulan"],
+    ["", "Voucher Indomaret", "Rp 50.000"],
+    ["", "Milestone Bonus", "Rp 200K-5jt"],
+    ["", "Internet GRATIS", "12-60 bulan"],
   ];
   const boxY = 580;
   const boxW = (W - 120 - 40) / 3;
@@ -142,7 +142,7 @@ async function renderFlyerToCanvas(
   ctx.fillStyle = "#000";
   ctx.fillText(opts.sahabatCode, 100, codeY + 175);
 
-  // QR code (right side) — qrcode lib loaded on-demand to keep main bundle slim
+  // QR code (right side) - qrcode lib loaded on-demand to keep main bundle slim
   try {
     const { default: QRCode } = await import("qrcode");
     const qrDataUrl = await QRCode.toDataURL(opts.portalUrl, {
@@ -241,15 +241,15 @@ export function SahabatKitDialog({ open, onOpenChange, sahabat }: SahabatKitDial
     }).finally(() => setRendering(false));
     // Build default WA message
     setWaMessage(
-      `Halo! Saya ${sahabat.customerName} pengguna internet JABNET 🌐
+      `Halo! Saya ${sahabat.customerName} pengguna internet JABNET
 
 Ikutan yuk pakai internet fiber optic di rumah. Pakai kode Sahabat saya saat daftar biar kita sama-sama dapat voucher:
 
-🎁 KODE SAHABAT: *${sahabat.sahabatCode}*
+ KODE SAHABAT: *${sahabat.sahabatCode}*
 
 Daftar di: ${portalUrl}
 
-Nanti kalau udah aktif, kamu dapat welcome bonus 7 hari gratis, dan saya dapat voucher Indomaret 50K 🙏`
+Nanti kalau udah aktif, kamu dapat welcome bonus 7 hari gratis, dan saya dapat voucher Indomaret 50K `
     );
   }, [open, sahabat, theme, portalUrl]);
 

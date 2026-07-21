@@ -1,8 +1,8 @@
 /**
  * BillingSyncWorker (v4.1.2)
- * ──────────────────────────
+ * --------------------------
  * Background worker yang fetch pelanggan dari billing.jabnet.id dan:
- * 1. Update field whitelist (8 field) — TIDAK overwrite alamat/GPS/ODP lokal
+ * 1. Update field whitelist (8 field) - TIDAK overwrite alamat/GPS/ODP lokal
  * 2. Detect state transitions → emit Collection Pipeline events
  *    - active → isolir: auto-create collection (stage=new)
  *    - isolir → active: auto-close collection (stage=paid)
@@ -82,7 +82,7 @@ export class BillingSyncWorker {
 
   /**
    * Manual trigger HANYA untuk Phase 2 collection thresholds
-   * (tidak fetch billing — ambil langsung dari DB customers).
+   * (tidak fetch billing - ambil langsung dari DB customers).
    * Berguna untuk testing/operasional setelah admin ubah settings.
    */
   async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number }> {
@@ -100,7 +100,7 @@ export class BillingSyncWorker {
   }
 
   /**
-   * Force resync 1 customer dari billing API — admin trigger saat data terlihat drift.
+   * Force resync 1 customer dari billing API - admin trigger saat data terlihat drift.
    * Skip whitelist preserve, langsung overwrite dari upstream.
    * Return: status + transition + before/after.
    */
@@ -179,7 +179,7 @@ export class BillingSyncWorker {
     };
   }
 
-  // ─── PRIVATE ─────────────────────────────────────────────────────────────
+  // --- PRIVATE -------------------------------------------------------------
 
   private async currentInterval(): Promise<number> {
     const peakStart = parseInt(await storage.getSetting(SETTING_KEYS.peakStart) ?? "8");
@@ -300,7 +300,7 @@ export class BillingSyncWorker {
       // Collections cutover: in pipeline-mode the billing_sync rule handles auto-open; skip legacy.
       const collectionsMode = parseCollectionsMode(await storage.getMitraSetting("collections_engine_mode"));
       if (legacyCollectionsActive(collectionsMode)) {
-        // ── Phase 2: Collection threshold triggers (overdue days + auto-writeoff) ──
+        // -- Phase 2: Collection threshold triggers (overdue days + auto-writeoff) --
         const collectionEnabled = (await storage.getSetting("collection_enabled")) !== "false";
         if (collectionEnabled) {
           const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
@@ -317,7 +317,7 @@ export class BillingSyncWorker {
           await storage.setSetting("collection_trigger_last_opened", String(collectionResults.opened), "collection");
         }
 
-        // ── Phase 3: Reconciliation pass — auto-fix customer<->collection drift ──
+        // -- Phase 3: Reconciliation pass - auto-fix customer<->collection drift --
         // Catch cases yang lewat dari transition detection (mis. sync gagal sebelumnya, manual close,
         // atau collection yang stuck open meskipun customer sudah lunas)
         try {
@@ -336,7 +336,7 @@ export class BillingSyncWorker {
         console.log(`[BillingSyncWorker] collections pipeline-mode: legacy auto-open/reconcile dilewati`);
       }
 
-      // ── Phase 4: Pipeline billing-intake — create/auto-resolve cards per billing_sync rules ──
+      // -- Phase 4: Pipeline billing-intake - create/auto-resolve cards per billing_sync rules --
       try {
         const intake = await runBillingIntakeRules();
         (stats.transitions as any).pipeline_intake_created = intake.created;
@@ -348,14 +348,14 @@ export class BillingSyncWorker {
         console.error(`[BillingSyncWorker] billing-intake error:`, e.message);
       }
 
-      // ── Phase 4b (collection config-engine) DIHAPUS — digantikan rule billing_sync (Phase 4). ──
+      // -- Phase 4b (collection config-engine) DIHAPUS - digantikan rule billing_sync (Phase 4). --
 
-      // ── Phase 5 dihapus dari sini (v4.2.3+) ──
+      // -- Phase 5 dihapus dari sini (v4.2.3+) --
       // Speed-on-Demand expire+revert sekarang ditangani oleh dedicated 60s worker di server/index.ts
       // dengan atomic guarantee: revert dulu, baru mark expired. Kalau revert gagal, retry next loop.
       // Pattern lama (legacy expireOverdueRedemptions) masih ada di storage tapi tidak dipakai.
 
-      // Success — clear backoff, record observability
+      // Success - clear backoff, record observability
       this.backoffMs = 0;
       const successIso = new Date().toISOString();
       await storage.setSetting(SETTING_KEYS.lastSuccessAt, successIso, "billing");
@@ -378,7 +378,7 @@ export class BillingSyncWorker {
       await storage.setSetting(SETTING_KEYS.lastStatus, "error", "billing");
       await storage.setSetting(SETTING_KEYS.lastError, err.message, "billing");
       console.error(`[BillingSyncWorker] ✗ sync failed, backing off ${this.backoffMs / 1000}s:`, err.message);
-      // Jangan throw ke luar — let scheduler continue
+      // Jangan throw ke luar - let scheduler continue
     } finally {
       this.runLock = false;
       // Reset ke idle kecuali sedang backing_off (error path) atau stopped (shutdown)
@@ -452,7 +452,7 @@ export class BillingSyncWorker {
     const resellerId = await this.resolveResellerId(resellerIdOverride);
     const combined = await this.fetchResellerRows(resellerId);
     if (combined.length === 0) {
-      throw new Error(`Billing API returned empty (reseller_id=${resellerId}) — check connectivity/credentials`);
+      throw new Error(`Billing API returned empty (reseller_id=${resellerId}) - check connectivity/credentials`);
     }
     return combined;
   }
@@ -464,14 +464,14 @@ export class BillingSyncWorker {
   }
 
   /**
-   * Phase 2 collection triggers — berjalan setelah main billing sync.
+   * Phase 2 collection triggers - berjalan setelah main billing sync.
    * 1. Overdue trigger: customer dengan dueDate < (today - triggerDays) AND belum ada collection open → auto-open
    *    Preventive: tim collection bisa follow-up SEBELUM customer diisolir billing
    * 2. Writeoff trigger: collection open > writeoffDays → auto-move ke stage "written_off"
    *    Cleanup: pelanggan yang sudah lama tidak bayar (e.g. 90 hari) diwrite-off otomatis
    */
   private async runCollectionThresholds(triggerDays: number, writeoffDays: number): Promise<{ opened: number; writtenOff: number }> {
-    // Always called as a sub-step of runOnce — caller already established withMitra context.
+    // Always called as a sub-step of runOnce - caller already established withMitra context.
     // If no context (e.g. direct test call), default to mitra 1.
     const mid = getMitraIdOrNull() ?? 1;
     return withMitra(mid, () => this._runCollectionThresholdsInner(triggerDays, writeoffDays)) as Promise<any>;
@@ -496,7 +496,7 @@ export class BillingSyncWorker {
       if (dueMs + triggerDays * 86400_000 > now) continue;
       // Skip kalau billing status sudah lunas (paid)
       if (c.billingStatus === "lunas" || c.billingStatus === "paid") continue;
-      // Cek open collection — kalau sudah ada, skip
+      // Cek open collection - kalau sudah ada, skip
       const existing = await storage.getOpenCollectionByCustomer(c.id);
       if (existing) continue;
 
@@ -609,8 +609,8 @@ export class BillingSyncWorker {
     const level = (loyalty as any).sahabatLevel ?? "new";
     const totalSuccessful = (loyalty as any).totalSuccessfulReferrals ?? 0;
     const LEVEL_LABEL: Record<string, string> = {
-      new: "Pelanggan", perunggu: "Perunggu 🥉", perak: "Perak 🥈",
-      emas: "Emas 🥇", platinum: "Platinum 💎", berlian: "Berlian 👑", ambassador: "Ambassador 🌟",
+      new: "Pelanggan", perunggu: "Perunggu ", perak: "Perak ",
+      emas: "Emas ", platinum: "Platinum ", berlian: "Berlian ", ambassador: "Ambassador ",
     };
     const NEXT: Record<string, string> = {
       new: "5 lagi ke Perunggu (Bonus Rp 200K)",
@@ -618,7 +618,7 @@ export class BillingSyncWorker {
       perak: "10 lagi ke Emas (GRATIS 24 bulan)",
       emas: "10 lagi ke Platinum (Cash Rp 2jt)",
       platinum: "20 lagi ke Berlian (Cash Rp 5jt)",
-      berlian: "Level maksimal 👑", ambassador: "Rev share 15% aktif",
+      berlian: "Level maksimal ", ambassador: "Rev share 15% aktif",
     };
     const { sendLoyaltyNotification } = await import("./mpwa.js");
     await sendLoyaltyNotification("sahabat_invite_registered", referrer.phone, {
@@ -633,7 +633,7 @@ export class BillingSyncWorker {
 
   private async openCollectionIfMissing(customerId: number, billing: BillingCustomerRecord): Promise<void> {
     const existing = await storage.getOpenCollectionByCustomer(customerId);
-    if (existing) return; // partial unique index juga block — belt & suspenders
+    if (existing) return; // partial unique index juga block - belt & suspenders
     const now = new Date().toISOString();
     try {
       const entryStage = (await storage.getCollectionStageKeyByRole("entry")) ?? "new";
@@ -658,7 +658,7 @@ export class BillingSyncWorker {
       } as any);
       console.log(`[BillingSyncWorker] → auto_opened collection #${col.id} for customer #${customerId}`);
     } catch (e: any) {
-      // Partial unique index mungkin trigger race — safe to ignore
+      // Partial unique index mungkin trigger race - safe to ignore
       if (!e.message.includes("UNIQUE")) throw e;
     }
   }
@@ -689,7 +689,7 @@ export class BillingSyncWorker {
 
   /**
    * Handler loyalty saat payment terdeteksi (JABNET Sahabat v4.1.9).
-   * 1. Evaluate streak (internal tracking — tidak kirim notif lagi, streak bukan reward utama)
+   * 1. Evaluate streak (internal tracking - tidak kirim notif lagi, streak bukan reward utama)
    * 2. Refresh tenure months (legacy display saja)
    * 3. Reward referral kalau ini first payment referee → Voucher Indomaret Rp 50K + level up check
    * 4. Kirim MPWA Sahabat: referral_rewarded (per referral) + perunggu/perak/emas/platinum/berlian (per level-up)
@@ -699,7 +699,7 @@ export class BillingSyncWorker {
       const customer = await storage.getCustomer(customerId);
       if (!customer?.phone) return;
 
-      // 1. Streak — tetap di-evaluate (untuk leaderboard insight), tidak notif
+      // 1. Streak - tetap di-evaluate (untuk leaderboard insight), tidak notif
       await storage.evaluatePaymentForLoyalty(
         customerId,
         billing.last_payment_date!,
@@ -709,7 +709,7 @@ export class BillingSyncWorker {
       // 2. Refresh tenure (legacy display)
       await storage.refreshTenureBadgeWithUpgradeCheck(customerId);
 
-      // 2b. Award points kalau bayar tepat waktu / early — Speed-on-Demand earning rules
+      // 2b. Award points kalau bayar tepat waktu / early - Speed-on-Demand earning rules
       try {
         if (billing.last_payment_date && billing.due_date) {
           const paid = new Date(billing.last_payment_date).getTime();
@@ -753,9 +753,9 @@ export class BillingSyncWorker {
 
       // 3a. Notif per referral sukses ke REFERRER (Voucher Indomaret Rp 50K)
       const LEVEL_LABEL: Record<string, string> = {
-        new: "Pelanggan", perunggu: "Perunggu 🥉", perak: "Perak 🥈",
-        emas: "Emas 🥇", platinum: "Platinum 💎", berlian: "Berlian 👑",
-        ambassador: "Ambassador 🌟",
+        new: "Pelanggan", perunggu: "Perunggu ", perak: "Perak ",
+        emas: "Emas ", platinum: "Platinum ", berlian: "Berlian ",
+        ambassador: "Ambassador ",
       };
       const NEXT_THRESHOLD: Record<string, string> = {
         new: "5 lagi ke Perunggu (Voucher Rp 200K + Speed Boost)",
@@ -763,8 +763,8 @@ export class BillingSyncWorker {
         perak: "10 lagi ke Emas (Internet GRATIS 24 bulan)",
         emas: "10 lagi ke Platinum (Cash Rp 2jt + Ambassador)",
         platinum: "20 lagi ke Berlian (Cash Rp 5jt + Trainer)",
-        berlian: "Kamu sudah maksimal — selamat, Legend!",
-        ambassador: "Status Ambassador aktif — 15% rev share semua referral selanjutnya",
+        berlian: "Kamu sudah maksimal - selamat, Legend!",
+        ambassador: "Status Ambassador aktif - 15% rev share semua referral selanjutnya",
       };
       for (const ref of rewarded) {
         const referrer = await storage.getCustomer(ref.referrerCustomerId);
@@ -784,11 +784,11 @@ export class BillingSyncWorker {
         // Broadcast Telegram ke admin/marketing_spv untuk visibility
         import("./telegram.js").then(({ notifyRolesTelegram }) => {
           notifyRolesTelegram(["admin", "marketing_spv"], "sahabat_referral",
-            `🤝 *Referral Sahabat baru*\n\n${referrer.name} (${sahabatCode}) berhasil refer *${ref.refereeName || customer.name}*\n\nTotal refs: ${totalRefs} · Level: ${LEVEL_LABEL[level] ?? level}`);
+            ` *Referral Sahabat baru*\n\n${referrer.name} (${sahabatCode}) berhasil refer *${ref.refereeName || customer.name}*\n\nTotal refs: ${totalRefs} · Level: ${LEVEL_LABEL[level] ?? level}`);
         }).catch(() => {});
       }
 
-      // 3b. Notif level up — kirim ke referrer sesuai level baru
+      // 3b. Notif level up - kirim ke referrer sesuai level baru
       for (const upgrade of levelUpgrades) {
         const referrer = await storage.getCustomer(upgrade.referrerCustomerId);
         if (!referrer?.phone) continue;

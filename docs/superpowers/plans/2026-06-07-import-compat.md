@@ -4,15 +4,15 @@
 
 **Goal:** Make the leads→pipeline import emit a single Coordinate field (instead of separate lat/lng) and resolve assignees against the JABNET tenant with a Skip(+optional default) fallback.
 
-**Architecture:** Pure mapping changes in `tools/leadsToPipeline.ts` (coordinate field + `resolveAssignee` + `leadToCard` taking an explicit assignee), driven by the runner `tools/import-leads-to-pipeline.ts` (loads tenant user ids, parses `--default-assignee`, tallies). Tools-only — no app code, schema, or migration.
+**Architecture:** Pure mapping changes in `tools/leadsToPipeline.ts` (coordinate field + `resolveAssignee` + `leadToCard` taking an explicit assignee), driven by the runner `tools/import-leads-to-pipeline.ts` (loads tenant user ids, parses `--default-assignee`, tallies). Tools-only - no app code, schema, or migration.
 
-**Tech Stack:** TypeScript run via `npx tsx`, `node:test`. `tools/` is OUTSIDE tsconfig — gated by the tsx test + a `--help` smoke (NOT `npm run typecheck`/`build`). Spec: `docs/superpowers/specs/2026-06-07-import-compat-design.md`. The `coordinate` field type itself was added app-side in slice D.
+**Tech Stack:** TypeScript run via `npx tsx`, `node:test`. `tools/` is OUTSIDE tsconfig - gated by the tsx test + a `--help` smoke (NOT `npm run typecheck`/`build`). Spec: `docs/superpowers/specs/2026-06-07-import-compat-design.md`. The `coordinate` field type itself was added app-side in slice D.
 
 **Coding standards:** pure testable mapping; DRY (one `resolveAssignee`; reuse the generic field/value loops); `.js` import extensions in tests.
 
 ---
 
-## Task 1: Mapping module — coordinate field + assignee resolution (TDD)
+## Task 1: Mapping module - coordinate field + assignee resolution (TDD)
 
 **Files:**
 - Modify: `tools/leadsToPipeline.ts`
@@ -89,7 +89,7 @@ Also ensure `LEAD_PIPELINE_FIELDS` is in the test's import list (add it if absen
 - [ ] **Step 2: Run to verify failure**
 
 Run: `npx tsx --test tools/leadsToPipeline.test.ts`
-Expected: FAIL — `resolveAssignee` not exported; `leadToCard` arity; coordinate assertions.
+Expected: FAIL - `resolveAssignee` not exported; `leadToCard` arity; coordinate assertions.
 
 - [ ] **Step 3: Implement the module changes in `tools/leadsToPipeline.ts`**
 
@@ -167,7 +167,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Runner — tenant user ids, `--default-assignee`, tallies
+## Task 2: Runner - tenant user ids, `--default-assignee`, tallies
 
 **Files:**
 - Modify: `tools/import-leads-to-pipeline.ts`
@@ -223,7 +223,7 @@ Replace the `const c = leadToCard(lead, stageIdByKey);` line (~129) with assigne
     const c = leadToCard(lead, stageIdByKey, assigneeId);
 ```
 
-In the field-values insert loop, count coordinate writes — after `nValues++;` add:
+In the field-values insert loop, count coordinate writes - after `nValues++;` add:
 
 ```ts
       if (v.fieldKey === "coordinate") nCoord++;
@@ -245,7 +245,7 @@ In the final `console.log(...)` summary (~171), add the coordinate + assignee ta
 Run: `npx tsx tools/import-leads-to-pipeline.ts --help`
 Expected: exits 0 and the output mentions `--default-assignee`.
 
-(Do NOT run the full import — it requires DB_* env + a live dev DB; that's a manual step the user runs.)
+(Do NOT run the full import - it requires DB_* env + a live dev DB; that's a manual step the user runs.)
 
 - [ ] **Step 7: Commit**
 
@@ -294,5 +294,5 @@ Then verify "Leads (Marketing)" has a **Koordinat** field (map + wilayah/ODP in 
 
 - **Spec coverage:** coordinate field replaces lat/lng → Task 1 (b,c); phone unchanged (no edit); `resolveAssignee` + `leadToCard(assigneeId)` → Task 1 (d,e); runner tenant-id load + `--default-assignee` + tallies → Task 2; tests/smoke → Tasks 1/3. No app code/schema/migration (tools-only). `coordinate` type already exists app-side (slice D).
 - **Type consistency:** `resolveAssignee(leadAssignedTo, validUserIds, defaultAssignee)`, `leadToCard(lead, stageIdByKey, assigneeId)` used identically in module, tests, and runner. `coordinate` value is `JSON.stringify({lat,lng})` everywhere.
-- **Gating:** `tools/` is outside tsconfig — its gates are the tsx test + `--help` smoke; `npm run typecheck` is only a sanity check that nothing leaked into app code.
+- **Gating:** `tools/` is outside tsconfig - its gates are the tsx test + `--help` smoke; `npm run typecheck` is only a sanity check that nothing leaked into app code.
 - **No placeholders.**

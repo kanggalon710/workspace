@@ -1,4 +1,4 @@
-/** Gather collection metrics for a pipeline (current tenant) — storage + the pure aggregator. */
+/** Gather collection metrics for a pipeline (current tenant) - storage + the pure aggregator. */
 import { storage } from "./storage.js";
 import { buildCollectionSnapshot } from "../shared/collectionMetrics.js";
 import { computeCollectionMetrics, type CollectionMetrics, type MetricsSnapshot } from "../shared/collectionDashboard.js";

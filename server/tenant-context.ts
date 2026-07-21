@@ -1,8 +1,8 @@
 /**
- * Phase B multi-tenant — AsyncLocalStorage context propagation.
+ * Phase B multi-tenant - AsyncLocalStorage context propagation.
  *
  * Routes wrap requests with `tenantContext.run({ mitraId, userId, isSuperAdmin }, next)`.
- * Storage methods call `getMitraId()` to scope queries — no need to thread `mitraId`
+ * Storage methods call `getMitraId()` to scope queries - no need to thread `mitraId`
  * through 170+ method signatures.
  *
  * Workers / cross-tenant jobs use `withMitra(id, fn)` wrapper.
@@ -27,10 +27,10 @@ export const tenantContext = new AsyncLocalStorage<TenantCtx>();
 export function getMitraId(): number {
   const ctx = tenantContext.getStore();
   if (!ctx) {
-    throw new Error("[tenant-context] Missing context — request not wrapped in tenantContext.run()");
+    throw new Error("[tenant-context] Missing context - request not wrapped in tenantContext.run()");
   }
   if (ctx.mitraId == null) {
-    throw new Error("[tenant-context] No active tenant — user has not selected a mitra");
+    throw new Error("[tenant-context] No active tenant - user has not selected a mitra");
   }
   return ctx.mitraId;
 }

@@ -1,4 +1,4 @@
-# LP4 — Create Lead from Pipeline Card — Implementation Plan
+# LP4 - Create Lead from Pipeline Card - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -24,7 +24,7 @@
 
 ---
 
-## Task 1: Source registry — add `"pipeline"`
+## Task 1: Source registry - add `"pipeline"`
 
 **Files:**
 - Modify: `shared/leadSources.ts`
@@ -43,7 +43,7 @@ test("pipeline source has label", () => {
 });
 ```
 
-- [ ] **Step 2: Run — expect fail**
+- [ ] **Step 2: Run - expect fail**
 
 Run: `npx tsx --test shared/leadSources.test.ts`
 Expected: FAIL (`canonicalLeadSource("pipeline")` → `"other"`; label undefined).
@@ -67,7 +67,7 @@ export type CanonicalLeadSource =
 ```
 (`LEAD_SOURCE_OPTIONS` is derived, so it updates automatically.)
 
-- [ ] **Step 4: Run — expect pass**
+- [ ] **Step 4: Run - expect pass**
 
 Run: `npx tsx --test shared/leadSources.test.ts`
 Expected: PASS. Then `npx tsc --noEmit` → 0 errors.
@@ -122,10 +122,10 @@ test("first field of each type wins; bad coordinate JSON ignored", () => {
 });
 ```
 
-- [ ] **Step 2: Run — expect fail**
+- [ ] **Step 2: Run - expect fail**
 
 Run: `npx tsx --test shared/cardToLead.test.ts`
-Expected: FAIL — module not found.
+Expected: FAIL - module not found.
 
 - [ ] **Step 3: Implement**
 
@@ -161,9 +161,9 @@ export function detectLeadPrefill(
 }
 ```
 
-> Verify `parseCoordinate` is exported from `shared/pipelineFieldTypes.ts` with signature `(value: string|null|undefined) => {lat:number;lng:number}|null`. (It is — `shared/pipelineFieldTypes.ts:39`.)
+> Verify `parseCoordinate` is exported from `shared/pipelineFieldTypes.ts` with signature `(value: string|null|undefined) => {lat:number;lng:number}|null`. (It is - `shared/pipelineFieldTypes.ts:39`.)
 
-- [ ] **Step 4: Run — expect pass**
+- [ ] **Step 4: Run - expect pass**
 
 Run: `npx tsx --test shared/cardToLead.test.ts`
 Expected: PASS (3 tests). Then `npx tsc --noEmit` → 0 errors.
@@ -179,7 +179,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Storage — `getLeadCardLinkByCard`
+## Task 3: Storage - `getLeadCardLinkByCard`
 
 **Files:**
 - Modify: `server/storage.ts` (near `getLeadCardLinks`, added in LP1 ~line 2680)
@@ -188,7 +188,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 After `getLeadCardLinks` (LP1), add:
 ```ts
-  /** Link untuk satu CARD (tenant-scoped) — null kalau kartu belum tertaut lead. */
+  /** Link untuk satu CARD (tenant-scoped) - null kalau kartu belum tertaut lead. */
   async getLeadCardLinkByCard(cardId: number): Promise<LeadCardLink | null> {
     const mitraId = getMitraId();
     const rows = await this.db.select().from(leadCardLinks)
@@ -213,7 +213,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Endpoints — lead-link + create-lead
+## Task 4: Endpoints - lead-link + create-lead
 
 **Files:**
 - Modify: `server/routes.ts` (add near other `/api/pipelines/cards/:cardId/*` routes, e.g. after the relations routes ~line 5440)
@@ -271,7 +271,7 @@ Add:
 
     await storage.createLeadCardLink({ leadId: lead.id, cardId: card.id, ruleId: null });
     await logAudit(req, "CREATE", "lead", lead.id, lead.name, { fromCardId: card.id });
-    // NOTE: intentionally NO emitLeadEvent — the card already exists and is now linked (anti-loop).
+    // NOTE: intentionally NO emitLeadEvent - the card already exists and is now linked (anti-loop).
     return sendSuccess(res, { lead, link: { leadId: lead.id, cardId: card.id } }, 201);
   });
 ```
@@ -325,7 +325,7 @@ export function useCreateLeadFromCard(cardId: number) {
   });
 }
 ```
-(Ensure `useQuery`, `useMutation`, `useQueryClient`, `api` are imported in the file — they are, used by existing hooks. If the api base path differs, e.g. it already prefixes `/api`, follow the existing hook calls' exact pathing.)
+(Ensure `useQuery`, `useMutation`, `useQueryClient`, `api` are imported in the file - they are, used by existing hooks. If the api base path differs, e.g. it already prefixes `/api`, follow the existing hook calls' exact pathing.)
 
 - [ ] **Step 2: Typecheck**
 
@@ -443,7 +443,7 @@ export function CreateLeadFromCardDialog({
 }
 ```
 
-> Verify component import paths against the repo: `@/components/ui/dialog` (Dialog/DialogContent/DialogHeader/DialogTitle), `@/components/ui/form-field` (FormField), `@/components/ui/combobox` (Combobox), `@/components/ui/input`, `@/components/ui/button`. These are the same imports CardDetailModal/PipelineRulesDialog use — copy the exact specifiers from those files if any differ.
+> Verify component import paths against the repo: `@/components/ui/dialog` (Dialog/DialogContent/DialogHeader/DialogTitle), `@/components/ui/form-field` (FormField), `@/components/ui/combobox` (Combobox), `@/components/ui/input`, `@/components/ui/button`. These are the same imports CardDetailModal/PipelineRulesDialog use - copy the exact specifiers from those files if any differ.
 
 - [ ] **Step 2: Wire into CardDetailModal**
 
@@ -459,7 +459,7 @@ import { CreateLeadFromCardDialog } from "./CreateLeadFromCardDialog";
   const [showCreateLead, setShowCreateLead] = useState(false);
 ```
 (`useState` is already imported in the modal.)
-- In the JSX, near the card metadata/header area (a sensible spot is alongside the description or in the left/meta column — place it after the description block, before `<CardRelations>`), add a lead-link row:
+- In the JSX, near the card metadata/header area (a sensible spot is alongside the description or in the left/meta column - place it after the description block, before `<CardRelations>`), add a lead-link row:
 ```tsx
               <div className="flex items-center gap-2 pt-1">
                 {leadLink?.link ? (
@@ -485,7 +485,7 @@ import { CreateLeadFromCardDialog } from "./CreateLeadFromCardDialog";
         />
       )}
 ```
-(`card.values` is `Record<number,string>`; `card.fields` are the field metas with `id`+`type` — confirm property names by reading the `CardDetail` type / `useCardFields` usage at the top of the file, which references `card.values` and `card.fields`.)
+(`card.values` is `Record<number,string>`; `card.fields` are the field metas with `id`+`type` - confirm property names by reading the `CardDetail` type / `useCardFields` usage at the top of the file, which references `card.values` and `card.fields`.)
 
 - [ ] **Step 3: Build + typecheck**
 
@@ -525,11 +525,11 @@ Buka kartu di /pipelines → "Buat Lead" → dialog pre-filled (nama=judul; phon
 
 - [ ] **Step 5: Update memory**
 
-Update `memory/project-leads-pipeline-integration.md`: LP4 DONE on dev (belum push) — reverse create-lead-from-card, source "pipeline", lead_card_links reuse, no-emit anti-loop, detectLeadPrefill, badge. LP4b (template) berikutnya bila diminta.
+Update `memory/project-leads-pipeline-integration.md`: LP4 DONE on dev (belum push) - reverse create-lead-from-card, source "pipeline", lead_card_links reuse, no-emit anti-loop, detectLeadPrefill, badge. LP4b (template) berikutnya bila diminta.
 
 ---
 
-## Self-Review (penulis plan — sudah dijalankan)
+## Self-Review (penulis plan - sudah dijalankan)
 
 **Spec coverage:** §source "pipeline"→T1; §detectLeadPrefill→T2; §getLeadCardLinkByCard→T3; §endpoints (lead-link + create-lead, 409 guard, no-emit, audit, tenant via loadGuardedCard)→T4; §hooks→T5; §dialog + modal button/badge→T6; §tenant/audit/loop-safe→T4 by construction; §testing→T1/T2/T7. AC1-7 covered.
 

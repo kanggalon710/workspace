@@ -43,7 +43,7 @@ interface RoleItem {
 }
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -58,7 +58,7 @@ function permStats(perms: Record<string, PermissionLevel>) {
   return { none, read, write, granted: read + write };
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 export default function RolesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -305,9 +305,9 @@ export default function RolesPage() {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // PRESET CARD
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function PresetCard({ preset, busy, onToggleActive, onSetDefault, onEdit, onDelete }: {
   preset: RolePresetDTO;
   busy: boolean;
@@ -373,9 +373,9 @@ function PresetCard({ preset, busy, onToggleActive, onSetDefault, onEdit, onDele
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // ROLE CARD
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
   const { user } = useAuth();
   const stats = useMemo(() => permStats(role.permissions), [role.permissions]);
@@ -409,7 +409,7 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
                   </span>
                 )}
                 {role.canSeeAllData && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400" title="Supervisor — bisa lihat data semua user">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400" title="Supervisor - bisa lihat data semua user">
                     SUPERVISOR
                   </span>
                 )}
@@ -475,9 +475,9 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
-// PREVIEW DIALOG — read-only view of all permissions per group
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
+// PREVIEW DIALOG - read-only view of all permissions per group
+// =====================================================================
 function RolePreviewDialog({ role, onClose, onEdit }: any) {
   if (!role) return null;
   const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
@@ -508,7 +508,7 @@ function RolePreviewDialog({ role, onClose, onEdit }: any) {
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-xs text-amber-800 dark:text-amber-200">
-                <strong>Mode Supervisor aktif</strong> — role ini bisa melihat data semua user (bukan hanya datanya sendiri).
+                <strong>Mode Supervisor aktif</strong> - role ini bisa melihat data semua user (bukan hanya datanya sendiri).
               </div>
             </div>
           )}
@@ -554,9 +554,9 @@ function RolePreviewDialog({ role, onClose, onEdit }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
-// FORM DIALOG (create + edit) — group-by-group permission matrix
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
+// FORM DIALOG (create + edit) - group-by-group permission matrix
+// =====================================================================
 function RoleFormDialog({ open, onClose, initial, onSaved }: any) {
   const isEdit = !!initial;
   const isSystem = initial?.isSystem ?? false;
@@ -620,7 +620,7 @@ function RoleFormDialog({ open, onClose, initial, onSaved }: any) {
           </DialogTitle>
           <DialogDescription>
             {isSystem
-              ? "Role bawaan — nama tidak bisa diubah, tapi permissions bisa di-tune."
+              ? "Role bawaan - nama tidak bisa diubah, tapi permissions bisa di-tune."
               : "Definisikan permission per fitur. User akan dapat akses sesuai role yang dipilih."}
           </DialogDescription>
         </DialogHeader>
@@ -697,9 +697,9 @@ function RoleFormDialog({ open, onClose, initial, onSaved }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 // USERS-IN-ROLE DIALOG
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function RoleUsersDialog({ role, onClose }: any) {
   const { data: users = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/roles", role?.id, "users"],
@@ -740,7 +740,7 @@ function RoleUsersDialog({ role, onClose }: any) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-sm truncate">{u.name}</div>
-                      <div className="text-[11px] text-muted-foreground truncate">@{u.username} · {u.position ?? "—"}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">@{u.username} · {u.position ?? "-"}</div>
                     </div>
                     <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive === 1 ? "bg-emerald-500" : "bg-slate-400"}`} />
                   </div>
@@ -754,7 +754,7 @@ function RoleUsersDialog({ role, onClose }: any) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =====================================================================
 function KpiTile({ icon, label, value, iconBg }: any) {
   return (
     <Card>

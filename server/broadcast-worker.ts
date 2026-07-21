@@ -27,7 +27,7 @@ const RUNNING_CAMPAIGNS = new Set<number>();
  */
 function substitute(template: string, vars: Record<string, any>): string {
   return template
-    // Double brace dulu (lebih spesifik) — pakai \w yang juga match underscore
+    // Double brace dulu (lebih spesifik) - pakai \w yang juga match underscore
     .replace(/\{\{(\w+)\}\}/g, (_, key) => {
       const v = vars[key];
       return v == null ? "" : String(v);
@@ -40,7 +40,7 @@ function substitute(template: string, vars: Record<string, any>): string {
 }
 
 /**
- * v4.2.20: Build var map untuk template — 28 params sesuai PRD untuk pelanggan
+ * v4.2.20: Build var map untuk template - 28 params sesuai PRD untuk pelanggan
  * + variant lebih kecil untuk reseller.
  * fallback `cs` / `nama_isp` ambil dari app_settings kalau ada.
  */
@@ -60,19 +60,19 @@ async function buildVarsPelanggan(c: {
   const waFinance = (await storage.getSetting("company_wa_finance")) ?? waCs;
   const portalUrl = (await storage.getSetting("customer_portal_url")) ?? "https://portal.jabnet.id";
 
-  const fmtRp = (n: number | null | undefined) => n == null ? "—" : `Rp. ${Number(n).toLocaleString("id-ID")}`;
+  const fmtRp = (n: number | null | undefined) => n == null ? "-" : `Rp. ${Number(n).toLocaleString("id-ID")}`;
   const fmtDate = (iso: string | null | undefined) => {
-    if (!iso) return "—";
+    if (!iso) return "-";
     try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" }); }
     catch { return iso; }
   };
   const fmtDay = (iso: string | null | undefined) => {
-    if (!iso) return "—";
+    if (!iso) return "-";
     try { return new Date(iso).toLocaleDateString("id-ID", { weekday: "long" }); }
     catch { return ""; }
   };
   const fmtTime = (iso: string | null | undefined) => {
-    if (!iso) return "—";
+    if (!iso) return "-";
     try { return new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }); }
     catch { return ""; }
   };
@@ -88,8 +88,8 @@ async function buildVarsPelanggan(c: {
     alamat_pelanggan:                 c.address ?? "",
     telepon_pelanggan:                c.phone ?? "",
     nama_isp:                         ispName,
-    paket_layanan:                    c.package ?? "—",
-    package:                          c.package ?? "—", // legacy alias
+    paket_layanan:                    c.package ?? "-",
+    package:                          c.package ?? "-", // legacy alias
     harga_paket_layanan:              fmtRp(c.billingPrice ?? null),
     tgl_aktivasi:                     fmtDate(c.installDate),
     customer_id:                      c.customerId ?? "",
@@ -97,22 +97,22 @@ async function buildVarsPelanggan(c: {
     // Invoice / billing
     tgl_jatuh_tempo_invoice:          fmtDate(c.dueDate),
     hari_tgl_jatuh_tempo_invoice:     fmtDay(c.dueDate),
-    periode_tagihan:                  c.dueDate ? new Date(c.dueDate).toLocaleDateString("id-ID", { month: "long", year: "numeric" }) : "—",
+    periode_tagihan:                  c.dueDate ? new Date(c.dueDate).toLocaleDateString("id-ID", { month: "long", year: "numeric" }) : "-",
     total_tagihan:                    fmtRp(c.billingPrice ?? null),
     // Pembayaran
     tanggal_pembayaran_diterima:      fmtDate(c.lastPaymentDate),
     jam_pembayaran_diterima:          fmtTime(c.lastPaymentDate),
     tanggal_pembayaran:               fmtDate(c.lastPaymentDate),
     jam_pembayaran:                   fmtTime(c.lastPaymentDate),
-    metode_pembayaran:                "—",
+    metode_pembayaran:                "-",
     link_pembayaran:                  `${portalUrl}/billing`,
     // Link / URL
     link_survey_feedback:             `${portalUrl}/survey`,
     url_wa_finance:                   waFinance,
     url_wa_cs:                        waCs,
     link_pelanggan_baru:              `${portalUrl}/welcome`,
-    periode_invoice_dibayarkan:       "—",
-    total_invoice_dibayarkan:         "—",
+    periode_invoice_dibayarkan:       "-",
+    total_invoice_dibayarkan:         "-",
     link_data_pelanggan_readonly:     `${portalUrl}/profile`,
     link_data_pelanggan_editable:     `${portalUrl}/profile/edit`,
     // Legacy generic
@@ -131,9 +131,9 @@ async function buildVarsReseller(r: {
   const ispName = (await storage.getSetting("company_name")) ?? "JABNET";
   const waCs = (await storage.getSetting("company_wa_cs")) ?? "https://wa.me/6281234567890";
   const waFinance = (await storage.getSetting("company_wa_finance")) ?? waCs;
-  const fmtRp = (n: number | null | undefined) => n == null ? "—" : `Rp. ${Number(n).toLocaleString("id-ID")}`;
+  const fmtRp = (n: number | null | undefined) => n == null ? "-" : `Rp. ${Number(n).toLocaleString("id-ID")}`;
   const fmtDate = (iso: string | null | undefined) => {
-    if (!iso) return "—";
+    if (!iso) return "-";
     try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" }); }
     catch { return iso; }
   };
@@ -155,7 +155,7 @@ async function buildVarsReseller(r: {
 }
 
 /**
- * v4.2.22: parseButtons — output MPWA spec format langsung (single source of truth).
+ * v4.2.22: parseButtons - output MPWA spec format langsung (single source of truth).
  * Support BOTH legacy {label, payload} dan new {displayText, phoneNumber/url/copyText/id}
  * tapi output selalu pakai spec format yang dikirim ke MPWA /send-button.
  */
@@ -200,9 +200,9 @@ function parseButtons(json: string | null | undefined): MpwaButton[] | undefined
  * Dipanggil saat campaign di-launch / move to "running".
  *
  * v4.2.20: Support 3 sumber audience (priority order):
- *   1. directRecipients (JSON array) — user manual-select via checkbox di form
- *   2. savedSegmentId — saved audience segment
- *   3. audienceFilter — inline filter JSON
+ *   1. directRecipients (JSON array) - user manual-select via checkbox di form
+ *   2. savedSegmentId - saved audience segment
+ *   3. audienceFilter - inline filter JSON
  *
  * Return jumlah recipient yang berhasil di-enrol.
  */
@@ -222,7 +222,7 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
   };
   const targetType = (campaign as any).targetType ?? "pelanggan";
 
-  // ── Priority 1: directRecipients ──
+  // -- Priority 1: directRecipients --
   const directRaw = (campaign as any).directRecipients as string | null;
   if (directRaw) {
     let directList: Array<{ phone: string; name?: string; customerId?: string; resellerId?: number; id?: number }> = [];
@@ -267,7 +267,7 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
     return { enrolled: inserted, skipped: directList.length - items.length };
   }
 
-  // ── Priority 2/3: filter-based (savedSegmentId atau audienceFilter) ──
+  // -- Priority 2/3: filter-based (savedSegmentId atau audienceFilter) --
   let filter: any = null;
   if (campaign.savedSegmentId) {
     const seg = await storage.getBroadcastSegment(campaign.savedSegmentId);
@@ -313,7 +313,7 @@ export async function startBroadcastCampaign(campaignId: number): Promise<void> 
   const campaign = await storage.getBroadcastCampaign(campaignId);
   if (!campaign) throw new Error("Campaign not found");
   if (campaign.status !== "draft" && campaign.status !== "scheduled") {
-    throw new Error(`Campaign status "${campaign.status}" — tidak bisa start`);
+    throw new Error(`Campaign status "${campaign.status}" - tidak bisa start`);
   }
 
   // Enrol audience kalau belum (recipients masih 0)
@@ -360,20 +360,20 @@ async function runCampaignLoop(campaignId: number): Promise<void> {
   const allButtons = parseButtons(campaign.buttonsOverride ?? template?.buttons);
   let mediaUrl = template?.mediaUrl ?? undefined;
   const mediaType = (template?.mediaType ?? undefined) as "image" | "video" | "document" | undefined;
-  // v4.2.23: Compat mode — kalau text-link, skip native button (jangan pass buttons ke sendMpwa)
+  // v4.2.23: Compat mode - kalau text-link, skip native button (jangan pass buttons ke sendMpwa)
   const compatMode = (template as any)?.compatMode === "text-link" ? "text-link" : "native";
   const buttons = compatMode === "text-link" ? undefined : allButtons;
 
-  // v4.2.23: Detect localhost URL — MPWA server tidak bisa fetch dari local dev.
+  // v4.2.23: Detect localhost URL - MPWA server tidak bisa fetch dari local dev.
   // Skip image kalau localhost (untuk text-link mode, image opsional). Untuk native mode, ini akan fallback.
   let imageWarning = "";
   if (mediaUrl && /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/i.test(mediaUrl)) {
-    imageWarning = `Image URL adalah localhost/private (${mediaUrl}) — MPWA tidak bisa fetch dari internet. Image di-skip.`;
+    imageWarning = `Image URL adalah localhost/private (${mediaUrl}) - MPWA tidak bisa fetch dari internet. Image di-skip.`;
     console.warn(`[broadcast-${campaignId}] ${imageWarning}`);
     mediaUrl = undefined;
   }
 
-  console.log(`[broadcast] start campaign ${campaignId} "${campaign.name}" — device=${device?.name ?? "legacy-MPWA"}, rate=${rateLimitMs}ms, buttons=${allButtons?.length ?? 0}, media=${mediaType && mediaUrl ? mediaType : "-"}, compat=${compatMode}${imageWarning ? " [⚠️ image localhost skip]" : ""}`);
+  console.log(`[broadcast] start campaign ${campaignId} "${campaign.name}" - device=${device?.name ?? "legacy-MPWA"}, rate=${rateLimitMs}ms, buttons=${allButtons?.length ?? 0}, media=${mediaType && mediaUrl ? mediaType : "-"}, compat=${compatMode}${imageWarning ? " [ image localhost skip]" : ""}`);
 
   // Fallback ke legacy MPWA config kalau no device set
   const mpwaConfig = device ? null : await loadMpwaConfig();
@@ -383,7 +383,7 @@ async function runCampaignLoop(campaignId: number): Promise<void> {
     // Re-check status sebelum next send
     const fresh = await storage.getBroadcastCampaign(campaignId);
     if (!fresh || fresh.status === "cancelled") {
-      console.log(`[broadcast] campaign ${campaignId} cancelled — stopping`);
+      console.log(`[broadcast] campaign ${campaignId} cancelled - stopping`);
       break;
     }
 
@@ -449,7 +449,7 @@ async function runCampaignLoop(campaignId: number): Promise<void> {
       continue;
     }
 
-    // Dev mode (legacy MPWA disabled, no device set) — mark sent tapi log only
+    // Dev mode (legacy MPWA disabled, no device set) - mark sent tapi log only
     if (!mpwaConfig) {
       console.log(`[broadcast-DEV] ${recipient.phone} ← ${recipient.renderedMessage?.slice(0, 80)}…`);
       await storage.updateRecipientStatus(recipient.id, {
@@ -521,14 +521,14 @@ async function runCampaignLoop(campaignId: number): Promise<void> {
     skippedCount: finalCounts.skipped,
   } as any);
 
-  console.log(`[broadcast] campaign ${campaignId} done — sent=${finalCounts.sent}, failed=${finalCounts.failed}, status=${finalStatus}`);
+  console.log(`[broadcast] campaign ${campaignId} done - sent=${finalCounts.sent}, failed=${finalCounts.failed}, status=${finalStatus}`);
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
 }
 
-/** Cancel a running campaign — worker akan exit di next tick */
+/** Cancel a running campaign - worker akan exit di next tick */
 export async function cancelBroadcastCampaign(campaignId: number): Promise<void> {
   await storage.updateBroadcastCampaign(campaignId, {
     status: "cancelled",

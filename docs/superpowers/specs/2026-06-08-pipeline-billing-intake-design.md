@@ -1,11 +1,11 @@
-# Spec — Billing-sourced auto-create for custom pipelines (billing_sync trigger)
+# Spec - Billing-sourced auto-create for custom pipelines (billing_sync trigger)
 
 > Date: 2026-06-08 · Mitra-scoped · Extends the generic pipeline automation engine.
 
 ## Goal
 
 Let any custom `/pipelines` board auto-create cards from billing data the way `/collections`
-does for "Baru Isolir" — when a synced customer matches a configurable billing condition, a card
+does for "Baru Isolir" - when a synced customer matches a configurable billing condition, a card
 is created in a chosen stage with custom fields populated from customer/billing attributes; when the
 customer no longer matches (e.g. paid), the card is auto-moved to a resolve stage.
 
@@ -14,12 +14,12 @@ reusable automation rule.
 
 ## Decisions (confirmed)
 
-1. **Architecture** — extend `pipeline_rules` with a new `triggerType = "billing_sync"` (not a
+1. **Architecture** - extend `pipeline_rules` with a new `triggerType = "billing_sync"` (not a
    separate per-pipeline config table).
-2. **Trigger** — filter over the **locally-synced `customers` table** (no extra billing API call;
+2. **Trigger** - filter over the **locally-synced `customers` table** (no extra billing API call;
    runs on every sync incl. manual "Sync Now"). Filter dimensions mirror the billing API params.
-3. **Lifecycle** — create **and** auto-resolve.
-4. **Mapping** — fixed catalog of customer/billing attributes → custom fields.
+3. **Lifecycle** - create **and** auto-resolve.
+4. **Mapping** - fixed catalog of customer/billing attributes → custom fields.
 
 ## Trigger filter (billing API ↔ local customer field)
 
@@ -35,9 +35,9 @@ ignored. "Baru Isolir" parity = `{ isIsolir: 1 }` (or `{ billingStatus: "belum_l
 
 ## Data model
 
-### `pipeline_cards` — additive columns (idempotent migration via `p4cColAdds`)
-- `source_customer_id INT NULL` — links a card to `customers.id` (dedup + resolve lookup).
-- `source_rule_id INT NULL` — which billing_sync rule created the card.
+### `pipeline_cards` - additive columns (idempotent migration via `p4cColAdds`)
+- `source_customer_id INT NULL` - links a card to `customers.id` (dedup + resolve lookup).
+- `source_rule_id INT NULL` - which billing_sync rule created the card.
 
 ### `pipeline_rules`
 - `triggerType` gains value `"billing_sync"` (column is `varchar(16)`; the value is 12 chars).
@@ -61,7 +61,7 @@ ignored. "Baru Isolir" parity = `{ isIsolir: 1 }` (or `{ billingStatus: "belum_l
 address, district, village, customerType, status, installDate, pppoeUsername, ontSerialNumber,
 coordinate` (coordinate = `{lat,lng}` from `customers.lat`/`lng`).
 
-Validation: attribute must be type-compatible with the target field — `billingPrice` → `number`/`currency`,
+Validation: attribute must be type-compatible with the target field - `billingPrice` → `number`/`currency`,
 `coordinate` → `coordinate`, `phone` → `phone`/`text`, dates → `text`, everything else → `text`/`textarea`/`dropdown`.
 
 `titleSource` is one of the text-ish attributes (default `name`; fallback `customer_id`, then
@@ -84,7 +84,7 @@ New module `server/pipeline-billing-intake.ts`:
   - `customerToFieldValues(customer, fieldMap): { fieldId, value }[]` (omit null/empty; coordinate
     emitted only when lat+lng finite; numbers stringified)
   - `customerTitle(customer, titleSource): string`
-- **Runner** `runBillingIntakeRules(): Promise<{ created: number; resolved: number }>` — invoked from
+- **Runner** `runBillingIntakeRules(): Promise<{ created: number; resolved: number }>` - invoked from
   `billing-sync-worker` after the main sync (per-mitra, inside `withMitra`). Loads enabled
   `billing_sync` rules, customers, and existing source-linked cards; performs create + resolve via
   `storage`. Uses card insert + stage-move methods already present.
@@ -99,7 +99,7 @@ New module `server/pipeline-billing-intake.ts`:
 ## Frontend
 
 `PipelineRulesDialog` gains a **"Saat sync billing"** trigger option:
-- 4 filter selects (customerType, status, isIsolir, billingStatus — each with "Abaikan/any").
+- 4 filter selects (customerType, status, isIsolir, billingStatus - each with "Abaikan/any").
 - Entry stage select (target) + Resolve stage select.
 - Title source select.
 - Field-map editor: rows of (billing attribute → pipeline field), reusing the existing field-map row
@@ -115,8 +115,8 @@ typecheck + esbuild bundle (no DB in CI).
 - Calling the billing API directly with these filters (we filter synced local data).
 - Migrating `/collections` onto this engine (separate roadmap item P6).
 - Per-field manual-override protection on auto-populated cards (cards are created once; later edits
-  are user-owned — the runner never overwrites an existing active card's fields).
-- Time-window/threshold conditions beyond the billing attributes above (e.g. "overdue ≥ N days") —
+  are user-owned - the runner never overwrites an existing active card's fields).
+- Time-window/threshold conditions beyond the billing attributes above (e.g. "overdue ≥ N days") -
   can be added later as another filter key; this iteration mirrors the billing API filter set.
 
 ## Decomposition (for the plan)

@@ -6,17 +6,17 @@ interface MapMitraSelectorProps {
   ownMitraId: number;
   /** True when viewing another mitra's data (read-only). */
   viewingOther: boolean;
-  /** A search / layer / map-type panel is open — hide on mobile so it can't overlap that panel. */
+  /** A search / layer / map-type panel is open - hide on mobile so it can't overlap that panel. */
   panelOpen: boolean;
   onChange: (mitraId: number) => void;
 }
 
 /**
- * "Data mitra" switcher — JABNET owner only. Lets the system admin view another mitra's
+ * "Data mitra" switcher - JABNET owner only. Lets the system admin view another mitra's
  * network data (read-only). Positioned to never collide with the map's other top controls:
  *  - Mobile: second row, centered (row 1 holds the menu + utility buttons). Hidden while a
  *    search/layer/map-type panel is open, since those panels occupy the same row.
- *  - Desktop: top-center, first row — the MapToolbar is offset to the row below it (its
+ *  - Desktop: top-center, first row - the MapToolbar is offset to the row below it (its
  *    `stacked` prop), so the two never overlap.
  */
 export function MapMitraSelector({

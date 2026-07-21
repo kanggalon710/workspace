@@ -1,4 +1,4 @@
-# Dynamic Field Rules (Phase 4) — Implementation Plan
+# Dynamic Field Rules (Phase 4) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Shared pure module — evaluator + visible/required helpers
+### Task 1: Shared pure module - evaluator + visible/required helpers
 
 **Files:**
 - Create: `shared/fieldRules.ts`
@@ -91,7 +91,7 @@ test("isFieldRequired: hidden → false; requiredWhen evaluated; else static fla
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/fieldRules.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -174,7 +174,7 @@ export function hasRequiredWhen(field: { config: string | null }): boolean {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/fieldRules.test.ts`
-Expected: PASS — all 7 tests.
+Expected: PASS - all 7 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -185,7 +185,7 @@ git commit -m "feat(pipelines): pure field-rules evaluator (visibility/required,
 
 ---
 
-### Task 2: Storage — updateField accepts config
+### Task 2: Storage - updateField accepts config
 
 **Files:**
 - Modify: `server/storage.ts` (`updateField`)
@@ -204,7 +204,7 @@ Then in its `patch` object building (the block that does `if (data.label !== und
 ```ts
     if (data.config !== undefined) patch.config = data.config;
 ```
-(Match the existing patch-building style in that method — read it first.)
+(Match the existing patch-building style in that method - read it first.)
 
 - [ ] **Step 2: Verify typecheck**
 
@@ -220,7 +220,7 @@ git commit -m "feat(pipelines): updateField persists config (for field rules)"
 
 ---
 
-### Task 3: Routes — validate + persist field rules on create/update
+### Task 3: Routes - validate + persist field rules on create/update
 
 **Files:**
 - Modify: `server/routes.ts` (field POST + PATCH handlers; add a `validateFieldRules` helper)
@@ -277,7 +277,7 @@ Concretely, add after the existing body parsing and before the `createField` cal
     const configErr = await validateFieldRules(Number(req.params.id), null, config ?? null);
     if (configErr) return sendError(res, configErr, 400);
 ```
-(where `config` is the JSON string the handler already assembles/receives; if the handler currently only builds `config` for `type==="user"`, change it to accept a client-provided `config` string and merge — see the client task. The simplest contract: the client sends the final `config` JSON string; the server validates + stores it as-is.)
+(where `config` is the JSON string the handler already assembles/receives; if the handler currently only builds `config` for `type==="user"`, change it to accept a client-provided `config` string and merge - see the client task. The simplest contract: the client sends the final `config` JSON string; the server validates + stores it as-is.)
 
 - [ ] **Step 3: Wire into the field PATCH route**
 
@@ -306,7 +306,7 @@ git commit -m "feat(pipelines): validate + persist field visibility/required rul
 
 ---
 
-### Task 4: Server enforcement — block save on missing conditional-required
+### Task 4: Server enforcement - block save on missing conditional-required
 
 **Files:**
 - Modify: `server/routes.ts` (`PUT /api/pipelines/cards/:cardId/values`)
@@ -333,7 +333,7 @@ In the `PUT /api/pipelines/cards/:cardId/values` handler, after the per-field va
       if ((effective.get(f.id) ?? "").trim() === "") return sendError(res, `${f.label}: wajib diisi`, 400);
     }
 ```
-(`fields` is the pipeline's fields list already fetched in this handler as `byId`/`fields`; `card` is already fetched with `stageId`. Confirm both variable names by reading the handler; if `fields` isn't in scope, it's `await storage.listFields(card.pipelineId)` — reuse the one already fetched for value validation.)
+(`fields` is the pipeline's fields list already fetched in this handler as `byId`/`fields`; `card` is already fetched with `stageId`. Confirm both variable names by reading the handler; if `fields` isn't in scope, it's `await storage.listFields(card.pipelineId)` - reuse the one already fetched for value validation.)
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -349,7 +349,7 @@ git commit -m "feat(pipelines): enforce conditional-required fields on card save
 
 ---
 
-### Task 5: Client — reactive visibility/required in the card form
+### Task 5: Client - reactive visibility/required in the card form
 
 **Files:**
 - Modify: `client/components/pipelines/CardDetailModal.tsx` (`FieldCustomSection`)
@@ -410,13 +410,13 @@ git commit -m "feat(pipelines): reactive field visibility + required gating in c
 
 ---
 
-### Task 6: Field-rule editor — ConditionsBuilder stage source + ManageFieldsDialog sections
+### Task 6: Field-rule editor - ConditionsBuilder stage source + ManageFieldsDialog sections
 
 **Files:**
 - Modify: `client/components/pipelines/ConditionsBuilder.tsx` (additive stage source)
 - Modify: `client/components/pipelines/ManageFieldsDialog.tsx` (rule sections + config wiring)
 
-**Context:** READ both files first. `ConditionsBuilder` currently renders `DraftCondition = { fieldId: number|""; op; value }[][]` (field-only) and is ALSO used by `PipelineRulesDialog` for automation conditions — so the stage source must be **additive and opt-in** (automation usage unchanged).
+**Context:** READ both files first. `ConditionsBuilder` currently renders `DraftCondition = { fieldId: number|""; op; value }[][]` (field-only) and is ALSO used by `PipelineRulesDialog` for automation conditions - so the stage source must be **additive and opt-in** (automation usage unchanged).
 
 - [ ] **Step 1: Extend ConditionsBuilder with an opt-in stage source**
 
@@ -451,17 +451,17 @@ git commit -m "feat(pipelines): field visibility/required rule editor (stage sou
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/fieldRules.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "fieldRules\|visibleWhen\|requiredWhen\|isFieldVisible" server/ shared/ client/ | sort` → expect shared module + test, routes, card modal, manage-fields dialog.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/fieldRules.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "fieldRules\|visibleWhen\|requiredWhen\|isFieldVisible" server/ shared/ client/ | sort` → expect shared module + test, routes, card modal, manage-fields dialog.
 
 ---
 
 ## Self-Review
 
-- **Spec coverage:** condition model (field + stage) + evaluator → Task 1. Storage in `config` → Tasks 2–3 (config persisted on create+update). Validation (fieldId ∈ pipeline & ≠ self, stage valid, op valid) → Task 3 `validateFieldRules`. Server enforcement (only `requiredWhen` blocks; hidden skipped; static stays soft) → Task 4 (`hasRequiredWhen` guard + `isFieldRequired`). Client reactive visible/required + save gate + don't-clear-hidden → Task 5. Editor with stage source → Task 6. Testing → Task 1 + Task 7. All covered.
-- **Placeholders:** Tasks 1–5 + 7 are complete code. Tasks 3 and 6 flag real integration points (the field CREATE handler's current `config` assembly; ConditionsBuilder's additive stage extension) with concrete contracts and instruct reading the file — appropriate for those existing components.
+- **Spec coverage:** condition model (field + stage) + evaluator → Task 1. Storage in `config` → Tasks 2-3 (config persisted on create+update). Validation (fieldId ∈ pipeline & ≠ self, stage valid, op valid) → Task 3 `validateFieldRules`. Server enforcement (only `requiredWhen` blocks; hidden skipped; static stays soft) → Task 4 (`hasRequiredWhen` guard + `isFieldRequired`). Client reactive visible/required + save gate + don't-clear-hidden → Task 5. Editor with stage source → Task 6. Testing → Task 1 + Task 7. All covered.
+- **Placeholders:** Tasks 1-5 + 7 are complete code. Tasks 3 and 6 flag real integration points (the field CREATE handler's current `config` assembly; ConditionsBuilder's additive stage extension) with concrete contracts and instruct reading the file - appropriate for those existing components.
 - **Type consistency:** `FieldRuleCondition`/`evaluateFieldConditionGroups`/`parseFieldRules`/`isFieldVisible`/`isFieldRequired`/`hasRequiredWhen` defined in Task 1 and consumed in Tasks 3 (validate), 4 (enforce), 5 (client). `updateField` gains `config` (Task 2) and is called with it (Task 3). The card form's `ctx = { values, stageId }` shape matches `FieldRuleCtx`. `DraftCondition` extended consistently (Task 6) and serialized to `FieldRuleCondition` (same field names: source/fieldId/op/value).
 
 ## Deploy note

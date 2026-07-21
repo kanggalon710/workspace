@@ -87,7 +87,7 @@ const iconSizeMap = {
 };
 
 /**
- * StatusBadge — semantic status indicator with icon + label.
+ * StatusBadge - semantic status indicator with icon + label.
  * Centralizes all "active / inactive / pending / error" visual patterns.
  *
  * @example

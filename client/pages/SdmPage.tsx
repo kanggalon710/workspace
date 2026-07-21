@@ -1,6 +1,6 @@
 /** Modul SDM / HRD Fase 1 (adaptasi SDM_Jabnet.xlsx): Catat Kehadiran harian,
  *  Rekap bulanan (laporan kehadiran), dan Cuti (self-service + approval HR).
- *  Karyawan = user aktif apps (langsung "ngelink" — tanpa master data ganda). */
+ *  Karyawan = user aktif apps (langsung "ngelink" - tanpa master data ganda). */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -33,7 +33,7 @@ function parseAttendanceCsv(text: string): Array<{ ident: string; date: string; 
     let m = dateRaw?.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) date = `${m[1]}-${m[2]}-${m[3]}`;
     else if ((m = dateRaw?.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})/) ?? null)) date = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-    if (!ident || !date) continue;   // baris header / tidak valid — lewati
+    if (!ident || !date) continue;   // baris header / tidak valid - lewati
     const time = (t?: string) => { const tm = t?.match(/^(\d{1,2}):(\d{2})/); return tm ? `${tm[1].padStart(2, "0")}:${tm[2]}` : null; };
     out.push({ ident, date, checkIn: time(inRaw), checkOut: time(outRaw) });
   }
@@ -50,7 +50,7 @@ const ATT_STATUSES = [
 ] as const;
 const LEAVE_TYPES = [["tahunan", "Cuti Tahunan"], ["khusus", "Cuti Khusus"], ["sakit", "Sakit"], ["izin", "Izin"], ["unpaid", "Cuti Tidak Dibayar"]] as const;
 
-/** FR-HR-901: posisi terakhir karyawan yang sedang jam kerja hari ini — dispatch teknisi terdekat. */
+/** FR-HR-901: posisi terakhir karyawan yang sedang jam kerja hari ini - dispatch teknisi terdekat. */
 function TrackingSection({ nameOf }: { nameOf: (id: number | null) => string | null }) {
   const { data: locs } = useQuery({
     queryKey: ["/api/hr/tracking"],
@@ -59,7 +59,7 @@ function TrackingSection({ nameOf }: { nameOf: (id: number | null) => string | n
   });
   if ((locs ?? []).length === 0) return null;
   return (
-    <PageSection title="Posisi Teknisi Hari Ini" description="Ping GPS tiap 5 menit selama jam kerja (berhenti saat absen keluar) — retensi 30 hari">
+    <PageSection title="Posisi Teknisi Hari Ini" description="Ping GPS tiap 5 menit selama jam kerja (berhenti saat absen keluar) - retensi 30 hari">
       <Card padding="none" className="divide-y overflow-hidden">
         {(locs ?? []).map((l) => (
           <div key={l.userId} className="flex items-center gap-2.5 px-4 py-2 text-sm">
@@ -96,7 +96,7 @@ function MoneyApprovalList({ writable, nameOf }: { writable: boolean; nameOf: (i
       {rows.map((r) => (
         <div key={`${r.kind}-${r.id}`} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
           <span className="min-w-0 flex-1"><b>{nameOf(r.userId)}</b> · {r.label}
-            {r.extra && <span className="ml-1.5 text-xs text-muted-foreground">— {r.extra}</span>}</span>
+            {r.extra && <span className="ml-1.5 text-xs text-muted-foreground">- {r.extra}</span>}</span>
           {writable && (
             <span className="flex gap-1">
               <Button type="button" size="icon-sm" variant="success" aria-label="Setujui" loading={review.isPending}
@@ -111,7 +111,7 @@ function MoneyApprovalList({ writable, nameOf }: { writable: boolean; nameOf: (i
   );
 }
 
-/** FR-HR-1501/1502: Dashboard HR — headcount, kehadiran hari ini, approval pending, demografi. */
+/** FR-HR-1501/1502: Dashboard HR - headcount, kehadiran hari ini, approval pending, demografi. */
 function HrDashboardSection({ onGoApproval, onGoCuti }: { onGoApproval: () => void; onGoCuti: () => void }) {
   const { data } = useQuery({ queryKey: ["/api/hr/dashboard"], queryFn: () => api.get<any>(`/hr/dashboard`), refetchInterval: 120_000 });
   if (!data) return <div className="h-40 animate-pulse rounded-xl bg-muted" />;
@@ -204,7 +204,7 @@ function KpiSection({ users, nameOf }: { users: any[]; nameOf: (id: number | nul
       formId: Number(assess.formId), userId: Number(assess.userId), period,
       scores: questions.map((_, i) => assess.scores[i] ?? 3),
     }),
-    onSuccess: (r: any) => { toast.success(`Penilaian tersimpan — skor ${r.total}/100`); setAssess({ formId: "", userId: "", scores: {} }); qc.invalidateQueries({ queryKey: ["/api/hr/kpi"] }); },
+    onSuccess: (r: any) => { toast.success(`Penilaian tersimpan - skor ${r.total}/100`); setAssess({ formId: "", userId: "", scores: {} }); qc.invalidateQueries({ queryKey: ["/api/hr/kpi"] }); },
     onError: (e: any) => toast.error(e?.message || "Gagal"),
   });
   return (
@@ -218,7 +218,7 @@ function KpiSection({ users, nameOf }: { users: any[]; nameOf: (id: number | nul
         <p className="mt-1 text-[11px] text-muted-foreground">{(data?.forms ?? []).length} formulir tersedia.</p>
       </PageSection>
 
-      <PageSection title={`Nilai Karyawan — Periode ${period}`} description="Skor 1 (kurang) sampai 5 (sangat baik) per pertanyaan; total tertimbang 0-100">
+      <PageSection title={`Nilai Karyawan - Periode ${period}`} description="Skor 1 (kurang) sampai 5 (sangat baik) per pertanyaan; total tertimbang 0-100">
         <div className="flex flex-wrap gap-2">
           <select value={assess.formId} onChange={(e) => setAssess((p) => ({ ...p, formId: e.target.value, scores: {} }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
             <option value="">Pilih formulir…</option>
@@ -260,7 +260,7 @@ function KpiSection({ users, nameOf }: { users: any[]; nameOf: (id: number | nul
   );
 }
 
-/** FR-HR-703: petty cash — saldo per pemegang + topup/expense. */
+/** FR-HR-703: petty cash - saldo per pemegang + topup/expense. */
 function PettyCashSection({ users, nameOf }: { users: any[]; nameOf: (id: number | null) => string | null }) {
   const qc = useQueryClient();
   const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
@@ -272,7 +272,7 @@ function PettyCashSection({ users, nameOf }: { users: any[]; nameOf: (id: number
     onError: (e: any) => toast.error(e?.message || "Gagal"),
   });
   return (
-    <PageSection title="Petty Cash" description="Kas kecil per pemegang — top-up dan pengeluaran, saldo otomatis">
+    <PageSection title="Petty Cash" description="Kas kecil per pemegang - top-up dan pengeluaran, saldo otomatis">
       <div className="flex flex-wrap items-end gap-2">
         <select value={form.holderId} onChange={(e) => setForm((p) => ({ ...p, holderId: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
           <option value="">Pemegang…</option>
@@ -330,7 +330,7 @@ export default function SdmPage() {
   }, [employees, users]);
   const nameOf = (id: number | null) => {
     const u = (users ?? []).find((x: any) => x.id === id);
-    return u ? (u.name || u.username) : id != null ? `#${id}` : "–";
+    return u ? (u.name || u.username) : id != null ? `#${id}` : "-";
   };
 
   const [tab, setTab] = useState<"dashboard" | "karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "kpi" | "pengaturan">(readable ? "dashboard" : "cuti");
@@ -370,12 +370,12 @@ export default function SdmPage() {
     onError: (e: any) => toast.error(e?.message || "Gagal menyimpan"),
   });
 
-  // ── Cuti ──
+  // -- Cuti --
   const [leaveForm, setLeaveForm] = useState({ startDate: todayIso(), endDate: todayIso(), type: "tahunan", reason: "" });
   const createLeave = useMutation({
     mutationFn: () => api.post(`/hr/leaves`, leaveForm),
     onSuccess: () => {
-      toast.success("Pengajuan cuti terkirim — menunggu persetujuan HR");
+      toast.success("Pengajuan cuti terkirim - menunggu persetujuan HR");
       qc.invalidateQueries({ queryKey: ["/api/hr/leaves"] });
     },
     onError: (e: any) => toast.error(e?.message || "Gagal mengajukan cuti"),
@@ -383,13 +383,13 @@ export default function SdmPage() {
   const reviewLeave = useMutation({
     mutationFn: ({ id, status }: { id: number; status: "approved" | "rejected" }) => api.post(`/hr/leaves/${id}/review`, { status }),
     onSuccess: (_d, v) => {
-      toast.success(v.status === "approved" ? "Cuti disetujui — kehadiran otomatis terisi" : "Cuti ditolak");
+      toast.success(v.status === "approved" ? "Cuti disetujui - kehadiran otomatis terisi" : "Cuti ditolak");
       qc.invalidateQueries({ queryKey: ["/api/hr/leaves"] });
     },
     onError: (e: any) => toast.error(e?.message || "Gagal memproses"),
   });
 
-  // ── HR-1b: wizard profil + lembur pending + master org/jabatan ──
+  // -- HR-1b: wizard profil + lembur pending + master org/jabatan --
   const [wizardUser, setWizardUser] = useState<{ id: number; name: string } | null>(null);
   const { data: pendingOt } = useQuery({
     queryKey: ["/api/hr/overtime", "pending"],
@@ -445,7 +445,7 @@ export default function SdmPage() {
     onError: (e: any) => toast.error(e?.message || "Gagal"),
   });
 
-  // ── Import absensi mesin (Fingerspot) ──
+  // -- Import absensi mesin (Fingerspot) --
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState("");
   const importParsed = useMemo(() => {
@@ -475,7 +475,7 @@ export default function SdmPage() {
     onError: (e: any) => toast.error(e?.message || "Gagal import"),
   });
 
-  // ── HR-1a: approval presensi + pengaturan (lokasi/shift/jadwal/libur) ──
+  // -- HR-1a: approval presensi + pengaturan (lokasi/shift/jadwal/libur) --
   const { data: pendingEvents } = useQuery({
     queryKey: ["/api/hr/attendance/events", "pending"],
     queryFn: () => api.get<any[]>(`/hr/attendance/events?status=pending`),
@@ -520,7 +520,7 @@ export default function SdmPage() {
     ...(readable ? [{ key: "pengaturan", label: "Pengaturan", icon: IdCard }] : []),
   ] as const;
 
-  // ── HR-2: payroll ──
+  // -- HR-2: payroll --
   const [payPeriod, setPayPeriod] = useState(todayIso().slice(0, 7));
   const { data: salaries } = useQuery({
     queryKey: ["/api/hr/salary"],
@@ -549,13 +549,13 @@ export default function SdmPage() {
   });
   const markPaid = useMutation({
     mutationFn: (id: number) => api.post(`/hr/payroll/${id}/status`, { status: "paid" }),
-    onSuccess: () => { toast.success("Ditandai sudah bayar — slip tampil di ESS karyawan"); qc.invalidateQueries({ queryKey: ["/api/hr/payroll"] }); },
+    onSuccess: () => { toast.success("Ditandai sudah bayar - slip tampil di ESS karyawan"); qc.invalidateQueries({ queryKey: ["/api/hr/payroll"] }); },
   });
   const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
 
   return (
     <PageContainer>
-      <PageHeader icon={IdCard} title="SDM" description="Kehadiran, absensi, dan cuti karyawan — terhubung langsung ke akun user" accent="violet"
+      <PageHeader icon={IdCard} title="SDM" description="Kehadiran, absensi, dan cuti karyawan - terhubung langsung ke akun user" accent="violet"
         breadcrumbs={[{ label: "HRD", path: "/divisi/hrd" }, { label: "SDM" }]}>
         <div className="flex items-center border-b -mb-2">
           {tabs.map((t) => (
@@ -570,7 +570,7 @@ export default function SdmPage() {
       {tab === "dashboard" && readable && <HrDashboardSection onGoApproval={() => setTab("approval")} onGoCuti={() => setTab("cuti")} />}
 
       {tab === "karyawan" && readable && (
-        <PageSection title="Registry Karyawan" description="Tandai akun user mana yang karyawan resmi — jadi dasar kehadiran, rekap, dan integrasi data lintas divisi"
+        <PageSection title="Registry Karyawan" description="Tandai akun user mana yang karyawan resmi - jadi dasar kehadiran, rekap, dan integrasi data lintas divisi"
           actions={writable ? <Button size="sm" variant="outline" leftIcon={<Upload className="size-4" />} onClick={() => setShowEmpImport(true)}>Import Massal</Button> : undefined}>
           <Card padding="none" className="divide-y overflow-hidden">
             {(employees ?? []).map((u: any) => (
@@ -599,13 +599,13 @@ export default function SdmPage() {
             ))}
           </Card>
           <p className="mt-2 text-xs text-muted-foreground">
-            NIK (employeeId) & jabatan diisi dari Manajemen User (menu Pengaturan) — dipakai untuk mencocokkan import mesin absensi.
+            NIK (employeeId) & jabatan diisi dari Manajemen User (menu Pengaturan) - dipakai untuk mencocokkan import mesin absensi.
           </p>
         </PageSection>
       )}
 
       {tab === "kehadiran" && readable && (
-        <PageSection title="Catat Kehadiran" description="Klik status per karyawan lalu Simpan — bisa dikoreksi kapan saja"
+        <PageSection title="Catat Kehadiran" description="Klik status per karyawan lalu Simpan - bisa dikoreksi kapan saja"
           actions={<span className="flex items-center gap-2">
             {writable && (
               <Button type="button" size="sm" variant="outline" leftIcon={<Upload className="size-4" />} onClick={() => setShowImport(true)}>
@@ -647,7 +647,7 @@ export default function SdmPage() {
       )}
 
       {tab === "approval" && readable && (
-        <PageSection title="Approval Presensi" description="Absen ESS di luar radius kantor menunggu keputusan HR — disetujui = tercatat hadir">
+        <PageSection title="Approval Presensi" description="Absen ESS di luar radius kantor menunggu keputusan HR - disetujui = tercatat hadir">
           {(pendingEvents ?? []).length === 0 ? (
             <EmptyState icon={Check} size="sm" title="Tidak ada antrean" description="Semua presensi dalam radius kantor tercatat otomatis." />
           ) : (
@@ -695,7 +695,7 @@ export default function SdmPage() {
                 <div key={o.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
                   <span className="min-w-0 flex-1">
                     <b>{nameOf(o.userId)}</b> · <span className="tabular-nums">{o.date}</span> · <b className="tabular-nums">{o.hours} jam</b>
-                    {o.reason && <span className="ml-1.5 text-xs text-muted-foreground">— {o.reason}</span>}
+                    {o.reason && <span className="ml-1.5 text-xs text-muted-foreground">- {o.reason}</span>}
                   </span>
                   <span className="flex gap-1">
                     <Button type="button" size="icon-sm" variant="success" aria-label="Setujui" loading={reviewOt.isPending}
@@ -798,7 +798,7 @@ export default function SdmPage() {
           <PageSection title="Shift Kerja & Jadwal" description="Shift menentukan basis keterlambatan (FR-HR-301/304)">
             <Card padding="none" className="divide-y overflow-hidden">
               {(hrCfg?.shifts?.shifts ?? []).map((s: any) => (
-                <div key={s.id} className="px-4 py-2 text-sm">{s.name} · <span className="tabular-nums">{s.startTime}–{s.endTime}</span> · toleransi {s.lateToleranceMin} mnt</div>
+                <div key={s.id} className="px-4 py-2 text-sm">{s.name} · <span className="tabular-nums">{s.startTime}-{s.endTime}</span> · toleransi {s.lateToleranceMin} mnt</div>
               ))}
             </Card>
             {writable && (
@@ -831,7 +831,7 @@ export default function SdmPage() {
             )}
           </PageSection>
 
-          <PageSection title="Roster Shift (Rotasi per Tanggal)" description="Menimpa jadwal tetap pada tanggal terpilih — untuk pola shift bergilir (FR-HR-301)"
+          <PageSection title="Roster Shift (Rotasi per Tanggal)" description="Menimpa jadwal tetap pada tanggal terpilih - untuk pola shift bergilir (FR-HR-301)"
             actions={<input type="date" value={rosterDate} onChange={(e) => setRosterDate(e.target.value)}
               className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Tanggal roster" />}>
             {(hrCfg?.shifts?.shifts ?? []).length === 0 ? (
@@ -944,14 +944,14 @@ export default function SdmPage() {
         <>
           {/* FR-HR-502: antrean saya sebagai atasan langsung (tahap 1 sebelum HR) */}
           {(teamLeaves ?? []).length > 0 && (
-            <PageSection title="Persetujuan Tim Saya" description="Anda atasan langsung pengaju — setelah Anda setujui, lanjut ke HR">
+            <PageSection title="Persetujuan Tim Saya" description="Anda atasan langsung pengaju - setelah Anda setujui, lanjut ke HR">
               <Card padding="none" className="divide-y overflow-hidden">
                 {(teamLeaves ?? []).map((l: any) => (
                   <div key={l.id} className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 text-sm">
                     <span className="min-w-0 flex-1">
                       <b>{nameOf(l.userId)}</b> · {LEAVE_TYPES.find(([k]) => k === l.type)?.[1] ?? l.type}
                       <span className="ml-1.5 text-xs tabular-nums text-muted-foreground">{l.startDate} → {l.endDate}</span>
-                      {l.reason && <span className="ml-1.5 text-xs text-muted-foreground">— {l.reason}</span>}
+                      {l.reason && <span className="ml-1.5 text-xs text-muted-foreground">- {l.reason}</span>}
                     </span>
                     <span className="flex gap-1">
                       <Button type="button" size="icon-sm" variant="success" aria-label="Setujui (lanjut HR)" loading={reviewLeave.isPending}
@@ -965,7 +965,7 @@ export default function SdmPage() {
             </PageSection>
           )}
 
-          <PageSection title="Ajukan Cuti" description="Alur: atasan langsung (bila ada) → HR — cuti disetujui otomatis mengisi kehadiran">
+          <PageSection title="Ajukan Cuti" description="Alur: atasan langsung (bila ada) → HR - cuti disetujui otomatis mengisi kehadiran">
             <Card padding="md" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <label className="text-xs font-medium text-muted-foreground">Mulai
                 <input type="date" value={leaveForm.startDate} onChange={(e) => setLeaveForm((p) => ({ ...p, startDate: e.target.value }))}
@@ -997,7 +997,7 @@ export default function SdmPage() {
                     <span className="min-w-0 flex-1 truncate text-sm">
                       <b>{l.userId === user?.id ? "Saya" : nameOf(l.userId)}</b> · {LEAVE_TYPES.find(([k]) => k === l.type)?.[1] ?? l.type}
                       <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{l.startDate} → {l.endDate}</span>
-                      {l.reason && <span className="ml-1.5 text-xs text-muted-foreground">— {l.reason}</span>}
+                      {l.reason && <span className="ml-1.5 text-xs text-muted-foreground">- {l.reason}</span>}
                     </span>
                     <StatusBadge size="sm"
                       variant={l.status === "approved" ? "success" : l.status === "rejected" ? "danger" : "pending"}
@@ -1051,7 +1051,7 @@ export default function SdmPage() {
             <p className="text-xs text-muted-foreground">
               Export CSV dari mesin lalu tempel di sini (atau pilih file). Format per baris:
               <code className="mx-1 rounded bg-muted px-1 py-0.5 font-mono-tight">NIK/username, tanggal, jam masuk, jam pulang</code>
-              — tanggal <code className="rounded bg-muted px-1 font-mono-tight">YYYY-MM-DD</code> atau <code className="rounded bg-muted px-1 font-mono-tight">DD/MM/YYYY</code>.
+              - tanggal <code className="rounded bg-muted px-1 font-mono-tight">YYYY-MM-DD</code> atau <code className="rounded bg-muted px-1 font-mono-tight">DD/MM/YYYY</code>.
               Pencocokan via NIK (employeeId) atau username. Semua baris masuk sebagai status <b>Hadir</b> + jam scan.
             </p>
             <input type="file" accept=".csv,.txt" aria-label="Pilih file CSV"

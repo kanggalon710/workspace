@@ -56,7 +56,7 @@ test("next stage hilang dari config → next_missing (tidak crash)", () => {
   assert.equal(decideSopAdvance("a", 5, m, new Set()).reason, "next_missing");
 });
 
-test("stageKeysForDivision — case-insensitive", () => {
+test("stageKeysForDivision - case-insensitive", () => {
   assert.deepEqual(stageKeysForDivision(LADDER, "cs"), ["delegasi_cs"]);
   assert.deepEqual(stageKeysForDivision(LADDER, "MARKETING"), ["delegasi_marketing"]);
   assert.deepEqual(stageKeysForDivision(LADDER, "finance"), ["contacted"]);

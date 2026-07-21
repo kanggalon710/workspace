@@ -14,9 +14,9 @@ import {
   type MPWAButton,
 } from "./mpwa-client.js";
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // normalizePhone
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("normalizePhone: handle berbagai format", () => {
   assert.equal(normalizePhone("081234567890"),        "6281234567890");
   assert.equal(normalizePhone("+6281234567890"),      "6281234567890");
@@ -27,9 +27,9 @@ test("normalizePhone: handle berbagai format", () => {
   assert.equal(normalizePhone(""),                    "");
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // maskApiKey
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("maskApiKey: mask middle, keep first 4 + last 4", () => {
   assert.equal(maskApiKey("abc123def456ghi789"), "abc1****i789");
   assert.equal(maskApiKey("short"),              "****");
@@ -37,9 +37,9 @@ test("maskApiKey: mask middle, keep first 4 + last 4", () => {
   assert.equal(maskApiKey("12345678"),           "****"); // 8 chars
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // MPWAClient constructor validation
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("constructor: throw kalau apiKey kosong", () => {
   assert.throws(() => new MPWAClient({ apiKey: "" }), /apiKey wajib/);
 });
@@ -54,9 +54,9 @@ test("constructor: default baseUrl ke https://mpwa.jabnet.id", () => {
   assert.ok(c, "constructor sukses tanpa sender");
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Method signature validation (tanpa network call, mock fetch)
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("sendText: throw kalau sender ngga ada", async () => {
   const c = new MPWAClient({ apiKey: "k" });
   // Karena ngga ada sender di constructor, sendText akan throw saat build payload
@@ -149,9 +149,9 @@ test("logoutDevice: throw kalau sender ngga ada", async () => {
   await assert.rejects(c.logoutDevice(), /sender wajib/);
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Webhook payload validation
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("isMPWAWebhookPayload: accept valid shape", () => {
   assert.equal(isMPWAWebhookPayload({
     device: "62888", message: "Halo", from: "62111", name: "Test",
@@ -178,9 +178,9 @@ test("isMPWAWebhookPayload: handle media + participant (group)", () => {
   }), true);
 });
 
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 // Integration mock: payload structure (real-server compatibility)
-// ──────────────────────────────────────────────────────────────────
+// ------------------------------------------------------------------
 test("sendText: payload struktur sesuai spec MPWA", async () => {
   // Mock fetch untuk capture body request
   const originalFetch = global.fetch;

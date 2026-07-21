@@ -1,4 +1,4 @@
-# Card CSV Import/Export (Phase 6) — Implementation Plan
+# Card CSV Import/Export (Phase 6) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,11 +8,11 @@
 
 **Tech Stack:** TypeScript, Drizzle (MySQL), `node:test` via `npx tsx --test`, React. `.js` import extensions. No schema change.
 
-**Refinement vs spec:** custom-field values export as the **raw stored string** (round-trip-safe — re-import passes `validateFieldValue`), not humanized; only the base columns (stage→label, assignee→name) are resolved. Coordinate/multiselect stay raw.
+**Refinement vs spec:** custom-field values export as the **raw stored string** (round-trip-safe - re-import passes `validateFieldValue`), not humanized; only the base columns (stage→label, assignee→name) are resolved. Coordinate/multiselect stay raw.
 
 ---
 
-### Task 1: Pure module — columns, export-row, import-row resolver
+### Task 1: Pure module - columns, export-row, import-row resolver
 
 **Files:**
 - Create: `shared/cardCsv.ts`
@@ -96,7 +96,7 @@ test("resolveImportRow: happy path → draft with values", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/cardCsv.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -188,7 +188,7 @@ export function resolveImportRow(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/cardCsv.test.ts`
-Expected: PASS — all 7 tests.
+Expected: PASS - all 7 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -241,7 +241,7 @@ Near the pipeline card routes, add (`requirePipelineCapability(..., "view")`):
   });
 ```
 NOTE: `getCardValues` per card is N+1; acceptable for an export action. If a batch reader exists
-(`getCardValuesForCards`/similar — grep), prefer it and build a per-card map. Report which you used.
+(`getCardValuesForCards`/similar - grep), prefer it and build a per-card map. Report which you used.
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -264,7 +264,7 @@ git commit -m "feat(pipelines): card CSV export endpoint"
 
 - [ ] **Step 1: Add the import route**
 
-Add (`requirePipelineCapability(..., "cards")`; reuse `validateFieldValue` + `isMultiUser` already imported in routes.ts — confirm; if `isMultiUser` isn't imported, import from `@shared/pipelineFieldTypes`):
+Add (`requirePipelineCapability(..., "cards")`; reuse `validateFieldValue` + `isMultiUser` already imported in routes.ts - confirm; if `isMultiUser` isn't imported, import from `@shared/pipelineFieldTypes`):
 ```ts
   router.post("/api/pipelines/:id/cards/import", async (req, res) => {
     if (!requireWritePermission(req, res, "pipelines")) return;
@@ -324,13 +324,13 @@ git commit -m "feat(pipelines): card CSV import endpoint (map + validate + repor
 
 ---
 
-### Task 4: Frontend — export download + import dialog
+### Task 4: Frontend - export download + import dialog
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts`, `client/pages/PipelineBoardPage.tsx`
 - Create: `client/components/pipelines/CardImportDialog.tsx`
 
-**Context:** READ `client/lib/api.ts` (how the auth token is attached + base URL), `client/pages/PipelineBoardPage.tsx` (toolbar, `pipeline.capabilities`/`can()` gating, `fields`/`stages`), and `client/pages/ExportImportPage.tsx` (its CSV parse function — copy/adapt it).
+**Context:** READ `client/lib/api.ts` (how the auth token is attached + base URL), `client/pages/PipelineBoardPage.tsx` (toolbar, `pipeline.capabilities`/`can()` gating, `fields`/`stages`), and `client/pages/ExportImportPage.tsx` (its CSV parse function - copy/adapt it).
 
 - [ ] **Step 1: Hooks + export helper**
 
@@ -366,7 +366,7 @@ Create `client/components/pipelines/CardImportDialog.tsx`: props `{ pipelineId, 
 - Require **exactly one** column mapped to `Judul` (disable submit otherwise, with a hint).
 - On submit: build `MappedImportRow[]` from the data rows using the mapping (title/stage/assignee/priority
   strings; `values[fieldId] = cell`), call `useImportCards(pipelineId).mutateAsync(rows)`, then show the
-  **report**: "Dibuat N, dilewati M" + a scrollable list of `errors` (`Baris {index+2}: {reason}` — +2 to
+  **report**: "Dibuat N, dilewati M" + a scrollable list of `errors` (`Baris {index+2}: {reason}` - +2 to
   account for header + 1-based). A "Selesai" button closes + (the mutation already invalidated the board).
 - Use the project Dialog/Button/Input/Combobox + design conventions; semantic HTML + aria-labels.
 
@@ -394,18 +394,18 @@ git commit -m "feat(pipelines): card CSV export download + import dialog"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/cardCsv.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "cardCsv\|cards/export\|cards/import\|CardImportDialog" server/ shared/ client/ | sort` → expect shared module + test, routes, hook, dialog, board page.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/cardCsv.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "cardCsv\|cards/export\|cards/import\|CardImportDialog" server/ shared/ client/ | sort` → expect shared module + test, routes, hook, dialog, board page.
 
 ---
 
 ## Self-Review
 
-- **Spec coverage:** export columns + raw-value rows → Task 1 (`buildExportColumns`/`formatCardForExport`) + Task 2 (endpoint + `toCSV`). Import flexible-mapping + skip-invalid-report → Task 1 (`resolveImportRow`) + Task 3 (endpoint builds ctx, per-row validate via `validateFieldValue`, returns `{created,skipped,errors}`). Capability gating (view export / cards import) → Tasks 2–3. Frontend export-download + import-mapping dialog + report → Task 4. Injected validator for purity → Task 1 signature + Task 3 wrapper. Row cap → Task 3. Testing → Task 1 + Task 5. All covered. (Field-value humanization intentionally dropped for round-trip safety — documented at top.)
-- **Placeholders:** Tasks 1–3 + 5 contain full code. Tasks 2/4 flag two real integration points (batch card-values reader if present; `api.getBlob` token reuse + real cards queryKey) with concrete fallbacks and instruct reading the files.
-- **Type consistency:** `ExportColumn`/`CsvField`/`MappedImportRow`/`ImportCtx`/`CardDraft` + `buildExportColumns`/`formatCardForExport`/`resolveImportRow` (Task 1) consumed identically in Tasks 2–3. `resolveImportRow`'s injected validator signature `(field: CsvField, value) => string|null` matches the Task-3 wrapper over `validateFieldValue(type,value,options?,{multiple})`. `createCard({stageId,title,assigneeId,priority}, userId)` + `setCardValues(cardId, {fieldId,value}[])` match the real storage signatures.
+- **Spec coverage:** export columns + raw-value rows → Task 1 (`buildExportColumns`/`formatCardForExport`) + Task 2 (endpoint + `toCSV`). Import flexible-mapping + skip-invalid-report → Task 1 (`resolveImportRow`) + Task 3 (endpoint builds ctx, per-row validate via `validateFieldValue`, returns `{created,skipped,errors}`). Capability gating (view export / cards import) → Tasks 2-3. Frontend export-download + import-mapping dialog + report → Task 4. Injected validator for purity → Task 1 signature + Task 3 wrapper. Row cap → Task 3. Testing → Task 1 + Task 5. All covered. (Field-value humanization intentionally dropped for round-trip safety - documented at top.)
+- **Placeholders:** Tasks 1-3 + 5 contain full code. Tasks 2/4 flag two real integration points (batch card-values reader if present; `api.getBlob` token reuse + real cards queryKey) with concrete fallbacks and instruct reading the files.
+- **Type consistency:** `ExportColumn`/`CsvField`/`MappedImportRow`/`ImportCtx`/`CardDraft` + `buildExportColumns`/`formatCardForExport`/`resolveImportRow` (Task 1) consumed identically in Tasks 2-3. `resolveImportRow`'s injected validator signature `(field: CsvField, value) => string|null` matches the Task-3 wrapper over `validateFieldValue(type,value,options?,{multiple})`. `createCard({stageId,title,assigneeId,priority}, userId)` + `setCardValues(cardId, {fieldId,value}[])` match the real storage signatures.
 
 ## Deploy note
 No schema change. Purely additive endpoints + UI. Import is create-only and capped at 2000 rows/request.

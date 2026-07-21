@@ -1,4 +1,4 @@
-# Design — Performance Optimization (Load Time + Maps)
+# Design - Performance Optimization (Load Time + Maps)
 
 **Date:** 2026-05-16
 **Status:** Approved for implementation
@@ -9,15 +9,15 @@
 Setiap perubahan yang dikerjakan WAJIB dilaporkan dengan format ini di pesan ke user:
 
 ```
-✏️ Diubah: <file>:<line range or function>
+✏ Diubah: <file>:<line range or function>
    <ringkasan apa yang berubah>
 
-⚠️ Potensi terdampak:
+ Potensi terdampak:
    - <feature/endpoint/page lain yang mungkin kena>
    - <perilaku yang bisa berubah dari user perspective>
    - <call site yang share code path ini>
 
-✅ Verifikasi yang harus dijalankan:
+ Verifikasi yang harus dijalankan:
    - <step manual test atau perintah cek>
 ```
 
@@ -39,7 +39,7 @@ JABNET Workspace baru migrasi dari SQLite ke MySQL (cPanel). User report lambat 
 ### Bottleneck yang teridentifikasi (analisis pre-design)
 
 - **Missing indexes**: `users.token` (auth middleware tiap request full scan), `customers.odp_id`, `customers.status`, `customers.(lat,lng)`, `audit_logs.created_at`, `audit_logs.user_id`, `cable_cores.cable_id`, `leads.(lat,lng)`, `collections.status`, `tickets.status`
-- **N+1 di `getDashboardStats()`** (`storage.ts:4312`): loop ODPs lalu query utilization per ODP — ~18-20 queries total
+- **N+1 di `getDashboardStats()`** (`storage.ts:4312`): loop ODPs lalu query utilization per ODP - ~18-20 queries total
 - **`getMapData()` (`storage.ts:4686`)** SELECT * 6 tabel paralel, customers full row 25+ kolom termasuk pppoe credentials, tidak ada bbox filter
 - **Read-back pattern setelah Phase 1B refactor**: setiap INSERT/UPDATE Pattern A/B = 2 roundtrip (insert/update → select by id). Login: 11 roundtrip total
 - **Dashboard load 10 API call paralel** competing for MySQL pool (limit 10)
@@ -63,11 +63,11 @@ Phase C (Map Viewport Loading)
 Phase D (Keep-alive + Cache + Skeleton)
 ```
 
-Tidak ada parallel agent — sequential agar setiap phase verified sebelum next.
+Tidak ada parallel agent - sequential agar setiap phase verified sebelum next.
 
 ---
 
-## Phase A — Database Indexes
+## Phase A - Database Indexes
 
 ### Goal
 Eliminasi full-table scan di hot paths.
@@ -76,7 +76,7 @@ Eliminasi full-table scan di hot paths.
 
 | Index | Tabel | Kolom | Manfaat |
 |---|---|---|---|
-| `idx_users_token` | `users` | `token` | Auth middleware tiap request — dari full scan jadi O(log n) |
+| `idx_users_token` | `users` | `token` | Auth middleware tiap request - dari full scan jadi O(log n) |
 | `idx_customers_odp_id` | `customers` | `odp_id` | ODP utilization & map filter |
 | `idx_customers_status` | `customers` | `status` | Dashboard active count, filter UI |
 | `idx_customers_lat_lng` | `customers` | `(lat, lng)` composite | Map viewport bbox query (Phase C) |
@@ -89,10 +89,10 @@ Eliminasi full-table scan di hot paths.
 
 ### Implementation
 
-1. Tambah `index("...").on(...)` di `shared/schema.ts` per table — Drizzle generate `CREATE INDEX` di migration
+1. Tambah `index("...").on(...)` di `shared/schema.ts` per table - Drizzle generate `CREATE INDEX` di migration
 2. **Startup auto-migration block** di `server/storage.ts` atau `server/index.ts`:
    ```ts
-   // Idempotent — gunakan IF NOT EXISTS pattern
+   // Idempotent - gunakan IF NOT EXISTS pattern
    const indexes = [
      { table: "users", name: "idx_users_token", cols: "token" },
      { table: "customers", name: "idx_customers_odp_id", cols: "odp_id" },
@@ -122,24 +122,24 @@ Eliminasi full-table scan di hot paths.
 
 | Index | Diubah | Potensi terdampak |
 |---|---|---|
-| `idx_users_token` | `users` table (read-only DDL) | **Positif:** seluruh authenticated endpoint (~150+). **Risk:** index build saat ALTER table — tabel kecil <100 row, instant |
-| `idx_customers_odp_id` | `customers` table | **Positif:** ODP utilization, map filter, Dashboard. **Risk:** index build pada 1000+ row — ~<1s, blok ALTER tapi tidak crash |
+| `idx_users_token` | `users` table (read-only DDL) | **Positif:** seluruh authenticated endpoint (~150+). **Risk:** index build saat ALTER table - tabel kecil <100 row, instant |
+| `idx_customers_odp_id` | `customers` table | **Positif:** ODP utilization, map filter, Dashboard. **Risk:** index build pada 1000+ row - ~<1s, blok ALTER tapi tidak crash |
 | `idx_customers_status` | `customers` table | **Positif:** Dashboard count, Customer list filter. **Risk:** sama |
 | `idx_customers_lat_lng` composite | `customers` table | **Positif:** Phase C bbox query. **Risk:** sama |
-| `idx_audit_logs_created` | `audit_logs` table | **Positif:** Dashboard recent activity, UserDetailDrawer activity tab. **Risk:** audit_logs bisa besar — index build mungkin 1-2s lock |
+| `idx_audit_logs_created` | `audit_logs` table | **Positif:** Dashboard recent activity, UserDetailDrawer activity tab. **Risk:** audit_logs bisa besar - index build mungkin 1-2s lock |
 | `idx_audit_logs_user` | `audit_logs` table | **Positif:** UserDetailDrawer, user-specific timeline. **Risk:** sama |
 | `idx_cable_cores_cable` | `cable_cores` table | **Positif:** CableCoreManagerPage, core connection list. **Risk:** minimal |
 | `idx_leads_lat_lng` | `leads` table | **Positif:** Map heatmap, lead viewport query (Phase C). **Risk:** minimal |
 | `idx_collections_status` | `collections` table | **Positif:** Pipeline page, Dashboard. **Risk:** minimal |
 | `idx_tickets_status` | `tickets` table | **Positif:** Tickets page, Dashboard. **Risk:** minimal |
 
-**General risk:** kalau MySQL versi cPanel <5.7, online ALTER bisa lock table — tapi semua tabel target relatif kecil, downtime <5 detik per index. Deploy off-peak (malam) untuk safety.
+**General risk:** kalau MySQL versi cPanel <5.7, online ALTER bisa lock table - tapi semua tabel target relatif kecil, downtime <5 detik per index. Deploy off-peak (malam) untuk safety.
 
 ---
 
-## Phase B — Backend Query Refactor
+## Phase B - Backend Query Refactor
 
-### B.1 `getDashboardStats()` — N+1 → ~2 queries
+### B.1 `getDashboardStats()` - N+1 → ~2 queries
 
 **Current (`storage.ts:4312`):** ~18-20 query (loop ODPs × utilization).
 
@@ -171,14 +171,14 @@ async getDashboardStats(): Promise<DashboardStats> {
 
 Target: <200ms (dari ~1.5s).
 
-**Diubah:** `server/storage.ts:4312` — `getDashboardStats()` body
+**Diubah:** `server/storage.ts:4312` - `getDashboardStats()` body
 **Potensi terdampak:**
 - `GET /api/dashboard` (consumer: `Dashboard.tsx` via `useDashboard()` hook)
-- Public API endpoint kalau ada (`/api/public/v1/marketing/overview` mungkin pakai aggregate yang sama — perlu cek)
-- Shape `DashboardStats` di `shared/schema.ts` — kalau ada field yang dihilangkan akan break frontend
+- Public API endpoint kalau ada (`/api/public/v1/marketing/overview` mungkin pakai aggregate yang sama - perlu cek)
+- Shape `DashboardStats` di `shared/schema.ts` - kalau ada field yang dihilangkan akan break frontend
 - **Risk perilaku:** angka `customer_active` sekarang exclude isolir secara eksplisit. Cek apakah Dashboard sebelumnya count beda.
 
-### B.2 `getMapData()` — Light projection
+### B.2 `getMapData()` - Light projection
 
 **Current:** SELECT * dari 6 tabel.
 
@@ -199,7 +199,7 @@ async getMapData(): Promise<MapData> {
       lat: odps.lat, lng: odps.lng, capacity: odps.capacity,
       odcId: odps.odcId, status: odps.status
     }).from(odps),
-    // Customers — DROP pppoe credentials, notes, manual_overrides, etc.
+    // Customers - DROP pppoe credentials, notes, manual_overrides, etc.
     this.db.select({
       id: customers.id, name: customers.name, customerId: customers.customerId,
       lat: customers.lat, lng: customers.lng, status: customers.status,
@@ -219,14 +219,14 @@ async getMapData(): Promise<MapData> {
 
 Payload reduction estimate: customer row ~800B → ~120B. 2000 customers: **1.6MB → 240KB**.
 
-**Diubah:** `server/storage.ts:4686` — `getMapData()` SELECT projections
+**Diubah:** `server/storage.ts:4686` - `getMapData()` SELECT projections
 **Potensi terdampak:**
 - `GET /api/map-data` (consumer: `MapPage.tsx` via `useMapData()`)
-- `MapData` type di `shared/schema.ts` — kalau field di-drop tapi type masih ada, TS error
-- Map info window display — saat ini mungkin pakai `customer.notes` / `customer.address` / `pppoe_username` di marker click. **PERLU CEK** `MapInfoWindow.tsx` apakah ada akses kolom yang di-drop.
+- `MapData` type di `shared/schema.ts` - kalau field di-drop tapi type masih ada, TS error
+- Map info window display - saat ini mungkin pakai `customer.notes` / `customer.address` / `pppoe_username` di marker click. **PERLU CEK** `MapInfoWindow.tsx` apakah ada akses kolom yang di-drop.
 - Sebelum perubahan: marker info popup punya akses semua data customer. Sesudah: cuma field minimal. **Solusi:** fetch full customer detail on-demand via `GET /api/customers/:id` saat marker di-click.
 
-### B.3 `createAuditLog()` — Skip read-back + fire-and-forget
+### B.3 `createAuditLog()` - Skip read-back + fire-and-forget
 
 **Current:** INSERT + SELECT-by-id (Pattern A from Phase 1B).
 
@@ -246,23 +246,23 @@ Login estimate: **11 roundtrip → 5 roundtrip**.
 
 **Diubah:** `server/storage.ts` `createAuditLog()` method + ALL call sites di `routes.ts`, `customer-portal-routes.ts`, `public-api-routes.ts`, workers
 **Potensi terdampak:**
-- Return type berubah dari `Promise<AuditLog>` jadi `Promise<void>` — kalau ada caller yang pakai return value akan break (perlu grep cek)
-- Fire-and-forget: kalau insert gagal (DB down), error tidak ke-handle — perlu `.catch(err => console.error(...))` di call site
+- Return type berubah dari `Promise<AuditLog>` jadi `Promise<void>` - kalau ada caller yang pakai return value akan break (perlu grep cek)
+- Fire-and-forget: kalau insert gagal (DB down), error tidak ke-handle - perlu `.catch(err => console.error(...))` di call site
 - Activity log timestamp: sebelum dapat real DB timestamp (autoincrement + DB clock), sesudah pakai input time. Kalau penting akurat, set `createdAt: new Date().toISOString()` di caller.
-- **Audit log integrity:** untuk action sensitif (delete user, role change, manual override) — TETAP await, jangan fire-and-forget. Hanya hot-path read endpoint yang fire-and-forget.
+- **Audit log integrity:** untuk action sensitif (delete user, role change, manual override) - TETAP await, jangan fire-and-forget. Hanya hot-path read endpoint yang fire-and-forget.
 
-### B.4 `getUserByToken()` — Pakai Phase A index
+### B.4 `getUserByToken()` - Pakai Phase A index
 
-Sudah pakai `SELECT *` — biarkan, tapi pastikan via `idx_users_token` (Phase A). Optional: light projection di middleware (drop password, token).
+Sudah pakai `SELECT *` - biarkan, tapi pastikan via `idx_users_token` (Phase A). Optional: light projection di middleware (drop password, token).
 
 **Diubah:** `server/storage.ts` `getUserByToken()` (mungkin) + Phase A `idx_users_token`
 **Potensi terdampak:**
-- Auth middleware di SEMUA endpoint authenticated — kalau projection di-thin, perlu cek apakah middleware butuh field yang di-drop (mis. `passwordHash`, `lastLogin`)
+- Auth middleware di SEMUA endpoint authenticated - kalau projection di-thin, perlu cek apakah middleware butuh field yang di-drop (mis. `passwordHash`, `lastLogin`)
 - Sebelum: `req.user` punya semua kolom user. Sesudah: cuma `id, username, role, isActive`. Cek `routes.ts` mana yang akses `req.user.X` field lain.
 
 ---
 
-## Phase C — Map Viewport Loading
+## Phase C - Map Viewport Loading
 
 ### C.1 Tier strategy
 
@@ -340,7 +340,7 @@ Body: { ids: [1, 2, 3, ...] }
 → Cached 30s server-side
 ```
 
-Fetch only for customers IN viewport (max 500). Refresh on user click "Refresh status" — no auto-poll.
+Fetch only for customers IN viewport (max 500). Refresh on user click "Refresh status" - no auto-poll.
 
 ### C.5 Per-change impact analysis
 
@@ -350,24 +350,24 @@ Fetch only for customers IN viewport (max 500). Refresh on user click "Refresh s
 
 **Diubah: `client/pages/MapPage.tsx` (1262 baris)**
 - **Potensi terdampak:** 
-  - File besar, banyak state — penambahan `bbox` state + `onIdle` handler harus tidak konflik dengan canvassing flow + cable drawing flow + snap preview yang sudah ada
-  - MarkerClusterer yang sekarang hanya cluster ODP — sekarang juga cluster customer. Performa rendering bisa beda (positif: lebih cepat saat zoom out).
+  - File besar, banyak state - penambahan `bbox` state + `onIdle` handler harus tidak konflik dengan canvassing flow + cable drawing flow + snap preview yang sudah ada
+  - MarkerClusterer yang sekarang hanya cluster ODP - sekarang juga cluster customer. Performa rendering bisa beda (positif: lebih cepat saat zoom out).
   - InfoWindow content: kalau sebelumnya tampilkan field lengkap customer (notes, package, dll), sekarang field minimal → harus fetch detail on-click via `GET /api/customers/:id`
 
-**Diubah: `client/hooks/useAssets.ts` — split `useMapData` jadi `useMapInfra` + `useMapCustomers`**
+**Diubah: `client/hooks/useAssets.ts` - split `useMapData` jadi `useMapInfra` + `useMapCustomers`**
 - **Potensi terdampak:** 
-  - SEMUA invalidation `queryKeys.mapData` di `useCrud` (line 56, 75, 93) — perlu tambah invalidate `['map', 'infra']` dan `['map', 'customers']`
-  - Mutation di customer create/update/delete saat ini invalidate `mapData` — sekarang juga harus invalidate viewport query
+  - SEMUA invalidation `queryKeys.mapData` di `useCrud` (line 56, 75, 93) - perlu tambah invalidate `['map', 'infra']` dan `['map', 'customers']`
+  - Mutation di customer create/update/delete saat ini invalidate `mapData` - sekarang juga harus invalidate viewport query
 
 **Diubah: New endpoint `/api/map-data/customers/status` (PPP batch)**
 - **Potensi terdampak:**
-  - Tambah load ke `traffic-snapshot-worker` data — read-only, tidak impact
+  - Tambah load ke `traffic-snapshot-worker` data - read-only, tidak impact
   - Cache 30s server-side: pakai in-memory Map, tidak perlu Redis
-  - Customer portal `/api/portal/traffic/live` (poll 3 detik) — TIDAK terpengaruh, beda endpoint beda customer
+  - Customer portal `/api/portal/traffic/live` (poll 3 detik) - TIDAK terpengaruh, beda endpoint beda customer
 
 ---
 
-## Phase D — Keep-Alive + Cache + Skeleton
+## Phase D - Keep-Alive + Cache + Skeleton
 
 ### D.1 Passenger keep-alive
 
@@ -447,17 +447,17 @@ defaultOptions: {
   - SEMUA endpoint authenticated yang cek permission via `hasPermission()` / `hasWritePermission()` middleware
   - Setelah admin ubah role user, user yang sedang login bisa lihat permissions LAMA selama max 60 detik (TTL). Acceptable trade-off untuk daily ops, tapi mungkin tidak untuk emergency revoke akses.
   - **Solusi emergency:** endpoint `POST /api/admin/perm-cache/invalidate` (admin only) untuk force-clear cache
-  - Memory: 1000 entries × ~5KB per perm dict ≈ 5MB max — aman di Passenger worker
+  - Memory: 1000 entries × ~5KB per perm dict ≈ 5MB max - aman di Passenger worker
 
 **Diubah: `client/lib/queryClient.ts` defaults**
-- **Potensi terdampak:** SEMUA `useQuery` di seluruh app — efeknya:
+- **Potensi terdampak:** SEMUA `useQuery` di seluruh app - efeknya:
   - User edit data, lalu navigasi page, lalu kembali → mungkin lihat data 30s lama (sebelum auto-refetch)
-  - Mutation tetap invalidate manual — kalau pake `invalidateQueries` setelah mutation, data tetap fresh
+  - Mutation tetap invalidate manual - kalau pake `invalidateQueries` setelah mutation, data tetap fresh
   - **Risk:** ada page yang asumsi data selalu fresh tiap mount (mis. realtime dashboard). Override per-hook dengan `staleTime: 0` kalau perlu.
-  - `refetchOnWindowFocus: false` — kalau user multi-tab + edit di tab lain, tab pertama tidak auto-refresh. Solusi: pakai TanStack Query devtools untuk debug, atau aktif kembali kalau ada complaint.
+  - `refetchOnWindowFocus: false` - kalau user multi-tab + edit di tab lain, tab pertama tidak auto-refresh. Solusi: pakai TanStack Query devtools untuk debug, atau aktif kembali kalau ada complaint.
 
 **Diubah: Skeleton states di Dashboard.tsx + MapPage.tsx + list pages**
-- **Potensi terdampak:** pure visual — tidak ada perubahan logic/data. Tapi loading state behavior beda (skeleton vs spinner) → user familiar mungkin bingung sebentar.
+- **Potensi terdampak:** pure visual - tidak ada perubahan logic/data. Tapi loading state behavior beda (skeleton vs spinner) → user familiar mungkin bingung sebentar.
 
 ---
 
@@ -493,16 +493,16 @@ defaultOptions: {
 
 | Phase | Risk | Mitigation |
 |---|---|---|
-| A — Indexes | Sangat rendah. ALTER TABLE CREATE INDEX safe di MySQL, idempotent | Test di local dulu, deploy off-peak |
-| B — Query refactor | Rendah. Logic preserved, hanya optimasi | Test endpoint manually post-deploy |
-| C — Map viewport | Medium. UX change — Map behavior berbeda saat pan | Keep fallback: `?bbox=` optional, kalau tidak ada return all (limit 1000) |
-| D — Keep-alive + cache | Rendah. Cache invalidation paths tertentu, kalau ada bug user lihat stale perms <60s | Manual invalidate endpoint untuk debugging |
+| A - Indexes | Sangat rendah. ALTER TABLE CREATE INDEX safe di MySQL, idempotent | Test di local dulu, deploy off-peak |
+| B - Query refactor | Rendah. Logic preserved, hanya optimasi | Test endpoint manually post-deploy |
+| C - Map viewport | Medium. UX change - Map behavior berbeda saat pan | Keep fallback: `?bbox=` optional, kalau tidak ada return all (limit 1000) |
+| D - Keep-alive + cache | Rendah. Cache invalidation paths tertentu, kalau ada bug user lihat stale perms <60s | Manual invalidate endpoint untuk debugging |
 
 ---
 
 ## Deploy Strategy
 
-Incremental — commit/push setelah tiap phase:
+Incremental - commit/push setelah tiap phase:
 
 1. **Phase A**: commit "perf: add DB indexes for hot paths" → push → GHA build → cPanel pull → restart → verify
 2. **Phase B**: commit "perf: refactor dashboard + map queries, async audit logs" → ...

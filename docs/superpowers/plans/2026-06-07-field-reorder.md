@@ -55,7 +55,7 @@ Replace it with an optimistic version mirroring `reorderStages` (which is define
     }),
 ```
 
-(`KEY`, `qc`, `invalidate`, and the `PipelineField` type are all already in scope in this file — confirm `PipelineField` is in the `@shared/schema` import at the top; it is.)
+(`KEY`, `qc`, `invalidate`, and the `PipelineField` type are all already in scope in this file - confirm `PipelineField` is in the `@shared/schema` import at the top; it is.)
 
 - [ ] **Step 2: Verify typecheck + build**
 
@@ -82,7 +82,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: Imports + state + ids**
 
-(a) Add the helper + icon imports. The file already imports from lucide and components — add:
+(a) Add the helper + icon imports. The file already imports from lucide and components - add:
 
 ```ts
 import { reorderByDrag, moveByOffset } from "@/components/pipelines/stageReorder";
@@ -116,7 +116,7 @@ Change the existing-fields map to expose the index, and make the row draggable. 
                       key={f.id}
                       className="group flex items-center gap-2.5 rounded-lg border border-border/60 bg-card px-3 py-2.5 shadow-elev-sm transition-shadow hover:shadow-elev-md"
                     >
-                      {/* Drag handle (visual only — reorder DnD is a future enhancement) */}
+                      {/* Drag handle (visual only - reorder DnD is a future enhancement) */}
                       <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors" />
 ```
 
@@ -162,7 +162,7 @@ Replace it with (adds `idx`, drag handlers on the row, a grab cursor on the grip
                       </div>
 ```
 
-(Leave the rest of the row — type badge, label/meta, show-on-card toggle, delete button — unchanged.)
+(Leave the rest of the row - type badge, label/meta, show-on-card toggle, delete button - unchanged.)
 
 - [ ] **Step 3: Verify typecheck + build**
 
@@ -204,10 +204,10 @@ Expected: success.
 - [ ] **Step 4: Manual checklist (record results)**
 
 On a dev pipeline with ≥3 custom fields (e.g. the "Leads (Marketing)" pipeline):
-- Open **Field** (Kelola Field). Drag a field row by the grip onto another row → the order changes instantly and persists after closing + reopening the dialog. ✅
-- ▲ / ▼ arrows move a field up/down; ▲ is disabled on the first row, ▼ on the last. ✅
-- The new order is reflected in the board card chips (showOnCard fields) and the card modal's Field Kustom section after the queries settle. ✅
-- On error (simulate offline) the list rolls back to the prior order. ✅
+- Open **Field** (Kelola Field). Drag a field row by the grip onto another row → the order changes instantly and persists after closing + reopening the dialog.
+- ▲ / ▼ arrows move a field up/down; ▲ is disabled on the first row, ▼ on the last.
+- The new order is reflected in the board card chips (showOnCard fields) and the card modal's Field Kustom section after the queries settle.
+- On error (simulate offline) the list rolls back to the prior order.
 
 - [ ] **Step 5: Final commit (only if the manual pass required a fixup; otherwise skip)**
 

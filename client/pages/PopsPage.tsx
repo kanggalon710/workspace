@@ -152,7 +152,7 @@ export default function PopsPage() {
   return (
     <AssetTable<Pop>
       title="POP"
-      description="Point of Presence — titik awal jaringan FTTH"
+      description="Point of Presence - titik awal jaringan FTTH"
       data={data}
       isLoading={isLoading}
       columns={columns}

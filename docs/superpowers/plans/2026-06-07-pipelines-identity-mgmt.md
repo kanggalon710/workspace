@@ -28,7 +28,7 @@ Change to append the unique option value so duplicate-labeled options are distin
 ```tsx
                     value={`${option.label} ${option.description || ""} ${option.value}`}
 ```
-(Leave `key={option.value}` and `isSelected = option.value === value` as-is — they're correct.)
+(Leave `key={option.value}` and `isSelected = option.value === value` as-is - they're correct.)
 
 - [ ] **Step 2: Stable keys for field-map + condition rows (defensive)**
 
@@ -56,7 +56,7 @@ git commit -m "fix(ui): Combobox unique cmdk value (duplicate-label select-both)
 
 ---
 
-### Task 2: Backend — cascade delete + isArchived patch + client mutations
+### Task 2: Backend - cascade delete + isArchived patch + client mutations
 
 **Files:** Modify `server/storage.ts`, `server/routes.ts`, `client/hooks/usePipelines.ts`
 
@@ -101,9 +101,9 @@ In `storage.updatePipeline`'s `data` type add `isArchived?: number;` and in the 
     if (data.isArchived !== undefined) patch.isArchived = data.isArchived;
 ```
 
-- [ ] **Step 3: Routes — `DELETE` + PATCH `isArchived`**
+- [ ] **Step 3: Routes - `DELETE` + PATCH `isArchived`**
 
-In `server/routes.ts`, the PATCH `/api/pipelines/:id` destructures `{ name, description, color, icon }` — add `isArchived`:
+In `server/routes.ts`, the PATCH `/api/pipelines/:id` destructures `{ name, description, color, icon }` - add `isArchived`:
 ```ts
     const { name, description, color, icon, isArchived } = req.body ?? {};
     ... await storage.updatePipeline(Number(req.params.id), { name, description, color, icon, isArchived }, req.authUser!.id);
@@ -124,7 +124,7 @@ Add a DELETE route near the archive route (~line 4436). For the creator-or-admin
     sendSuccess(res, { ok: true });
   });
 ```
-(`listPipelines(true)` includes archived — confirm the method name/arg from `storage`; if different, use the existing "get one pipeline" accessor. `requirePipelineEdit` already 403s non-editors.)
+(`listPipelines(true)` includes archived - confirm the method name/arg from `storage`; if different, use the existing "get one pipeline" accessor. `requirePipelineEdit` already 403s non-editors.)
 
 - [ ] **Step 4: Client mutations (`usePipelines.ts`)**
 
@@ -132,7 +132,7 @@ In `usePipelineMutations`, add (mirroring the existing `delete`/`updatePipeline`
 ```ts
     deletePipeline: useMutation({ mutationFn: (id: number) => api.delete(`/pipelines/${id}`), onSuccess: invalidate }),
 ```
-The existing `updatePipeline` mutation already spreads the body (`({ id, ...b }) => api.patch(...)`), so passing `{ id, isArchived: 0 }` works for restore — no change needed there.
+The existing `updatePipeline` mutation already spreads the body (`({ id, ...b }) => api.patch(...)`), so passing `{ id, isArchived: 0 }` works for restore - no change needed there.
 
 - [ ] **Step 5: Typecheck + build + commit**
 
@@ -144,13 +144,13 @@ git commit -m "feat(pipelines): cascade deletePipeline + DELETE route (creator/a
 
 ---
 
-### Task 3: Icon system — `pipelineIcon.tsx` (+ TDD resolver)
+### Task 3: Icon system - `pipelineIcon.tsx` (+ TDD resolver)
 
 **Files:** Create `client/components/pipelines/pipelineIcon.tsx`, `client/components/pipelines/pipelineIcon.test.ts`
 
 - [ ] **Step 1: Write the failing resolver test**
 
-Create `client/components/pipelines/pipelineIcon.test.ts` (resolver is pure + the icon-name map is plain data; the test imports only the map keys + resolver, which import lucide — to keep it tsx-runnable, the test checks the NAME→presence mapping, not React rendering):
+Create `client/components/pipelines/pipelineIcon.test.ts` (resolver is pure + the icon-name map is plain data; the test imports only the map keys + resolver, which import lucide - to keep it tsx-runnable, the test checks the NAME→presence mapping, not React rendering):
 ```ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -237,12 +237,12 @@ Read an existing dialog (e.g. `ManageFieldsDialog.tsx`) for the `Dialog`/`Dialog
 - [ ] **Step 2: Typecheck + build → 0 errors, green. Commit:**
 ```bash
 git add client/components/pipelines/PipelineSettingsDialog.tsx
-git commit -m "feat(pipelines): PipelineSettingsDialog — edit/archive/permanent-delete (pipelines-mgmt)"
+git commit -m "feat(pipelines): PipelineSettingsDialog - edit/archive/permanent-delete (pipelines-mgmt)"
 ```
 
 ---
 
-### Task 5: Board header redesign — `PipelineBoardPage.tsx`
+### Task 5: Board header redesign - `PipelineBoardPage.tsx`
 
 **Files:** Modify `client/pages/PipelineBoardPage.tsx`
 
@@ -288,17 +288,17 @@ Near the other dialogs at the bottom, add:
           onDeleted={() => { setShowSettings(false); navigate("/pipelines"); }} />
       )}
 ```
-(`pipeline` is `PipelineWithStages` — `PipelineSettingsDialog` only needs the base `Pipeline` fields, which are present.)
+(`pipeline` is `PipelineWithStages` - `PipelineSettingsDialog` only needs the base `Pipeline` fields, which are present.)
 
 - [ ] **Step 4: Typecheck + build → 0 errors, green. Commit:**
 ```bash
 git add client/pages/PipelineBoardPage.tsx
-git commit -m "feat(pipelines): board header redesign — icon + responsive title + description + settings menu (pipelines-mgmt)"
+git commit -m "feat(pipelines): board header redesign - icon + responsive title + description + settings menu (pipelines-mgmt)"
 ```
 
 ---
 
-### Task 6: List page — full create + per-card menu + icon + archived view
+### Task 6: List page - full create + per-card menu + icon + archived view
 
 **Files:** Modify `client/pages/PipelinesPage.tsx`
 
@@ -312,12 +312,12 @@ For each pipeline card: render `resolvePipelineIcon(p.icon)` (tinted by `p.color
 
 - [ ] **Step 3: Archived view**
 
-The list uses `usePipelines(includeArchived)` — add a state `const [showArchived, setShowArchived] = useState(false)` and call `usePipelines(showArchived)`; a toggle button "Arsip" flips it. For archived pipelines (`p.isArchived === 1`), show a **Pulihkan** action (→ `updatePipeline.mutateAsync({ id: p.id, isArchived: 0 })`) instead of the normal open-on-click (or in the kebab). Confirm the `usePipelines` hook signature accepts the flag (it does: `usePipelines(includeArchived = false)`).
+The list uses `usePipelines(includeArchived)` - add a state `const [showArchived, setShowArchived] = useState(false)` and call `usePipelines(showArchived)`; a toggle button "Arsip" flips it. For archived pipelines (`p.isArchived === 1`), show a **Pulihkan** action (→ `updatePipeline.mutateAsync({ id: p.id, isArchived: 0 })`) instead of the normal open-on-click (or in the kebab). Confirm the `usePipelines` hook signature accepts the flag (it does: `usePipelines(includeArchived = false)`).
 
 - [ ] **Step 4: Typecheck + build → 0 errors, green. Commit:**
 ```bash
 git add client/pages/PipelinesPage.tsx
-git commit -m "feat(pipelines): list page — full create (desc/icon/color) + per-card edit/archive/delete + archived view (pipelines-mgmt)"
+git commit -m "feat(pipelines): list page - full create (desc/icon/color) + per-card edit/archive/delete + archived view (pipelines-mgmt)"
 ```
 
 - [ ] **Step 5: Manual checklist (relay; run on dev)**
@@ -334,5 +334,5 @@ git commit -m "feat(pipelines): list page — full create (desc/icon/color) + pe
 - **Spec coverage:** §1 combobox+keys → T1; §2 backend (deletePipeline cascade, DELETE route+guard, isArchived) → T2; §3 icon system → T3; §4 settings dialog → T4; §5 header → T5; §6 list page → T6; §8 edge cases (navigate-away on delete/archive, type-name confirm, default icon, mitra-scoped cascade) → T2/T4/T5.
 - **Type consistency:** `resolvePipelineIcon`/`IconPicker`/`PIPELINE_ICON_NAMES`/`DEFAULT_PIPELINE_ICON` (T3) used in T4/T5/T6; `deletePipeline` mutation (T2) used in T4; `updatePipeline({isArchived})` (T2) used in T6; `PipelineSettingsDialog` props (T4) match T5/T6 usage; `onDeleted` navigate wired in T5.
 - **Backend correctness:** cascade deletes children before parents, all mitra-scoped (`getMitraId()`), `inArray` for card/rule children; route guarded by write-perm + pipeline-edit + creator-or-admin.
-- **No placeholders** except the one explicit "use the codebase's System-Admin check" instruction in T2-Step3 (the implementer resolves the exact helper) — flagged, not a silent gap.
+- **No placeholders** except the one explicit "use the codebase's System-Admin check" instruction in T2-Step3 (the implementer resolves the exact helper) - flagged, not a silent gap.
 - **Standards:** pure `resolvePipelineIcon` (SoC/TDD), `IconPicker`/`PipelineSettingsDialog` components, semantic `<h1>`/`<p>` header + aria-labels + `type="button"`, semantic tokens (hex only in the swatch palette + icon tint, mirroring stored colors).

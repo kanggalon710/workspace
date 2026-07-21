@@ -12,7 +12,7 @@
 
 ---
 
-## Task 1: Pure phone helpers (`shared/phone.ts`) — TDD
+## Task 1: Pure phone helpers (`shared/phone.ts`) - TDD
 
 **Files:**
 - Create: `shared/phone.ts`
@@ -53,7 +53,7 @@ test("whatsappHref builds wa.me link with encoded greeting; empty when not norma
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/phone.test.ts`
-Expected: FAIL — `Cannot find module './phone.js'`.
+Expected: FAIL - `Cannot find module './phone.js'`.
 
 - [ ] **Step 3: Implement `shared/phone.ts`**
 
@@ -71,7 +71,7 @@ export function toWhatsappNumber(raw: string): string {
   return /^\d+$/.test(p) ? p : "";
 }
 
-/** tel: href — keeps a leading + and digits, strips spacing/dashes/parens. "" if no dialable chars. */
+/** tel: href - keeps a leading + and digits, strips spacing/dashes/parens. "" if no dialable chars. */
 export function telHref(raw: string): string {
   const cleaned = String(raw ?? "").replace(/[\s\-()]/g, "");
   return /[+\d]/.test(cleaned) ? `tel:${cleaned}` : "";
@@ -217,11 +217,11 @@ Expected: success.
 - [ ] **Step 4: Manual checklist (record results)**
 
 On the dev "Leads (Marketing)" pipeline (it has a phone field):
-- Open a card whose phone field has a value → **Telepon** + **WhatsApp** buttons appear under the input. ✅
-- WhatsApp link points to `https://wa.me/62…?text=Halo` (8/0/62 inputs all normalize to `62…`). ✅
-- An empty phone field shows no buttons. ✅
-- A card with two phone fields shows a button pair under each. ✅
-- Read-only (non-edit) card: input disabled but buttons still tappable. ✅
+- Open a card whose phone field has a value → **Telepon** + **WhatsApp** buttons appear under the input.
+- WhatsApp link points to `https://wa.me/62…?text=Halo` (8/0/62 inputs all normalize to `62…`).
+- An empty phone field shows no buttons.
+- A card with two phone fields shows a button pair under each.
+- Read-only (non-edit) card: input disabled but buttons still tappable.
 
 - [ ] **Step 5: Final commit (only if the manual pass required a fixup; otherwise skip)**
 

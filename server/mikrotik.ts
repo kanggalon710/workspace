@@ -1,11 +1,11 @@
 /**
  * MikroTik RouterOS API Client
  * Supports both:
- *   1. RouterOS API (binary protocol) — port 8728/8729 or custom
- *   2. REST API (HTTP/HTTPS)          — port 80/443 (RouterOS 7.1+)
+ *   1. RouterOS API (binary protocol) - port 8728/8729 or custom
+ *   2. REST API (HTTP/HTTPS)          - port 80/443 (RouterOS 7.1+)
  *
  * Auto-detects which protocol to use based on config.
- * All calls go through the server — browser never touches the router directly.
+ * All calls go through the server - browser never touches the router directly.
  */
 
 import { RouterOSClient } from "routeros-client";
@@ -18,7 +18,7 @@ export interface MikrotikCredentials {
   useSsl: boolean;
 }
 
-// ── Core helper: get connected client ──
+// -- Core helper: get connected client --
 async function withClient<T>(
   creds: MikrotikCredentials,
   fn: (client: any) => Promise<T>,
@@ -57,9 +57,9 @@ async function withClient<T>(
   }
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  PUBLIC API METHODS
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 /** Test connection and return system identity + resource */
 export async function testConnection(creds: MikrotikCredentials) {
@@ -99,7 +99,7 @@ export async function getSystemIdentity(creds: MikrotikCredentials) {
   });
 }
 
-// ── PPP / PPPoE ──
+// -- PPP / PPPoE --
 
 /** List all PPP secrets */
 export async function getPppSecrets(creds: MikrotikCredentials) {
@@ -129,7 +129,7 @@ export async function getPppProfiles(creds: MikrotikCredentials) {
   });
 }
 
-// ── Interfaces ──
+// -- Interfaces --
 
 /** List all interfaces with traffic stats */
 export async function getInterfaces(creds: MikrotikCredentials) {
@@ -151,7 +151,7 @@ export async function monitorTraffic(creds: MikrotikCredentials, iface: string) 
   });
 }
 
-// ── IP Pool ──
+// -- IP Pool --
 
 /** List IP pools */
 export async function getIpPools(creds: MikrotikCredentials) {
@@ -167,9 +167,9 @@ export async function getIpPoolUsed(creds: MikrotikCredentials) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  PPP PROFILE CRUD
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 /** Get a single PPP profile by .id */
 export async function getPppProfile(creds: MikrotikCredentials, id: string) {
@@ -199,9 +199,9 @@ export async function deletePppProfile(creds: MikrotikCredentials, id: string) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  PPP SECRET CRUD
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 /** Create a new PPP secret (PPPoE user account) */
 export async function createPppSecret(creds: MikrotikCredentials, data: Record<string, any>) {
@@ -232,9 +232,9 @@ export async function enableDisablePppSecret(creds: MikrotikCredentials, id: str
   });
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  SIMPLE QUEUE CRUD
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 /** List all simple queues */
 export async function getSimpleQueues(creds: MikrotikCredentials) {
@@ -264,9 +264,9 @@ export async function deleteSimpleQueue(creds: MikrotikCredentials, id: string) 
   });
 }
 
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 //  NETWORK UTILITY (read-only)
-// ═══════════════════════════════════════════════════════════
+// ===========================================================
 
 /** List DHCP server leases */
 export async function getDhcpLeases(creds: MikrotikCredentials) {
@@ -296,7 +296,7 @@ export async function getFirewallAddressList(creds: MikrotikCredentials) {
   });
 }
 
-// ── Logs ──
+// -- Logs --
 
 /** Get recent log entries */
 export async function getLog(creds: MikrotikCredentials, limit = 50) {

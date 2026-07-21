@@ -1,6 +1,6 @@
 /**
  * Pure helpers for the JABNET-root billing admin panel + per-mitra manual sync.
- * No I/O — unit-tested in billing-admin-helpers.test.ts.
+ * No I/O - unit-tested in billing-admin-helpers.test.ts.
  */
 
 export interface CooldownResult {

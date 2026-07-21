@@ -4,13 +4,13 @@
 
 **Goal:** Replace the right-sidebar card drawer with a centered, single-column, width-toggleable modal (full-screen on mobile) that opens in a new tab via `/pipelines/:id?card=<id>`.
 
-**Architecture:** A new `CardDetailModal` (shadcn `Dialog`) replaces `CardDetailDrawer`, reusing all existing card hooks/mutations and the unchanged `FieldCustomSection` (so slices A–D keep working inside). `PipelineBoardPage` drives the modal from `selectedCard` state and syncs the URL (`?card=`) for share/new-tab/refresh, reading the param once on mount. No backend/schema/migration.
+**Architecture:** A new `CardDetailModal` (shadcn `Dialog`) replaces `CardDetailDrawer`, reusing all existing card hooks/mutations and the unchanged `FieldCustomSection` (so slices A-D keep working inside). `PipelineBoardPage` drives the modal from `selectedCard` state and syncs the URL (`?card=`) for share/new-tab/refresh, reading the param once on mount. No backend/schema/migration.
 
 **Tech Stack:** TypeScript, React 18, wouter, TanStack Query, shadcn Dialog, `node:test` via `npx tsx --test`. Spec: `docs/superpowers/specs/2026-06-07-card-detail-modal-design.md`.
 
 **Coding standards:** semantic HTML5 (`Dialog` semantics, `<label>`, `<button type="button">`, `<a>`), DRY (reuse Dialog/Combobox/existing mutations + a pure `parseCardParam`), SoC (modal container vs `FieldCustomSection`), pure tested helper. Client imports `@shared/...`/`@/...`; tests `./....js`.
 
-**Key facts (verified):** `DialogContent` already renders a built-in top-right close `✕` (don't add another). `ManageFieldsDialog` overrides the default `grid p-6` with `... flex flex-col p-0` on `DialogContent` — mirror that. wouter `useLocation` returns the path WITHOUT the query, so the modal is driven by state and the URL is synced separately. Card fields available on `CardDetail`: `title, description, stageId, assigneeId, priority, tags, createdBy, createdAt` + `comments/activity/fields/values`. Mutations: `updateCard`, `moveCard`, `addComment`, `deleteCard`, `setCardValues`.
+**Key facts (verified):** `DialogContent` already renders a built-in top-right close `` (don't add another). `ManageFieldsDialog` overrides the default `grid p-6` with `... flex flex-col p-0` on `DialogContent` - mirror that. wouter `useLocation` returns the path WITHOUT the query, so the modal is driven by state and the URL is synced separately. Card fields available on `CardDetail`: `title, description, stageId, assigneeId, priority, tags, createdBy, createdAt` + `comments/activity/fields/values`. Mutations: `updateCard`, `moveCard`, `addComment`, `deleteCard`, `setCardValues`.
 
 ---
 
@@ -43,7 +43,7 @@ test("parseCardParam extracts a positive integer card id, else null", () => {
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `npx tsx --test client/lib/cardParam.test.ts`
-Expected: FAIL — `Cannot find module './cardParam.js'`.
+Expected: FAIL - `Cannot find module './cardParam.js'`.
 
 - [ ] **Step 3: Implement `client/lib/cardParam.ts`**
 
@@ -82,7 +82,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Create: `client/components/pipelines/CardDetailModal.tsx`
 
-(Do NOT delete `CardDetailDrawer.tsx` yet — Task 3 switches the import and deletes it, keeping each task's build green.)
+(Do NOT delete `CardDetailDrawer.tsx` yet - Task 3 switches the import and deletes it, keeping each task's build green.)
 
 - [ ] **Step 1: Create `CardDetailModal.tsx`**
 
@@ -318,7 +318,7 @@ function FieldCustomSection({ card, pipelineId, writable }: { card: CardDetail; 
 Run: `npm run typecheck`
 Expected: 0 errors.
 Run: `npm run build`
-Expected: build succeeds (the new component is not yet referenced — that's fine).
+Expected: build succeeds (the new component is not yet referenced - that's fine).
 
 - [ ] **Step 3: Commit**
 
@@ -352,7 +352,7 @@ import { CardDetailModal } from "@/components/pipelines/CardDetailModal";
 import { parseCardParam } from "@/lib/cardParam";
 ```
 
-Ensure `useEffect` is imported from `react` (the file already imports `useState`/`useMemo` — add `useEffect` to that import if not present).
+Ensure `useEffect` is imported from `react` (the file already imports `useState`/`useMemo` - add `useEffect` to that import if not present).
 
 - [ ] **Step 2: Add open/close handlers + deep-link-on-mount**
 
@@ -454,13 +454,13 @@ Expected: success.
 - [ ] **Step 4: Manual checklist (record results)**
 
 On the dev "Leads (Marketing)" pipeline:
-- Click a card → a centered modal opens (desktop); on a narrow viewport it fills the screen. ✅ (#2)
-- Edit the name + description (blur saves); change Stage, Assignee, Prioritas via the selects → changes persist and the board reflects them. ✅
-- Width toggle (⤢/⤡) switches Normal ↔ Lebar and the choice survives reopening. ✅
-- "Buka di tab baru" opens `/pipelines/:id?card=N` in a new tab and lands with the modal open; refreshing that URL reopens it. ✅
-- Close → URL returns to `/pipelines/:id` (no `?card=`). ✅
-- Custom fields work inside (phone Call/WhatsApp buttons; coordinate map picker + wilayah/ODP info). ✅ (A–D intact)
-- A bogus `/pipelines/:id?card=999999` shows "Kartu tidak ditemukan". ✅
+- Click a card → a centered modal opens (desktop); on a narrow viewport it fills the screen.  (#2)
+- Edit the name + description (blur saves); change Stage, Assignee, Prioritas via the selects → changes persist and the board reflects them.
+- Width toggle (⤢/⤡) switches Normal ↔ Lebar and the choice survives reopening.
+- "Buka di tab baru" opens `/pipelines/:id?card=N` in a new tab and lands with the modal open; refreshing that URL reopens it.
+- Close → URL returns to `/pipelines/:id` (no `?card=`).
+- Custom fields work inside (phone Call/WhatsApp buttons; coordinate map picker + wilayah/ODP info).  (A-D intact)
+- A bogus `/pipelines/:id?card=999999` shows "Kartu tidak ditemukan".
 
 - [ ] **Step 5: Final commit (only if the manual pass required a fixup; otherwise skip)**
 
@@ -475,7 +475,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Self-review notes (author)
 
-- **Spec coverage:** container/modal + responsiveness + width toggle + open-in-tab → Tasks 2/3; single-column layout w/ header + quick-edit stage/assignee/priority + read-only created-by/date/tags + description + fields + comments + activity + delete → Task 2; deep-link + clear-on-close → Task 3; `parseCardParam` tested → Task 1. No backend/schema/migration. Slices A–D intact (FieldCustomSection unchanged).
+- **Spec coverage:** container/modal + responsiveness + width toggle + open-in-tab → Tasks 2/3; single-column layout w/ header + quick-edit stage/assignee/priority + read-only created-by/date/tags + description + fields + comments + activity + delete → Task 2; deep-link + clear-on-close → Task 3; `parseCardParam` tested → Task 1. No backend/schema/migration. Slices A-D intact (FieldCustomSection unchanged).
 - **Type consistency:** `CardDetailModal` props `{cardId,pipelineId,onClose,writable,newTabHref}`; `parseCardParam(search)`; mutations `moveCard({cardId,toStageId})` / `updateCard({cardId,...})` match `usePipelineMutations`. `CardDetail` exposes `stageId/assigneeId/priority/tags/createdBy/createdAt`.
 - **Build-green ordering:** Task 2 adds the modal unused (compiles); Task 3 switches the import and deletes the drawer in the same task.
 - **No placeholders.**

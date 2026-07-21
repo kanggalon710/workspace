@@ -1,4 +1,4 @@
-# Pipeline Templates (Phase 5) — Implementation Plan
+# Pipeline Templates (Phase 5) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Pure transform module — snapshot/remap + built-ins
+### Task 1: Pure transform module - snapshot/remap + built-ins
 
 **Files:**
 - Create: `shared/pipelineTemplate.ts`
@@ -101,7 +101,7 @@ test("built-in templates are well-formed", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/pipelineTemplate.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -158,8 +158,8 @@ function rewriteTriggerConfig(tc: any, triggerType: string, mapField: Mapper, ma
 
 ```
 
-Then the two clear directional functions (rules use different property names per direction —
-`*Key` when snapshotting, `*Id` when instantiating — so keep them explicit rather than generic; the
+Then the two clear directional functions (rules use different property names per direction -
+`*Key` when snapshotting, `*Id` when instantiating - so keep them explicit rather than generic; the
 shared `rewriteConfigRefs`/`rewriteTriggerConfig` helpers above map a single ref via the passed mapper).
 The Step-1 test is the exact contract for both:
 
@@ -216,8 +216,8 @@ export function remapTemplateRule(rule: TemplateRule, fieldKeyToId: Map<string, 
 }
 ```
 
-(In `pipelineToTemplate` the stage mapper `ms` yields a key string — correct for snapshot; in
-`remapTemplateRule` it yields the numeric new id — correct for instantiate. So billing_sync's
+(In `pipelineToTemplate` the stage mapper `ms` yields a key string - correct for snapshot; in
+`remapTemplateRule` it yields the numeric new id - correct for instantiate. So billing_sync's
 `resolveStageId` round-trips: id → `stage_K` on snapshot, `stage_K` → new id on apply.)
 
 Then add the built-ins (complete, minimal definitions):
@@ -259,7 +259,7 @@ export const BUILTIN_TEMPLATES: TemplateDefinition[] = [
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/pipelineTemplate.test.ts`
-Expected: PASS — all 3 tests.
+Expected: PASS - all 3 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -355,14 +355,14 @@ git commit -m "feat(pipelines): pipeline_templates table + startup create + seed
 
 ---
 
-### Task 3: Storage — list/get/delete + create-from-pipeline
+### Task 3: Storage - list/get/delete + create-from-pipeline
 
 **Files:**
 - Modify: `server/storage.ts`
 
 - [ ] **Step 1: Add methods**
 
-In `server/storage.ts`, near the other pipeline methods, add (import `pipelineToTemplate` from `../shared/pipelineTemplate.js`; `listStages`/`listFields`/`listRules`/`listRuleActionsByRuleIds`/`listRuleFieldMaps...` already exist — use the available readers; if a per-rule fieldMaps reader is needed, use the existing one that the rules detail endpoint uses):
+In `server/storage.ts`, near the other pipeline methods, add (import `pipelineToTemplate` from `../shared/pipelineTemplate.js`; `listStages`/`listFields`/`listRules`/`listRuleActionsByRuleIds`/`listRuleFieldMaps...` already exist - use the available readers; if a per-rule fieldMaps reader is needed, use the existing one that the rules detail endpoint uses):
 
 ```ts
   async listTemplates(): Promise<PipelineTemplate[]> {
@@ -433,7 +433,7 @@ git commit -m "feat(pipelines): template list/get/delete + create-from-pipeline 
 
 ---
 
-### Task 4: Storage — instantiateTemplate (two-pass apply)
+### Task 4: Storage - instantiateTemplate (two-pass apply)
 
 **Files:**
 - Modify: `server/storage.ts`
@@ -468,7 +468,7 @@ In `server/storage.ts`, add (imports `remapFieldConfig`, `remapTemplateRule`, ty
       });
       fieldKeyToId.set(f.key, created.id);
     }
-    // NOTE: a field rule referencing a LATER field is remapped after both exist — so do a second pass
+    // NOTE: a field rule referencing a LATER field is remapped after both exist - so do a second pass
     // to fix configs that referenced not-yet-created fields:
     for (const f of def.fields) {
       if (!f.config) continue;
@@ -499,7 +499,7 @@ git commit -m "feat(pipelines): instantiateTemplate (two-pass clone with id rema
 
 ---
 
-### Task 5: Routes — templates API
+### Task 5: Routes - templates API
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -562,7 +562,7 @@ git commit -m "feat(pipelines): template API (list/save/apply/delete)"
 
 ---
 
-### Task 6: Frontend — template picker + save-as-template
+### Task 6: Frontend - template picker + save-as-template
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts`, `client/pages/PipelinesPage.tsx`
@@ -615,18 +615,18 @@ git commit -m "feat(pipelines): template picker + save-as-template UI"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/pipelineTemplate.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "pipeline_templates\|pipelineTemplate\|instantiateTemplate\|TemplatePicker" server/ shared/ client/ | sort` → expect shared module + test, schema, storage, routes, hook, dialog, page.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/pipelineTemplate.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "pipeline_templates\|pipelineTemplate\|instantiateTemplate\|TemplatePicker" server/ shared/ client/ | sort` → expect shared module + test, schema, storage, routes, hook, dialog, page.
 
 ---
 
 ## Self-Review
 
 - **Spec coverage:** key-based definition + full id remap (config rules, conditions, triggerConfig, actions, fieldMaps) → Task 1. Drop cross-pipeline actions → Task 1 (filter). `pipeline_templates` table + migration + per-mitra builtin seed → Task 2. list/get/delete/create-from-pipeline → Task 3. instantiate two-pass → Task 4. Routes (list/save/apply/delete) with capability gating → Task 5. Frontend picker + save-as → Task 6. Round-trip test → Task 1; final → Task 7. All covered.
-- **Placeholders:** Tasks 1–5 + 7 contain full code; Task 1 explicitly directs the implementer to write two clear directional functions (`pipelineToTemplate`/`remapTemplateRule`) using the Step-1 test as the contract, and ships complete built-in definitions. Task 3 flags the real per-action field-map reader to reuse; Task 6 integrates into the existing page/hooks. The billing_sync stage-mapper direction caveat is called out explicitly.
-- **Type consistency:** `TemplateDefinition`/`TemplateRule` + `pipelineToTemplate`/`remapFieldConfig`/`remapTemplateRule`/`BUILTIN_TEMPLATES` (Task 1) consumed in Tasks 2 (seed), 3 (snapshot), 4 (instantiate). `remapTemplateRule` returns a shape matching `storage.createRule`'s `data` (verified against the signature: name/triggerType/triggerStageId/triggerConfig/conditions/enabled/actions[{actionType,actionConfig,targetStageId,targetPipelineId,titleTemplate,copyAssignee,fieldMaps[{sourceFieldId,targetFieldId}]}]). `PipelineTemplate` type (Task 2) used by storage methods (Task 3–4) + routes (Task 5).
+- **Placeholders:** Tasks 1-5 + 7 contain full code; Task 1 explicitly directs the implementer to write two clear directional functions (`pipelineToTemplate`/`remapTemplateRule`) using the Step-1 test as the contract, and ships complete built-in definitions. Task 3 flags the real per-action field-map reader to reuse; Task 6 integrates into the existing page/hooks. The billing_sync stage-mapper direction caveat is called out explicitly.
+- **Type consistency:** `TemplateDefinition`/`TemplateRule` + `pipelineToTemplate`/`remapFieldConfig`/`remapTemplateRule`/`BUILTIN_TEMPLATES` (Task 1) consumed in Tasks 2 (seed), 3 (snapshot), 4 (instantiate). `remapTemplateRule` returns a shape matching `storage.createRule`'s `data` (verified against the signature: name/triggerType/triggerStageId/triggerConfig/conditions/enabled/actions[{actionType,actionConfig,targetStageId,targetPipelineId,titleTemplate,copyAssignee,fieldMaps[{sourceFieldId,targetFieldId}]}]). `PipelineTemplate` type (Task 2) used by storage methods (Task 3-4) + routes (Task 5).
 
 ## Deploy note
-New table `pipeline_templates` created on startup; built-ins seeded per mitra (idempotent by name). Purely additive — no impact on existing pipelines.
+New table `pipeline_templates` created on startup; built-ins seeded per mitra (idempotent by name). Purely additive - no impact on existing pipelines.

@@ -1,4 +1,4 @@
-/** Pure helpers for the pipelines engine — no DB, fully unit-testable. */
+/** Pure helpers for the pipelines engine - no DB, fully unit-testable. */
 
 /** Given an ordered list of ids, assign contiguous 0-based positions. */
 export function reorderPositions(orderedIds: number[]): Array<{ id: number; position: number }> {

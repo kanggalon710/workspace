@@ -1,4 +1,4 @@
-# Spec — Mitra Members Bug Fix + Help Text
+# Spec - Mitra Members Bug Fix + Help Text
 
 **Date**: 2026-05-26
 **Status**: Approved
@@ -10,7 +10,7 @@
 
 ## Fix
 
-**Backend** — `server/routes.ts:765`:
+**Backend** - `server/routes.ts:765`:
 ```sql
 -- before
 u.is_active AS isActive, u.last_login_at AS lastLoginAt,
@@ -18,17 +18,17 @@ u.is_active AS isActive, u.last_login_at AS lastLoginAt,
 u.is_active AS isActive, u.last_login AS lastLoginAt,
 ```
 
-**Frontend** — `client/pages/MitraPage.tsx`, di komponen `MembersTab` (line ~775), tambah info banner singkat DI ATAS dropdown Add Member, visible hanya saat `canEdit`:
+**Frontend** - `client/pages/MitraPage.tsx`, di komponen `MembersTab` (line ~775), tambah info banner singkat DI ATAS dropdown Add Member, visible hanya saat `canEdit`:
 
-> 💡 **Tips:** Pastikan setiap mitra punya **minimal 1 user dari JABNET dengan role Administrator** sebagai entry point — biar mereka bisa kelola data + tambah user lain. Mitra baru tidak bisa diakses kalau belum ada admin assigned.
+>  **Tips:** Pastikan setiap mitra punya **minimal 1 user dari JABNET dengan role Administrator** sebagai entry point - biar mereka bisa kelola data + tambah user lain. Mitra baru tidak bisa diakses kalau belum ada admin assigned.
 
 Styling: `Card bg-violet-50/30 border-violet-200 dark:bg-violet-950/20 dark:border-violet-800/50 p-3 rounded-lg`, icon `Info` (sudah ter-import dari lucide-react), `text-xs`.
 
 ## Out of Scope
 
-- **Authorization scoping** (`isSystemAdmin` cross-tenant problem) — akan dibahas terpisah sebagai Spec B
-- **Wizard create mitra dengan akun Administrator otomatis** — akan dibahas terpisah sebagai Spec C
-- Restructure `MembersTab` lain (tampil role, status online, dll) — defer
+- **Authorization scoping** (`isSystemAdmin` cross-tenant problem) - akan dibahas terpisah sebagai Spec B
+- **Wizard create mitra dengan akun Administrator otomatis** - akan dibahas terpisah sebagai Spec C
+- Restructure `MembersTab` lain (tampil role, status online, dll) - defer
 
 ## Verification
 
@@ -40,4 +40,4 @@ Styling: `Card bg-violet-50/30 border-violet-200 dark:bg-violet-950/20 dark:bord
 
 ## Risk
 
-Negligible — 1-character SQL fix + additive UI banner. Tidak ada schema change.
+Negligible - 1-character SQL fix + additive UI banner. Tidak ada schema change.

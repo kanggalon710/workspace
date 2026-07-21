@@ -1,4 +1,4 @@
-# Dev DB Sync From Production — Implementation Plan
+# Dev DB Sync From Production - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 > **Subagents: work DIRECTLY in this repo on branch `dev`. NO git worktrees, NO branch switches. Verify `git branch --show-current` is `dev` before committing.**
@@ -7,20 +7,20 @@
 
 **Architecture:** Cross-database `INSERT … SELECT` through the existing mysql2 pool (the same MySQL user already has both schemas). A pure helper module computes the env-gate, the table/column intersections, and the SQL; a storage runner executes it; an env-gated admin endpoint drives it; an env-gated client card triggers it.
 
-**Tech Stack:** Node/Express 5, mysql2 pool, Drizzle (unused here — raw `conn.query`), React 18 + TanStack Query, Tailwind/shadcn UI. Pure-module tests run with `npx tsx --test`.
+**Tech Stack:** Node/Express 5, mysql2 pool, Drizzle (unused here - raw `conn.query`), React 18 + TanStack Query, Tailwind/shadcn UI. Pure-module tests run with `npx tsx --test`.
 
 ---
 
 ## File Structure
 
-- **Create** `server/dev-db-sync.ts` — pure helpers: `devDbSyncAvailable`, `tablesToMirror`, `copyColumns`, `buildCopySql`. No I/O.
-- **Create** `server/dev-db-sync.test.ts` — unit tests for the pure helpers.
-- **Modify** `server/storage.ts` — add `runDevDbSyncFromProd(prodDb)` (uses the pool + the pure helpers).
-- **Modify** `server/routes.ts` — add `POST /api/dev/db-sync`; add `devDbSync` flag to `GET /api/public-config`.
-- **Create** `client/hooks/useDevDbSync.ts` — mutation hook + result type.
-- **Create** `client/components/integrations/DevDbSyncCard.tsx` — the prominent dev-only card + confirm dialog.
-- **Modify** `client/pages/IntegrationPage.tsx` — render `<DevDbSyncCard />` at the top of the page.
-- **Modify** `.env.example` — document `DEV_DB_SYNC_ENABLED` + `PROD_DB_NAME`.
+- **Create** `server/dev-db-sync.ts` - pure helpers: `devDbSyncAvailable`, `tablesToMirror`, `copyColumns`, `buildCopySql`. No I/O.
+- **Create** `server/dev-db-sync.test.ts` - unit tests for the pure helpers.
+- **Modify** `server/storage.ts` - add `runDevDbSyncFromProd(prodDb)` (uses the pool + the pure helpers).
+- **Modify** `server/routes.ts` - add `POST /api/dev/db-sync`; add `devDbSync` flag to `GET /api/public-config`.
+- **Create** `client/hooks/useDevDbSync.ts` - mutation hook + result type.
+- **Create** `client/components/integrations/DevDbSyncCard.tsx` - the prominent dev-only card + confirm dialog.
+- **Modify** `client/pages/IntegrationPage.tsx` - render `<DevDbSyncCard />` at the top of the page.
+- **Modify** `.env.example` - document `DEV_DB_SYNC_ENABLED` + `PROD_DB_NAME`.
 
 ---
 
@@ -70,7 +70,7 @@ test("buildCopySql: TRUNCATE + INSERT…SELECT with backtick-quoted identifiers"
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test server/dev-db-sync.test.ts`
-Expected: FAIL — cannot find module `./dev-db-sync.js` / functions not defined.
+Expected: FAIL - cannot find module `./dev-db-sync.js` / functions not defined.
 
 - [ ] **Step 3: Write the module**
 
@@ -78,7 +78,7 @@ Create `server/dev-db-sync.ts`:
 ```ts
 /**
  * Pure helpers for the dev-only "tarik data dari production" feature (prod → dev DB copy).
- * No I/O — unit-tested. The runner lives in storage.ts; the endpoint in routes.ts.
+ * No I/O - unit-tested. The runner lives in storage.ts; the endpoint in routes.ts.
  */
 
 /** Backtick-quote a MySQL identifier (schema/table/column). */
@@ -90,7 +90,7 @@ function q(id: string): string {
  * The feature may run ONLY when all hold:
  *  1. DEV_DB_SYNC_ENABLED === "true"  (set only in dev's .env)
  *  2. PROD_DB_NAME is set and differs from the current DB_NAME (never copy a DB onto itself)
- *  3. current DB_NAME ends with "_dev" (defence in depth — prod's DB is `jabnet_fiber`)
+ *  3. current DB_NAME ends with "_dev" (defence in depth - prod's DB is `jabnet_fiber`)
  * On production these env vars are absent, so this returns false there.
  */
 export function devDbSyncAvailable(env: NodeJS.ProcessEnv): boolean {
@@ -259,10 +259,10 @@ and the catch fallback:
 
 - [ ] **Step 3: Add the endpoint**
 
-Add near the other `/api/*` routes (e.g. just after the `/api/public-config` handler). It is env-gated first (404 when unavailable — hides existence on prod), then admin-gated:
+Add near the other `/api/*` routes (e.g. just after the `/api/public-config` handler). It is env-gated first (404 when unavailable - hides existence on prod), then admin-gated:
 ```ts
 router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
-  // Env gate FIRST — on production these vars are absent, so the route 404s (looks like it doesn't exist).
+  // Env gate FIRST - on production these vars are absent, so the route 404s (looks like it doesn't exist).
   if (!devDbSyncAvailable(process.env)) return sendError(res, "Not found", 404);
   if (!requireWritePermission(req, res, "integrations")) return;
   try {
@@ -281,7 +281,7 @@ router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
       const tmpDir = path.join(process.cwd(), "tmp");
       await mkdir(tmpDir, { recursive: true });
       await writeFile(path.join(tmpDir, "restart.txt"), new Date().toISOString());
-    } catch { /* ignore — not fatal */ }
+    } catch { /* ignore - not fatal */ }
   } catch (e: any) {
     sendError(res, e?.message || "Sinkronisasi gagal", 500);
   }
@@ -460,14 +460,14 @@ In `client/pages/IntegrationPage.tsx`, add the import with the other component i
 ```tsx
 import { DevDbSyncCard } from "@/components/integrations/DevDbSyncCard";
 ```
-Then in the main `IntegrationPage` component's return (the `<div className="space-y-6">` at ~line 887), insert `<DevDbSyncCard />` immediately AFTER the header block (the `<div className="flex items-center gap-3">…</div>` that ends ~line 902) and BEFORE the "Card 1 — Google Maps Platform" comment:
+Then in the main `IntegrationPage` component's return (the `<div className="space-y-6">` at ~line 887), insert `<DevDbSyncCard />` immediately AFTER the header block (the `<div className="flex items-center gap-3">…</div>` that ends ~line 902) and BEFORE the "Card 1 - Google Maps Platform" comment:
 ```tsx
       </div>
 
       <DevDbSyncCard />
 
       {/* ================================================================= */}
-      {/* Card 1 — Google Maps Platform                                     */}
+      {/* Card 1 - Google Maps Platform                                     */}
 ```
 
 - [ ] **Step 4: Verify it compiles + builds**
@@ -493,7 +493,7 @@ git commit -m "feat(dev-sync): prominent dev-only DevDbSyncCard + useDevDbSync h
 
 In `.env.example`, add a new section (near the MySQL section):
 ```bash
-# ── Dev-only: "Tarik Data dari Production" button (prod → dev DB copy) ──
+# -- Dev-only: "Tarik Data dari Production" button (prod → dev DB copy) --
 # Set these ONLY in the dev/staging .env. On production leave them UNSET so the feature
 # (button + POST /api/dev/db-sync) stays disabled. Guard also requires DB_NAME to end with "_dev"
 # and to differ from PROD_DB_NAME, so production can never copy onto itself.
@@ -522,7 +522,7 @@ Set in **dev** `.env` only (`/home/jabnet/private/fiber-jabnet-dev/config/.env`)
 DEV_DB_SYNC_ENABLED=true
 PROD_DB_NAME=jabnet_fiber
 ```
-Then `touch /home/jabnet/dev-fiber-jabnet/tmp/restart.txt`. The MySQL user (`jabnet_crm_user`) must have SELECT on `jabnet_fiber` and full DML on `jabnet_fiber_dev` (it already does — the mirror cron relies on the same access). Do **not** set these vars on production.
+Then `touch /home/jabnet/dev-fiber-jabnet/tmp/restart.txt`. The MySQL user (`jabnet_crm_user`) must have SELECT on `jabnet_fiber` and full DML on `jabnet_fiber_dev` (it already does - the mirror cron relies on the same access). Do **not** set these vars on production.
 
 ## Manual acceptance (on dev)
 1. `workspace-dev.jabnet.id` → `/integrations`: amber "Tarik Data dari Production" card at top with DEVELOPMENT badge.

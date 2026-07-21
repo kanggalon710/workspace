@@ -1,5 +1,5 @@
 /**
- * v4.2.19: Audience Builder — rule-based filter UI dengan live preview
+ * v4.2.19: Audience Builder - rule-based filter UI dengan live preview
  */
 
 import { useState, useEffect, useMemo } from "react";
@@ -178,7 +178,7 @@ export function AudienceBuilder({
                     <div key={s.id} className="flex items-center gap-2">
                       <span className="font-mono">#{s.customerId}</span>
                       <span className="truncate flex-1">{s.name}</span>
-                      <span className="text-[10px]">{s.district ?? "—"}</span>
+                      <span className="text-[10px]">{s.district ?? "-"}</span>
                     </div>
                   ))}
                 </div>

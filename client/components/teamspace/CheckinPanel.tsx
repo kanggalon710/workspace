@@ -1,4 +1,4 @@
-/** Teamspace Fase 2 — Pertanyaan / Check-in rutin (FR-8xx): jadwal per hari+jam,
+/** Teamspace Fase 2 - Pertanyaan / Check-in rutin (FR-8xx): jadwal per hari+jam,
  *  jawab inline, rekap per tanggal + completion rate. Pengiriman oleh worker
  *  (notifikasi in-app + WhatsApp MPWA). */
 import { useMemo, useState } from "react";
@@ -33,7 +33,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
     return (id: number) => map.get(id) ?? `#${id}`;
   }, [users]);
 
-  // ── Jawab inline ──
+  // -- Jawab inline --
   const [answerDrafts, setAnswerDrafts] = useState<Record<number, string>>({});
   const submitAnswer = async (q: CheckinQuestionRow) => {
     const text = (answerDrafts[q.id] ?? "").trim();
@@ -47,7 +47,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
     }
   };
 
-  // ── Rekap ──
+  // -- Rekap --
   const [recapFor, setRecapFor] = useState<CheckinQuestionRow | null>(null);
   const { data: responses } = useCheckinResponses(recapFor?.id ?? null);
   const responsesByDate = useMemo(() => {
@@ -60,7 +60,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
     return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
   }, [responses]);
 
-  // ── Form buat pertanyaan ──
+  // -- Form buat pertanyaan --
   const [showForm, setShowForm] = useState(false);
   const [qText, setQText] = useState("");
   const [days, setDays] = useState<number[]>([1]);
@@ -75,7 +75,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
         questionText: qText.trim(), sendDays: days, sendTime: time,
         isConfidential: confidential, recipientIds: recipients.map(Number),
       });
-      toast.success("Pertanyaan rutin dibuat — akan dikirim otomatis sesuai jadwal");
+      toast.success("Pertanyaan rutin dibuat - akan dikirim otomatis sesuai jadwal");
       setShowForm(false);
       setQText(""); setDays([1]); setTime("09:00"); setRecipients([]); setConfidential(false);
     } catch (e: any) {
@@ -105,7 +105,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Pertanyaan dikirim otomatis sesuai jadwal — via notifikasi & WhatsApp.
+          Pertanyaan dikirim otomatis sesuai jadwal - via notifikasi & WhatsApp.
         </p>
         {canManage && (
           <Button type="button" size="sm" leftIcon={<Plus className="size-4" />} onClick={() => setShowForm(true)}>
@@ -121,7 +121,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
           icon={MessagesSquare}
           title="Belum ada pertanyaan rutin"
           description={canManage
-            ? 'Contoh: "Apa yang kamu kerjakan minggu ini?" dikirim tiap Senin 09:00 — update progres tanpa menagih manual.'
+            ? 'Contoh: "Apa yang kamu kerjakan minggu ini?" dikirim tiap Senin 09:00 - update progres tanpa menagih manual.'
             : "Manager tim belum membuat pertanyaan check-in."}
         />
       ) : (
@@ -177,7 +177,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
                   </div>
                 )}
 
-                {/* Jawab inline — hanya penerima dengan instance aktif yang belum dijawab */}
+                {/* Jawab inline - hanya penerima dengan instance aktif yang belum dijawab */}
                 {iAmRecipient && q.myPending && (
                   <div className="mt-2.5 rounded-lg border border-warning/40 bg-warning/5 p-2.5">
                     <p className="mb-1.5 text-[10px] font-semibold text-warning">Anda belum menjawab instance terakhir</p>
@@ -274,7 +274,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
               <div className="flex items-center justify-between rounded-lg border px-3 py-2">
                 <div>
                   <p className="text-xs font-medium">Rahasia</p>
-                  <p className="text-[10px] text-muted-foreground">Jawaban hanya terlihat oleh pembuat & manager — bukan sesama penerima</p>
+                  <p className="text-[10px] text-muted-foreground">Jawaban hanya terlihat oleh pembuat & manager - bukan sesama penerima</p>
                 </div>
                 <Switch checked={confidential} onCheckedChange={setConfidential} />
               </div>

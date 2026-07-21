@@ -1,4 +1,4 @@
-# Typed Card Comments + Per-Entry Attachments (`/pipelines`) — Design
+# Typed Card Comments + Per-Entry Attachments (`/pipelines`) - Design
 
 > Tanggal: 2026-06-15 · Status: spec disetujui (brainstorm), siap → writing-plans
 > Konteks: card detail `/pipelines` (`CardDetailModal`). Menambah dropdown tipe entri + upload (foto+file) per entri, dan merapikan UI/UX bagian Komentar & Lampiran.
@@ -7,9 +7,9 @@
 
 Card detail saat ini punya 3 blok bertumpuk yang membingungkan:
 
-1. **Lampiran** (`CardAttachments`) — upload multi-file generik (drag-drop, filesystem-backed, grid gambar + list file). UX sudah baik.
-2. **Komentar & Lampiran** — komentar teks polos dengan foto opsional (`photoPath`) **yang composer-nya tidak bisa upload** (kolom ada, form tidak). Tanpa tipe.
-3. **Aktivitas** — log sistem read-only menampilkan string tipe mentah (`commented`, `moved`).
+1. **Lampiran** (`CardAttachments`) - upload multi-file generik (drag-drop, filesystem-backed, grid gambar + list file). UX sudah baik.
+2. **Komentar & Lampiran** - komentar teks polos dengan foto opsional (`photoPath`) **yang composer-nya tidak bisa upload** (kolom ada, form tidak). Tanpa tipe.
+3. **Aktivitas** - log sistem read-only menampilkan string tipe mentah (`commented`, `moved`).
 
 Permintaan: (a) perbaiki UI/UX komentar & lampiran, (b) dropdown pilih tipe entri **Catatan / Telepon / WhatsApp / Kunjungan / Aktivitas**, (c) upload (foto + file) per entri, gambar **di-compress dulu** sebelum upload.
 
@@ -23,14 +23,14 @@ Polanya sudah ada di `/leads` (`LeadPipelinePage`): dropdown `note/call/whatsapp
 ## Arsitektur
 
 ```
-Composer (CardComments) ──multipart {body,type,files[]}──▶ POST /cards/:id/comments
+Composer (CardComments) --multipart {body,type,files[]}--▶ POST /cards/:id/comments
   files: JPEG di-compress (compressImage) sebelum append ke FormData
-        │
+        |
         ▼
 addComment(cardId, authorId, body, type)  → row pipeline_card_comments
   for each file: saveCardAttachment(..., commentId)  → pipeline_card_attachments (comment_id set)
-        │
-GET /cards/:id  ──▶ comments[] tiap comment.attachments[] (group by comment_id)
+        |
+GET /cards/:id  --▶ comments[] tiap comment.attachments[] (group by comment_id)
                     + authorName (batch resolve, anti-N+1)
                     Lampiran generik = attachments WHERE comment_id IS NULL
 ```
@@ -44,9 +44,9 @@ Reuse tabel attachment (bukan tabel baru / single `photoPath`) membuat "foto + m
 | `pipeline_card_comments` | `type` | `varchar(16)` default `"note"` | salah satu dari catalog 5 tipe |
 | `pipeline_card_attachments` | `comment_id` | `int` NULL | NULL = Lampiran kartu (perilaku lama); set = milik 1 komentar |
 
-**Migrasi**: cek `information_schema.columns` lalu `ALTER TABLE ... ADD COLUMN` per kolom dengan try/catch terpisah (DB tolak `ADD COLUMN IF NOT EXISTS` — konvensi project, lihat [[reference-startup-add-column]]). Tambah ke blok migrasi startup `server/storage.ts`.
+**Migrasi**: cek `information_schema.columns` lalu `ALTER TABLE ... ADD COLUMN` per kolom dengan try/catch terpisah (DB tolak `ADD COLUMN IF NOT EXISTS` - konvensi project, lihat [[reference-startup-add-column]]). Tambah ke blok migrasi startup `server/storage.ts`.
 
-## Shared — `shared/cardCommentTypes.ts` (pure, tested)
+## Shared - `shared/cardCommentTypes.ts` (pure, tested)
 
 Single source of truth:
 ```ts
@@ -66,7 +66,7 @@ Dipakai composer (opsi dropdown) + timeline (ikon/label/warna). Ikon di-resolve 
 
 ## Backend
 
-- `storage.addComment(cardId, authorId, body, type)` — terima `type` (validasi `isCardCommentType`, default `note`).
+- `storage.addComment(cardId, authorId, body, type)` - terima `type` (validasi `isCardCommentType`, default `note`).
 - `POST /api/pipelines/cards/:cardId/comments` → **multipart**:
   - gate `loadGuardedCard(req,res,"comment")` (tetap).
   - `parseMultipart(req, { maxBytes: ATTACHMENT_MAX_BYTES, maxFiles: 10, maxTotalBytes: 60MB })` → `fields.body`, `fields.type`, `files[]`.
@@ -85,8 +85,8 @@ Dipakai composer (opsi dropdown) + timeline (ikon/label/warna). Ikon di-resolve 
 
 - **`client/components/pipelines/CardComments.tsx`** (baru) = composer + timeline:
   - **Composer**: `<select>` 5 tipe + `<Input>` teks + tombol lampir (multi-file) + preview (thumbnail gambar / chip file) dengan tombol hapus + **Kirim**. JPEG di-compress (`compressImage`, maxDim 1920 / ~1.5MB) sebelum `FormData.append` (sama seperti `useUploadAttachments`).
-  - **Timeline**: per item — ikon+warna by tipe, `authorName`, waktu relatif, teks, lalu `<AttachmentGallery>` untuk lampirannya (+ render legacy `photoPath` bila ada). EmptyState bila kosong.
-- **`client/components/pipelines/AttachmentGallery.tsx`** (baru): presentasional — grid gambar + chip file + tombol hapus opsional. Diekstrak dari `CardAttachments`, dipakai oleh Lampiran generik **dan** tiap komentar (satu jalur render, DRY).
+  - **Timeline**: per item - ikon+warna by tipe, `authorName`, waktu relatif, teks, lalu `<AttachmentGallery>` untuk lampirannya (+ render legacy `photoPath` bila ada). EmptyState bila kosong.
+- **`client/components/pipelines/AttachmentGallery.tsx`** (baru): presentasional - grid gambar + chip file + tombol hapus opsional. Diekstrak dari `CardAttachments`, dipakai oleh Lampiran generik **dan** tiap komentar (satu jalur render, DRY).
 - `CardAttachments.tsx` → pakai `<AttachmentGallery>` untuk bagian list (composer drag-drop tetap).
 - **`useAddComment`** mutation → multipart (`type` + `files`), mirror `useUploadAttachments` (compress + FormData + auth header tanpa Content-Type). Ganti `m.addComment` lama (JSON `{body}`); satu-satunya pemanggil = `CardComments`.
 - Tipe `RuleWithMaps`/card-detail comment di `usePipelines.ts`: `comments[]` += `type`, `authorName`, `attachments[]`.
@@ -97,7 +97,7 @@ Dipakai composer (opsi dropdown) + timeline (ikon/label/warna). Ikon di-resolve 
 - **Tenant isolation**: semua query via `getMitraId()`; attachment & comment scoped mitra.
 - **Permission**: gate `comment` (write) untuk tambah; `view` untuk baca; hapus attachment = uploader atau admin (pola `CardAttachments` existing).
 - **Compress**: gambar JPEG di-compress client-side sebelum upload (≤1920px / ~1.5MB). PNG/webp/dok dikirim apa adanya (preserve alpha/binary), seperti `useUploadAttachments` sekarang.
-- **Limit**: 25MB/file (`ATTACHMENT_MAX_BYTES`), 10 file/req, 60MB total — reuse.
+- **Limit**: 25MB/file (`ATTACHMENT_MAX_BYTES`), 10 file/req, 60MB total - reuse.
 - **Best-effort author name**: gagal resolve → "Pengguna", tidak menggagalkan GET.
 
 ## Acceptance Criteria

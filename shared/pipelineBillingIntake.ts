@@ -39,7 +39,7 @@ export interface BillingFilter {
 }
 
 /** Atribut tanggal billing yang boleh jadi basis "hari overdue" (harus ada di data customer
- *  saat keputusan buat-kartu — custom field kartu tidak bisa karena kartunya belum ada). */
+ *  saat keputusan buat-kartu - custom field kartu tidak bisa karena kartunya belum ada). */
 export const OVERDUE_DATE_ATTRS: { value: string; label: string }[] = [
   { value: "dueDate", label: "Jatuh Tempo" },
   { value: "isolirDate", label: "Tgl Isolir" },
@@ -49,7 +49,7 @@ export const OVERDUE_DATE_ATTRS: { value: string; label: string }[] = [
 export const FILTER_KEYS = ["customerType", "status", "isIsolir", "billingStatus"] as const;
 
 /** Selectable values for the billing_sync filter dropdowns. These are the values stored in the
- *  local (synced) `customers` table — note `status` is English ("active"/"suspended"), NOT the
+ *  local (synced) `customers` table - note `status` is English ("active"/"suspended"), NOT the
  *  billing API's "aktif". Filtering compares case-insensitively against these stored values. */
 export const BILLING_FILTER_OPTIONS: {
   customerType: { value: string; label: string }[];
@@ -122,7 +122,7 @@ export function preferredFieldTypeForAttr(attr: string): string {
 export function normalizeDateValue(raw: string): string {
   const s = String(raw ?? "").trim();
   if (!s) return "";
-  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/); // YYYY-MM-DD[ T...] — already date-first
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/); // YYYY-MM-DD[ T...] - already date-first
   if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return "";

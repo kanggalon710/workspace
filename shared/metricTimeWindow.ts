@@ -1,4 +1,4 @@
-/** Pure time-window helpers for pipeline metrics — no I/O. nowMs is injected for testability. */
+/** Pure time-window helpers for pipeline metrics - no I/O. nowMs is injected for testability. */
 
 export type TimePreset =
   | "all" | "today" | "yesterday" | "7d" | "30d"

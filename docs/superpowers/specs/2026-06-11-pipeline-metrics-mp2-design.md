@@ -1,4 +1,4 @@
-# Spec — MP2: Pipeline Metric Time Filters
+# Spec - MP2: Pipeline Metric Time Filters
 
 > Date: 2026-06-11 · Mitra-scoped · Sub-project 2 of the Pipeline Metrics epic. Build on `dev`.
 > Depends on MP1 (merged). Design decided autonomously (user delegated continuous build).
@@ -11,17 +11,17 @@ Satisfies epic criteria #8, #10, #11.
 
 ## Decisions (confirmed)
 1. **Strip context overrides only time-aware metrics** (`timeField != "none"`). Timeless metrics
-   (`timeField = "none"`, e.g. "Total Kartu") are unaffected — they stay all-time.
+   (`timeField = "none"`, e.g. "Total Kartu") are unaffected - they stay all-time.
 2. **New metrics default `timeField = "none"`** → existing MP1 metrics behave exactly as before.
 
-## 1. Schema — add 4 columns to `pipeline_metrics`
+## 1. Schema - add 4 columns to `pipeline_metrics`
 Via the guarded `loyaltyColumnAdditions` array (info_schema COUNT check → `ALTER TABLE ADD COLUMN`):
 - `time_field VARCHAR(24)` (null/"none" = timeless; "created" | "updated" | "field:<fieldId>")
 - `time_preset VARCHAR(16)` (default null → treated as "all")
 - `time_from TEXT`, `time_to TEXT` (for "custom")
 Add the matching columns to the `pipelineMetrics` Drizzle table: `timeField`, `timePreset`, `timeFrom`, `timeTo`.
 
-## 2. Pure module — `shared/metricTimeWindow.ts` (tested)
+## 2. Pure module - `shared/metricTimeWindow.ts` (tested)
 ```ts
 export type TimePreset = "all" | "today" | "yesterday" | "7d" | "30d" | "this_month" | "last_month" | "this_year" | "custom";
 export const TIME_PRESETS: { preset: TimePreset; label: string }[];   // Indonesian labels
@@ -37,8 +37,8 @@ Jan 1..now. `custom` → `[startOf(from), endOf(to)]`; if from/to missing → nu
 Tests: relative presets exact (`7d` from = now-7d), `all`→null, custom range, `dateInWindow` boundary
 (inclusive), invalid date → false, `today` contains now.
 
-## 3. Engine — `server/pipeline-metrics-engine.ts`
-- `computeAllPipelineMetrics(req, pipelineId, rowFilter, ctx?)` — new optional `ctx: { preset: string; from?: string; to?: string } | null`.
+## 3. Engine - `server/pipeline-metrics-engine.ts`
+- `computeAllPipelineMetrics(req, pipelineId, rowFilter, ctx?)` - new optional `ctx: { preset: string; from?: string; to?: string } | null`.
 - Per metric: if `timeField` is null/"none" → no time filtering (timeless). Else resolve **effective window**:
   `ctx && ctx.preset !== "all"` → `resolveTimeWindow(ctx.preset, now, ctx.from, ctx.to)` (strip override);
   else → `resolveTimeWindow(metric.timePreset ?? "all", now, metric.timeFrom, metric.timeTo)`.
@@ -48,7 +48,7 @@ Tests: relative presets exact (`7d` from = now-7d), `all`→null, custom range, 
   when a window applies.
 
 ## 4. Endpoint
-`GET /api/pipelines/:id/metrics?ctx=<preset>&from=&to=` — parse the query into `ctx` (omit when absent or
+`GET /api/pipelines/:id/metrics?ctx=<preset>&from=&to=` - parse the query into `ctx` (omit when absent or
 "all") and pass to `computeAllPipelineMetrics`. Same read+view gate.
 
 ## 5. Storage
@@ -56,7 +56,7 @@ Tests: relative presets exact (`7d` from = now-7d), `all`→null, custom range, 
 (timeField/timePreset stored as-is; null when "none"/"all").
 
 ## 6. Client
-- `usePipelineMetrics(pipelineId, ctx?)` — ctx `{ preset, from?, to? }`; query key includes ctx; appends the
+- `usePipelineMetrics(pipelineId, ctx?)` - ctx `{ preset, from?, to? }`; query key includes ctx; appends the
   query string. (Keep the no-ctx call working for callers that don't pass it.)
 - `MetricsStrip`: a **time-context dropdown** (TIME_PRESETS) at the strip header (left of the gear). Default
   "Semua waktu". On change → refetch with the ctx. A custom range reveals two date inputs.

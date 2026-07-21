@@ -1,7 +1,7 @@
-# Spec — SP5: Collection Dashboard Metrics
+# Spec - SP5: Collection Dashboard Metrics
 
 > Date: 2026-06-10 · Mitra-scoped · Sub-project 5 of the collection epic. Build on `dev`.
-> Depends on SP1–SP4 (merged). Design decided autonomously (user delegated continuous build).
+> Depends on SP1-SP4 (merged). Design decided autonomously (user delegated continuous build).
 
 ## Goal
 
@@ -18,7 +18,7 @@ and show them in a read-only metrics view. Lets Pipeline Collections eventually 
    ranges, which are for routing, not reporting.)
 3. **Metrics view** = a read-only `CollectionMetricsDialog` opened from the board ("Metrik" button), view-gated.
 
-## 1. Pure module — `shared/collectionDashboard.ts` (tested)
+## 1. Pure module - `shared/collectionDashboard.ts` (tested)
 
 ```ts
 export interface MetricsCard { stageId: number; sourceCustomerId: number | null; }
@@ -43,14 +43,14 @@ export function computeCollectionMetrics(input: {
   stages: { id: number; label: string }[];
 }): CollectionMetrics;
 ```
-Bands: `daysOverdue===0 → "0"`, `1–7`, `8–30`, `31–60`, `61–90`, `>90 → "90+"`. A card with no snapshot
+Bands: `daysOverdue===0 → "0"`, `1-7`, `8-30`, `31-60`, `61-90`, `>90 → "90+"`. A card with no snapshot
 (customer missing) counts in totals/byStage but contributes 0 outstanding and is excluded from aging.
 
 Tests: empty → zeros + successRate null; mixed cards (active/paid/writeoff) → correct counts, outstanding
 sum over active only, successRate = paid/(paid+writeoff), aging band placement (boundary 7/8, 30/31, 90/91),
 byStage labels.
 
-## 2. Server gatherer — `server/collection-metrics.ts`
+## 2. Server gatherer - `server/collection-metrics.ts`
 ```ts
 export async function getCollectionMetrics(pipelineId: number): Promise<CollectionMetrics>;
 ```
@@ -59,11 +59,11 @@ export async function getCollectionMetrics(pipelineId: number): Promise<Collecti
   ids; `listStages(pid)` → labels. Call `computeCollectionMetrics`. Runs in current-tenant context.
 - If the pipeline has no enabled config, still returns metrics (paid/writeoff null → all active; useful, no crash).
 
-## 3. Endpoint — `server/routes.ts`
-`GET /api/pipelines/:id/collection-metrics` — `requirePermission("pipelines")` + `requirePipelineView`
+## 3. Endpoint - `server/routes.ts`
+`GET /api/pipelines/:id/collection-metrics` - `requirePermission("pipelines")` + `requirePipelineView`
 (read-level; metrics are observability). Returns `sendSuccess(res, metrics)`.
 
-## 4. Client — hook + dialog
+## 4. Client - hook + dialog
 - `useCollectionMetrics(pipelineId)` (GET).
 - `client/components/pipelines/CollectionMetricsDialog.tsx` (mobile-first, read-only):
   - StatTiles: Total Kartu, Aktif, Lunas, Write-Off, Outstanding (Rp), Success Rate (%). `accent`:
@@ -71,7 +71,7 @@ export async function getCollectionMetrics(pipelineId: number): Promise<Collecti
   - **Aging** section: horizontal bars (simple divs scaled to max bucket) per band with counts.
   - **Per-stage** section: list of stage → count.
   - Loading skeleton; EmptyState when totalCards = 0.
-- Board: a "Metrik" button (view-gated: `can("view")` — or always, since the board itself requires view) +
+- Board: a "Metrik" button (view-gated: `can("view")` - or always, since the board itself requires view) +
   the dialog mount, mirroring the existing Field/Akses/Otomasi/Collection buttons.
 
 ## 5. Testing
@@ -83,5 +83,5 @@ export async function getCollectionMetrics(pipelineId: number): Promise<Collecti
 3. Pay/age some cards via Sync Now → reopen Metrik → numbers update.
 
 ## 7. Out of scope
-SP3b (custom triggers). Time-series/history snapshots of metrics (kpi_snapshots-style) — current state only.
+SP3b (custom triggers). Time-series/history snapshots of metrics (kpi_snapshots-style) - current state only.
 Replacing the legacy `/collections` dashboard wholesale.

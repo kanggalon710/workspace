@@ -15,7 +15,7 @@ interface MapInfoWindowProps {
   onAddCustomerDrop?: () => void;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// -- Helpers ---------------------------------------------------------------
 
 function InfoRow({ label, value, mono }: { label: string; value?: string | null; mono?: boolean }) {
   if (!value) return null;
@@ -83,7 +83,7 @@ const TYPE_META: Record<string, { abbr: string; colorKey: keyof typeof ASSET_COL
   cable:    { abbr: "KBL", colorKey: "cable",    Icon: Cable },
 };
 
-// ── Main ──────────────────────────────────────────────────────────────────
+// -- Main ------------------------------------------------------------------
 export function MapInfoWindowContent({
   type, data, onClose, onEdit, onConnect, onViewCableDetail, onAddAssetAtCable, onAddCustomerDrop,
 }: MapInfoWindowProps) {
@@ -111,10 +111,10 @@ export function MapInfoWindowContent({
   return (
     <div style={containerStyle}>
 
-      {/* ── Accent stripe ── */}
+      {/* -- Accent stripe -- */}
       <div style={{ height: 4, background: accentColor, width: "100%" }} />
 
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid #f3f4f6" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
           {/* Type badge circle */}
@@ -144,7 +144,7 @@ export function MapInfoWindowContent({
               </span>
             </div>
           </div>
-          {/* Close button — replaces native Google Maps X */}
+          {/* Close button - replaces native Google Maps X */}
           {onClose && (
             <button onClick={onClose} style={{
               width: 26, height: 26, borderRadius: "50%", border: "none",
@@ -158,7 +158,7 @@ export function MapInfoWindowContent({
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* -- Body -- */}
       <div style={{ padding: "10px 14px" }}>
 
         {/* POP */}
@@ -251,7 +251,7 @@ export function MapInfoWindowContent({
         )}
       </div>
 
-      {/* ── Footer ── */}
+      {/* -- Footer -- */}
       <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 8 }}>
         {type !== "cable" && onEdit && (
           <button onClick={onEdit} style={{

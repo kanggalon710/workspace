@@ -1,4 +1,4 @@
-# Card Relations Engine (Pipelines Phase 1) — Implementation Plan
+# Card Relations Engine (Pipelines Phase 1) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Shared pure module — catalog + href + validation
+### Task 1: Shared pure module - catalog + href + validation
 
 **Files:**
 - Create: `shared/cardRelations.ts`
@@ -66,7 +66,7 @@ test("dedupeRelations removes same type+id", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test shared/cardRelations.test.ts`
-Expected: FAIL — module missing.
+Expected: FAIL - module missing.
 
 - [ ] **Step 3: Write the module**
 
@@ -121,7 +121,7 @@ export function dedupeRelations<T extends { entityType: string; entityId: number
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test shared/cardRelations.test.ts`
-Expected: PASS — all 5 tests.
+Expected: PASS - all 5 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -189,7 +189,7 @@ In `server/storage.ts`, find the block where pipeline tables are created with `C
 
 - [ ] **Step 3: Import the table symbol in storage.ts**
 
-Ensure `cardRelations` is in the schema import list at the top of `server/storage.ts` (the big `import { ... } from "@shared/schema"` or `"../shared/schema.js"` block — match the existing style). Add `cardRelations` and the `CardRelation` type alongside the other pipeline imports.
+Ensure `cardRelations` is in the schema import list at the top of `server/storage.ts` (the big `import { ... } from "@shared/schema"` or `"../shared/schema.js"` block - match the existing style). Add `cardRelations` and the `CardRelation` type alongside the other pipeline imports.
 
 - [ ] **Step 4: Verify typecheck + build**
 
@@ -205,12 +205,12 @@ git commit -m "feat(pipelines): card_relations table + startup create"
 
 ---
 
-### Task 3: Storage — CRUD + batched resolver + search + implicit surfacing
+### Task 3: Storage - CRUD + batched resolver + search + implicit surfacing
 
 **Files:**
 - Modify: `server/storage.ts`
 
-Context: follow the batched `inArray` + Map convention. The entity tables `customers`, `leads`, `collections`, `odps`, `pipelineCards` must be imported in storage.ts (most already are — verify with grep and add any missing to the schema import).
+Context: follow the batched `inArray` + Map convention. The entity tables `customers`, `leads`, `collections`, `odps`, `pipelineCards` must be imported in storage.ts (most already are - verify with grep and add any missing to the schema import).
 
 - [ ] **Step 1: Add the relations storage methods**
 
@@ -361,7 +361,7 @@ In `server/storage.ts`, near the other pipeline-card methods, add:
   }
 ```
 
-NOTE on `like_`: this codebase uses Drizzle's `like` operator. At the top of `server/storage.ts`, confirm `like` and `or` are imported from `drizzle-orm` (search `from "drizzle-orm"`); if `like`/`or` are missing, add them to that import. Then replace `like_(col, val)` above with `like(col, val)` (the `like_` name is a placeholder to force you to wire the real import — use the real `like`).
+NOTE on `like_`: this codebase uses Drizzle's `like` operator. At the top of `server/storage.ts`, confirm `like` and `or` are imported from `drizzle-orm` (search `from "drizzle-orm"`); if `like`/`or` are missing, add them to that import. Then replace `like_(col, val)` above with `like(col, val)` (the `like_` name is a placeholder to force you to wire the real import - use the real `like`).
 
 - [ ] **Step 2: Verify typecheck + build**
 
@@ -377,7 +377,7 @@ git commit -m "feat(pipelines): card-relations storage CRUD + batched resolver +
 
 ---
 
-### Task 4: Routes — relations endpoints
+### Task 4: Routes - relations endpoints
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -394,7 +394,7 @@ import { isValidEntityType } from "../shared/cardRelations.js";
 In `server/routes.ts`, near the other `/api/pipelines/cards/:cardId/...` routes (e.g. after the move route), add:
 
 ```ts
-  // ── Card relations (Phase 1) ──
+  // -- Card relations (Phase 1) --
   router.get("/api/pipelines/cards/:cardId/relations", async (req, res) => {
     if (!requirePermission(req, res, "pipelines")) return;
     const card = await storage.getCard(Number(req.params.cardId));
@@ -483,7 +483,7 @@ git commit -m "feat(pipelines): card-relations endpoints (list/add/delete/search
 
 ---
 
-### Task 5: Frontend — relations hook + CardDetailModal section
+### Task 5: Frontend - relations hook + CardDetailModal section
 
 **Files:**
 - Modify: `client/hooks/usePipelines.ts` (add relations hooks)
@@ -515,7 +515,7 @@ export function useCardRelationMutations(cardId: number) {
 }
 ```
 
-(Use whatever the file calls the delete helper — `api.del` or `api.delete`; match existing usage. Ensure `useQuery`/`useMutation`/`useQueryClient` are imported in this file — they already are for other hooks.)
+(Use whatever the file calls the delete helper - `api.del` or `api.delete`; match existing usage. Ensure `useQuery`/`useMutation`/`useQueryClient` are imported in this file - they already are for other hooks.)
 
 - [ ] **Step 2: Build the CardRelations section component**
 
@@ -597,7 +597,7 @@ export function CardRelations({ cardId, writable }: { cardId: number; writable: 
 }
 ```
 
-NOTE: `Combobox`'s exact props (`onSearch`, `searchPlaceholder`) must match the project's `@/components/ui/combobox`. READ that component; if it doesn't support async `onSearch`, fetch options on type change with a debounced effect instead and pass static `options`. Adapt to the real Combobox API — do not invent props.
+NOTE: `Combobox`'s exact props (`onSearch`, `searchPlaceholder`) must match the project's `@/components/ui/combobox`. READ that component; if it doesn't support async `onSearch`, fetch options on type change with a debounced effect instead and pass static `options`. Adapt to the real Combobox API - do not invent props.
 
 - [ ] **Step 3: Mount it in CardDetailModal**
 
@@ -627,18 +627,18 @@ git commit -m "feat(pipelines): card relations section in CardDetailModal"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/cardRelations.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "card_relations\|cardRelations\|CardRelations" server/ shared/ client/ | sort` → expect schema, storage, routes, shared module + test, hook, component.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/cardRelations.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "card_relations\|cardRelations\|CardRelations" server/ shared/ client/ | sort` → expect schema, storage, routes, shared module + test, hook, component.
 
 ---
 
 ## Self-Review
 
 - **Spec coverage:** polymorphic table → Task 2. Pure catalog/href/dedupe → Task 1. Batched resolver + CRUD + search + entity existence → Task 3. Implicit source-customer surfacing (read-time, non-deletable) → Task 4 GET handler. 4 routes with card→pipeline permission → Task 4. CardDetailModal "Relasi" section + picker → Task 5. Multi-tenant scoping → every storage method uses `getMitraId()`; `entityExistsInMitra` enforces same-mitra on add. Testing → Task 1 + Task 6.
-- **Placeholders:** Tasks 1–4 + 6 contain complete code. Tasks 3 and 5 flag two real integration points to wire against the actual codebase (`like`/`or` import in storage; `Combobox` async-search API) rather than guessing — both call out exactly what to verify and how to adapt.
-- **Type consistency:** `RelationEntityType`, `RELATION_ENTITY_TYPES`, `isValidEntityType`, `relationHref`, `dedupeRelations` (Task 1) consumed in Tasks 4–5. `CardRelation` type (Task 2) used in Task 3 method signatures. Storage methods `listCardRelations`/`addCardRelation`/`deleteCardRelation`/`resolveRelationLabels`/`searchRelatableEntities`/`entityExistsInMitra` (Task 3) called by Task 4 routes. Route shapes (`entityLabel`/`entitySubtitle`/`pipelineId`/`implicit`) consumed by Task 5 component.
+- **Placeholders:** Tasks 1-4 + 6 contain complete code. Tasks 3 and 5 flag two real integration points to wire against the actual codebase (`like`/`or` import in storage; `Combobox` async-search API) rather than guessing - both call out exactly what to verify and how to adapt.
+- **Type consistency:** `RelationEntityType`, `RELATION_ENTITY_TYPES`, `isValidEntityType`, `relationHref`, `dedupeRelations` (Task 1) consumed in Tasks 4-5. `CardRelation` type (Task 2) used in Task 3 method signatures. Storage methods `listCardRelations`/`addCardRelation`/`deleteCardRelation`/`resolveRelationLabels`/`searchRelatableEntities`/`entityExistsInMitra` (Task 3) called by Task 4 routes. Route shapes (`entityLabel`/`entitySubtitle`/`pipelineId`/`implicit`) consumed by Task 5 component.
 
 ## Deploy note
-New table `card_relations` is created on startup (`CREATE TABLE IF NOT EXISTS`) — no manual SQL. Purely additive; no impact on existing pipelines/cards.
+New table `card_relations` is created on startup (`CREATE TABLE IF NOT EXISTS`) - no manual SQL. Purely additive; no impact on existing pipelines/cards.

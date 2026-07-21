@@ -91,7 +91,7 @@ export default function NotificationBell() {
 
   return (
     <div ref={dropdownRef} className="relative">
-      {/* Bell button — inline within TopBar */}
+      {/* Bell button - inline within TopBar */}
       <button
         onClick={() => setOpen((o) => !o)}
         className="relative h-9 w-9 rounded-md hover:bg-accent flex items-center justify-center transition-colors"
@@ -218,7 +218,7 @@ function NotificationItem({ n, onClick, onMarkRead, onDelete }: any) {
         </div>
       </div>
 
-      {/* Actions — hover */}
+      {/* Actions - hover */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
         {isUnread && (
           <button
@@ -263,4 +263,4 @@ function getIconForType(type: string): { Icon: any; color: string; bg: string } 
   }
 }
 
-// v4.2.18 (P1.1): fmtRelative now imported from @/lib/dateFormat (guaranteed safe — no "Invalid Date")
+// v4.2.18 (P1.1): fmtRelative now imported from @/lib/dateFormat (guaranteed safe - no "Invalid Date")

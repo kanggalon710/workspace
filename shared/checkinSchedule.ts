@@ -1,5 +1,5 @@
-/** Pure helpers jadwal check-in rutin (FR-8xx) — no I/O, unit-testable.
- *  Konvensi hari: ISO 1=Senin … 7=Minggu (sesuai urutan UI Senin–Minggu). */
+/** Pure helpers jadwal check-in rutin (FR-8xx) - no I/O, unit-testable.
+ *  Konvensi hari: ISO 1=Senin … 7=Minggu (sesuai urutan UI Senin-Minggu). */
 
 /** JS Date.getDay() (0=Minggu..6=Sabtu) → ISO DOW (1=Senin..7=Minggu). */
 export function isoDow(d: Date): number {
@@ -39,7 +39,7 @@ export function isValidSendTime(t: unknown): t is string {
 /** Apakah pertanyaan harus dikirim SEKARANG oleh worker tick?
  *  Aturan: aktif · hari ini termasuk sendDays · waktu sekarang >= sendTime
  *  · belum terkirim hari ini (lastSentDate != hari ini).
- *  Pakai ">=" (bukan "==") supaya tahan worker restart/downtime — instance hari itu
+ *  Pakai ">=" (bukan "==") supaya tahan worker restart/downtime - instance hari itu
  *  tetap terkirim saat worker bangun lagi, dan dedup harian mencegah kirim dobel. */
 export function shouldSendNow(
   q: { isActive: number | boolean; sendDays: string | null; sendTime: string | null; lastSentDate: string | null },

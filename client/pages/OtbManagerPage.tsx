@@ -184,7 +184,7 @@ function CorePortGrid({ totalCores, otbId, otbName }: { totalCores: number; otbI
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg">{otbName} — Layout Port</h3>
+      <h3 className="font-semibold text-lg">{otbName} - Layout Port</h3>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 text-sm">
@@ -418,7 +418,7 @@ export default function OtbManagerPage() {
         <div>
           <h1 className="text-2xl font-bold">OTB Manager</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Optical Termination Box — kelola port core di setiap POP
+            Optical Termination Box - kelola port core di setiap POP
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)} className="shrink-0">
@@ -593,7 +593,7 @@ export default function OtbManagerPage() {
           <DialogHeader>
             <DialogTitle>Detail Port OTB</DialogTitle>
             <DialogDescription>
-              {viewOtb && popMap.get(viewOtb.popId)?.name} — {viewOtb?.name}
+              {viewOtb && popMap.get(viewOtb.popId)?.name} - {viewOtb?.name}
             </DialogDescription>
           </DialogHeader>
           {viewOtb && (

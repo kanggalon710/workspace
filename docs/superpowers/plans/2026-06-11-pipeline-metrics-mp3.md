@@ -107,12 +107,12 @@ test("evaluateFormula throws on a parse error (engine catches it)", () => {
 - [ ] **Step 2: Run the test, verify it FAILS**
 
 Run: `npx tsx --test shared/metricFormula.test.ts`
-Expected: FAIL — `Cannot find module './metricFormula.js'`.
+Expected: FAIL - `Cannot find module './metricFormula.js'`.
 
 - [ ] **Step 3: Implement `shared/metricFormula.ts`**
 
 ```ts
-/** Pure, safe formula parser + evaluator for pipeline metrics — NO eval(). Shunting-yard → RPN. */
+/** Pure, safe formula parser + evaluator for pipeline metrics - NO eval(). Shunting-yard → RPN. */
 
 export const FORMULA_TERM_KEYS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
@@ -241,7 +241,7 @@ export function evaluateFormula(expr: string, values: Record<string, number>): n
 - [ ] **Step 4: Run the test, verify it PASSES**
 
 Run: `npx tsx --test shared/metricFormula.test.ts`
-Expected: PASS — all green. Debug the implementation (not the tests) until green.
+Expected: PASS - all green. Debug the implementation (not the tests) until green.
 
 - [ ] **Step 5: Commit**
 
@@ -338,7 +338,7 @@ In the `.values({...})` object, after the four `timeField/timePreset/timeFrom/ti
 
 - [ ] **Step 2: Persist in `updateMetricDef`**
 
-`formula` is a plain scalar — add it to the copy-loop key array. `terms` is JSON — handle it like `stageIds`. In `updateMetricDef`:
+`formula` is a plain scalar - add it to the copy-loop key array. `terms` is JSON - handle it like `stageIds`. In `updateMetricDef`:
 
 ```ts
     for (const k of ["name", "description", "icon", "color", "type", "source", "aggregation", "fieldId", "prefix", "suffix", "decimals", "position", "timeField", "timePreset", "timeFrom", "timeTo", "formula"]) {
@@ -349,7 +349,7 @@ In the `.values({...})` object, after the four `timeField/timePreset/timeFrom/ti
     if (data.conditions !== undefined) patch.conditions = data.conditions ? JSON.stringify(data.conditions) : null;
 ```
 
-(Add only the `terms` line; the `stageIds`/`conditions`/loop lines already exist — extend the loop array with `"formula"` and insert the new `terms` line next to the `stageIds` one.)
+(Add only the `terms` line; the `stageIds`/`conditions`/loop lines already exist - extend the loop array with `"formula"` and insert the new `terms` line next to the `stageIds` one.)
 
 - [ ] **Step 3: Typecheck**
 
@@ -435,7 +435,7 @@ Replace it with a leading `formula` branch:
 ```
 
 `parseConditionGroups` and `evaluateConditionGroups` are already imported in this file. The term's
-`conditions` is the parsed object (or null) — re-stringify it for `parseConditionGroups`, exactly as
+`conditions` is the parsed object (or null) - re-stringify it for `parseConditionGroups`, exactly as
 the metric-level conditions are handled.
 
 - [ ] **Step 3: Typecheck**
@@ -531,7 +531,7 @@ EOF
 
 ---
 
-## Task 6: Config dialog — terms editor + formula input
+## Task 6: Config dialog - terms editor + formula input
 
 **Files:**
 - Modify: `client/components/pipelines/MetricsConfigDialog.tsx`
@@ -592,7 +592,7 @@ Add to the object passed to `setDraft` (after the MP2 time fields):
     formula: d.formula ?? "",
 ```
 
-> The term `conditions` is stored as a parsed object (`{groups}`) inside the `terms` JSON — NOT a
+> The term `conditions` is stored as a parsed object (`{groups}`) inside the `terms` JSON - NOT a
 > separate JSON string. So unlike the metric-level conditions (which are a JSON string needing
 > `JSON.parse`), here `t.conditions` is already an object. The branch above handles `{groups}` vs a
 > legacy flat array without a second `JSON.parse`.
@@ -703,7 +703,7 @@ EOF
 - [ ] **Step 1: Run the pure tests**
 
 Run: `npx tsx --test shared/metricFormula.test.ts`
-Expected: PASS — all green.
+Expected: PASS - all green.
 
 - [ ] **Step 2: Typecheck + build**
 
@@ -723,7 +723,7 @@ Expected: 0 type errors; build succeeds.
 
 - [ ] **Step 4: Update epic memory**
 
-Edit `/home/ygao-t580/.claude/projects/-home-ygao-t580-Works-Jabnet-Website-ftth-tools/memory/project-pipeline-metrics-epic.md` — move MP3 to done with a one-line summary (`shared/metricFormula.ts` + terms/formula cols + engine branch + dialog terms editor). Leave MP4 remaining.
+Edit `/home/ygao-t580/.claude/projects/-home-ygao-t580-Works-Jabnet-Website-ftth-tools/memory/project-pipeline-metrics-epic.md` - move MP3 to done with a one-line summary (`shared/metricFormula.ts` + terms/formula cols + engine branch + dialog terms editor). Leave MP4 remaining.
 
 - [ ] **Step 5: Final handoff to user**
 
@@ -735,6 +735,6 @@ Per [[feedback-post-update-handoff]]: report what changed, where, and the deploy
 
 - **Spec coverage:** §1 schema/source → Task 2; §2 pure module → Task 1; §3 engine → Task 4; §4 validation → Task 5; §5 storage → Task 3; §6 client → Task 6; §7/§8 testing+acceptance → Tasks 1 & 7. All covered.
 - **MP1/MP2 preserved:** the engine change only adds a leading `if (def.source === "formula")` branch; non-formula metrics fall through to the unchanged `field_agg`/else logic. `terms`/`formula` default null.
-- **Type consistency:** `TermDraft` (Task 6) ↔ stored term shape (Task 2/3) ↔ engine read (Task 4) ↔ validation (Task 5) all use `{key, source, aggregation, fieldId, stageIds, conditions}`. `FORMULA_TERM_KEYS`/`parseFormula`/`evaluateFormula` names identical across Tasks 1, 4, 5, 6. Term `conditions` is stored as a parsed object inside the terms JSON (not a separate JSON string) — Task 3 stringifies the whole `terms` array once; Task 6 startEdit reads `t.conditions` as an object (no inner JSON.parse); Task 4 re-stringifies per term for `parseConditionGroups`. Consistent.
+- **Type consistency:** `TermDraft` (Task 6) ↔ stored term shape (Task 2/3) ↔ engine read (Task 4) ↔ validation (Task 5) all use `{key, source, aggregation, fieldId, stageIds, conditions}`. `FORMULA_TERM_KEYS`/`parseFormula`/`evaluateFormula` names identical across Tasks 1, 4, 5, 6. Term `conditions` is stored as a parsed object inside the terms JSON (not a separate JSON string) - Task 3 stringifies the whole `terms` array once; Task 6 startEdit reads `t.conditions` as an object (no inner JSON.parse); Task 4 re-stringifies per term for `parseConditionGroups`. Consistent.
 - **Divide-by-zero:** Task 1 returns 0 for the whole expression; verified by the `a/b+c` test.
 - **No placeholders:** every code step has complete code.

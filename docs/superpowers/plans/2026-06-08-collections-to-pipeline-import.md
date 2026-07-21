@@ -181,7 +181,7 @@ test("assignees field is type user with multiple config", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx tsx --test tools/collectionsToPipeline.test.ts`
-Expected: FAIL — cannot find module `./collectionsToPipeline.js`.
+Expected: FAIL - cannot find module `./collectionsToPipeline.js`.
 
 - [ ] **Step 3: Write the module**
 
@@ -192,7 +192,7 @@ import { resolveAssignee } from "./leadsToPipeline.js";
 
 export { resolveAssignee };
 
-/** DB-shape (snake_case) collection row — only fields we read. */
+/** DB-shape (snake_case) collection row - only fields we read. */
 export interface CollectionRow {
   id: number;
   customer_id: number; // FK -> customers.id
@@ -430,7 +430,7 @@ export function collectionActivityToActivity(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx --test tools/collectionsToPipeline.test.ts`
-Expected: PASS — all tests (tests 1-9) pass.
+Expected: PASS - all tests (tests 1-9) pass.
 
 - [ ] **Step 5: Commit**
 
@@ -487,7 +487,7 @@ if (args.includes("--help") || args.includes("-h")) {
       "  --default-assignee <userId>   fallback assignee when a collection's assignee isn't a JABNET user.",
       "",
       "  Photos: collection_activities.photo_data (base64) are written to the filesystem via",
-      "  saveBase64Photo — set JABNET_PRIVATE_ROOT (or JABNET_UPLOAD_ROOT) so they land in the",
+      "  saveBase64Photo - set JABNET_PRIVATE_ROOT (or JABNET_UPLOAD_ROOT) so they land in the",
       "  private uploads dir, not ./uploads.",
     ].join("\n"),
   );
@@ -761,7 +761,7 @@ Expected: bundle OK + usage prints.
 ## Self-Review
 
 - **Spec coverage:** uploads `collections` feature → Task 1. Pure module (stages+fallback, fields incl. user-multiple, card, field-values, multi-assignee, classify, comment/activity) → Task 2. Runner (replicate stages, JOIN customers, fields with config, cards, multi-assignee value, comments+photos, activity, tallies, --reset/--default-assignee/--help) → Task 3. All spec sections covered.
-- **Placeholders:** none — full code in every code step.
+- **Placeholders:** none - full code in every code step.
 - **Type consistency:** `CollectionRow`/`CustomerLite`/`CollectionStageRow`/`CollectionActivityRow`/`StageDef`/`FieldDef`/`CardDraft` defined in Task 2 and consumed with matching shapes in Task 3. `collectionToCard(col, customer, stageIdByKey, firstStageKey, assigneeId)` signature matches both test (Task 2) and runner (Task 3). `saveBase64Photo(slug, feature, idHint, dataUrl)` matches `server/uploads.ts`. `resolveAssignee` re-exported from `leadsToPipeline.js`.
 
 ## Run on prod (after merge + user push + deploy)

@@ -1,4 +1,4 @@
-/** Pure rules for pipeline card attachments — no I/O, fully unit-testable. */
+/** Pure rules for pipeline card attachments - no I/O, fully unit-testable. */
 
 export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024; // 25 MB/file
 
@@ -13,7 +13,7 @@ export const ATTACHMENT_TYPES: AttachmentType[] = [
   { ext: "docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", kind: "file" },
   { ext: "xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", kind: "file" },
   { ext: "zip",  mime: "application/zip", kind: "file" },
-  // Teamspace BUG-011 (FR-502): voice note chat — hasil MediaRecorder browser
+  // Teamspace BUG-011 (FR-502): voice note chat - hasil MediaRecorder browser
   { ext: "webm", mime: "audio/webm", kind: "audio" },
   { ext: "ogg",  mime: "audio/ogg",  kind: "audio" },
   { ext: "m4a",  mime: "audio/mp4",  kind: "audio" },

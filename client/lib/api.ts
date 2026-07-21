@@ -19,7 +19,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
-  // Handle 401 globally — only trigger logout if user is actually logged in
+  // Handle 401 globally - only trigger logout if user is actually logged in
   if (res.status === 401) {
     // Don't fire the event if localStorage is already empty (already logged out)
     if (localStorage.getItem("ftth_user")) {

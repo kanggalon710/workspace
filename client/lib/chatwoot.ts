@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-// DRY: DTO shapes are owned by the server-side pure modules — re-export, don't redeclare.
+// DRY: DTO shapes are owned by the server-side pure modules - re-export, don't redeclare.
 import type { Inbox, ConversationSummary, ChatMessage, CannedResponse } from "@shared/chatwootMappers";
 import type { ChatwootAgent } from "@shared/chatwootAgent";
 

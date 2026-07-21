@@ -82,11 +82,11 @@ export default function PipelineBoardPage() {
     if (c) setSelectedCard(c);
   }, []);
 
-  // Teamspace: pertahankan base path sesuai route asal — board tim harus tetap di
+  // Teamspace: pertahankan base path sesuai route asal - board tim harus tetap di
   // /teamspace/boards (gate `team_tasks`); navigasi ke /pipelines akan memblokir
   // anggota tim yang tidak punya izin ops `pipelines`.
   const basePath = teamParams ? `/teamspace/boards/${pid}` : `/pipelines/${pid}`;
-  // UX Cicle: di board tim, tampilkan bar modul tim persisten (Ringkasan/Chat/…) —
+  // UX Cicle: di board tim, tampilkan bar modul tim persisten (Ringkasan/Chat/…) -
   // dari board tidak lagi jalan buntu tanpa tombol kembali.
   const { data: ownerTeam } = useTeam(teamParams && (pipeline as any)?.teamId ? Number((pipeline as any).teamId) : null);
   const openCard = useCallback((cardId: number) => { setSelectedCard(cardId); navigate(`${basePath}?card=${cardId}`); }, [navigate, basePath]);
@@ -138,7 +138,7 @@ export default function PipelineBoardPage() {
   // Group visible cards by stage (and sort each bucket) once per render instead of re-filtering
   // the full list per stage. Stable array identity per stage helps downstream memoization.
   // Urutan: field kustom (bila dipilih) menang; kalau tidak, urut by tanggal Dibuat/Update-terakhir
-  // (dateField) — jadi toggle "Dibuat/Update terakhir" langsung mengubah urutan kartu.
+  // (dateField) - jadi toggle "Dibuat/Update terakhir" langsung mengubah urutan kartu.
   const cardsByStage = useMemo(() => {
     const map = new Map<number, typeof visible>();
     for (const c of visible) {
@@ -181,7 +181,7 @@ export default function PipelineBoardPage() {
     }
   };
 
-  // Akses ditolak / pipeline tidak ditemukan (403/404 dari server) — jangan render
+  // Akses ditolak / pipeline tidak ditemukan (403/404 dari server) - jangan render
   // board parsial atau menggantung di "Memuat…". Data inti tetap tersembunyi.
   if (pipelineError) {
     return (
@@ -205,13 +205,13 @@ export default function PipelineBoardPage() {
 
   return (
     // Mobile: tinggi dikunci ke viewport (h-dvh + overflow-hidden) supaya HALAMAN tidak ikut
-    // scroll — hanya kolom kartu yang scroll (perilaku kanban normal). Desktop: h-full lama.
+    // scroll - hanya kolom kartu yang scroll (perilaku kanban normal). Desktop: h-full lama.
     <section
       aria-label={pipeline?.name ? `Papan ${pipeline.name}` : "Papan pipeline"}
       className="flex flex-col h-dvh overflow-hidden md:h-full md:overflow-visible -m-4 md:-m-6 -mt-16 md:-mt-6 pb-20 md:pb-0"
     >
       <header className="sticky top-0 z-10 bg-background pt-16 md:pt-6 px-4 md:px-6 pb-2 border-b border-border/40">
-        {/* UX Cicle: board tim = SATU baris bersih — nav modul tim + Pilih + kebab.
+        {/* UX Cicle: board tim = SATU baris bersih - nav modul tim + Pilih + kebab.
             Judul/deskripsi board & deretan tombol disembunyikan (redundan dgn nav tim). */}
         {teamParams && ownerTeam && (
           <TeamModuleNav team={ownerTeam} active="tasks" trailing={
@@ -254,7 +254,7 @@ export default function PipelineBoardPage() {
             </>
           } />
         )}
-        {/* Mobile: tombol aksi wrap ke baris sendiri (basis-full) — kalau satu baris,
+        {/* Mobile: tombol aksi wrap ke baris sendiri (basis-full) - kalau satu baris,
             judul pipeline (flex-1) terjepit jadi 0px oleh deretan tombol. */}
         {!(teamParams && ownerTeam) && (
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 md:flex-nowrap md:items-start">
@@ -321,7 +321,7 @@ export default function PipelineBoardPage() {
           </div>
         </div>
         )}
-        {/* Metrik hanya untuk pipeline ops — board tim tidak perlu (feedback user). */}
+        {/* Metrik hanya untuk pipeline ops - board tim tidak perlu (feedback user). */}
         {pipeline && pid != null && !teamParams && <MetricsStrip pipelineId={pid} canManage={can("manage")} onManage={() => setShowMetricsCfg(true)} />}
         {pipeline && <div className="mt-2"><BoardFilters search={search} onSearch={setSearch} dateField={dateField} onDateField={setDateField} range={range} onRange={setRange} assigneeId={assigneeId} onAssignee={setAssigneeId} assigneeOptions={assigneeOptions} fields={fields} filterFieldId={filterFieldId} onFilterField={setFilterFieldId} filterValue={filterValue} onFilterValue={setFilterValue} sortFieldId={sortFieldId} onSortField={setSortFieldId} sortDir={sortDir} onSortDirToggle={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} visibleCount={visible.length} onReset={() => { setSearch(""); setRange("all"); setAssigneeId(null); setFilterFieldId(null); setFilterValue(""); setSortFieldId(null); setSortDir("asc"); }} /></div>}
       </header>
@@ -386,7 +386,7 @@ export default function PipelineBoardPage() {
           )}
         </div>
       </div>
-      {/* Bulk action bar — only visible in select mode */}
+      {/* Bulk action bar - only visible in select mode */}
       {selectMode && pid != null && (
         <BulkActionBar
           pipelineId={pid}

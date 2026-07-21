@@ -2,14 +2,14 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  /** Visually indeterminate state (dash) — does not affect the underlying input value. */
+  /** Visually indeterminate state (dash) - does not affect the underlying input value. */
   indeterminate?: boolean;
   /** Label text rendered next to the checkbox. */
   label?: string;
 }
 
 /**
- * Checkbox — accessible native-input wrapper styled with Tailwind.
+ * Checkbox - accessible native-input wrapper styled with Tailwind.
  * Tap-target ≥ 24 × 24 px for mobile.
  */
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
@@ -33,7 +33,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         type="checkbox"
         ref={innerRef}
         className={cn(
-          // sizing — at least 16×16 visual, but we wrap in a 24×24 touch target
+          // sizing - at least 16×16 visual, but we wrap in a 24×24 touch target
           "h-4 w-4 rounded border border-input bg-background",
           "accent-primary cursor-pointer",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1",

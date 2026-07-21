@@ -10,7 +10,7 @@ interface FloatingMenuButtonProps {
 }
 
 /**
- * FloatingMenuButton — premium floating control for mobile full-screen pages
+ * FloatingMenuButton - premium floating control for mobile full-screen pages
  * (Map, Canvassing). Provides escape route to sidebar/menu when TopBar is hidden.
  *
  * Pattern follows Google Maps / Waze / Gojek: glass-morphism circular button

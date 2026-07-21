@@ -1,4 +1,4 @@
-# Action-level Permissions (Phase 3b-ii) — Implementation Plan
+# Action-level Permissions (Phase 3b-ii) - Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Capability model — action keys + superset rule
+### Task 1: Capability model - action keys + superset rule
 
 **Files:**
 - Modify: `shared/pipelineCapabilities.ts`
@@ -47,7 +47,7 @@ test("non-restricted write grants all incl. actions", () => {
   assert.ok(s.has("export") && s.has("comment") && s.has("assign") && s.has("import"));
 });
 ```
-(Ensure `resolvePipelineCapabilities`, `capabilitiesFromLevel`, `deriveLevel`, `ACTION_CAPABILITIES` are all imported at the top of the test file — extend the existing import line.)
+(Ensure `resolvePipelineCapabilities`, `capabilitiesFromLevel`, `deriveLevel`, `ACTION_CAPABILITIES` are all imported at the top of the test file - extend the existing import line.)
 
 - [ ] **Step 2: Run tests to verify the new ones fail**
 
@@ -84,8 +84,8 @@ export const PIPELINE_CAPABILITY_LABELS: Record<PipelineCapability, string> = {
 export const ACTION_CAPABILITIES: PipelineCapability[] = ["comment", "assign", "export", "import"];
 ```
 
-(b) `EDIT_CLASS` stays exactly as is (do NOT add the action caps — an action-only grant must derive to
-`view`). Verify `capabilitiesFromLevel("edit")` returns `[...ALL_PIPELINE_CAPABILITIES]` (it does — so it
+(b) `EDIT_CLASS` stays exactly as is (do NOT add the action caps - an action-only grant must derive to
+`view`). Verify `capabilitiesFromLevel("edit")` returns `[...ALL_PIPELINE_CAPABILITIES]` (it does - so it
 now includes the actions automatically).
 
 (c) In `resolvePipelineCapabilities`, the restricted branch currently is:
@@ -101,7 +101,7 @@ Replace with (add the superset expansion):
   if (s.has("cards")) for (const a of ACTION_CAPABILITIES) s.add(a);
   return s;
 ```
-(The admin/creator and non-restricted `write` branches already return `new Set(ALL_PIPELINE_CAPABILITIES)`, which now includes the actions — no change needed there.)
+(The admin/creator and non-restricted `write` branches already return `new Set(ALL_PIPELINE_CAPABILITIES)`, which now includes the actions - no change needed there.)
 
 - [ ] **Step 4: Run tests to verify all pass**
 
@@ -111,7 +111,7 @@ Expected: ALL pass (existing + new).
 - [ ] **Step 5: Verify typecheck**
 
 Run: `npm run typecheck`
-Expected: 0 errors (the union widening may surface a non-exhaustive switch somewhere — if so, fix it; report any).
+Expected: 0 errors (the union widening may surface a non-exhaustive switch somewhere - if so, fix it; report any).
 
 - [ ] **Step 6: Commit**
 
@@ -122,7 +122,7 @@ git commit -m "feat(pipelines): action capabilities (comment/assign/export/impor
 
 ---
 
-### Task 2: Server — gate action routes
+### Task 2: Server - gate action routes
 
 **Files:**
 - Modify: `server/routes.ts`
@@ -132,7 +132,7 @@ git commit -m "feat(pipelines): action capabilities (comment/assign/export/impor
 In `server/routes.ts`:
 - `GET /api/pipelines/:id/cards/export` (~line 4632): change its capability gate from `"view"`/`"cards"`
   (read the current gate) to `"export"`. (Export currently uses `requirePipelineCapability(..., "view")`
-  per the CSV feature — change to `"export"`. Since `cards` supersets `export`, full-card roles still pass;
+  per the CSV feature - change to `"export"`. Since `cards` supersets `export`, full-card roles still pass;
   a view-only role now needs the `export` capability.)
 - `POST /api/pipelines/:id/cards/import` (~line 4658): change `"cards"` → `"import"`.
 - `POST /api/pipelines/cards/:cardId/comments` (~line 4853): change `"cards"` → `"comment"`.
@@ -166,7 +166,7 @@ git commit -m "feat(pipelines): gate export/import/comment/assign by action capa
 
 ---
 
-### Task 3: Frontend — board buttons, card modal, access-grid hint
+### Task 3: Frontend - board buttons, card modal, access-grid hint
 
 **Files:**
 - Modify: `client/pages/PipelineBoardPage.tsx`
@@ -175,14 +175,14 @@ git commit -m "feat(pipelines): gate export/import/comment/assign by action capa
 
 **Context:** READ all three. `PipelineBoardPage` has `const caps = new Set(pipeline?.capabilities ?? [])` and a `can(c)` helper (from the H1 capability gating). `CardDetailModal` is opened from the board and currently gets `writable`. `PipelineAccessDialog` renders a role × capability grid by iterating `ALL_PIPELINE_CAPABILITIES`.
 
-- [ ] **Step 1: Board — gate export/import buttons by action caps**
+- [ ] **Step 1: Board - gate export/import buttons by action caps**
 
 In `PipelineBoardPage.tsx`, the CSV Export button should be gated `can("export")` and the Import button
-`can("import")` (they were added in Phase 6 — Export was always-shown, Import was `can("cards")`). Update
+`can("import")` (they were added in Phase 6 - Export was always-shown, Import was `can("cards")`). Update
 both. Pass the resolved caps to the card modal: where `<CardDetailModal ... />` is rendered, add a prop
 `caps={pipeline?.capabilities ?? []}`.
 
-- [ ] **Step 2: CardDetailModal — accept caps; gate comment + assign**
+- [ ] **Step 2: CardDetailModal - accept caps; gate comment + assign**
 
 In `CardDetailModal.tsx`:
 - Add `caps?: string[]` to the component props (default `[]`).
@@ -194,11 +194,11 @@ In `CardDetailModal.tsx`:
 (Server enforces these; this prevents dead UI. Because `cards` supersets the actions, the detail response's
 `capabilities` for a full-card role already includes `comment`/`assign`, so nothing changes for them.)
 
-- [ ] **Step 3: Access dialog — hint for action caps**
+- [ ] **Step 3: Access dialog - hint for action caps**
 
 In `PipelineAccessDialog.tsx`, the grid already renders the 4 new capabilities (it iterates
 `ALL_PIPELINE_CAPABILITIES`). Add a one-line muted hint below the grid: "Aksi (Komentar/Tugaskan/Export/Import)
-otomatis tercakup oleh 'Kelola Kartu' — centang terpisah hanya untuk role tanpa Kelola Kartu penuh."
+otomatis tercakup oleh 'Kelola Kartu' - centang terpisah hanya untuk role tanpa Kelola Kartu penuh."
 
 - [ ] **Step 4: Verify typecheck + build**
 
@@ -218,17 +218,17 @@ git commit -m "feat(pipelines): UI gating for action capabilities (export/import
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Pure tests** — Run: `npx tsx --test shared/pipelineCapabilities.test.ts` → all PASS.
-- [ ] **Step 2: Typecheck** — Run: `npm run typecheck` → 0 errors.
-- [ ] **Step 3: Build** — Run: `npm run build` → success.
-- [ ] **Step 4: Wiring** — Run: `grep -rln "ACTION_CAPABILITIES\|\"export\")\|\"import\")\|\"comment\")\|\"assign\"" server/ shared/ client/ | sort` and confirm the resolver, routes (export/import/comment/assign gates), and grid reference the new caps.
+- [ ] **Step 1: Pure tests** - Run: `npx tsx --test shared/pipelineCapabilities.test.ts` → all PASS.
+- [ ] **Step 2: Typecheck** - Run: `npm run typecheck` → 0 errors.
+- [ ] **Step 3: Build** - Run: `npm run build` → success.
+- [ ] **Step 4: Wiring** - Run: `grep -rln "ACTION_CAPABILITIES\|\"export\")\|\"import\")\|\"comment\")\|\"assign\"" server/ shared/ client/ | sort` and confirm the resolver, routes (export/import/comment/assign gates), and grid reference the new caps.
 
 ---
 
 ## Self-Review
 
 - **Spec coverage:** 4 action keys + labels + ACTION_CAPABILITIES + superset-in-resolver → Task 1. Back-compat via `capabilitiesFromLevel("edit")` (now includes actions) + EDIT_CLASS unchanged → Task 1 (b). Route gating export/import/comment + assign-only PATCH → Task 2. Grid auto-render + hint, board button gating, card modal comment/assign gating → Task 3. Tests → Task 1 + Task 4. All covered.
-- **Placeholders:** Tasks 1–2 + 4 are full code. Task 3 gives concrete prop/derivation/gating instructions over the existing components (read-and-edit) — appropriate; the exact JSX lines (assignee selector ~107, comment composer ~160) are cited.
+- **Placeholders:** Tasks 1-2 + 4 are full code. Task 3 gives concrete prop/derivation/gating instructions over the existing components (read-and-edit) - appropriate; the exact JSX lines (assignee selector ~107, comment composer ~160) are cited.
 - **Type consistency:** `PipelineCapability` widened in Task 1; `ACTION_CAPABILITIES` defined there and used in Task 1 tests + referenced conceptually in Task 2 gates (gates pass the literal cap strings, which are now valid `PipelineCapability` values). `resolvePipelineCapabilities` signature unchanged (only its body adds the superset). The board's `can(c: string)` already accepts any string; `caps={pipeline.capabilities}` (string[]) flows to `CardDetailModal.caps: string[]`.
 
 ## Deploy note

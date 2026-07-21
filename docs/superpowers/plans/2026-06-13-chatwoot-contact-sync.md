@@ -1,4 +1,4 @@
-# Chatwoot Contact Sync — Batch 2b Implementation Plan
+# Chatwoot Contact Sync - Batch 2b Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans. Steps use checkbox (`- [ ]`) syntax.
 
@@ -31,9 +31,9 @@
 ```
 
 - [ ] **Step 2: Startup ALTER in `server/storage.ts`**
-Find the startup migration area that does `ALTER TABLE ... ADD COLUMN` with an information_schema existence check (around lines 460-550). Following that EXACT pattern (check `information_schema.columns` for the column, then `ALTER` in a try/catch), add migrations for `customers.chatwoot_contact_id VARCHAR(64) NULL` and `customers.chatwoot_synced_at VARCHAR(40) NULL`. Mirror the surrounding code's helper if one exists (e.g. an `addColumnIfMissing(table, name, def)` helper — search for it; if present, just add two calls).
+Find the startup migration area that does `ALTER TABLE ... ADD COLUMN` with an information_schema existence check (around lines 460-550). Following that EXACT pattern (check `information_schema.columns` for the column, then `ALTER` in a try/catch), add migrations for `customers.chatwoot_contact_id VARCHAR(64) NULL` and `customers.chatwoot_synced_at VARCHAR(40) NULL`. Mirror the surrounding code's helper if one exists (e.g. an `addColumnIfMissing(table, name, def)` helper - search for it; if present, just add two calls).
 
-- [ ] **Step 3: Storage helper** — add to `DatabaseStorage` (near other customer methods):
+- [ ] **Step 3: Storage helper** - add to `DatabaseStorage` (near other customer methods):
 ```ts
 async updateCustomerChatwootLink(id: number, contactId: string, syncedAt: string): Promise<void> {
   const mitraId = getMitraId();
@@ -42,7 +42,7 @@ async updateCustomerChatwootLink(id: number, contactId: string, syncedAt: string
     .where(and(eq(customers.id, id), eq(customers.mitraId, mitraId)));
 }
 ```
-(Confirm `customers`, `and`, `eq`, `getMitraId` are imported in storage.ts — they are, used by `getCustomer`.)
+(Confirm `customers`, `and`, `eq`, `getMitraId` are imported in storage.ts - they are, used by `getCustomer`.)
 
 - [ ] **Step 4: Verify** `npm run typecheck` → 0 errors (run it yourself; don't trust prior assumptions).
 
@@ -96,11 +96,11 @@ test("labels: slugified, deduped, empties dropped", () => {
 });
 ```
 
-- [ ] **Step 2: Run, verify FAIL** — `npx tsx --test shared/chatwootContact.test.ts`
+- [ ] **Step 2: Run, verify FAIL** - `npx tsx --test shared/chatwootContact.test.ts`
 
 - [ ] **Step 3: Implement `shared/chatwootContact.ts`**
 ```ts
-/** Pure builders: Workspace customer → Chatwoot contact payload + labels. No I/O — testable. */
+/** Pure builders: Workspace customer → Chatwoot contact payload + labels. No I/O - testable. */
 import { toWhatsappNumber } from "./phone.js";
 
 type CustomerLike = {
@@ -140,7 +140,7 @@ export function buildChatwootContactLabels(c: CustomerLike, opts: { tenant: stri
 }
 ```
 
-- [ ] **Step 4: Run, verify PASS** (3 tests) — `npx tsx --test shared/chatwootContact.test.ts`
+- [ ] **Step 4: Run, verify PASS** (3 tests) - `npx tsx --test shared/chatwootContact.test.ts`
 
 - [ ] **Step 5: Commit**
 ```bash
@@ -156,7 +156,7 @@ git commit -m "feat(chatwoot): pure contact payload + label builders (shared)"
 
 - [ ] **Step 1: Add functions** (after `listContactConversations`):
 ```ts
-// ── Contact sync (Batch 2b) ────────────────────────────────────────────────
+// -- Contact sync (Batch 2b) ------------------------------------------------
 
 /** Find an existing contact by identifier (customerId) first, else by normalized phone. */
 export async function findChatwootContact(customerId: string, phone: string | null | undefined, normalize: (p: string) => string): Promise<any | null> {
@@ -193,7 +193,7 @@ export async function upsertChatwootContact(
     action = "created";
   }
 
-  // Labels — best-effort; jangan gagalkan sync kalau label error.
+  // Labels - best-effort; jangan gagalkan sync kalau label error.
   try {
     const labels = opts.buildLabels(customer, { tenant: opts.tenant });
     if (labels.length) await chatwootRequest(`/contacts/${contactId}/labels`, { method: "POST", body: { labels } });
@@ -220,11 +220,11 @@ git commit -m "feat(chatwoot): findChatwootContact + idempotent upsertChatwootCo
 
 ## Task 4: Sync endpoints in `server/routes.ts`
 
-**Files:** Modify `server/routes.ts` — add after the chatwoot read endpoints. Gated `chatwoot` **write**.
+**Files:** Modify `server/routes.ts` - add after the chatwoot read endpoints. Gated `chatwoot` **write**.
 
 - [ ] **Step 1: Add routes**
 ```ts
-/** Contact sync (Batch 2b) — manual. Gated `chatwoot` write. Workspace → Chatwoot upsert. */
+/** Contact sync (Batch 2b) - manual. Gated `chatwoot` write. Workspace → Chatwoot upsert. */
 router.post("/api/integrations/chatwoot/customers/:id/sync", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "chatwoot")) return sendError(res, "Akses ditolak (write)", 403);
@@ -284,7 +284,7 @@ router.post("/api/integrations/chatwoot/contacts/sync-bulk", async (req: Request
   }
 });
 ```
-> Confirm `req.authUser` has `.activeMitraId`, `.id`, `.username`, `.name` (used elsewhere in routes.ts — it does).
+> Confirm `req.authUser` has `.activeMitraId`, `.id`, `.username`, `.name` (used elsewhere in routes.ts - it does).
 
 - [ ] **Step 2: Verify** `npm run typecheck` → 0 errors.
 
@@ -300,7 +300,7 @@ git commit -m "feat(chatwoot): contact sync endpoints (single + bulk, write-gate
 
 **Files:** `client/lib/chatwoot.ts`, `client/hooks/useChatwoot.ts`
 
-- [ ] **Step 1: `client/lib/chatwoot.ts`** — add to `chatwootApi`:
+- [ ] **Step 1: `client/lib/chatwoot.ts`** - add to `chatwootApi`:
 ```ts
   syncCustomerContact: (customerId: number) =>
     api.post<{ contactId: number; action: "created" | "updated" }>(`/integrations/chatwoot/customers/${customerId}/sync`, {}),
@@ -308,7 +308,7 @@ git commit -m "feat(chatwoot): contact sync endpoints (single + bulk, write-gate
     api.post<{ results: { customerId: number; ok: boolean; contactId?: number; action?: string; error?: string }[]; synced: number; failed: number }>(`/integrations/chatwoot/contacts/sync-bulk`, { customerIds }),
 ```
 
-- [ ] **Step 2: `client/hooks/useChatwoot.ts`** — add (merge imports; needs `useMutation`, `useQueryClient`):
+- [ ] **Step 2: `client/hooks/useChatwoot.ts`** - add (merge imports; needs `useMutation`, `useQueryClient`):
 ```ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -369,7 +369,7 @@ export function ChatwootSyncButton({ customerId, alreadySynced, size = "sm" }: {
   );
 }
 ```
-> Verify `Button` supports `loading` + `size` (it does per earlier tasks; match `sonner` toast import to the repo — grep `import { toast }`).
+> Verify `Button` supports `loading` + `size` (it does per earlier tasks; match `sonner` toast import to the repo - grep `import { toast }`).
 
 - [ ] **Step 2: Per-customer placement in `CustomersPage.tsx`**
 Import `ChatwootSyncButton`. In the customer detail dialog header (the `<div className="flex items-start justify-between gap-3">` that already contains `<OpenInChatwootButton target="contacts" size="sm" />`), add beside it:
@@ -383,7 +383,7 @@ The page renders a filtered customers array (grep for the memoized filtered list
 ```tsx
 // near other page-level hooks:
 const bulkSync = useSyncBulkContacts();
-// in the header actions row (gated by chatwoot status — reuse useChatwootStatus or just render; backend enforces perm):
+// in the header actions row (gated by chatwoot status - reuse useChatwootStatus or just render; backend enforces perm):
 <Button type="button" variant="outline" size="sm" loading={bulkSync.isPending}
   onClick={() => {
     const ids = filteredCustomers.map((c: any) => c.id).slice(0, 200);

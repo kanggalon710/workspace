@@ -17,19 +17,19 @@
 Setiap task, agent harus laporkan di akhir:
 
 ```
-✏️ Diubah: <file>:<line range or function>
+✏ Diubah: <file>:<line range or function>
    <ringkasan apa yang berubah>
 
-⚠️ Potensi terdampak:
+ Potensi terdampak:
    - <feature/endpoint/page lain yang mungkin kena>
 
-✅ Verifikasi yang harus dijalankan:
+ Verifikasi yang harus dijalankan:
    - <step manual test atau perintah cek>
 ```
 
 ---
 
-# PHASE A — Database Indexes
+# PHASE A - Database Indexes
 
 ## Task A1: Add idempotent index migration block
 
@@ -75,7 +75,7 @@ Insert this method into `DatabaseStorage` class (anywhere after constructor, bef
           console.log(`[index-migration] Created ${ix.name} on ${ix.table}`);
         }
       } catch (err: any) {
-        // Table might not exist yet (fresh DB) — log and continue
+        // Table might not exist yet (fresh DB) - log and continue
         console.warn(`[index-migration] Skipped ${ix.name}: ${err.message}`);
       }
     }
@@ -83,7 +83,7 @@ Insert this method into `DatabaseStorage` class (anywhere after constructor, bef
 ```
 
 **Note kolom dengan length:**
-- `token(64)`: TEXT column needs prefix length in MySQL — 64 chars cukup karena token hex 32 bytes = 64 char
+- `token(64)`: TEXT column needs prefix length in MySQL - 64 chars cukup karena token hex 32 bytes = 64 char
 - `created_at(20)`: TEXT ISO date, 20 chars cover full timestamp `2026-05-16T12:34:56Z`
 
 - [ ] **Step 3: Wire `runIndexMigrations()` to startup**
@@ -153,11 +153,11 @@ EXPLAIN SELECT * FROM users WHERE token = 'sample_token_value';
 Expected: `type: ref`, `key: idx_users_token`, `rows: 1`.
 
 **Potensi terdampak:**
-- Seluruh authenticated endpoint (~150+) — semua butuh `getUserByToken()` query
-- ODP utilization endpoint, Dashboard, Map data — semua filter by `odp_id`/`status`
-- UserDetailDrawer activity tab — `audit_logs.user_id` filter
-- CableCoreManagerPage — `cable_cores.cable_id` join
-- **Risk: ALTER lock** — tabel target relatif kecil (<10K rows), tiap CREATE INDEX <1-2 detik. Tapi disarankan deploy off-peak (malam) untuk safety.
+- Seluruh authenticated endpoint (~150+) - semua butuh `getUserByToken()` query
+- ODP utilization endpoint, Dashboard, Map data - semua filter by `odp_id`/`status`
+- UserDetailDrawer activity tab - `audit_logs.user_id` filter
+- CableCoreManagerPage - `cable_cores.cable_id` join
+- **Risk: ALTER lock** - tabel target relatif kecil (<10K rows), tiap CREATE INDEX <1-2 detik. Tapi disarankan deploy off-peak (malam) untuk safety.
 
 ---
 
@@ -166,7 +166,7 @@ Expected: `type: ref`, `key: idx_users_token`, `rows: 1`.
 **Files:**
 - Modify: `shared/schema.ts`
 
-Tujuan: index ada di Drizzle schema sehingga `drizzle-kit generate` future tetap sync. Tidak wajib untuk fix performance — Task A1 sudah cukup. Skip kalau tidak pakai drizzle migrations.
+Tujuan: index ada di Drizzle schema sehingga `drizzle-kit generate` future tetap sync. Tidak wajib untuk fix performance - Task A1 sudah cukup. Skip kalau tidak pakai drizzle migrations.
 
 - [ ] **Step 1: Skip atau lakukan**
 
@@ -174,7 +174,7 @@ Cek `package.json` apakah ada `drizzle-kit generate` di scripts. Kalau tidak dip
 
 - [ ] **Step 2 (kalau dilanjut): Add index() defs di schema**
 
-Contoh untuk `customers` table — di `shared/schema.ts` ganti existing definition:
+Contoh untuk `customers` table - di `shared/schema.ts` ganti existing definition:
 
 ```ts
 import { mysqlTable, text, int, double, varchar, longtext, mediumtext, index } from "drizzle-orm/mysql-core";
@@ -198,12 +198,12 @@ git commit -m "perf(A): add Drizzle schema-level index definitions for new index
 ```
 
 **Potensi terdampak:**
-- Tidak ada runtime impact — purely schema metadata
+- Tidak ada runtime impact - purely schema metadata
 - Future `drizzle-kit generate` akan generate migration file dengan indexes ini
 
 ---
 
-# PHASE B — Backend Query Refactor
+# PHASE B - Backend Query Refactor
 
 ## Task B1: Refactor `getDashboardStats()` to single aggregate query
 
@@ -313,8 +313,8 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Potensi terdampak:**
 - `GET /api/dashboard` consumer: `Dashboard.tsx`. Cek field nama match.
-- Public API `/api/public/v1/marketing/overview` — kalau pakai `getDashboardStats()` shape, perlu cek
-- **Risk perilaku:** `customer_active` sekarang exclude isolir secara eksplisit (`AND is_isolir=0`). Sebelumnya mungkin pakai logic lain — cek baseline.
+- Public API `/api/public/v1/marketing/overview` - kalau pakai `getDashboardStats()` shape, perlu cek
+- **Risk perilaku:** `customer_active` sekarang exclude isolir secara eksplisit (`AND is_isolir=0`). Sebelumnya mungkin pakai logic lain - cek baseline.
 
 ---
 
@@ -366,7 +366,7 @@ sed -n '4686,4720p' /home/ygao-t580/Works/Jabnet/Website/ftth-tools/server/stora
         capacity: odps.capacity,
       }).from(odps),
 
-      // Customers — DROP pppoe_*, notes, manual_overrides, billing creds, etc.
+      // Customers - DROP pppoe_*, notes, manual_overrides, billing creds, etc.
       this.db.select({
         id: customers.id,
         name: customers.name,
@@ -441,7 +441,7 @@ export interface MapData {
 }
 ```
 
-(Adjust ke shape existing MapData — jangan invent baru.)
+(Adjust ke shape existing MapData - jangan invent baru.)
 
 - [ ] **Step 4: Check MapInfoWindow for dropped field access**
 
@@ -475,8 +475,8 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Potensi terdampak:**
 - `GET /api/map-data` consumer: `MapPage.tsx` via `useMapData()` hook
-- `MapData`/`MapCustomer` type — TypeScript surface change, hits any file that imports it
-- MapInfoWindow popup — now needs full-customer fetch on click (UX: tiny lag ~100ms on first click)
+- `MapData`/`MapCustomer` type - TypeScript surface change, hits any file that imports it
+- MapInfoWindow popup - now needs full-customer fetch on click (UX: tiny lag ~100ms on first click)
 - Mutation invalidation: existing `queryKeys.mapData` invalidation paths still work (shape change tidak ngubah cache key)
 
 ---
@@ -493,7 +493,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 grep -n "createAuditLog" /home/ygao-t580/Works/Jabnet/Website/ftth-tools/server/storage.ts | head -5
 ```
 
-- [ ] **Step 2: Simplify return — drop read-back**
+- [ ] **Step 2: Simplify return - drop read-back**
 
 Replace existing `createAuditLog()`:
 
@@ -508,7 +508,7 @@ Replace existing `createAuditLog()`:
   }
 ```
 
-**Important:** Return type changes from `Promise<AuditLog>` to `Promise<void>`. Any caller that uses return value will TS-error — fix those by removing the assignment.
+**Important:** Return type changes from `Promise<AuditLog>` to `Promise<void>`. Any caller that uses return value will TS-error - fix those by removing the assignment.
 
 - [ ] **Step 3: Find callers that consume return value**
 
@@ -572,15 +572,15 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Potensi terdampak:**
 - Return type change → semua caller harus tidak pakai return value (verified di Step 3)
-- Activity timeline (UserDetailDrawer activity tab): timestamp pakai `created_at` di insert payload — pastikan caller set `createdAt: new Date().toISOString()` kalau penting
-- Fire-and-forget di login: kalau DB down saat insert, error hanya muncul di console.error — login tetap sukses (acceptable: kalau DB down, ada error lain duluan)
+- Activity timeline (UserDetailDrawer activity tab): timestamp pakai `created_at` di insert payload - pastikan caller set `createdAt: new Date().toISOString()` kalau penting
+- Fire-and-forget di login: kalau DB down saat insert, error hanya muncul di console.error - login tetap sukses (acceptable: kalau DB down, ada error lain duluan)
 - Audit log untuk sensitive action TIDAK boleh fire-and-forget (security)
 
 ---
 
-# PHASE C — Map Viewport Loading
+# PHASE C - Map Viewport Loading
 
-## Task C1: Backend — split map endpoint into Tier 1 + Tier 2
+## Task C1: Backend - split map endpoint into Tier 1 + Tier 2
 
 **Files:**
 - Modify: `server/storage.ts` (add `getMapInfra()`, `getMapCustomersInBounds()`)
@@ -592,7 +592,7 @@ Insert after existing `getMapData()` (around line 4715):
 
 ```ts
   /**
-   * Tier 1 of map data — POPs/ODCs/ODPs/Poles/Cables. Always loaded.
+   * Tier 1 of map data - POPs/ODCs/ODPs/Poles/Cables. Always loaded.
    * No customers (those fetched separately by viewport).
    */
   async getMapInfra(): Promise<{
@@ -616,7 +616,7 @@ Insert after existing `getMapData()` (around line 4715):
         odcId: odps.odcId, capacity: odps.capacity,
       }).from(odps),
 
-      // Only fetch odp_id for usage count — minimal cost
+      // Only fetch odp_id for usage count - minimal cost
       this.db.select({ odpId: customers.odpId }).from(customers),
 
       this.db.select({
@@ -738,13 +738,13 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 **Potensi terdampak:**
-- Existing `/api/map-data` UNCHANGED — Phase C1 hanya tambah endpoint baru
+- Existing `/api/map-data` UNCHANGED - Phase C1 hanya tambah endpoint baru
 - New endpoints require Phase A indexes to be performant (composite `idx_customers_lat_lng`)
-- 500 limit: kalau viewport sangat luas (zoom out maks) dengan >500 customers di area, hanya 500 ditampilkan. Acceptable — solusi via auto-cluster di frontend Task C2.
+- 500 limit: kalau viewport sangat luas (zoom out maks) dengan >500 customers di area, hanya 500 ditampilkan. Acceptable - solusi via auto-cluster di frontend Task C2.
 
 ---
 
-## Task C2: Frontend — viewport-based map loading
+## Task C2: Frontend - viewport-based map loading
 
 **Files:**
 - Modify: `client/hooks/useAssets.ts`
@@ -783,7 +783,7 @@ export function useMapInfra() {
     queryFn: () => api.get<{
       pops: any[]; odcs: any[]; odps: any[]; poles: any[]; cables: any[];
     }>("/map-data/infra"),
-    staleTime: 60_000,  // 1 min — infra rarely changes
+    staleTime: 60_000,  // 1 min - infra rarely changes
   });
 }
 
@@ -877,7 +877,7 @@ Then on `<GoogleMap>` component (line 860), add `onIdle` prop:
 
 - [ ] **Step 5: Move customer markers INTO MarkerClusterer**
 
-Find `client/pages/MapPage.tsx:956` — section `{/* ── Customer markers (diluar clusterer agar tidak bentrok dengan ODP) ── */}`.
+Find `client/pages/MapPage.tsx:956` - section `{/* -- Customer markers (diluar clusterer agar tidak bentrok dengan ODP) -- */}`.
 
 Current pattern (around line 956-1000):
 ```tsx
@@ -885,7 +885,7 @@ Current pattern (around line 956-1000):
 {customers.map((c) => <Marker ... />)}
 ```
 
-Change to: render customers INSIDE the SAME `<MarkerClusterer>` that wraps ODPs (line 876). This is the trickier change — read carefully.
+Change to: render customers INSIDE the SAME `<MarkerClusterer>` that wraps ODPs (line 876). This is the trickier change - read carefully.
 
 ```tsx
 <MarkerClusterer options={{ maxZoom: 15, gridSize: 60, zoomOnClick: true }}>
@@ -895,7 +895,7 @@ Change to: render customers INSIDE the SAME `<MarkerClusterer>` that wraps ODPs 
       {data?.odps.map((odp) => (
         <Marker key={`odp-${odp.id}`} clusterer={clusterer} ... />
       ))}
-      {/* CUSTOMERS — move here */}
+      {/* CUSTOMERS - move here */}
       {data?.customers.map((c) => (
         <Marker key={`customer-${c.id}`} clusterer={clusterer} position={{ lat: c.lat!, lng: c.lng! }} ... />
       ))}
@@ -921,7 +921,7 @@ Inside MapPage JSX, add small floating indicator (e.g. bottom-right):
 
 - [ ] **Step 7: Update mutation invalidation in `useAssets.ts`**
 
-In `useCrud` (line 56, 75, 93) — invalidations after mutation. Change `queryClient.invalidateQueries({ queryKey: queryKeys.mapData })` to invalidate BOTH old and new keys:
+In `useCrud` (line 56, 75, 93) - invalidations after mutation. Change `queryClient.invalidateQueries({ queryKey: queryKeys.mapData })` to invalidate BOTH old and new keys:
 
 ```ts
 qc.invalidateQueries({ queryKey: queryKeys.mapData });
@@ -953,9 +953,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Potensi terdampak:**
 - `MapPage.tsx` first load: lebih cepat (tier 1 only ~500KB → 200KB), tapi customer marker muncul setelah onIdle fire (small delay ~400ms after map ready)
-- MarkerClusterer rendering: gabung ODP+customer di cluster sama — visual cluster akan beda dari sebelumnya (gabungan count)
+- MarkerClusterer rendering: gabung ODP+customer di cluster sama - visual cluster akan beda dari sebelumnya (gabungan count)
 - Customer mutations (create/update/delete) sekarang juga invalidate viewport query → marker auto-update
-- Tier 2 query queryKey includes bbox — pan/zoom kreates new cache entry per bbox. TanStack Query LRU eviction handle ini (default gcTime 5-10min).
+- Tier 2 query queryKey includes bbox - pan/zoom kreates new cache entry per bbox. TanStack Query LRU eviction handle ini (default gcTime 5-10min).
 - **InfoWindow:** kalau click customer marker → object data lebih thin (no package/notes). Solusi (Task C3 optional).
 
 ---
@@ -1011,9 +1011,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 **Potensi terdampak:**
-- Tiny UX lag (~100-200ms) saat first click pada customer marker — acceptable, hampir tidak terasa
+- Tiny UX lag (~100-200ms) saat first click pada customer marker - acceptable, hampir tidak terasa
 - TanStack Query cache: 1 min stale time, subsequent click ke customer yang sama = instant
-- Existing `GET /api/customers/:id` endpoint — pastikan return full Customer object (cek `routes.ts`)
+- Existing `GET /api/customers/:id` endpoint - pastikan return full Customer object (cek `routes.ts`)
 
 ---
 
@@ -1039,7 +1039,7 @@ User opens `https://fiber.jabnet.id/map`:
 
 ---
 
-# PHASE D — Keep-Alive + Cache + Skeleton
+# PHASE D - Keep-Alive + Cache + Skeleton
 
 ## Task D1: Add `/api/health` endpoint
 
@@ -1051,7 +1051,7 @@ User opens `https://fiber.jabnet.id/map`:
 In `server/routes.ts`, add EARLY in the router setup (before any auth middleware):
 
 ```ts
-// Public health check — for cPanel cron keep-alive + uptime monitors
+// Public health check - for cPanel cron keep-alive + uptime monitors
 router.get("/api/health", (_req: Request, res: Response) => {
   res.json({ ok: true, ts: Date.now(), version: process.env.npm_package_version || "4.3.0" });
 });
@@ -1083,7 +1083,7 @@ Command: curl -s https://fiber.jabnet.id/api/health > /dev/null 2>&1
 ```
 
 **Potensi terdampak:**
-- Public endpoint (no auth) — minimal DOS surface (no DB call, no I/O)
+- Public endpoint (no auth) - minimal DOS surface (no DB call, no I/O)
 - Cron load: ~360 requests/day. Negligible.
 - Future uptime monitor compatible (UptimeRobot, BetterStack, etc.)
 
@@ -1105,7 +1105,7 @@ Create `server/perm-cache.ts`:
  * TTL: 60s. Invalidated on role/user mutations.
  *
  * Why: Auth middleware calls getUserEffectivePermissions() on every
- * authenticated request — same result for same user during a session.
+ * authenticated request - same result for same user during a session.
  */
 
 type PermDict = Record<string, "none" | "read" | "write">;
@@ -1176,15 +1176,15 @@ For each of these methods, add `invalidatePermCache(...)` after the DB write:
 |---|---|
 | `updateUser()` (if `roleId` changed) | `invalidatePermCache(userId)` |
 | `deleteUser()` | `invalidatePermCache(userId)` |
-| `createUser()` | (no-op — new user, no cache yet) |
-| `updateRole()` | `invalidatePermCache()` (clear all — any user with this role affected) |
+| `createUser()` | (no-op - new user, no cache yet) |
+| `updateRole()` | `invalidatePermCache()` (clear all - any user with this role affected) |
 | `deleteRole()` | `invalidatePermCache()` (same reason) |
 
 Example for `updateRole()`:
 ```ts
 async updateRole(id: number, data: Partial<Role>): Promise<Role | undefined> {
   await this.db.update(roles).set(data).where(eq(roles.id, id));
-  invalidatePermCache();  // clear all — any user with this role affected
+  invalidatePermCache();  // clear all - any user with this role affected
   const [row] = await this.db.select().from(roles).where(eq(roles.id, id));
   return row;
 }
@@ -1219,9 +1219,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 **Potensi terdampak:**
-- Auth middleware (semua endpoint authenticated) — efek positif, 2 query saved
+- Auth middleware (semua endpoint authenticated) - efek positif, 2 query saved
 - **Stale-window risk:** setelah admin ubah role user X, user X bisa lihat perms LAMA selama max 60 detik (atau sampai re-login). Acceptable untuk daily ops; emergency revoke pakai endpoint `/api/admin/perm-cache/invalidate`.
-- Cache size 1000 entries × ~5KB ≈ 5MB max — aman di Passenger worker
+- Cache size 1000 entries × ~5KB ≈ 5MB max - aman di Passenger worker
 - Multi-worker Passenger: cache per worker (in-memory). Inconsistency antar worker tapi only sampai TTL ekspirasi.
 
 ---
@@ -1233,9 +1233,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: Review current defaults**
 
-Sudah baca di context: staleTime 2min, gcTime 10min, refetchOnWindowFocus false, retry 1. **Sebenarnya sudah cukup baik** — opsional tuning only.
+Sudah baca di context: staleTime 2min, gcTime 10min, refetchOnWindowFocus false, retry 1. **Sebenarnya sudah cukup baik** - opsional tuning only.
 
-- [ ] **Step 2: Optional — Reduce staleTime untuk balance freshness vs speed**
+- [ ] **Step 2: Optional - Reduce staleTime untuk balance freshness vs speed**
 
 Sekarang 2min → bisa naikkan ke 5min untuk page yang jarang berubah. Atau biarkan saja.
 
@@ -1257,7 +1257,7 @@ No changes needed if defaults sudah OK.
 
 **Files:**
 - Modify: `client/pages/Dashboard.tsx`
-- Modify: `client/pages/MapPage.tsx` (already minimal — skip if hard)
+- Modify: `client/pages/MapPage.tsx` (already minimal - skip if hard)
 - Verify components exist: `client/components/ui/skeleton*.tsx`
 
 - [ ] **Step 1: Verify skeleton components exist**
@@ -1287,7 +1287,7 @@ if (isLoading) return (
 );
 ```
 
-(Adjust per existing Dashboard structure — keep header, replace body.)
+(Adjust per existing Dashboard structure - keep header, replace body.)
 
 - [ ] **Step 3: Map skeleton (light touch)**
 
@@ -1307,7 +1307,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 **Potensi terdampak:**
-- Purely visual — no logic change
+- Purely visual - no logic change
 - Users see skeleton during load instead of spinner → perceived faster
 - Skeleton shape must match real content layout (slight care needed in skeleton component config)
 
@@ -1379,12 +1379,12 @@ git commit -m "cleanup: mark legacy /api/map-data as deprecated"
 # Self-Review Checklist (writing-plans)
 
 **Spec coverage:**
-- ✅ Phase A indexes — Task A1 (A2 optional)
-- ✅ Phase B query refactor — Tasks B1, B2, B3
-- ✅ Phase C map viewport — Tasks C1, C2, C3 (optional), C4 deploy
-- ✅ Phase D keep-alive/cache/skeleton — Tasks D1, D2, D3 (optional), D4, D5
+-  Phase A indexes - Task A1 (A2 optional)
+-  Phase B query refactor - Tasks B1, B2, B3
+-  Phase C map viewport - Tasks C1, C2, C3 (optional), C4 deploy
+-  Phase D keep-alive/cache/skeleton - Tasks D1, D2, D3 (optional), D4, D5
 
-**Placeholder scan:** None — all code blocks have concrete code.
+**Placeholder scan:** None - all code blocks have concrete code.
 
 **Type consistency:**
 - `MapInfra` shape consistent across `getMapInfra()`, `useMapInfra()`, `MapData`
@@ -1397,7 +1397,7 @@ git commit -m "cleanup: mark legacy /api/map-data as deprecated"
 
 # Execution Notes
 
-- Deploy incrementally — after each phase, user verifies before proceeding
+- Deploy incrementally - after each phase, user verifies before proceeding
 - All commits use `Co-Authored-By: Claude Opus 4.7` trailer
 - TypeScript build (`npm run build`) is the primary verification gate per task
 - Manual end-user verification at Phase boundaries (after C4, D5)

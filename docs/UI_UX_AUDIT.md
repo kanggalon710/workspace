@@ -1,4 +1,4 @@
-# UI/UX Audit & Modernization — JABNET Workspace
+# UI/UX Audit & Modernization - JABNET Workspace
 
 > **Scope:** Audit menyeluruh terhadap arsitektur UI/UX + eksekusi Phase 1 foundation improvements.
 > **Date:** 2026-04-23
@@ -11,34 +11,34 @@
 JABNET Workspace v4.1.10 memiliki fondasi teknis yang solid (React 18 + TypeScript + Tailwind + shadcn/ui), namun 10 tahun pengalaman menunjukkan beberapa gap yang perlu ditutup untuk naik level ke platform ISP enterprise-grade:
 
 ### Strengths (Tetap Dipertahankan)
-- ✅ HSL design tokens dengan dark mode support
-- ✅ Permission-based navigation (39 keys × 6 roles)
-- ✅ Lazy-loaded routes + keyboard shortcuts (Cmd+M, Cmd+D)
-- ✅ Sidebar collapsible dengan auto-expand grup aktif
-- ✅ Bottom-nav mobile dengan safe-area insets
-- ✅ Consistent Lucide icons
-- ✅ Recharts responsive dengan customization
+-  HSL design tokens dengan dark mode support
+-  Permission-based navigation (39 keys × 6 roles)
+-  Lazy-loaded routes + keyboard shortcuts (Cmd+M, Cmd+D)
+-  Sidebar collapsible dengan auto-expand grup aktif
+-  Bottom-nav mobile dengan safe-area insets
+-  Consistent Lucide icons
+-  Recharts responsive dengan customization
 
 ### Gaps yang Ditemukan (Prioritas)
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | Hardcoded hex colors di chart & asset components | HIGH | 🟡 Partial fix |
-| 2 | Tidak ada Skeleton component yang reusable | HIGH | ✅ Fixed |
-| 3 | Empty state tidak konsisten (blank page) | HIGH | ✅ Fixed |
-| 4 | PageLoader generic (tidak kontekstual) | MEDIUM | ✅ Fixed |
-| 5 | 404 page minimal | MEDIUM | ✅ Fixed |
-| 6 | No ErrorBoundary — single error crash app | HIGH | ✅ Fixed |
-| 7 | Form validation via manual register() (tanpa zod) | HIGH | 📋 Planned |
-| 8 | StatusBadge tidak ada (duplicate badge code) | MEDIUM | ✅ Fixed |
-| 9 | KPI tile repeated across pages | MEDIUM | ✅ Fixed |
-| 10 | No pagination / virtual scroll (1000+ items) | HIGH | 📋 Planned |
-| 11 | No breadcrumbs untuk deep routes | MEDIUM | 📋 Planned |
-| 12 | Accessibility: missing aria-labels, no keyboard nav for kanban | MEDIUM | 📋 Planned |
+| 1 | Hardcoded hex colors di chart & asset components | HIGH |  Partial fix |
+| 2 | Tidak ada Skeleton component yang reusable | HIGH |  Fixed |
+| 3 | Empty state tidak konsisten (blank page) | HIGH |  Fixed |
+| 4 | PageLoader generic (tidak kontekstual) | MEDIUM |  Fixed |
+| 5 | 404 page minimal | MEDIUM |  Fixed |
+| 6 | No ErrorBoundary - single error crash app | HIGH |  Fixed |
+| 7 | Form validation via manual register() (tanpa zod) | HIGH |  Planned |
+| 8 | StatusBadge tidak ada (duplicate badge code) | MEDIUM |  Fixed |
+| 9 | KPI tile repeated across pages | MEDIUM |  Fixed |
+| 10 | No pagination / virtual scroll (1000+ items) | HIGH |  Planned |
+| 11 | No breadcrumbs untuk deep routes | MEDIUM |  Planned |
+| 12 | Accessibility: missing aria-labels, no keyboard nav for kanban | MEDIUM |  Planned |
 
 ---
 
-## 2. Phase 1 — Foundation (EXECUTED ✅)
+## 2. Phase 1 - Foundation (EXECUTED )
 
 ### 2.1 Design Token Extensions
 **File:** [client/index.css](../client/index.css)
@@ -102,32 +102,32 @@ CHART_TOOLTIP_STYLE       // theme-aware tooltip styling
 Digunakan di Dashboard menggantikan `#0EA5E9`, `#E2E8F0`, `#6366F1`, dll.
 
 ### 2.5 Navigational Resilience
-- **PageLoader** (App.tsx) — logo JABNET + dual-ring spinner dengan context text "Memuat halaman... Mohon tunggu sebentar"
-- **404 Page** — Gradient "404" text + dual CTA (Dashboard + History back)
-- **Access Denied** — Icon lock + permission key display + dual CTA (Dashboard + Profile)
-- **ErrorBoundary** — Wrap di sekitar `<Suspense>` dalam `ProtectedRouter`. Menampilkan error stack di dev mode, hanya recovery UI di production.
+- **PageLoader** (App.tsx) - logo JABNET + dual-ring spinner dengan context text "Memuat halaman... Mohon tunggu sebentar"
+- **404 Page** - Gradient "404" text + dual CTA (Dashboard + History back)
+- **Access Denied** - Icon lock + permission key display + dual CTA (Dashboard + Profile)
+- **ErrorBoundary** - Wrap di sekitar `<Suspense>` dalam `ProtectedRouter`. Menampilkan error stack di dev mode, hanya recovery UI di production.
 
 ---
 
-## 3. Phase 2 — Component Adoption (NEXT)
+## 3. Phase 2 - Component Adoption (NEXT)
 
 Migrasi gradual halaman-halaman existing ke komponen baru:
 
 ### Prioritas Tinggi
-- [ ] **Dashboard.tsx** — Replace KPI tiles (baris 265-326) dengan `<StatTile />`. Replace status badges inline dengan `<StatusBadge />`.
-- [ ] **UsersPage.tsx** — Header pakai `<PageHeader />`. Loading skeleton pakai `<SkeletonTable />`. Empty state pakai `<EmptyState />`.
-- [ ] **CustomersPage.tsx** — Split form yang panjang jadi tabs (Identitas / Lokasi / Layanan / PPPoE). Gunakan zod schema.
-- [ ] **CollectionPipelinePage.tsx** — Kanban column pakai `<StatusBadge variant="pending">`. Empty column pakai `<EmptyState size="sm">`.
-- [ ] **LeadPipelinePage.tsx** — Hapus hardcoded Terra tokens (`#350800`, `#ff5f2e`), gunakan `<StatusBadge />`.
+- [ ] **Dashboard.tsx** - Replace KPI tiles (baris 265-326) dengan `<StatTile />`. Replace status badges inline dengan `<StatusBadge />`.
+- [ ] **UsersPage.tsx** - Header pakai `<PageHeader />`. Loading skeleton pakai `<SkeletonTable />`. Empty state pakai `<EmptyState />`.
+- [ ] **CustomersPage.tsx** - Split form yang panjang jadi tabs (Identitas / Lokasi / Layanan / PPPoE). Gunakan zod schema.
+- [ ] **CollectionPipelinePage.tsx** - Kanban column pakai `<StatusBadge variant="pending">`. Empty column pakai `<EmptyState size="sm">`.
+- [ ] **LeadPipelinePage.tsx** - Hapus hardcoded Terra tokens (`#350800`, `#ff5f2e`), gunakan `<StatusBadge />`.
 
 ### Prioritas Medium
-- [ ] **MonitoringPage, BillingPages** — Replace chart colors dengan `CHART_PALETTE`
-- [ ] **RolesPage.tsx** — Permission matrix dengan collapsible groups
-- [ ] **AnnouncementsPage, BugReportsPage** — Empty state + skeleton
+- [ ] **MonitoringPage, BillingPages** - Replace chart colors dengan `CHART_PALETTE`
+- [ ] **RolesPage.tsx** - Permission matrix dengan collapsible groups
+- [ ] **AnnouncementsPage, BugReportsPage** - Empty state + skeleton
 
 ---
 
-## 4. Phase 3 — Advanced UX (BACKLOG)
+## 4. Phase 3 - Advanced UX (BACKLOG)
 
 ### 4.1 Form System
 ```bash
@@ -174,10 +174,10 @@ Per page: convert register() usage to zodResolver pattern.
 ### Colors (dalam className)
 ```
 bg-primary        # Brand sky blue
-bg-success        # Emerald — active, paid, done
-bg-warning        # Amber — pending, attention
-bg-destructive    # Red — isolir, failed, critical
-bg-info           # Sky — informational
+bg-success        # Emerald - active, paid, done
+bg-warning        # Amber - pending, attention
+bg-destructive    # Red - isolir, failed, critical
+bg-info           # Sky - informational
 
 bg-asset-pop      # Red (POP on map)
 bg-asset-odc      # Blue (ODC)
@@ -222,16 +222,16 @@ shadow-elev-lg    # Modal, FAB, prominent overlay
 
 ---
 
-## 6. Metrics — Before vs After Phase 1
+## 6. Metrics - Before vs After Phase 1
 
 | Metric | Before | After | Δ |
 |--------|--------|-------|---|
 | Reusable UI components | 10 | 16 | +60% |
 | CSS design tokens | 18 | 38 | +111% |
 | Hardcoded hex in pages | ~45 | ~40 | -11% (starts) |
-| Empty state coverage | 0 pages | 1 page (Dashboard) | — |
-| Error boundary coverage | 0% | 100% (ProtectedRouter) | — |
-| Loading skeleton coverage | 1 page (manual) | 1 page + reusable lib | — |
+| Empty state coverage | 0 pages | 1 page (Dashboard) | - |
+| Error boundary coverage | 0% | 100% (ProtectedRouter) | - |
+| Loading skeleton coverage | 1 page (manual) | 1 page + reusable lib | - |
 
 Complete migration target (Phase 2): 80% pages, <10 hardcoded hex, 100% loading states, 100% empty states.
 
@@ -241,9 +241,9 @@ Complete migration target (Phase 2): 80% pages, <10 hardcoded hex, 100% loading 
 
 ### 7.1 Design System Repository
 Pertimbangkan memisahkan design system ke workspace terpisah (`@jabnet/ui`) kalau nanti akan ada:
-- Mobile app (React Native/Expo) — reuse tokens
-- Marketing website — reuse brand identity
-- Technician mobile PWA — reuse components
+- Mobile app (React Native/Expo) - reuse tokens
+- Marketing website - reuse brand identity
+- Technician mobile PWA - reuse components
 
 **Pathway:** Storybook + Chromatic untuk visual regression testing.
 

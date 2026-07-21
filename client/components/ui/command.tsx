@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Command — shadcn-style wrapper around cmdk for command palette UI.
+ * Command - shadcn-style wrapper around cmdk for command palette UI.
  * Use together with CommandDialog for Cmd+K modal pattern.
  */
 
