@@ -10790,6 +10790,77 @@ router.get("/api/prospects/details/:placeId", async (req: Request, res: Response
   }
 });
 
+// Prospect Finder via metode PENCARIAN (text search) - scrape nomor sekaligus.
+// Google Places "searchText" bisa balikin nomor telepon langsung di field mask,
+// jadi 1 request langsung dapat daftar prospek + nomornya (tanpa N call detail).
+// Body: { query, lat?, lng?, radius? } - lat/lng opsional untuk bias lokasi + hitung jarak.
+router.post("/api/prospects/search", async (req: Request, res: Response) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  try {
+    const { query, lat, lng, radius = 5000 } = req.body ?? {};
+    if (!query || typeof query !== "string" || !query.trim()) return sendError(res, "Kata kunci pencarian wajib diisi");
+
+    const apiKey = (await storage.getMitraSetting("google_maps_api_key")) || "";
+    if (!apiKey) return sendError(res, "Google Maps API key belum di-set untuk mitra ini. Atur di /integrations.", 503);
+
+    const hasBias = lat != null && lng != null && !isNaN(Number(lat)) && !isNaN(Number(lng));
+    const body: any = {
+      textQuery: query.trim(),
+      maxResultCount: 20,
+      languageCode: "id",
+      regionCode: "ID",
+    };
+    // Bias hasil ke sekitar titik referensi (kalau ada) supaya prospek relevan dengan area jaringan.
+    if (hasBias) {
+      body.locationBias = {
+        circle: {
+          center: { latitude: Number(lat), longitude: Number(lng) },
+          radius: Math.min(Math.max(Number(radius) || 5000, 1), 50000),
+        },
+      };
+    }
+
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        // Field mask termasuk nomor telepon + website = scraping nomor sekaligus.
+        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.types,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri",
+        "Referer": APP_URL,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return sendError(res, `Google Places API error: ${errText}`, 502);
+    }
+
+    const data = await response.json() as any;
+    const places = (data.places ?? []).map((p: any) => ({
+      placeId: p.id,
+      name: p.displayName?.text ?? "-",
+      address: p.formattedAddress ?? "-",
+      types: p.types ?? [],
+      category: inferCategory(p.types ?? []),
+      lat: p.location?.latitude,
+      lng: p.location?.longitude,
+      distance: hasBias && p.location
+        ? Math.round(haversineDistance(Number(lat), Number(lng), p.location.latitude, p.location.longitude))
+        : null,
+      // Nomor + website sudah ter-scrape langsung dari hasil pencarian.
+      phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
+      website: p.websiteUri ?? null,
+    }));
+
+    if (hasBias) places.sort((a: any, b: any) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+    sendSuccess(res, { places, query: query.trim(), refLat: hasBias ? lat : null, refLng: hasBias ? lng : null });
+  } catch (e: any) {
+    sendError(res, e.message, 500);
+  }
+});
+
 // ==================== MARKETING CRM ====================
 
 const MARKETING_ROLES = ["admin", "marketing", "marketing_spv"];
