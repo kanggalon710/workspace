@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { formatRelative as fmtRelative } from "@/lib/dateFormat";
 import {
   Bell, BellOff, Check, CheckCheck, X, Loader2,
-  Ticket as TicketIcon, Users, Megaphone, Bug, MessageCircle, AlertTriangle,
+  Ticket as TicketIcon, Users, Megaphone, Bug, MessageCircle, AlertTriangle, DownloadCloud,
 } from "lucide-react";
 
 interface Notification {
@@ -251,6 +251,8 @@ function getIconForType(type: string): { Icon: any; color: string; bg: string } 
       return { Icon: AlertTriangle, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-950/40" };
     case "announcement":
       return { Icon: Megaphone, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-950/40" };
+    case "system_update":
+      return { Icon: DownloadCloud, color: "text-sky-600 dark:text-sky-400", bg: "bg-sky-100 dark:bg-sky-950/40" };
     case "bug_report":
     case "bug_update":
     case "bug_assigned":

@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { FloatingMenuButton } from "./FloatingMenuButton";
+import { UpdateBanner } from "./UpdateBanner";
 import { useSidebar } from "@/context/SidebarContext";
 
 interface LayoutProps {
@@ -55,7 +56,10 @@ export function Layout({ children }: LayoutProps) {
               aria-hidden="true"
             />
           )}
-          <div className={isFullScreen ? "contents" : "relative"}>{children}</div>
+          <div className={isFullScreen ? "contents" : "relative"}>
+            {!isFullScreen && <UpdateBanner />}
+            {children}
+          </div>
         </div>
       </main>
 

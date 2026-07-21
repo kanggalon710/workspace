@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { DevDbSyncCard } from "@/components/integrations/DevDbSyncCard";
+import { AppUpdateCard } from "@/components/integrations/AppUpdateCard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -984,6 +985,9 @@ export default function IntegrationPage() {
       </Card>
 
       <DevDbSyncCard />
+
+      {/* Pembaruan Aplikasi - cek versi GitHub + update sekali klik (admin) */}
+      <AppUpdateCard />
 
       {/* ================================================================= */}
       {/* Card 1 - Google Maps Platform                                     */}
