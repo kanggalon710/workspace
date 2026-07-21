@@ -72,7 +72,7 @@ import {
   buildPermissionMatrixFromPreset, PERMISSION_PRESETS,
   ALL_PERMISSION_KEYS, type PermissionLevel,
   collections, collectionActivities, collectionAssignees,
-  collectionStages, DEFAULT_COLLECTION_STAGES,
+  collectionStages, DEFAULT_COLLECTION_STAGES, COLLECTION_STAGE_LABELS, COLLECTION_STAGE_COLORS,
   type Collection, type InsertCollection,
   type CollectionActivity, type InsertCollectionActivity,
   type CollectionStageRow, type CollectionStageRole,
@@ -178,6 +178,7 @@ import { computePeriodBuckets, assignCountToBuckets, lastValueInBuckets, buildEx
 import { computeInsertPosition } from "./pipeline-helpers.js";
 import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { buildCollectionSnapshot, resolveCollectionStatus, type CollectionSnapshot } from "../shared/collectionMetrics.js";
+import { decideSopAdvance, stageKeysForDivision, type SopStageMeta } from "../shared/collectionSop.js";
 import { isCardCommentType } from "../shared/cardCommentTypes.js";
 import { tablesToMirror, copyColumns, buildCopySql } from "./dev-db-sync.js";
 
@@ -1657,6 +1658,63 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
 
+  /** SOP churn→reaktivasi: auto-delegasi kartu yang lewat SLA stage-nya ke stage/divisi berikutnya.
+   *  Dipanggil tiap cycle billing-sync + manual via /collections/run-thresholds.
+   *  daysInStage dihitung dari stage_change terakhir (fallback openedAt). Idempotent-ish:
+   *  hanya advance 1 langkah per run per kartu; run berikutnya lanjut kalau masih lewat SLA. */
+  async runCollectionSopAdvance(): Promise<{ advanced: number; details: Array<{ collectionId: number; from: string; to: string; days: number }> }> {
+    const mitraId = getMitraId();
+    const now = Date.now();
+    const details: Array<{ collectionId: number; from: string; to: string; days: number }> = [];
+
+    const stageRows = await this.getCollectionStages();
+    const byKey = new Map<string, SopStageMeta>(stageRows.map((s: any) => [s.key, s as SopStageMeta]));
+    const terminalKeys = await this.getTerminalStageKeys();
+
+    // Ada stage yang punya SLA+next? kalau tidak, skip total (hemat query).
+    const hasFlow = stageRows.some((s: any) => Number(s.slaDays ?? 0) > 0 && s.nextStageKey);
+    if (!hasFlow) return { advanced: 0, details };
+
+    // Kartu open (belum closed).
+    const openCols = await this.db.select().from(collections)
+      .where(and(eq(collections.mitraId, mitraId), sql`${collections.closedAt} IS NULL`));
+    if (openCols.length === 0) return { advanced: 0, details };
+
+    // Batched: waktu stage_change terakhir per collection (1 query).
+    const lastChangeRows: any = ((await this.db.execute(sql`
+      SELECT collection_id AS cid, MAX(created_at) AS last_change
+      FROM collection_activities
+      WHERE mitra_id = ${mitraId} AND type = 'stage_change'
+      GROUP BY collection_id
+    `))[0] as any);
+    const lastChangeByCid = new Map<number, string>();
+    for (const r of (lastChangeRows ?? [])) lastChangeByCid.set(Number(r.cid), r.last_change);
+
+    let advanced = 0;
+    for (const col of openCols) {
+      const anchorIso = lastChangeByCid.get(col.id) ?? col.openedAt;
+      const anchorMs = new Date(anchorIso).getTime();
+      if (isNaN(anchorMs)) continue;
+      const daysInStage = (now - anchorMs) / 86400_000;
+      const decision = decideSopAdvance(String(col.stage), daysInStage, byKey, terminalKeys);
+      if (!decision.advance || !decision.toStage) continue;
+      try {
+        const fromLabel = byKey.get(decision.fromStage)?.label ?? decision.fromStage;
+        const toMeta = byKey.get(decision.toStage);
+        const toLabel = toMeta?.label ?? decision.toStage;
+        const owner = (toMeta as any)?.ownerDivision ?? "";
+        await this.moveCollectionStage(col.id, decision.toStage, null, {
+          note: `Auto-delegasi SOP: "${fromLabel}" → "${toLabel}"${owner ? ` (divisi ${owner})` : ""} setelah ${Math.floor(daysInStage)} hari.`,
+        } as any);
+        advanced++;
+        details.push({ collectionId: col.id, from: decision.fromStage, to: decision.toStage, days: Math.floor(daysInStage) });
+      } catch (e: any) {
+        console.error(`[SOP] auto-advance error collection #${col.id}:`, e.message);
+      }
+    }
+    return { advanced, details: details.slice(0, 100) };
+  }
+
   /** Sync health stats — untuk admin dashboard visibility */
   async getSyncHealthStats(): Promise<{
     customersTotal: number;
@@ -1699,10 +1757,18 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== COLLECTION PIPELINE (v4.1.2) ====================
 
-  async getCollections(filter?: { stage?: string; assignedTo?: number; openOnly?: boolean; customerId?: number }): Promise<Collection[]> {
+  async getCollections(filter?: { stage?: string; assignedTo?: number; openOnly?: boolean; customerId?: number; ownerDivision?: string }): Promise<Collection[]> {
     const mitraId = getMitraId();
     const conds: any[] = [eq(collections.mitraId, mitraId)];
     if (filter?.stage) conds.push(eq(collections.stage, filter.stage));
+    // Filter per-divisi penanggung jawab (view pipeline ter-scope CS/Marketing):
+    // hanya kartu yang stage-nya dimiliki divisi tsb.
+    if (filter?.ownerDivision) {
+      const stageRows = await this.getCollectionStages();
+      const keys = stageKeysForDivision(stageRows as any, filter.ownerDivision);
+      if (keys.length === 0) return [];
+      conds.push(inArray(collections.stage, keys));
+    }
     if (filter?.assignedTo !== undefined) conds.push(eq(collections.assignedTo, filter.assignedTo));
     // openOnly: include rows yang masih open (closed_at IS NULL) + closed recently (last 7 days)
     // supaya collection yang baru "lunas"/"write-off" tetap kelihatan di pipeline sebagai konfirmasi
@@ -1868,23 +1934,68 @@ export class DatabaseStorage implements IStorage {
   async seedCollectionStagesForMitra(mitraId: number): Promise<number> {
     const existing = await withMitra(mitraId, () => this.getCollectionStages());
     if (existing.length > 0) return 0;
-    let template: Array<{ key: string; label: string; color: string; role: string }>;
+    let template: Array<{ key: string; label: string; color: string; role: string; ownerDivision?: string | null; slaDays?: number | null; nextStageKey?: string | null }>;
     if (mitraId === 1) {
       template = DEFAULT_COLLECTION_STAGES.map((s) => ({ ...s }));
     } else {
       const jabnet = await withMitra(1, () => this.getCollectionStages());
       template = (jabnet.length > 0 ? jabnet : DEFAULT_COLLECTION_STAGES as any[]).map((s: any) => ({
         key: s.key, label: s.label, color: s.color, role: s.role,
+        ownerDivision: s.ownerDivision ?? null, slaDays: s.slaDays ?? null, nextStageKey: s.nextStageKey ?? null,
       }));
     }
     const now = new Date().toISOString();
     let pos = 0;
     for (const s of template) {
       await this.db.insert(collectionStages).values({
-        mitraId, key: s.key, label: s.label, color: s.color, position: pos++, role: s.role, createdAt: now,
+        mitraId, key: s.key, label: s.label, color: s.color, position: pos++, role: s.role,
+        ownerDivision: s.ownerDivision ?? null, slaDays: s.slaDays ?? null, nextStageKey: s.nextStageKey ?? null,
+        createdAt: now,
       } as any);
     }
     return template.length;
+  }
+
+  /** Terapkan ladder SOP churn→reaktivasi ke stages 1 mitra — IDEMPOTENT & aman untuk data lama.
+   *  - Tambah 2 stage delegasi (delegasi_cs, delegasi_marketing) bila belum ada, disisipkan
+   *    setelah 'contacted'.
+   *  - Set owner_division / sla_days / next_stage_key + label/color/position untuk key SOP yang
+   *    dikenal. Stage custom (key di luar daftar) TIDAK disentuh. */
+  async applyCollectionSopLadder(mitraId: number): Promise<{ inserted: number; updated: number }> {
+    return withMitra(mitraId, async () => {
+      const now = new Date().toISOString();
+      const existing = await this.getCollectionStages();
+      const byKey = new Map(existing.map((s) => [s.key, s]));
+      let inserted = 0, updated = 0;
+
+      // 1. Pastikan 2 stage delegasi ada.
+      for (const key of ["delegasi_cs", "delegasi_marketing"] as const) {
+        if (byKey.has(key)) continue;
+        await this.db.insert(collectionStages).values({
+          mitraId, key,
+          label: COLLECTION_STAGE_LABELS[key], color: COLLECTION_STAGE_COLORS[key],
+          position: 999, role: "none", createdAt: now,
+        } as any);
+        inserted++;
+      }
+
+      // 2. Set metadata + posisi untuk semua key SOP yang dikenal (urut = DEFAULT_COLLECTION_STAGES).
+      let pos = 0;
+      for (const def of DEFAULT_COLLECTION_STAGES) {
+        pos++;
+        const row = byKey.get(def.key) ?? (await this.getCollectionStages()).find((s) => s.key === def.key);
+        if (!row) continue;
+        await this.db.update(collectionStages).set({
+          ownerDivision: def.ownerDivision ?? null,
+          slaDays: def.slaDays ?? null,
+          nextStageKey: def.nextStageKey ?? null,
+          position: pos,
+          updatedAt: now,
+        } as any).where(and(eq(collectionStages.mitraId, mitraId), eq(collectionStages.key, def.key)));
+        updated++;
+      }
+      return { inserted, updated };
+    });
   }
 
   /** Seed built-in pipeline templates for a mitra. Idempotent — skips if name+is_builtin=1 already exists. */
@@ -1935,7 +2046,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(collectionStages.mitraId, mitraId), eq(collectionStages.role, role)));
   }
 
-  async updateCollectionStage(id: number, data: { label?: string; color?: string; role?: CollectionStageRole }): Promise<CollectionStageRow> {
+  async updateCollectionStage(id: number, data: { label?: string; color?: string; role?: CollectionStageRole; ownerDivision?: string | null; slaDays?: number | null; nextStageKey?: string | null }): Promise<CollectionStageRow> {
     const mitraId = getMitraId();
     const [target] = await this.db.select().from(collectionStages).where(and(eq(collectionStages.id, id), eq(collectionStages.mitraId, mitraId)));
     if (!target) throw new Error("Stage tidak ditemukan");
@@ -1947,6 +2058,10 @@ export class DatabaseStorage implements IStorage {
     if (data.label !== undefined) patch.label = data.label;
     if (data.color !== undefined) patch.color = data.color;
     if (data.role !== undefined) patch.role = data.role;
+    // SOP fields — null berarti "kosongkan" (dibedakan dari undefined = jangan sentuh).
+    if (data.ownerDivision !== undefined) patch.ownerDivision = data.ownerDivision || null;
+    if (data.slaDays !== undefined) patch.slaDays = (data.slaDays == null || Number(data.slaDays) <= 0) ? null : Number(data.slaDays);
+    if (data.nextStageKey !== undefined) patch.nextStageKey = data.nextStageKey || null;
     await this.db.update(collectionStages).set(patch).where(and(eq(collectionStages.id, id), eq(collectionStages.mitraId, mitraId)));
     const [row] = await this.db.select().from(collectionStages).where(and(eq(collectionStages.id, id), eq(collectionStages.mitraId, mitraId)));
     return row!;
@@ -9824,6 +9939,15 @@ export class DatabaseStorage implements IStorage {
           KEY idx_collection_stages_mitra (mitra_id)
         )
       `);
+      // SOP churn→reaktivasi (v5.3): kolom owner_division / sla_days / next_stage_key.
+      for (const [col, ddl] of [
+        ["owner_division", "ADD COLUMN owner_division VARCHAR(32)"],
+        ["sla_days", "ADD COLUMN sla_days INT"],
+        ["next_stage_key", "ADD COLUMN next_stage_key VARCHAR(64)"],
+      ] as const) {
+        try { await this.pool.execute(`ALTER TABLE collection_stages ${ddl}`); }
+        catch (e: any) { if (e?.errno !== 1060) console.warn(`[migration] collection_stages ${col}: ${e.message}`); }
+      }
       // Seed mitra 1 (JABNET) dari template default, lalu backfill semua mitra lain (clone dari mitra 1).
       await this.seedCollectionStagesForMitra(1);
       const [mitraRows]: any = await this.pool.execute(`SELECT id FROM mitras WHERE id <> 1`);
@@ -9836,6 +9960,13 @@ export class DatabaseStorage implements IStorage {
         }
       }
       if (seededMitras > 0) console.log(`[migration] Seeded collection_stages for ${seededMitras} non-JABNET mitra(s)`);
+      // Terapkan ladder SOP (owner/sla/next + 2 stage delegasi) idempotent ke SEMUA mitra —
+      // aman untuk data lama: hanya menambah stage baru + set metadata key yang dikenal.
+      await this.applyCollectionSopLadder(1);
+      for (const m of (mitraRows as any[])) {
+        try { await this.applyCollectionSopLadder(Number(m.id)); }
+        catch (e: any) { console.warn(`[migration] SOP ladder mitra ${m.id}: ${e.message}`); }
+      }
     } catch (e: any) {
       console.warn(`[migration] collection_stages setup failed: ${e.message}`);
     }

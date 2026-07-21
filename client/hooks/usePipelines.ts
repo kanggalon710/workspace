@@ -307,10 +307,11 @@ export function useRoles() {
 export type CollectionsEngineMode = "legacy" | "pipeline";
 export type CollectionsEngineModeData = { mode: CollectionsEngineMode; pipelineId: number | null };
 
-export function useCollectionsEngineMode() {
+export function useCollectionsEngineMode(opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["collections-engine-mode"],
     queryFn: () => api.get<CollectionsEngineModeData>(`/collections/engine-mode`),
+    enabled: opts?.enabled ?? true,
   });
 }
 

@@ -89,20 +89,34 @@ const ACTIVITY_CFG: Record<string, { label: string; icon: any; color: string }> 
   assigned: { label: "Ditugaskan", icon: UserIcon, color: "#6366F1" },
 };
 
-export default function CollectionPipelinePage() {
+/** division: undefined = board penuh (Keuangan/Finance). "cs"/"marketing" = view ter-scope
+ *  SOP delegasi — hanya menampilkan kartu di stage milik divisi tsb (cross-check delegasi). */
+export default function CollectionPipelinePage({ division }: { division?: "cs" | "marketing" } = {}) {
   const { user, canWrite } = useAuth();
   const qc = useQueryClient();
-  const canEdit = canWrite("collections");
+  const scopePerm = division === "cs" ? "customers" : division === "marketing" ? "leads" : "collections";
+  const canEdit = canWrite("collections") || canWrite(scopePerm);
   const [, navigate] = useLocation();
+
+  // Suffix query param divisi untuk semua endpoint collection (scoping + izin fallback).
+  const withDiv = (path: string) => division ? path + (path.includes("?") ? "&" : "?") + `division=${division}` : path;
+
+  // Meta divisi untuk header + judul.
+  const DIV_META: Record<string, { title: string; desc: string }> = {
+    cs: { title: "Pipeline Reaktivasi — Layanan Pelanggan", desc: "Kartu delegasi dari Finance. Hubungi & tindak lanjut 7 hari sebelum eskalasi ke Marketing." },
+    marketing: { title: "Pipeline Reaktivasi — Marketing", desc: "Kartu delegasi untuk kunjungan/reaktivasi PIC sales. Tahap akhir SOP churn." },
+  };
 
   // ── Collections cutover: tampilkan interstitial kalau mode = pipeline ────────
   // CATATAN: TIDAK ada auto-redirect — escape hatch "Lihat data lama" harus tetap
   // bisa diklik agar cutover reversible (verifikasi/rollback). Lihat early-return
   // di bawah yang menampilkan banner ketimbang board.
-  const { data: engineMode, isLoading: engineModeLoading } = useCollectionsEngineMode();
+  // Scoped view (cs/marketing) selalu pakai board legacy — jangan panggil engine-mode
+  // (user divisi tsb tak punya izin 'collections' → hindari 403).
+  const { data: engineMode, isLoading: engineModeLoading } = useCollectionsEngineMode({ enabled: !division });
   const [stayLegacy, setStayLegacy] = useState(false);
   const pipelineMode =
-    engineMode?.mode === "pipeline" && engineMode.pipelineId != null;
+    !division && engineMode?.mode === "pipeline" && engineMode.pipelineId != null;
   const showInterstitial = pipelineMode && !stayLegacy && !engineModeLoading;
 
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
@@ -126,10 +140,10 @@ export default function CollectionPipelinePage() {
   // ── Queries ──
   // Refetch interval hanya aktif ketika tab aktif (hemat bandwidth + server load)
   const { data: collections, isLoading, refetch, isFetching } = useQuery<CollectionWithCustomer[]>({
-    queryKey: ["/api/collections", selectedStage],
+    queryKey: ["/api/collections", selectedStage, division ?? "all-div"],
     queryFn: () => {
       const q = selectedStage === "all" ? "" : `?stage=${selectedStage}`;
-      return api.get<CollectionWithCustomer[]>(`/collections${q}`);
+      return api.get<CollectionWithCustomer[]>(withDiv(`/collections${q}`));
     },
     refetchInterval: (query) => query.state.error ? false : 60_000,
     refetchIntervalInBackground: false,
@@ -149,28 +163,35 @@ export default function CollectionPipelinePage() {
   });
 
   const { data: stats } = useQuery({
-    queryKey: ["/api/collections/stats"],
-    queryFn: () => api.get("/collections/stats"),
+    queryKey: ["/api/collections/stats", division ?? "all-div"],
+    queryFn: () => api.get(withDiv("/collections/stats")),
     refetchInterval: (query) => query.state.error ? false : 60_000,
     refetchIntervalInBackground: false,
     staleTime: 30_000,
   });
 
   // Pipeline stage dinamis per-mitra (urut posisi).
-  const { data: stages = [] } = useQuery<CollectionStageRow[]>({
-    queryKey: ["/api/collections/stages"],
-    queryFn: () => api.get<CollectionStageRow[]>("/collections/stages"),
+  const { data: allStagesData = [] } = useQuery<CollectionStageRow[]>({
+    queryKey: ["/api/collections/stages", division ?? "all-div"],
+    queryFn: () => api.get<CollectionStageRow[]>(withDiv("/collections/stages")),
     staleTime: 60_000,
   });
+  // Scoped view: hanya tampilkan kolom stage milik divisi ini (cross-check delegasi).
+  const stages = useMemo(() => {
+    if (!division) return allStagesData;
+    return allStagesData.filter((s) => String((s as any).ownerDivision ?? "").toLowerCase() === division);
+  }, [allStagesData, division]);
   const stageHelpers = useMemo<StageHelpers>(() => {
-    const m = new Map(stages.map((s) => [s.key, s]));
+    const m = new Map(allStagesData.map((s) => [s.key, s]));
     return {
-      stages,
+      // stages = SEMUA stage (dipakai untuk daftar target pindah-stage di detail),
+      // supaya scoped user tetap bisa memindahkan kartu ke Lunas/Reaktivasi/Bermasalah.
+      stages: allStagesData,
       label: (k) => m.get(k)?.label ?? k,
       color: (k) => m.get(k)?.color ?? "#6B7280",
       role: (k) => m.get(k)?.role ?? "none",
     };
-  }, [stages]);
+  }, [allStagesData]);
   const stageLabel = stageHelpers.label;
   const stageColor = stageHelpers.color;
 
@@ -217,7 +238,7 @@ export default function CollectionPipelinePage() {
   const stageMut = useMutation({
     mutationFn: async (data: { id: number; stage: string; issueType?: string; promiseDate?: string; closeReason?: string; note?: string; photoData?: string }) => {
       // Step 1: patch stage
-      await api.patch(`/collections/${data.id}/stage`, {
+      await api.patch(withDiv(`/collections/${data.id}/stage`), {
         stage: data.stage,
         issueType: data.issueType,
         promiseDate: data.promiseDate,
@@ -225,7 +246,7 @@ export default function CollectionPipelinePage() {
       });
       // Step 2: kalau ada note/photo, attach sebagai activity
       if (data.note || data.photoData) {
-        await api.post(`/collections/${data.id}/activity`, {
+        await api.post(withDiv(`/collections/${data.id}/activity`), {
           type: data.photoData ? "photo" : "note",
           content: data.note || "Foto bukti",
           photoData: data.photoData,
@@ -247,7 +268,7 @@ export default function CollectionPipelinePage() {
 
   const assignMut = useMutation({
     mutationFn: (data: { id: number; userIds: number[] }) =>
-      api.put(`/collections/${data.id}/assignees`, { userIds: data.userIds }),
+      api.put(withDiv(`/collections/${data.id}/assignees`), { userIds: data.userIds }),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["/api/collections"] });
       qc.invalidateQueries({ queryKey: ["/api/collections", vars.id] });
@@ -258,7 +279,7 @@ export default function CollectionPipelinePage() {
 
   const addActivityMut = useMutation({
     mutationFn: ({ id, type, content }: { id: number; type: string; content: string }) =>
-      api.post(`/collections/${id}/activity`, { type, content }),
+      api.post(withDiv(`/collections/${id}/activity`), { type, content }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/collections"] });
       toast.success("Catatan ditambahkan");
@@ -387,22 +408,25 @@ export default function CollectionPipelinePage() {
           <div className="min-w-0 flex-1">
             <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-red-500 shrink-0" />
-              Collection Pipeline
+              {division ? DIV_META[division].title : "Collection Pipeline"}
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1 line-clamp-1 md:line-clamp-none">
-              Pelanggan isolir — auto-create saat isolir, auto-close saat bayar.
+              {division ? DIV_META[division].desc : "Pelanggan isolir — auto-create saat isolir, auto-close saat bayar."}
             </p>
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
-            {canEdit && (
+            {/* Kelola pipeline & settings hanya untuk board penuh (izin collections) — bukan view scoped. */}
+            {!division && canWrite("collections") && (
               <Button size="sm" variant="outline" onClick={() => setPipelineMgrOpen(true)} title="Kelola pipeline (stage)" className="h-8 gap-1.5 px-2.5">
                 <ListTree className="h-4 w-4" />
                 <span className="hidden sm:inline text-xs">Kelola Pipeline</span>
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => setSettingsOpen(true)} title="Pengaturan parameter" className="h-8 w-8 p-0">
-              <Settings className="h-4 w-4" />
-            </Button>
+            {!division && (
+              <Button size="sm" variant="outline" onClick={() => setSettingsOpen(true)} title="Pengaturan parameter" className="h-8 w-8 p-0">
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching} className="h-8 w-8 p-0">
               {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
@@ -413,23 +437,33 @@ export default function CollectionPipelinePage() {
           </div>
         </div>
 
-        {/* Stats header — mobile: 2 big rows + 3 tiny pills. Desktop: 5 uniform. */}
-        <div className="md:hidden grid grid-cols-2 gap-2">
-          <StatCard label="Total Open" value={(stats as any)?.total ?? 0} color="#EF4444" />
-          <StatCard label="Total Tagihan" value={fmtRp((stats as any)?.totalOverdue)} color="#F59E0B" compact />
-        </div>
-        <div className="md:hidden grid grid-cols-3 gap-2">
-          <MiniStat label="Avg Age" value={`${(stats as any)?.avgAgeDays ?? 0}h`} color="#6366F1" />
-          <MiniStat label="Janji" value={(stats as any)?.byStage?.promised ?? 0} color="#F59E0B" />
-          <MiniStat label="Bermasalah" value={(stats as any)?.byStage?.issue ?? 0} color="#DC2626" />
-        </div>
-        <div className="hidden md:grid grid-cols-5 gap-2">
-          <StatCard label="Total Open" value={(stats as any)?.total ?? 0} color="#EF4444" />
-          <StatCard label="Total Tagihan" value={fmtRp((stats as any)?.totalOverdue)} color="#F59E0B" compact />
-          <StatCard label="Avg Age" value={`${(stats as any)?.avgAgeDays ?? 0}h`} color="#6366F1" />
-          <StatCard label="Janji Bayar" value={(stats as any)?.byStage?.promised ?? 0} color="#F59E0B" />
-          <StatCard label="Bermasalah" value={(stats as any)?.byStage?.issue ?? 0} color="#DC2626" />
-        </div>
+        {/* Stats header. Scoped view: hitung dari kartu divisi (bukan stats global). */}
+        {division ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <StatCard label="Total Delegasi" value={enriched.length} color="#EF4444" />
+            <StatCard label="Total Tagihan" value={fmtRp(enriched.reduce((s, c) => s + (c.openedAmount ?? 0), 0))} color="#F59E0B" compact />
+            <StatCard label="Avg Age" value={`${enriched.length ? Math.round(enriched.reduce((s, c) => s + daysSince(c.openedAt), 0) / enriched.length) : 0}h`} color="#6366F1" />
+          </div>
+        ) : (
+          <>
+            <div className="md:hidden grid grid-cols-2 gap-2">
+              <StatCard label="Total Open" value={(stats as any)?.total ?? 0} color="#EF4444" />
+              <StatCard label="Total Tagihan" value={fmtRp((stats as any)?.totalOverdue)} color="#F59E0B" compact />
+            </div>
+            <div className="md:hidden grid grid-cols-3 gap-2">
+              <MiniStat label="Avg Age" value={`${(stats as any)?.avgAgeDays ?? 0}h`} color="#6366F1" />
+              <MiniStat label="Janji" value={(stats as any)?.byStage?.promised ?? 0} color="#F59E0B" />
+              <MiniStat label="Bermasalah" value={(stats as any)?.byStage?.issue ?? 0} color="#DC2626" />
+            </div>
+            <div className="hidden md:grid grid-cols-5 gap-2">
+              <StatCard label="Total Open" value={(stats as any)?.total ?? 0} color="#EF4444" />
+              <StatCard label="Total Tagihan" value={fmtRp((stats as any)?.totalOverdue)} color="#F59E0B" compact />
+              <StatCard label="Avg Age" value={`${(stats as any)?.avgAgeDays ?? 0}h`} color="#6366F1" />
+              <StatCard label="Janji Bayar" value={(stats as any)?.byStage?.promised ?? 0} color="#F59E0B" />
+              <StatCard label="Bermasalah" value={(stats as any)?.byStage?.issue ?? 0} color="#DC2626" />
+            </div>
+          </>
+        )}
 
         {/* Stage filter chips */}
         <div className="flex gap-1.5 flex-nowrap overflow-x-auto no-scrollbar -mx-3 md:mx-0 px-3 md:px-0 pb-2 md:flex-wrap">
@@ -517,6 +551,7 @@ export default function CollectionPipelinePage() {
       {/* Detail Dialog */}
       <CollectionDetail
         id={detailId}
+        division={division}
         onClose={() => setDetailId(null)}
         canEdit={canEdit}
         users={users ?? []}
@@ -950,9 +985,10 @@ function CollectionCard({ c, onClick }: { c: CollectionWithCustomer; onClick: ()
 }
 
 function CollectionDetail({
-  id, onClose, canEdit, users, onMoveStage, onAssign, onAddActivity, onDelete, isSystemAdmin, waLink, customerById,
+  id, division, onClose, canEdit, users, onMoveStage, onAssign, onAddActivity, onDelete, isSystemAdmin, waLink, customerById,
 }: {
   id: number | null;
+  division?: "cs" | "marketing";
   onClose: () => void;
   canEdit: boolean;
   users: any[];
@@ -968,10 +1004,11 @@ function CollectionDetail({
   const [noteText, setNoteText] = useState("");
   const [noteType, setNoteType] = useState("note");
   const [showFullHistory, setShowFullHistory] = useState(false);
+  const divQ = division ? `?division=${division}` : "";
 
   const { data: detail } = useQuery<any>({
-    queryKey: ["/api/collections", id],
-    queryFn: () => id ? api.get(`/collections/${id}`) : Promise.resolve(null),
+    queryKey: ["/api/collections", id, division ?? "all-div"],
+    queryFn: () => id ? api.get(`/collections/${id}${divQ}`) : Promise.resolve(null),
     enabled: !!id,
   });
 
@@ -1378,6 +1415,19 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
                 >
                   {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
+                {/* SOP: SLA hari → auto-delegasi ke stage berikutnya (nextStageKey). Kosong = tidak. */}
+                <input
+                  type="number" min="0" max="365"
+                  defaultValue={(s as any).slaDays ?? ""}
+                  key={`sla-${s.id}-${(s as any).slaDays}`}
+                  onBlur={(e) => { const raw = e.target.value.trim(); const v = raw === "" ? null : Number(raw); const cur = (s as any).slaDays ?? null; if (v !== cur) updateMut.mutate({ id: s.id, data: { slaDays: v } }); }}
+                  className="h-8 w-12 rounded-md border border-input bg-transparent text-xs px-1 shrink-0 text-center tabular-nums"
+                  title="SLA (hari) → auto-delegasi ke stage berikutnya. Kosong = tidak auto."
+                  placeholder="SLA"
+                />
+                {(s as any).ownerDivision && (
+                  <Badge variant="secondary" className="text-[9px] shrink-0 uppercase" title="Divisi penanggung jawab stage ini">{(s as any).ownerDivision}</Badge>
+                )}
                 <Badge variant="secondary" className="text-[10px] shrink-0" title="Jumlah kartu aktif">{cardCounts[s.key] ?? 0}</Badge>
                 <button
                   onClick={() => setDeleteTarget(s)}

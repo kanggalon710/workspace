@@ -85,15 +85,18 @@ export class BillingSyncWorker {
    * (tidak fetch billing — ambil langsung dari DB customers).
    * Berguna untuk testing/operasional setelah admin ubah settings.
    */
-  async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number }> {
+  async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number }> {
     const enabled = (await storage.getSetting("collection_enabled")) !== "false";
-    if (!enabled) return { opened: 0, writtenOff: 0 };
+    if (!enabled) return { opened: 0, writtenOff: 0, advanced: 0 };
     const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
     const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "0");
     const result = await this.runCollectionThresholds(triggerDays, writeoffDays);
+    // SOP churn→reaktivasi: auto-delegasi kartu yang lewat SLA stage-nya ke divisi berikutnya.
+    const mid = getMitraIdOrNull() ?? 1;
+    const sop = await withMitra(mid, () => storage.runCollectionSopAdvance());
     await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
     await storage.setSetting("collection_trigger_last_opened", String(result.opened), "collection");
-    return result;
+    return { ...result, advanced: sop.advanced };
   }
 
   /**
@@ -305,6 +308,11 @@ export class BillingSyncWorker {
           const collectionResults = await this.runCollectionThresholds(triggerDays, writeoffDays);
           (stats.transitions as any).auto_opened_overdue = collectionResults.opened;
           (stats.transitions as any).auto_writeoff = collectionResults.writtenOff;
+          // SOP churn→reaktivasi: auto-delegasi antar-stage/divisi berdasarkan SLA.
+          try {
+            const sop = await storage.runCollectionSopAdvance();
+            (stats.transitions as any).sop_auto_delegated = sop.advanced;
+          } catch (e: any) { console.warn(`[BillingSyncWorker] SOP advance error: ${e.message}`); }
           await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
           await storage.setSetting("collection_trigger_last_opened", String(collectionResults.opened), "collection");
         }

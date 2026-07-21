@@ -265,6 +265,9 @@ function ProtectedRouter() {
           <Route path="/settings/sla-calendar">{() => <WithPerm permission="tickets"><SlaCalendarPage /></WithPerm>}</Route>
           <Route path="/tickets">{() => <WithPerm permission="tickets"><TicketingPage /></WithPerm>}</Route>
           <Route path="/collections">{() => <WithPerm permission="collections"><CollectionPipelinePage /></WithPerm>}</Route>
+          {/* SOP churn→reaktivasi: view collection ter-scope divisi (delegasi lintas-divisi). */}
+          <Route path="/collections/cs">{() => <WithPerm permission="customers"><CollectionPipelinePage division="cs" /></WithPerm>}</Route>
+          <Route path="/collections/marketing">{() => <WithPerm permission="leads"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
           <Route path="/pipelines/:id">{() => <WithPerm permission="pipelines"><PipelineBoardPage /></WithPerm>}</Route>
           {/* Teamspace v5.0 — kolaborasi tim internal */}

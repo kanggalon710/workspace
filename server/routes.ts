@@ -10341,8 +10341,37 @@ router.get("/api/customers/:id/payment-history", async (req: Request, res: Respo
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+// ── Akses collection ter-scope divisi (SOP delegasi churn→reaktivasi) ─────────
+// User penuh (izin 'collections') melihat semua. User divisi CS/Marketing melihat
+// HANYA kartu di stage milik divisinya lewat ?division=. Izin fallback tanpa key baru:
+// cs → 'customers', marketing → 'leads' (divisi tsb sudah memiliki izin itu).
+const COLLECTION_DIVISION_PERM: Record<string, string> = { cs: "customers", marketing: "leads" };
+function collectionScopedDivision(req: Request): string | undefined {
+  const d = String(req.query.division ?? "").toLowerCase().trim();
+  return COLLECTION_DIVISION_PERM[d] ? d : undefined;
+}
+function collectionAccessOK(req: Request, division: string | undefined, write: boolean): boolean {
+  const full = write ? hasWritePermission(req, "collections") : hasPermission(req, "collections");
+  if (full) return true;
+  const p = division ? COLLECTION_DIVISION_PERM[division] : undefined;
+  if (!p) return false;
+  return write ? hasWritePermission(req, p) : hasPermission(req, p);
+}
+/** Untuk write ter-scope: user tanpa izin 'collections' penuh hanya boleh menyentuh kartu
+ *  yang stage-nya milik divisinya. Return true kalau boleh lanjut. */
+async function collectionScopedOwnershipOK(req: Request, res: Response, colId: number, division: string | undefined): Promise<boolean> {
+  if (hasWritePermission(req, "collections")) return true; // akses penuh — tanpa batas divisi
+  const col = await storage.getCollection(colId);
+  if (!col) { sendError(res, "Collection tidak ditemukan", 404); return false; }
+  const stages = await storage.getCollectionStages();
+  const owner = String((stages.find((s) => s.key === col.stage) as any)?.ownerDivision ?? "").toLowerCase();
+  if (!division || owner !== division) { sendError(res, "Kartu ini bukan delegasi divisi Anda", 403); return false; }
+  return true;
+}
+
 router.get("/api/collections", async (req: Request, res: Response) => {
-  if (!requirePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, false)) return sendError(res, "Akses ditolak", 403);
   try {
     const stage = req.query.stage as string | undefined;
     const assignedToMe = req.query.assignedToMe === "true";
@@ -10352,6 +10381,7 @@ router.get("/api/collections", async (req: Request, res: Response) => {
       stage,
       openOnly,
       customerId,
+      ownerDivision: division,
       assignedTo: assignedToMe ? req.authUser!.id : undefined,
     });
     // Batch-load assignees (anti N+1)
@@ -10366,7 +10396,8 @@ router.get("/api/collections", async (req: Request, res: Response) => {
 });
 
 router.get("/api/collections/stats", async (req: Request, res: Response) => {
-  if (!requirePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, false)) return sendError(res, "Akses ditolak", 403);
   try {
     sendSuccess(res, await storage.getCollectionStats());
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -10375,7 +10406,8 @@ router.get("/api/collections/stats", async (req: Request, res: Response) => {
 // ── Collection pipeline stages (custom per-mitra) ─────────────────────────────
 // NB: harus terdaftar SEBELUM "/api/collections/:id" supaya tidak ke-match sebagai :id.
 router.get("/api/collections/stages", async (req: Request, res: Response) => {
-  if (!requirePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, false)) return sendError(res, "Akses ditolak", 403);
   try {
     sendSuccess(res, await storage.getCollectionStages());
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -10387,6 +10419,12 @@ router.post("/api/collections/stages", async (req: Request, res: Response) => {
     const { label, color, role } = req.body ?? {};
     if (!label || typeof label !== "string" || !label.trim()) return sendError(res, "Judul stage wajib diisi");
     const row = await storage.createCollectionStage({ label: label.trim(), color, role });
+    // Set SOP fields bila dikirim (opsional saat create).
+    if (req.body?.ownerDivision !== undefined || req.body?.slaDays !== undefined || req.body?.nextStageKey !== undefined) {
+      await storage.updateCollectionStage(row.id, {
+        ownerDivision: req.body.ownerDivision, slaDays: req.body.slaDays, nextStageKey: req.body.nextStageKey,
+      });
+    }
     await logAudit(req, "CREATE", "collection_stage", row.id, row.label, { key: row.key, role: row.role });
     sendSuccess(res, row);
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -10404,9 +10442,9 @@ router.patch("/api/collections/stages/reorder", async (req: Request, res: Respon
 router.patch("/api/collections/stages/:id", async (req: Request, res: Response) => {
   if (!requireWritePermission(req, res, "collections")) return;
   try {
-    const { label, color, role } = req.body ?? {};
-    const row = await storage.updateCollectionStage(Number(req.params.id), { label, color, role });
-    await logAudit(req, "UPDATE", "collection_stage", row.id, row.label, { color: row.color, role: row.role });
+    const { label, color, role, ownerDivision, slaDays, nextStageKey } = req.body ?? {};
+    const row = await storage.updateCollectionStage(Number(req.params.id), { label, color, role, ownerDivision, slaDays, nextStageKey });
+    await logAudit(req, "UPDATE", "collection_stage", row.id, row.label, { color: row.color, role: row.role, ownerDivision: row.ownerDivision, slaDays: row.slaDays, nextStageKey: row.nextStageKey });
     sendSuccess(res, row);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -10423,7 +10461,8 @@ router.delete("/api/collections/stages/:id", async (req: Request, res: Response)
 });
 
 router.get("/api/collections/:id", async (req: Request, res: Response) => {
-  if (!requirePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, false)) return sendError(res, "Akses ditolak", 403);
   try {
     const col = await storage.getCollection(Number(req.params.id));
     if (!col) return sendError(res, "Collection tidak ditemukan", 404);
@@ -10436,7 +10475,9 @@ router.get("/api/collections/:id", async (req: Request, res: Response) => {
 });
 
 router.patch("/api/collections/:id/stage", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, true)) return sendError(res, "Akses ditolak", 403);
+  if (!(await collectionScopedOwnershipOK(req, res, Number(req.params.id), division))) return;
   try {
     const { stage, issueType, promiseDate, closeReason, notes } = req.body;
     // Validasi terhadap stage pipeline milik mitra (dinamis, custom per-mitra).
@@ -10464,7 +10505,9 @@ router.patch("/api/collections/:id/stage", async (req: Request, res: Response) =
 /** PUT /api/collections/:id/assignees — replace assignee set (multi-user).
  *  Body: { userIds: number[] }. Empty array = clear all assignees. */
 router.put("/api/collections/:id/assignees", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, true)) return sendError(res, "Akses ditolak", 403);
+  if (!(await collectionScopedOwnershipOK(req, res, Number(req.params.id), division))) return;
   try {
     const collectionId = Number(req.params.id);
     const userIds = Array.isArray(req.body?.userIds) ? req.body.userIds.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x) && x > 0) : [];
@@ -10525,7 +10568,9 @@ router.patch("/api/collections/:id/assign", async (req: Request, res: Response) 
 });
 
 router.post("/api/collections/:id/activity", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, true)) return sendError(res, "Akses ditolak", 403);
+  if (!(await collectionScopedOwnershipOK(req, res, Number(req.params.id), division))) return;
   try {
     const { type, content, photoData } = req.body;
     if (!type) return sendError(res, "Type activity wajib diisi");

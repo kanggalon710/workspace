@@ -367,6 +367,35 @@ Pengembangan besar setelah v4.3.0 — SEMUA sudah live di branch
 | `PRDHR.md` (upload) | PRD HR & Payroll (reverse-eng GajiHub) — HR-1 & HR-2 selesai, HR-3 sebagian |
 | `LOCAL-DEV.md` | Cara run lokal (Docker MySQL → db:push → dev) |
 
+### v5.4 — Collection SOP churn→reaktivasi (integrasi lintas-divisi)
+
+Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi antar-divisi:
+
+| Stage (`key`) | Owner | SLA | → berikutnya |
+|---|---|---|---|
+| Baru Isolir (`new`) | sistem | 3h | Dihubungi |
+| Dihubungi (`contacted`) | Finance | 4h | Delegasi CS |
+| Delegasi Layanan Pelanggan (`delegasi_cs`) 🆕 | CS | 7h | Delegasi Marketing |
+| Delegasi Marketing (`delegasi_marketing`) 🆕 | Marketing | 7h | — (write-off by age) |
+| Lunas/Reaktivasi (`paid`) · Churn (`written_off`) | — | — | terminal |
+
+- **Schema**: `collection_stages` + kolom `owner_division` / `sla_days` / `next_stage_key`
+  (migrasi idempotent + `applyCollectionSopLadder(mitraId)` — hanya set metadata key SOP,
+  tambah 2 stage delegasi; stage custom tak disentuh). Metadata seed di `COLLECTION_SOP_META`.
+- **Engine auto-delegasi**: `storage.runCollectionSopAdvance()` — anchor `daysInStage` dari
+  `stage_change` terakhir (fallback openedAt), advance 1 langkah/run bila lewat SLA. Logika murni
+  `shared/collectionSop.ts` (`decideSopAdvance`, `stageKeysForDivision`) + unit test (9). Dipanggil
+  tiap cycle billing-sync + manual `/collections/run-thresholds` (respons kini `{opened,writtenOff,advanced}`).
+- **View ter-scope divisi**: `getCollections({ownerDivision})` + endpoint collection terima `?division=cs|marketing`.
+  Izin fallback tanpa key baru: cs→`customers`, marketing→`leads`. Write ter-scope divalidasi
+  `collectionScopedOwnershipOK` (hanya boleh sentuh kartu di stage milik divisinya).
+- **Client**: `CollectionPipelinePage` terima prop `division` (judul + fetch `?division=` + kolom
+  hanya stage divisi + KPI dihitung dari kartu divisi + tombol admin disembunyikan). Route
+  `/collections/cs` (Layanan Pelanggan) + `/collections/marketing` (Marketing). Pipeline Manager
+  dapat edit SLA per stage + badge owner.
+- **Marketing 2 pipeline**: (1) `/leads` lead dari canvassing (auto-integrasi lama: `createLead`→
+  `emitLeadEvent`→pipeline card), (2) `/collections/marketing` reaktivasi (delegasi collection).
+
 Arsitektur singkat v5.x:
 - **Navigasi berbasis divisi**: `client/lib/divisions.ts` = satu sumber kebenaran
   (Sidebar/Beranda/hub `/divisi/:key` semua baca dari sini). Dashboard lama → `/dashboard-jaringan` (NOC).

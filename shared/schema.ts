@@ -461,6 +461,15 @@ export const collectionStages = mysqlTable("collection_stages", {
   color: varchar("color", { length: 16 }).notNull().default("#6B7280"),
   position: int("position").notNull().default(0),        // urutan drag-drop
   role: varchar("role", { length: 16 }).notNull().default("none"), // none | entry | paid | writeoff
+  // ── SOP churn→reaktivasi (v5.3) ──────────────────────────────────────────
+  // Divisi penanggung jawab stage ini (finance | cs | marketing | sistem | null).
+  // Dipakai untuk view pipeline ter-scope per divisi (CS & Marketing cross-check delegasi).
+  ownerDivision: varchar("owner_division", { length: 32 }),
+  // SLA: berapa hari kartu boleh diam di stage ini sebelum auto-delegasi ke nextStageKey.
+  // null / 0 = tidak ada auto-advance.
+  slaDays: int("sla_days"),
+  // Stage tujuan auto-delegasi saat SLA terlampaui (key stage berikutnya di ladder SOP).
+  nextStageKey: varchar("next_stage_key", { length: 64 }),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });
@@ -1420,39 +1429,65 @@ export const MPWA_TEMPLATE_CATEGORY_LABELS: Record<MpwaTemplateCategory, string>
 
 // Stage order = display order di Kanban. `suspend` = pre-isolir warning (overdue tapi belum isolir).
 // `promised` di-deprecated → di-migrate ke `contacted` (promise_date tetap di kolom collections.promise_date).
-export const COLLECTION_STAGES = ["suspend", "new", "contacted", "dikunjungi", "issue", "paid", "written_off"] as const;
+//
+// SOP churn→reaktivasi (v5.3): ladder penagihan lintas-divisi ~1 bulan —
+//   Baru Isolir (H+3, sistem) → Dihubungi (Finance +4h) → Delegasi Layanan Pelanggan (CS +7h)
+//   → Delegasi Marketing (visit/reaktivasi +7h) → Lunas/Reaktivasi ATAU Churn (write-off by age).
+export const COLLECTION_STAGES = ["suspend", "new", "contacted", "delegasi_cs", "delegasi_marketing", "dikunjungi", "issue", "paid", "written_off"] as const;
 export type CollectionStage = typeof COLLECTION_STAGES[number];
 
 export const COLLECTION_STAGE_LABELS: Record<CollectionStage, string> = {
   suspend: "Suspend",
   new: "Baru Isolir",
-  contacted: "Sudah Dihubungi",
+  contacted: "Dihubungi (Finance)",
+  delegasi_cs: "Delegasi Layanan Pelanggan",
+  delegasi_marketing: "Delegasi Marketing",
   dikunjungi: "Sudah Dikunjungi",
   issue: "Bermasalah",
-  paid: "Lunas ✅",
-  written_off: "Write-Off ❌",
+  paid: "Lunas / Reaktivasi ✅",
+  written_off: "Churn / Write-Off ❌",
 };
 
 export const COLLECTION_STAGE_COLORS: Record<CollectionStage, string> = {
   suspend: "#F59E0B",
   new: "#EF4444",
   contacted: "#3B82F6",
+  delegasi_cs: "#0EA5E9",
+  delegasi_marketing: "#EC4899",
   dikunjungi: "#8B5CF6",
   issue: "#DC2626",
   paid: "#22C55E",
   written_off: "#6B7280",
 };
 
+// Metadata SOP per stage: divisi penanggung jawab, SLA (hari boleh diam sebelum
+// auto-delegasi), dan stage tujuan berikutnya. Dipakai untuk seed ladder JABNET +
+// engine auto-delegasi (server) + view pipeline ter-scope per divisi (client).
+// Stage yang tidak tercantum = tidak ikut alur otomatis (mis. suspend/dikunjungi/issue/terminal).
+export const COLLECTION_SOP_META: Partial<Record<CollectionStage, { ownerDivision: string; slaDays: number; nextStageKey: CollectionStage | null }>> = {
+  suspend:             { ownerDivision: "finance",   slaDays: 0, nextStageKey: null },
+  new:                 { ownerDivision: "sistem",    slaDays: 3, nextStageKey: "contacted" },
+  contacted:           { ownerDivision: "finance",   slaDays: 4, nextStageKey: "delegasi_cs" },
+  delegasi_cs:         { ownerDivision: "cs",        slaDays: 7, nextStageKey: "delegasi_marketing" },
+  delegasi_marketing:  { ownerDivision: "marketing", slaDays: 7, nextStageKey: null },
+};
+
 // Template default pipeline collection — dipakai untuk seed mitra 1 (JABNET) saat migrasi,
 // lalu di-clone ke tiap mitra lain/baru. Urutan = posisi awal. Role menandai stage untuk
 // otomasi billing (entry=auto-open target, paid=auto-close, writeoff=auto write-off).
-export const DEFAULT_COLLECTION_STAGES: Array<{ key: string; label: string; color: string; role: CollectionStageRole }> =
-  COLLECTION_STAGES.map((key) => ({
-    key,
-    label: COLLECTION_STAGE_LABELS[key],
-    color: COLLECTION_STAGE_COLORS[key],
-    role: key === "new" ? "entry" : key === "paid" ? "paid" : key === "written_off" ? "writeoff" : "none",
-  }));
+export const DEFAULT_COLLECTION_STAGES: Array<{ key: string; label: string; color: string; role: CollectionStageRole; ownerDivision: string | null; slaDays: number | null; nextStageKey: string | null }> =
+  COLLECTION_STAGES.map((key) => {
+    const sop = COLLECTION_SOP_META[key];
+    return {
+      key,
+      label: COLLECTION_STAGE_LABELS[key],
+      color: COLLECTION_STAGE_COLORS[key],
+      role: key === "new" ? "entry" : key === "paid" ? "paid" : key === "written_off" ? "writeoff" : "none",
+      ownerDivision: sop?.ownerDivision ?? null,
+      slaDays: sop?.slaDays ?? null,
+      nextStageKey: sop?.nextStageKey ?? null,
+    };
+  });
 
 export const COLLECTION_ISSUE_TYPES = [
   "no_contact",

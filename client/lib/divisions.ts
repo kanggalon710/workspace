@@ -7,6 +7,7 @@ import {
   GitBranch, Calculator, FileSpreadsheet, BarChart3, MapPinned, Search, Contact,
   ClipboardList, Camera, TrendingUp, Users, MessageSquare, Package, AlertCircle,
   Heart, Wifi, MessageCircle, CheckSquare, Kanban, LayoutDashboard, KeyRound, CalendarCheck2,
+  RefreshCw,
 } from "lucide-react";
 
 export type DivisionModule = {
@@ -34,6 +35,8 @@ export const DIVISIONS: Division[] = [
     modules: [
       { label: "Dashboard Marketing", path: "/marketing", icon: BarChart3, permission: "marketing_dashboard" },
       { label: "Canvassing Lapangan", path: "/canvassing", icon: MapPinned, permission: "canvassing" },
+      { label: "Pipeline Lead (Canvassing)", path: "/leads", icon: Kanban, permission: "leads" },
+      { label: "Pipeline Reaktivasi (Delegasi Collection)", path: "/collections/marketing", icon: RefreshCw, permission: "leads" },
       { label: "Prospect Finder", path: "/prospects", icon: Search, permission: "prospects" },
       { label: "Database Kontak", path: "/contacts", icon: Contact, permission: "contacts" },
       { label: "Riwayat Sesi", path: "/canvassing/history", icon: ClipboardList, permission: "canvassing" },
@@ -89,6 +92,7 @@ export const DIVISIONS: Division[] = [
     description: "Pelanggan: data, komunikasi, WhatsApp, loyalty JABNET Sahabat",
     modules: [
       { label: "Pelanggan", path: "/customers", icon: Users, permission: "customers" },
+      { label: "Pipeline Reaktivasi (Delegasi Finance)", path: "/collections/cs", icon: RefreshCw, permission: "customers" },
       { label: "Komunikasi", path: "/communications", icon: MessageSquare, permission: "chatwoot" },
       { label: "JABNET Sahabat", path: "/loyalty", icon: Heart, permission: "loyalty_admin" },
       {
