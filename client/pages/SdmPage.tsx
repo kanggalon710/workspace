@@ -336,8 +336,9 @@ export default function SdmPage() {
   const [tab, setTab] = useState<"dashboard" | "karyawan" | "kehadiran" | "approval" | "rekap" | "cuti" | "payroll" | "kpi" | "pengaturan">(readable ? "dashboard" : "cuti");
   const [date, setDate] = useState(todayIso());
   const [month, setMonth] = useState(todayIso().slice(0, 7));
-  // Draft kehadiran: userId -> status (belum tersimpan)
-  const [draft, setDraft] = useState<Record<number, string>>({});
+  // Draft kehadiran: userId -> { status, jam masuk, jam keluar } (belum tersimpan)
+  type AttCell = { status?: string; checkIn?: string; checkOut?: string };
+  const [draft, setDraft] = useState<Record<number, AttCell>>({});
 
   const { data: attendance } = useQuery({
     queryKey: ["/api/hr/attendance", date],
@@ -356,11 +357,28 @@ export default function SdmPage() {
   });
 
   const savedByUser = useMemo(() => new Map((attendance ?? []).map((a) => [a.userId, a])), [attendance]);
-  const statusFor = (uid: number) => draft[uid] ?? savedByUser.get(uid)?.status ?? "";
+  // Nilai efektif per sel = draft (kalau ada) di atas data tersimpan; supaya jam bisa di-adjust.
+  const cellFor = (uid: number): { status: string; checkIn: string; checkOut: string } => {
+    const d = draft[uid]; const s = savedByUser.get(uid);
+    return {
+      status: d?.status ?? s?.status ?? "",
+      checkIn: d?.checkIn ?? s?.checkIn ?? "",
+      checkOut: d?.checkOut ?? s?.checkOut ?? "",
+    };
+  };
+  const statusFor = (uid: number) => cellFor(uid).status;
+  // Set sebagian sel + simpan seluruh nilai efektif ke draft (agar simpan mengirim record lengkap).
+  const setCell = (uid: number, patch: AttCell) =>
+    setDraft((p) => ({ ...p, [uid]: { ...cellFor(uid), ...patch } }));
 
   const saveAttendance = useMutation({
     mutationFn: () => api.post(`/hr/attendance`, {
-      records: Object.entries(draft).map(([uid, status]) => ({ userId: Number(uid), date, status })),
+      records: Object.keys(draft).map((uid) => {
+        const c = cellFor(Number(uid));
+        // Kalau jam diisi tapi status kosong, anggap hadir (record wajib punya status valid).
+        const status = c.status || (c.checkIn || c.checkOut ? "hadir" : "");
+        return { userId: Number(uid), date, status, checkIn: c.checkIn || null, checkOut: c.checkOut || null };
+      }).filter((r) => r.status),
     }),
     onSuccess: () => {
       toast.success("Kehadiran tersimpan");
@@ -616,14 +634,31 @@ export default function SdmPage() {
             className="h-9 rounded-lg border bg-background px-2.5 text-sm font-medium tabular-nums" aria-label="Tanggal kehadiran" /></span>}>
           <Card padding="none" className="divide-y overflow-hidden">
             {activeUsers.map((u: any) => {
-              const st = statusFor(u.id);
+              const cell = cellFor(u.id);
+              const st = cell.status;
+              // Jam hanya relevan untuk status "hadir"; status lain (izin/sakit/cuti/alpha/libur) jam disembunyikan.
+              const showTime = st === "" || st === "hadir";
               return (
                 <div key={u.id} className="flex flex-wrap items-center gap-2 px-4 py-2.5">
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{u.name || u.username}</span>
+                  {writable && showTime && (
+                    <div className="flex items-center gap-1 tabular-nums">
+                      <input type="time" value={cell.checkIn} aria-label={`Jam masuk ${u.name || u.username}`}
+                        onChange={(e) => setCell(u.id, { checkIn: e.target.value, ...(st ? {} : { status: "hadir" }) })}
+                        className="h-8 w-[92px] rounded-lg border bg-background px-2 text-xs" />
+                      <span className="text-xs text-muted-foreground">-</span>
+                      <input type="time" value={cell.checkOut} aria-label={`Jam keluar ${u.name || u.username}`}
+                        onChange={(e) => setCell(u.id, { checkOut: e.target.value, ...(st ? {} : { status: "hadir" }) })}
+                        className="h-8 w-[92px] rounded-lg border bg-background px-2 text-xs" />
+                    </div>
+                  )}
+                  {!writable && (cell.checkIn || cell.checkOut) && (
+                    <span className="text-xs tabular-nums text-muted-foreground">{cell.checkIn || "--:--"} - {cell.checkOut || "--:--"}</span>
+                  )}
                   <div className="flex flex-wrap gap-1">
                     {ATT_STATUSES.map((s) => (
                       <button key={s.key} type="button" disabled={!writable}
-                        onClick={() => setDraft((p) => ({ ...p, [u.id]: s.key }))}
+                        onClick={() => setCell(u.id, { status: s.key })}
                         aria-pressed={st === s.key}
                         className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${st === s.key ? "border-primary bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>
                         {s.label}
