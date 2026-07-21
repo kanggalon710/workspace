@@ -1,5 +1,13 @@
 const BASE_URL = "/api";
 
+// Endpoint sekunder: 401 di sini JANGAN memaksa logout seluruh sesi. Kalau token benar-benar
+// mati, endpoint kritis (dashboard/auth) akan 401 juga dan logout terpicu di sana. Ini mencegah
+// satu endpoint sekunder (mis. /system/update/check yang admin-only) menendang user dari sesi.
+const NON_SESSION_CRITICAL_401 = ["/system/"];
+function is401SessionCritical(path: string): boolean {
+  return !NON_SESSION_CRITICAL_401.some((p) => path.startsWith(p));
+}
+
 export function getAuthHeaders(): Record<string, string> {
   const stored = localStorage.getItem("ftth_user");
   if (!stored) return {};
@@ -19,13 +27,14 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
-  // Handle 401 globally - only trigger logout if user is actually logged in
+  // Handle 401 globally - only trigger logout if user is actually logged in AND
+  // endpoint-nya kritis untuk sesi (bukan endpoint sekunder yang cuma butuh izin khusus).
   if (res.status === 401) {
-    // Don't fire the event if localStorage is already empty (already logged out)
-    if (localStorage.getItem("ftth_user")) {
+    if (is401SessionCritical(path) && localStorage.getItem("ftth_user")) {
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+      throw new Error("Sesi berakhir. Silakan login kembali.");
     }
-    throw new Error("Sesi berakhir. Silakan login kembali.");
+    throw new Error("Akses ditolak.");
   }
 
   let json: any;

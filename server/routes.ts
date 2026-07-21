@@ -242,50 +242,8 @@ async function notifyAdminsOfUpdate(remoteSha: string, remoteShort: string): Pro
     await storage.setSetting("self_update_notified_sha", remoteSha, "update", "SHA terakhir dinotifikasi");
   } catch (e: any) { console.error("[self-update] notify gagal:", e?.message); }
 }
-
-// Info versi lokal - boleh dibaca semua user login (untuk tampil di footer/pengaturan).
-router.get("/api/system/version", async (req: Request, res: Response) => {
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
-  try {
-    const info = await getBuildInfo();
-    const restartSupported = await passengerRestartSupported();
-    sendSuccess(res, { ...info, restartSupported });
-  } catch (e: any) { sendError(res, e?.message || "Gagal baca versi", 500); }
-});
-
-// Cek pembaruan ke GitHub (admin). Cache 5 menit; buat notifikasi admin saat ada versi baru.
-router.get("/api/system/update/check", async (req: Request, res: Response) => {
-  if (!requireAdmin(req, res)) return;
-  try {
-    const force = req.query.force === "true";
-    if (!force && _updateCheckCache && Date.now() - _updateCheckCache.at < UPDATE_CHECK_TTL_MS) {
-      return sendSuccess(res, { ...(_updateCheckCache.data), cached: true });
-    }
-    const cfg = await loadSelfUpdateConfig();
-    const result = await checkForUpdate(cfg);
-    const payload = { ...result, enabled: cfg.enabled, repo: cfg.repo, branch: cfg.branch, tokenSet: !!cfg.token };
-    _updateCheckCache = { at: Date.now(), data: payload };
-    if (result.updateAvailable && result.remote.sourceSha) {
-      await notifyAdminsOfUpdate(result.remote.sourceSha, result.remote.sourceShaShort || result.remote.sourceSha.slice(0, 7));
-    }
-    sendSuccess(res, { ...payload, cached: false });
-  } catch (e: any) { sendError(res, e?.message || "Gagal cek pembaruan", 500); }
-});
-
-// Terapkan pembaruan (admin + self_update_enabled). Menjalankan git reset + restart.
-router.post("/api/system/update/apply", async (req: Request, res: Response) => {
-  if (!requireAdmin(req, res)) return;
-  try {
-    const cfg = await loadSelfUpdateConfig();
-    if (!cfg.enabled) return sendError(res, "Update otomatis dinonaktifkan. Aktifkan dulu di Integrasi (self_update_enabled).", 403);
-    if (!cfg.repo || !cfg.branch) return sendError(res, "Repo/branch update belum di-set.", 400);
-    const result = await runSelfUpdate(cfg);
-    try { await logAudit(req, "UPDATE", "system", 0, `Self-update ${result.newBuild.sourceShaShort ?? "?"}`, { ok: result.ok, restart: result.restartTriggered }); } catch { /* - */ }
-    _updateCheckCache = null; // reset cache supaya cek berikutnya akurat
-    if (result.newBuild.sourceSha) await storage.setSetting("self_update_notified_sha", result.newBuild.sourceSha, "update", "SHA terakhir dinotifikasi").catch(() => {});
-    sendSuccess(res, result);
-  } catch (e: any) { sendError(res, e?.message || "Gagal menerapkan pembaruan", 500); }
-});
+// CATATAN: route /api/system/* didaftarkan SETELAH authMiddleware (lihat di bawah
+// `router.use(authMiddleware)`) supaya req.authUser terisi - kalau di sini akan selalu 401.
 
 // ==================== HELPERS ====================
 
@@ -375,6 +333,52 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   }
 }
 router.use(authMiddleware);
+
+// ==================== SELF-UPDATE ROUTES (butuh req.authUser -> WAJIB setelah authMiddleware) ====================
+
+// Info versi lokal - boleh dibaca semua user login (untuk tampil di footer/pengaturan).
+router.get("/api/system/version", async (req: Request, res: Response) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  try {
+    const info = await getBuildInfo();
+    const restartSupported = await passengerRestartSupported();
+    sendSuccess(res, { ...info, restartSupported });
+  } catch (e: any) { sendError(res, e?.message || "Gagal baca versi", 500); }
+});
+
+// Cek pembaruan ke GitHub (admin). Cache 5 menit; buat notifikasi admin saat ada versi baru.
+router.get("/api/system/update/check", async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const force = req.query.force === "true";
+    if (!force && _updateCheckCache && Date.now() - _updateCheckCache.at < UPDATE_CHECK_TTL_MS) {
+      return sendSuccess(res, { ...(_updateCheckCache.data), cached: true });
+    }
+    const cfg = await loadSelfUpdateConfig();
+    const result = await checkForUpdate(cfg);
+    const payload = { ...result, enabled: cfg.enabled, repo: cfg.repo, branch: cfg.branch, tokenSet: !!cfg.token };
+    _updateCheckCache = { at: Date.now(), data: payload };
+    if (result.updateAvailable && result.remote.sourceSha) {
+      await notifyAdminsOfUpdate(result.remote.sourceSha, result.remote.sourceShaShort || result.remote.sourceSha.slice(0, 7));
+    }
+    sendSuccess(res, { ...payload, cached: false });
+  } catch (e: any) { sendError(res, e?.message || "Gagal cek pembaruan", 500); }
+});
+
+// Terapkan pembaruan (admin + self_update_enabled). Menjalankan git reset + restart.
+router.post("/api/system/update/apply", async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const cfg = await loadSelfUpdateConfig();
+    if (!cfg.enabled) return sendError(res, "Update otomatis dinonaktifkan. Aktifkan dulu di Integrasi (self_update_enabled).", 403);
+    if (!cfg.repo || !cfg.branch) return sendError(res, "Repo/branch update belum di-set.", 400);
+    const result = await runSelfUpdate(cfg);
+    try { await logAudit(req, "UPDATE", "system", 0, `Self-update ${result.newBuild.sourceShaShort ?? "?"}`, { ok: result.ok, restart: result.restartTriggered }); } catch { /* - */ }
+    _updateCheckCache = null; // reset cache supaya cek berikutnya akurat
+    if (result.newBuild.sourceSha) await storage.setSetting("self_update_notified_sha", result.newBuild.sourceSha, "update", "SHA terakhir dinotifikasi").catch(() => {});
+    sendSuccess(res, result);
+  } catch (e: any) { sendError(res, e?.message || "Gagal menerapkan pembaruan", 500); }
+});
 
 /** Check if user has READ access to a feature. System admin always passes. */
 function hasPermission(req: Request, feature: string): boolean {
