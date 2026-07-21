@@ -78,8 +78,8 @@ export const ATTACHMENT_TYPES: { ext: string; mime: string; kind: "image" | "fil
 export function fileExt(name: string): string;
 // Validate by extension (mime is advisory - browsers lie). Returns the matched type or an error.
 export function validateAttachment(name: string, sizeBytes: number):
-  | { ok: true; ext: string; mime: string; kind: "image" | "file" }
-  | { ok: false; error: string };
+ | { ok: true; ext: string; mime: string; kind: "image" | "file" }
+ | { ok: false; error: string };
 // content-type for streaming a given stored ext (mime map + octet-stream fallback).
 export function mimeForExt(ext: string): string;
 ```

@@ -117,11 +117,11 @@ Expected: FAIL - `Cannot find module './metricFormula.js'`.
 export const FORMULA_TERM_KEYS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
 type Tok =
-  | { t: "num"; v: number }
-  | { t: "id"; v: string }
-  | { t: "op"; v: "+" | "-" | "*" | "/" }
-  | { t: "lp" }
-  | { t: "rp" };
+ | { t: "num"; v: number }
+ | { t: "id"; v: string }
+ | { t: "op"; v: "+" | "-" | "*" | "/" }
+ | { t: "lp" }
+ | { t: "rp" };
 
 /** Tokenize. Throws on an unrecognized character. */
 function tokenize(expr: string): Tok[] {

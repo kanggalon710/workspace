@@ -6,7 +6,7 @@
 
 ## v4.2.27 - Apa yang baru
 
-###  Tags per Kontak - Kategorisasi Fleksibel
+### Tags per Kontak - Kategorisasi Fleksibel
 
 Setiap kontak di phonebook sekarang punya **tags** (multi-label) untuk kategorisasi. Tags bisa apa aja:
 - Per status: `VIP`, `Reseller`, `Calon Pelanggan`, `Pelanggan Lama`
@@ -15,15 +15,15 @@ Setiap kontak di phonebook sekarang punya **tags** (multi-label) untuk kategoris
 - Per kategori bisnis: `B2B`, `B2C`, `Mitra`
 
 **Fitur tag yang diimplement:**
--  Tag chip badge berwarna deterministik (warna otomatis konsisten per tag string)
--  Tag column di contact table (preview 3 tags + "+N more")
--  Filter by tag - chip clickable di atas table (single-select toggle)
--  Bulk-add tag - pilih kontak (multi-select) → klik "Tambah Tag" → pilih existing tag atau bikin baru
--  Tag input di Contact Form (add/edit) dengan suggestion dari existing tags
--  Tag merge logic: kalau kontak sudah punya `[VIP, Reseller]` lalu bulk-add `[Cilawu]` → result: `[VIP, Reseller, Cilawu]` (auto-dedup)
--  Per-phonebook tag list endpoint dengan count: `GET /api/phonebooks/:id/tags`
+- Tag chip badge berwarna deterministik (warna otomatis konsisten per tag string)
+- Tag column di contact table (preview 3 tags + "+N more")
+- Filter by tag - chip clickable di atas table (single-select toggle)
+- Bulk-add tag - pilih kontak (multi-select) → klik "Tambah Tag" → pilih existing tag atau bikin baru
+- Tag input di Contact Form (add/edit) dengan suggestion dari existing tags
+- Tag merge logic: kalau kontak sudah punya `[VIP, Reseller]` lalu bulk-add `[Cilawu]` → result: `[VIP, Reseller, Cilawu]` (auto-dedup)
+- Per-phonebook tag list endpoint dengan count: `GET /api/phonebooks/:id/tags`
 
-###  Smart Filter Import dari Customers
+### Smart Filter Import dari Customers
 
 Sebelumnya import dari Customers cuma list 300 kontak teratas. Sekarang di mode **"Dari Customers"** ada **Smart Filter section** untuk cari pelanggan berdasarkan:
 
@@ -39,7 +39,7 @@ Result preview dengan badge ISOLIR di pelanggan isolir. Pilihan "Pilih Semua Yan
 - Broadcast reminder bayar ke "Semua pelanggan overdue di Tarogong"
 - Bulk add ke phonebook "Pelanggan Isolir Bulan Ini" → tag `Reminder-Bayar`
 
-###  Import dari Phonebook Lain (Cross-Phonebook Copy)
+### Import dari Phonebook Lain (Cross-Phonebook Copy)
 
 Mode import baru: **"Phonebook Lain"** - copy/merge kontak dari phonebook lain ke phonebook tujuan.
 
@@ -55,7 +55,7 @@ Mode import baru: **"Phonebook Lain"** - copy/merge kontak dari phonebook lain k
 
 Endpoint: `POST /api/phonebooks/:id/import-from-phonebook` body `{sourcePhonebookId, contactIds?, addTags?}`
 
-###  Tag-on-Import (Auto-Kategorisasi)
+### Tag-on-Import (Auto-Kategorisasi)
 
 Di semua mode import (Customers/Phonebook lain/CSV/Paste), ada section **"Tag untuk Kategori"** opsional di bawah. Tag yang lu add akan diaplikasi ke SEMUA kontak yang diimport.
 
@@ -65,7 +65,7 @@ Di semua mode import (Customers/Phonebook lain/CSV/Paste), ada section **"Tag un
 3. → Semua kontak yang diimport otomatis dapat 2 tag itu
 4. Nanti broadcast tinggal filter tag "Premium" di phonebook
 
-###  Technical Details
+### Technical Details
 
 **Schema migration:**
 - ALTER TABLE phonebook_contacts ADD COLUMN tags TEXT - JSON array of strings
@@ -92,7 +92,7 @@ Di semua mode import (Customers/Phonebook lain/CSV/Paste), ada section **"Tag un
 
 ## v4.2.26 - Apa yang baru
 
-###  Broadcast Detail View - Lihat Terkirim ke Siapa, Gagal ke Mana
+### Broadcast Detail View - Lihat Terkirim ke Siapa, Gagal ke Mana
 
 Di list broadcast campaign (`/whatsapp/broadcast/pelanggan` atau `/reseller`), tombol **"Detail"** sekarang buka **full detail view** dengan transparansi penuh:
 
@@ -102,11 +102,11 @@ Di list broadcast campaign (`/whatsapp/broadcast/pelanggan` atau `/reseller`), t
 - Auto-refresh setiap 5 detik (saat campaign masih running)
 
 **Informasi Broadcast:**
--  **Oleh:** nama admin yang trigger broadcast, dengan @username + role
--  **Device:** WhatsApp device yang dipake (nama, phone, provider)
--  **Template:** template yang di-render (nama + key)
--  **Target:** customers / phonebook / direct recipients
--  **Mulai / Selesai:** timestamp dengan format Indonesia
+- **Oleh:** nama admin yang trigger broadcast, dengan @username + role
+- **Device:** WhatsApp device yang dipake (nama, phone, provider)
+- **Template:** template yang di-render (nama + key)
+- **Target:** customers / phonebook / direct recipients
+- **Mulai / Selesai:** timestamp dengan format Indonesia
 
 **Recipients Table (per kontak):**
 - Tabs filter status: All / ✓ Terkirim / ✗ Gagal / ⏳ Pending / ⊘ Skipped
@@ -119,15 +119,15 @@ Di list broadcast campaign (`/whatsapp/broadcast/pelanggan` atau `/reseller`), t
   - Customer ID linked
 
 **Actions:**
--  **Retry Failed** - kirim ulang ke semua recipient yang gagal
+- **Retry Failed** - kirim ulang ke semua recipient yang gagal
 - ✋ **Cancel Campaign** - stop campaign yang lagi running
--  **Export CSV** - download semua recipients dengan status + error untuk audit
+- **Export CSV** - download semua recipients dengan status + error untuk audit
 
 **URL state persistence:**
 - `?detail=ID` di URL - refresh page tetap di detail view
 - Browser back button balik ke list
 
-###  Audit Trail: "Oleh" di Campaign List
+### Audit Trail: "Oleh" di Campaign List
 
 Di list broadcast, kolom **"Oleh:"** sekarang menampilkan nama admin pengirim (sebelumnya hardcoded "System"). Backend `GET /api/broadcast/campaigns` + `/:id` di-enrich dengan:
 - `createdByUser`: `{ id, name, username, role }`
@@ -150,7 +150,7 @@ Fix bug operator precedence di stats card: `counts.pending + (counts as any).sen
 
 ## v4.2.25 - Apa yang baru
 
-###  Phonebook - Custom Contact Lists
+### Phonebook - Custom Contact Lists
 
 Menu baru `Notifikasi → Whatsapp → Phonebook` (`/whatsapp/phonebook`).
 
@@ -178,7 +178,7 @@ Phonebook = daftar kontak custom yang **terpisah dari database pelanggan**. Berg
 - Export CSV
 - Cascade delete (hapus phonebook = hapus semua kontaknya)
 
-###  Broadcast Form: Audience Source Toggle
+### Broadcast Form: Audience Source Toggle
 
 Di `Broadcast Pelanggan` form, sekarang ada toggle **Sumber Penerima**:
 - **Database Pelanggan** (default) - pakai customer list dengan quick filter + group-by
@@ -186,7 +186,7 @@ Di `Broadcast Pelanggan` form, sekarang ada toggle **Sumber Penerima**:
 
 Saat pakai Phonebook, otomatis tampil dropdown list phonebook + checkbox kontak. Kalau kontak punya `customerId` linked, 28 params placeholder pelanggan tetap kerja saat render.
 
-###  Template Live Preview di Broadcast Form
+### Template Live Preview di Broadcast Form
 
 Saat **pilih template** di broadcast form, otomatis muncul **preview WhatsApp bubble** di kanan dengan:
 - Sample data terisi (nama: John Doe, customer ID: 058500001, paket: 20 Mbps, dst.)
@@ -200,7 +200,7 @@ Layout 2-kolom responsive - preview sticky di kanan (desktop) atau di bawah (mob
 
 Status badges di bawah template selector:  Image ·  Button · Text+Link / Native mode · Filter: Belum Bayar (kalau template restrict ke unpaid).
 
-###  Bug fixes & improvements
+### Bug fixes & improvements
 
 - Server version display 4.2.25 di `/api/health`
 - Permission baru: `phonebooks` (untuk granular access control)
@@ -224,7 +224,7 @@ Indexes: `idx_phonebook_contacts_pb`, `idx_phonebook_contacts_phone`
 
 ## v4.2.24 - Apa yang baru
 
-###  Broadcast Audience Quick Filter + Group-By
+### Broadcast Audience Quick Filter + Group-By
 
 Halaman `Notifikasi → Whatsapp → Broadcast Pelanggan` (dan Reseller) sekarang punya **quick filter chips** + **group-by view** untuk memudahkan pemilihan audience.
 
@@ -256,7 +256,7 @@ Setiap group header punya:
 - Customer card tampilin paket + kecamatan + ODP icon kalau view flat
 - Reseller broadcast: search + filter by kecamatan
 
-###  Bug fixes
+### Bug fixes
 - Server version display di `/api/health` sekarang accurate
 - `tsx watch` cleaner restart (kill stale process)
 
@@ -270,7 +270,7 @@ Setiap group header punya:
 
 ## v4.2.23 - Apa yang baru
 
-###  WhatsApp Feature v2 - PRD Restructure (4 submenu)
+### WhatsApp Feature v2 - PRD Restructure (4 submenu)
 
 Sidebar baru grup **"Notifikasi"** dengan parent collapsible **"Whatsapp"** → 4 submenu:
 
@@ -279,7 +279,7 @@ Sidebar baru grup **"Notifikasi"** dengan parent collapsible **"Whatsapp"** → 
 3. **Broadcast Pelanggan** (`/whatsapp/broadcast/pelanggan`)
 4. **Broadcast Reseller** (`/whatsapp/broadcast/reseller`)
 
-###  Integrasi MPWA Lengkap (17 endpoint + webhook)
+### Integrasi MPWA Lengkap (17 endpoint + webhook)
 
 `MPWAClient` class implementasi spec resmi MPWA Jabnet:
 
@@ -289,7 +289,7 @@ Sidebar baru grup **"Notifikasi"** dengan parent collapsible **"Whatsapp"** → 
 - **Webhook receiver** untuk pesan masuk → auto-save ke `wa_inbox` table
 - Frontend: QR connect modal di Nomor Whatsapp dengan 4 tab (Status / Webhook / Tools / Reconnect)
 
-###  Template Builder Lengkap
+### Template Builder Lengkap
 
 - **Image upload** drag-drop (auto base64 → save ke `/public/uploads/wa-images/`, max 5MB)
 - **Button builder** native interactive - max 5 button, 4 type (reply / call / url / copy)
@@ -301,7 +301,7 @@ Sidebar baru grup **"Notifikasi"** dengan parent collapsible **"Whatsapp"** → 
 - Default button image global setting (`wa_default_button_image`)
 - 28 parameter dinamis dengan placeholder picker modal
 
-###  Broadcast Pipeline
+### Broadcast Pipeline
 
 - **Direct recipients** (manual select via checkbox) - bypass audience filter eval
 - **Saved segments** + custom inline filter
@@ -310,25 +310,25 @@ Sidebar baru grup **"Notifikasi"** dengan parent collapsible **"Whatsapp"** → 
 - **Per-recipient tracking** di `broadcast_recipients` table (status: pending/sending/sent/failed/skipped)
 - Manual input fields (`{{input_manual_text}}` / `{{input_manual_tanggal}}`) muncul dinamis saat template butuh
 
-###  URL State Persistence
+### URL State Persistence
 
 Halaman template (`/whatsapp/templates`) sekarang persist via URL query - refresh page tidak balik ke list, tetap di form yang sedang dibuka (`?action=edit&id=23` / `?action=new&type=pelanggan`).
 
-###  Server Improvements
+### Server Improvements
 
 - `tsx watch` mode untuk auto-reload dev server (no manual restart)
 - `/api/health` endpoint dengan version + features info
 - `/api/*` fallback return JSON 404 (bukan SPA HTML), error message lebih informatif
 - Migrations idempotent - server restart aman tanpa data loss
 
-###  Bug Fixes
+### Bug Fixes
 
 - **Broadcast direct recipients persisted ke DB** (sebelumnya Drizzle drop field yang ga di-declare)
 - **Schema fix** untuk `directRecipients`, `manualText`, `manualDate`, `deviceId`, `targetType`, `compatMode`
 - **Placeholder substitution** support both `{single}` legacy dan `{{double_brace}}` PRD spec
 - **Per-recipient render** dengan 28 params dari customer DB lookup
 
-###  Database Schema (new tables)
+### Database Schema (new tables)
 
 - `wa_devices` - multi-device dengan provider abstraction + QR state + webhook token
 - `wa_inbox` - incoming messages dari webhook (untuk auto-reply/chatbot)
@@ -336,7 +336,7 @@ Halaman template (`/whatsapp/templates`) sekarang persist via URL query - refres
 - `broadcast_campaigns` extended - `direct_recipients`, `device_id`, `target_type`, `compat_mode`, `manual_text`, `manual_date`
 - `mpwa_templates` extended - `footer`, `buttons`, `media_url`, `media_type`, `template_type`, `template_channel`, `customer_filter`, `share_to_reseller`, `compat_mode`
 
-###  Tests
+### Tests
 
 - 35+ unit tests pass (`tsx --test server/*.test.ts`)
 - MPWAClient: 22 tests (semua endpoint + button validation + payload shape)
@@ -351,13 +351,13 @@ Halaman template (`/whatsapp/templates`) sekarang persist via URL query - refres
 
 ## v4.2.13 - Apa yang baru
 
-###  Customer Portal pindah ke `portal.jabnet.id`
+### Customer Portal pindah ke `portal.jabnet.id`
 Portal pelanggan sekarang punya **domain dedicated** terpisah dari staff workspace:
 
 | Domain | Use case |
 |---|---|
 | `fiber-tools.arkanova.id` | Staff workspace - Pelanggan list, Tickets, Marketing, dst |
-| `portal.jabnet.id`  | Customer portal - login OTP, dashboard, tagihan, WiFi config |
+| `portal.jabnet.id` | Customer portal - login OTP, dashboard, tagihan, WiFi config |
 
 **Manfaat:**
 - Customer ngga lihat URL `fiber-tools.arkanova.id` (terkesan internal/staff)
@@ -403,7 +403,7 @@ Portal pelanggan sekarang punya **domain dedicated** terpisah dari staff workspa
 
 ## v4.2.8 - Apa yang baru
 
-###  Status Integrasi PPPoE & ONT - sekarang visible langsung
+### Status Integrasi PPPoE & ONT - sekarang visible langsung
 Halaman Pelanggan dapat **KPI strip baru "Status Integrasi PPPoE & ONT"** yang menampilkan breakdown integrasi customer secara real-time:
 
 - **✓ Lengkap** - punya PPPoE + ONT match GenieACS
@@ -413,7 +413,7 @@ Halaman Pelanggan dapat **KPI strip baru "Status Integrasi PPPoE & ONT"** yang m
 
 Plus **sub-row real-time**: PPPoE Online/Offline + ONT Online/Offline counts. **Klik tile mana saja → langsung filter table** ke customer yang masuk kategori itu. Bisa juga lewat filter dropdown "Integrasi" di filter panel (8 opsi: lengkap, pppoe_only, ont_only, none, pppoe_online/offline, ont_online/offline).
 
-###  Audit & Auto-Pair ONT - fuzzy matching
+### Audit & Auto-Pair ONT - fuzzy matching
 Tombol baru di header KPI strip: **" Audit & Auto-Pair ONT"**. Cari pasangan ONT GenieACS untuk customer "PPPoE saja" pakai 4 strategi fuzzy match:
 
 | Strategi | Confidence | Contoh |
@@ -432,24 +432,24 @@ Tombol baru di header KPI strip: **" Audit & Auto-Pair ONT"**. Cari pasangan ONT
 - Footer: jumlah dipilih + tombol " Apply N Pairing"
 - Apply → simpan `ontSerialNumber` ke customer DB. Setelah ini sync `/ont-status` akan langsung match (pakai SN) bahkan kalau PPPoE username ngga match exact.
 
-###  Safety
+### Safety
 - **Timeout 8s** untuk GenieACS fetch - fail-fast supaya frontend ngga gantung
 - Skip customer yang sudah punya `ontSerialNumber` - ngga override hasil pairing manual sebelumnya
 - Confirm dialog sebelum apply
 - Audit log di `audit_logs` untuk traceability
 - Permission check `customer_view` write - hanya admin/staff dengan akses
 
-###  Endpoints baru
+### Endpoints baru
 | Method | Path | Deskripsi |
 |--------|------|-----------|
-| GET    | `/api/customers/integration-audit` | Scan + fuzzy match candidate analysis (8s timeout) |
-| POST   | `/api/customers/auto-pair-ont` | Bulk apply pairs `[{customerId, deviceSerialNumber}]` |
+| GET | `/api/customers/integration-audit` | Scan + fuzzy match candidate analysis (8s timeout) |
+| POST | `/api/customers/auto-pair-ont` | Bulk apply pairs `[{customerId, deviceSerialNumber}]` |
 
 ---
 
 ## v4.2.7 - Apa yang baru
 
-###  BUG FIX KRITIS: Stage tidak advance setelah Selesaikan
+### BUG FIX KRITIS: Stage tidak advance setelah Selesaikan
 User report: setelah tap "Selesaikan Stage", tiket **stuck di stage yang sama**. Stage 1 sudah ✓ Selesai tapi card "Stage Saat Ini" tetap "1/6 · Diagnosa Awal", CTA tetap "Update Stage Diagnosa Awal".
 
 **Akar masalah:**
@@ -467,7 +467,7 @@ User report: setelah tap "Selesaikan Stage", tiket **stuck di stage yang sama**.
 - Stage 1 (diagnose_remote) → 2 (dispatch) → 3 (investigate) → 4 (repair) → 5 (verify) → 6 (confirm, isFinal) → status=resolved
 - Transitions table benar: closed transitions punya note + evidence + duration_sec, last (current) transition open
 
-###  Pixel-Match Polish dari Design "Jabnet Work Order"
+### Pixel-Match Polish dari Design "Jabnet Work Order"
 Refactor TechnicianWorkPage dengan **inline styles literal** dari design source (mobile-teknisi.jsx) - tidak interpret, tidak embellish:
 
 | Element | Sebelumnya | Sekarang (match design) |
@@ -491,10 +491,10 @@ Pulse ring animation **dipertahankan hanya di Customer Tracker** (PortalTrackerP
 
 ## v4.2.6 - Apa yang baru
 
-###  Implementasi Design "Jabnet Work Order"
+### Implementasi Design "Jabnet Work Order"
 Berdasarkan design exploration via Claude Design (claude.ai/design) - handoff bundle dengan 7 artboards. Implementasi pixel-close untuk **Mobile Teknisi** + **Customer Tracker** (portal pelanggan).
 
-###  Mobile Teknisi - Stage Execution UX
+### Mobile Teknisi - Stage Execution UX
 
 **Prinsip:** dynamic stages per kategori dengan field cards yang muncul sesuai requirement stage. Bukan checkpoint flat, tapi **stages-list → tap stage → execution screen dengan FieldCards**.
 
@@ -512,7 +512,7 @@ Berdasarkan design exploration via Claude Design (claude.ai/design) - handoff bu
    - **Rating**: 5-star buttons
    - Bottom: Save Draft + Selesaikan Stage (emerald, full-width)
 
-###  Workflow Presets Aligned dengan Design
+### Workflow Presets Aligned dengan Design
 
 6 preset workflow kategori-spesifik (replace v4.2.4 generic):
 
@@ -527,7 +527,7 @@ Berdasarkan design exploration via Claude Design (claude.ai/design) - handoff bu
 
 Auto-migration: kategori existing di re-applied ke preset baru saat startup (skip kalau sudah punya v4.2.6 fields format).
 
-###  Customer Tracker (Portal Pelanggan)
+### Customer Tracker (Portal Pelanggan)
 
 Halaman baru `/portal/track/:ticketId` - pelanggan bisa lihat realtime progress tiket mereka.
 
@@ -542,7 +542,7 @@ Halaman baru `/portal/track/:ticketId` - pelanggan bisa lihat realtime progress 
 **Backend baru:**
 - `GET /api/portal/tickets/:id/track` - full tracking data (ticket + stages + transitions + evidence + lead technician info), security check tiket harus milik portal customer
 
-###  JABNET Design Tokens
+### JABNET Design Tokens
 
 CSS variables + utility classes ditambah di `client/index.css`:
 - `--jbn-navy` `#1e40af` (brand primary, replace existing sky)
@@ -552,7 +552,7 @@ CSS variables + utility classes ditambah di `client/index.css`:
 - `.jbn-tabular` → tabular-nums
 - `.jbn-pulse-ring` keyframes untuk stage active indicator
 
-###  Backward Compat
+### Backward Compat
 
 - Endpoint v4.2.5 `POST /api/tickets/:id/checkpoint` masih ada (untuk tiket lama yang pakai action-based flow)
 - TechnicianWorkPage sekarang pakai `POST /api/tickets/:id/advance-stage` (existing v4.2.4 endpoint) dengan note + evidenceId + GPS metadata
@@ -562,7 +562,7 @@ CSS variables + utility classes ditambah di `client/index.css`:
 
 ## v4.2.5 - Apa yang baru
 
-###  Ticketing Redesign: dari rigid stages → action-based checkpoints
+### Ticketing Redesign: dari rigid stages → action-based checkpoints
 
 **Feedback v4.2.4:** stage workflow rigid (sequential preset) bikin teknisi bingung - kondisi lapangan ngga selalu jalan urut, dan admin pusing ngonfig requirement per stage.
 
@@ -572,14 +572,14 @@ Daripada paksa stage urut, teknisi dapat **8 action button** yang bisa di-tap ka
 
 | Action | Trigger | Validation |
 |--------|---------|------------|
-|  **Berangkat** | Otw ke lokasi | GPS wajib · auto status=in_progress |
-|  **Sampai** | Sudah di lokasi | GPS wajib |
-|  **Mulai Kerja** | Setup selesai | (none) · auto status=in_progress |
-|  **Foto Progress** | Update tengah-tengah | Foto wajib |
+| **Berangkat** | Otw ke lokasi | GPS wajib · auto status=in_progress |
+| **Sampai** | Sudah di lokasi | GPS wajib |
+| **Mulai Kerja** | Setup selesai | (none) · auto status=in_progress |
+| **Foto Progress** | Update tengah-tengah | Foto wajib |
 | ⏸ **Jeda** | Berhenti sementara | Catatan alasan wajib |
 | ▶ **Lanjut** | Resume kerja | (none) |
-|  **Eskalasi** | Perlu bantuan | Catatan wajib |
-|  **Selesai** | Pengerjaan tuntas | Foto + catatan wajib · auto status=resolved |
+| **Eskalasi** | Perlu bantuan | Catatan wajib |
+| **Selesai** | Pengerjaan tuntas | Foto + catatan wajib · auto status=resolved |
 
 **Time tracking auto-derive dari checkpoint pairs:**
 - `depart → arrive` = travel time
@@ -589,7 +589,7 @@ Daripada paksa stage urut, teknisi dapat **8 action button** yang bisa di-tap ka
 
 Admin lihat: "Tim A travel rata-rata 32 menit, Tim B 18 menit - investigate" tanpa harus define stage upfront.
 
-###  TechnicianWorkPage rewrite (lagi)
+### TechnicianWorkPage rewrite (lagi)
 
 - **Smart action highlighting**: action yang paling mungkin di-tap berikutnya di-highlight gradient warna (primary), action lain ditampilkan secondary/muted. State machine adaptive - kalau sudah depart, tombol Berangkat hilang dari grid.
 - **Action grid 2-column** dengan icon + short label + description hint
@@ -599,7 +599,7 @@ Admin lihat: "Tim A travel rata-rata 32 menit, Tim B 18 menit - investigate" tan
 - **Checklist suggested optional** dari kategori (tap-to-toggle, ngga blokir flow)
 - **Done state celebration** dengan summary metrics
 
-###  Chatwoot Integration (auto-create tiket dari chat)
+### Chatwoot Integration (auto-create tiket dari chat)
 
 Implementasi berdasarkan [Chatwoot Webhook Events](https://www.chatwoot.com/docs/product/others/webhook-events) + [Custom Attributes API](https://developers.chatwoot.com/api-reference/conversations/update-custom-attributes).
 
@@ -632,13 +632,13 @@ Implementasi berdasarkan [Chatwoot Webhook Events](https://www.chatwoot.com/docs
 **Endpoints baru:**
 | Method | Path | Deskripsi |
 |--------|------|-----------|
-| GET    | `/api/integrations/chatwoot/config` | Config + rules (token masked) |
-| PUT    | `/api/integrations/chatwoot/config` | Update config |
-| POST   | `/api/integrations/chatwoot/test` | Test koneksi |
-| POST   | `/api/integrations/chatwoot/keyword-rules` | Tambah rule |
-| PUT    | `/api/integrations/chatwoot/keyword-rules/:id` | Update rule |
+| GET | `/api/integrations/chatwoot/config` | Config + rules (token masked) |
+| PUT | `/api/integrations/chatwoot/config` | Update config |
+| POST | `/api/integrations/chatwoot/test` | Test koneksi |
+| POST | `/api/integrations/chatwoot/keyword-rules` | Tambah rule |
+| PUT | `/api/integrations/chatwoot/keyword-rules/:id` | Update rule |
 | DELETE | `/api/integrations/chatwoot/keyword-rules/:id` | Hapus rule |
-| POST   | `/api/integrations/chatwoot/webhook` | **Public** - Chatwoot push event di sini |
+| POST | `/api/integrations/chatwoot/webhook` | **Public** - Chatwoot push event di sini |
 
 **Security:**
 - Webhook public (Chatwoot ngga punya bearer auth ke external systems)
@@ -649,7 +649,7 @@ Implementasi berdasarkan [Chatwoot Webhook Events](https://www.chatwoot.com/docs
 
 **Customer linking:** phone normalization ke 5 format (+62, 0, 8, 62, raw digits) supaya match consistent.
 
-###  Breaking Changes (minimal)
+### Breaking Changes (minimal)
 
 - Endpoint v4.2.4 `POST /api/tickets/:id/advance-stage` masih ada (backward compat) tapi **tidak dipakai** di mobile UI baru. Pakai `POST /api/tickets/:id/checkpoint` instead.
 - Endpoint `GET /api/tickets/:id/workflow` masih return data v4.2.4 untuk legacy admin views, tapi mobile UX baru pakai `GET /api/tickets/:id/timeline`.
@@ -659,7 +659,7 @@ Implementasi berdasarkan [Chatwoot Webhook Events](https://www.chatwoot.com/docs
 
 ## v4.2.4 - Apa yang baru
 
-###  Workflow Stages Flexible per Kategori
+### Workflow Stages Flexible per Kategori
 Sistem ticketing diubah dari **status flat hardcoded** (open/in_progress/resolved) menjadi **workflow stages per kategori** yang flexible. Setiap kategori punya urutan stage sendiri dengan requirement (foto/GPS/catatan/TTD) per stage.
 
 **Contoh - Kategori "Gangguan" (SLA 4 jam):**
@@ -670,7 +670,7 @@ Sistem ticketing diubah dari **status flat hardcoded** (open/in_progress/resolve
 
 **4 preset workflow** auto-applied saat seed: `gangguan` · `install` · `migrasi` · `survey`. Admin bisa apply preset baru ke kategori existing via UI.
 
-###  TechnicianWorkPage - Mobile-First Redesign Total
+### TechnicianWorkPage - Mobile-First Redesign Total
 Halaman teknisi (`/work/:id`) di-rewrite dari 1064 baris jadi stage-driven UX:
 
 **Elemen utama:**
@@ -688,7 +688,7 @@ Tabel baru `ticket_stage_transitions` log per-stage durasi:
 - Note + evidence_id + GPS koordinat saat transition
 - Admin lihat "stuck-nya di mana": travel 5km tapi 45 menit? Repair 2 jam, kelamaan?
 
-###  Disciplined State Machine (no more free-form)
+### Disciplined State Machine (no more free-form)
 **Sebelum:** PUT /tickets/:id bisa set status apa saja (resolved → open → closed jump bebas)
 
 **Sekarang:**
@@ -709,18 +709,18 @@ Tabel baru `ticket_stage_transitions` log per-stage durasi:
 - **Admin Detail Dialog** - header SLA badge live + workflow timeline section dengan progress per stage
 - **Mobile teknisi** - banner SLA dengan progress bar live update tiap detik
 
-###  ODP Intelligence Endpoints
+### ODP Intelligence Endpoints
 Backend siap untuk integrasi ODP-context:
 - `GET /api/odps/:id/active-tickets` - list tiket aktif di ODP yang sama (untuk warning duplicate detection)
 - Bonus: response include `resolutionPatterns` - 5 resolusi tiket sebelumnya di ODP yang sama (untuk auto-suggest)
 
-###  Admin Category Management Diupgrade
+### Admin Category Management Diupgrade
 - **Expand per kategori** untuk lihat workflow preview (semua stage dengan icon, durasi, requirement)
 - **Apply Preset** button (Gangguan/Install/Migrasi/Survey) untuk reset workflow kategori existing
 - **SLA hours editor** inline saat edit kategori
 - **Tambah kategori** dengan dropdown preset selector + SLA jam
 
-###  Schema Changes (Auto-migration)
+### Schema Changes (Auto-migration)
 Backend startup auto-run:
 - `ticket_categories` → `+ workflow_stages TEXT` (JSON array)
 - `tickets` → `+ current_stage TEXT, + stage_entered_at TEXT`
@@ -728,19 +728,19 @@ Backend startup auto-run:
 - Backfill workflow_stages untuk 5 kategori existing dari nama (auto-detect: gangguan/install/migrasi/survey)
 - Backfill current_stage untuk tiket existing (status-based: open→prep, in_progress→onsite, resolved→done)
 
-###  Endpoints Baru
+### Endpoints Baru
 | Method | Path | Deskripsi |
 |--------|------|-----------|
-| GET    | `/api/tickets/:id/workflow` | Stages + transitions + SLA countdown |
-| POST   | `/api/tickets/:id/advance-stage` | Advance ke stage berikutnya (validate requirement) |
-| GET    | `/api/tickets/:id/stage-transitions` | Full per-stage history |
-| GET    | `/api/odps/:id/active-tickets` | Active tickets + past resolution patterns |
+| GET | `/api/tickets/:id/workflow` | Stages + transitions + SLA countdown |
+| POST | `/api/tickets/:id/advance-stage` | Advance ke stage berikutnya (validate requirement) |
+| GET | `/api/tickets/:id/stage-transitions` | Full per-stage history |
+| GET | `/api/odps/:id/active-tickets` | Active tickets + past resolution patterns |
 
 ---
 
 ## v4.2.3 - Apa yang baru
 
-###  Critical Safety: Boost Auto-Rollback Atomic Flow
+### Critical Safety: Boost Auto-Rollback Atomic Flow
 Memperbaiki **gap kritis** di Speed-on-Demand v4.2.2 - kalau MikroTik offline saat boost expire, customer dapat boost gratis selamanya karena status DB sudah jadi `expired` padahal profile belum di-revert.
 
 **Masalah lama (v4.2.2):**
@@ -782,7 +782,7 @@ Memperbaiki **gap kritis** di Speed-on-Demand v4.2.2 - kalau MikroTik offline sa
 
 ## v4.2.2 - Apa yang baru
 
-###  Speed-on-Demand Loyalty Point System
+### Speed-on-Demand Loyalty Point System
 Customer JABNET sekarang dapat point setiap bulan bayar tepat waktu, ditukar untuk **boost speed sementara** (2× / 3× lipat selama 6 / 24 jam).
 
 **Schema baru:**
@@ -830,7 +830,7 @@ Customer JABNET sekarang dapat point setiap bulan bayar tepat waktu, ditukar unt
 - Auto-expire redemption yang lewat endAt setiap billing-sync cycle
 - Send WA notif per redemption yang expired
 
-###  Open API Marketing Daily Report
+### Open API Marketing Daily Report
 Endpoint baru `GET /api/public/v1/marketing/daily-report` (scope `marketing:read`) untuk laporan harian tim marketing - designed untuk bot Telegram (openclaw) atau BI tool.
 
 **Response structure:**
@@ -846,7 +846,7 @@ Endpoint baru `GET /api/public/v1/marketing/daily-report` (scope `marketing:read
 
 **Query**: `?date=YYYY-MM-DD` untuk hari spesifik (default: hari ini)
 
-###  UI/UX Telco Mature Redesign
+### UI/UX Telco Mature Redesign
 Tab Speed Boost & Pengaturan dialog di-redesign full ke pattern telco mature:
 - KPI bar flat horizontal (numbers carry the design, no chunky colored boxes)
 - Status indicators via dot + label (bukan colored badge)
@@ -855,13 +855,13 @@ Tab Speed Boost & Pengaturan dialog di-redesign full ke pattern telco mature:
 - Dialog header light tone (no dark gradient untuk admin)
 - Hairline divider list view (instead of card-in-card)
 
-###  Bug Fixes
+### Bug Fixes
 - Lead Pipeline drawer: tombol Hapus dipindah dari header (sebelah X close - rawan misclick) ke footer **Zona Berbahaya**
 - Fix DOM nesting warning di IntegrationPage Meta CAPI card (`<p><Badge>` jadi `<div>`)
 - Polish active redemption row: gradient strip kiri + status pill dengan border + countdown chip
 - Filter auto-switch ke "Aktif" setelah Verify supaya admin langsung lihat hasil
 
-###  Optimization
+### Optimization
 - Polling portal Boost tab dipercepat 30s → 10s (status change detection lebih cepat)
 - Idempotency check di `earnPoints()` pakai `refId` (epoch payment date) cegah dobel award
 - Atomic balance update (loyalty + tx insert) supaya state konsisten
@@ -928,7 +928,7 @@ Tab Speed Boost & Pengaturan dialog di-redesign full ke pattern telco mature:
 
 ---
 
-##  Highlights
+## Highlights
 
 Versi v4.2.0 adalah **transformasi menyeluruh UI/UX** dari v4.1.10 yang "functional" → enterprise telco premium, setara dengan MyTelkomsel, Biznet Home, Vodafone Business, dan Salesforce/Pipedrive CRM.
 
@@ -942,7 +942,7 @@ Versi v4.2.0 adalah **transformasi menyeluruh UI/UX** dari v4.1.10 yang "functio
 
 ---
 
-##  Design System (Phase 1 + 2)
+## Design System (Phase 1 + 2)
 
 ### Design Tokens (`client/index.css` + `tailwind.config.ts`)
 - Extended HSL variables: `success`, `warning`, `info`, chart palette (`chart-1`…`chart-8`), asset topology (`asset-pop`, `asset-odc`, `asset-odp`, `asset-pole`, `asset-cable`)
@@ -978,7 +978,7 @@ Versi v4.2.0 adalah **transformasi menyeluruh UI/UX** dari v4.1.10 yang "functio
 
 ---
 
-##  Layout Transformation
+## Layout Transformation
 
 ### TopBar (NEW)
 - Breadcrumb auto-generated dari route
@@ -1017,7 +1017,7 @@ Versi v4.2.0 adalah **transformasi menyeluruh UI/UX** dari v4.1.10 yang "functio
 
 ---
 
-##  Authentication Pages (All 3 Redesigned)
+## Authentication Pages (All 3 Redesigned)
 
 ### Staff Login (`/login`)
 - **Mobile**: Gradient mesh hero band atas + elevated form card
@@ -1038,7 +1038,7 @@ Versi v4.2.0 adalah **transformasi menyeluruh UI/UX** dari v4.1.10 yang "functio
 
 ---
 
-##  Customer Portal Dashboard
+## Customer Portal Dashboard
 
 - Header mobile: gradient mesh backdrop + greeting "Halo, selamat datang, [Name]! "
 - Status pill dengan backdrop-blur (ONLINE/OFFLINE/ISOLIR)
@@ -1048,7 +1048,7 @@ Versi v4.2.0 adalah **transformasi menyeluruh UI/UX** dari v4.1.10 yang "functio
 
 ---
 
-##  Marketing Module - Full CRM Premium
+## Marketing Module - Full CRM Premium
 
 ### Sidebar Reorganization (CRM Funnel Order)
 ```
@@ -1093,7 +1093,7 @@ MARKETING
 
 ---
 
-##  Bug Fixes
+## Bug Fixes
 
 ### `AuthContext.canRead()` / `canWrite()` added
 - **Bug**: v4.1.10 memiliki Sidebar, App.tsx WithPerm, PublicApiPage yang memanggil `canRead()` dari `useAuth()` tapi **tidak diexport** - causing silent errors saat Sidebar render
@@ -1109,7 +1109,7 @@ MARKETING
 
 ---
 
-##  New Features
+## New Features
 
 ### Command Palette (⌘K)
 Press `Cmd+K` / `Ctrl+K` kapan saja untuk akses cepat:
@@ -1127,7 +1127,7 @@ Demo page untuk preview semua komponen Phase 2 - live DataTable, FormField + zod
 
 ---
 
-##  Technical Improvements
+## Technical Improvements
 
 ### Dependencies Added
 - `cmdk` - Command palette primitives
@@ -1147,7 +1147,7 @@ Demo page untuk preview semua komponen Phase 2 - live DataTable, FormField + zod
 
 ---
 
-##  Migration Guide dari v4.1.10
+## Migration Guide dari v4.1.10
 
 ### For End Users
 - Nothing. Fully backward-compatible.
@@ -1164,11 +1164,11 @@ Demo page untuk preview semua komponen Phase 2 - live DataTable, FormField + zod
 - Ikut pattern di `docs/DESIGN_SYSTEM.md` + Marketing Dashboard sebagai reference
 
 **DON'T:**
--  `const T = { accent: "#ff5f2e", ... }` - Terra tokens deprecated
--  `style={{color: "#22C55E"}}` - pakai class `text-success`
--  Manual loading spinner - pakai SkeletonCard/SkeletonTable
--  Custom modal styling - pakai shadcn Dialog
--  Inline breadcrumb - PageHeader handle otomatis
+- `const T = { accent: "#ff5f2e", ... }` - Terra tokens deprecated
+- `style={{color: "#22C55E"}}` - pakai class `text-success`
+- Manual loading spinner - pakai SkeletonCard/SkeletonTable
+- Custom modal styling - pakai shadcn Dialog
+- Inline breadcrumb - PageHeader handle otomatis
 
 ### Known Gaps (Phase 3 Backlog)
 - CanvassingPage masih 97 Terra refs (map-heavy, risk refactor)
@@ -1181,7 +1181,7 @@ Demo page untuk preview semua komponen Phase 2 - live DataTable, FormField + zod
 
 ---
 
-##  Documentation
+## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** - Handoff memory (updated dengan design system rules)
 - **[docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)** - Full design system spec
@@ -1190,7 +1190,7 @@ Demo page untuk preview semua komponen Phase 2 - live DataTable, FormField + zod
 
 ---
 
-##  Credits
+## Credits
 
 Redesign oleh Claude Code (Sonnet 4.6 + Opus 4.7) sebagai pair programmer untuk PT Arkanova Cipta Inovasi.
 

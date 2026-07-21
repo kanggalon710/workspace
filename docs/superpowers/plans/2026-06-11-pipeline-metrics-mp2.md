@@ -158,8 +158,8 @@ Create `shared/metricTimeWindow.ts`:
 /** Pure time-window helpers for pipeline metrics - no I/O. nowMs is injected for testability. */
 
 export type TimePreset =
-  | "all" | "today" | "yesterday" | "7d" | "30d"
-  | "this_month" | "last_month" | "this_year" | "custom";
+ | "all" | "today" | "yesterday" | "7d" | "30d"
+ | "this_month" | "last_month" | "this_year" | "custom";
 
 export const TIME_PRESETS: { preset: TimePreset; label: string }[] = [
   { preset: "all", label: "Semua waktu" },

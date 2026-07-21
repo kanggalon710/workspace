@@ -139,7 +139,7 @@ export function leadToCard(lead: LeadRow, stageIdByKey: Record<string, number>, 
 
 ```ts
 /** Resolve a card assignee against the tenant's users: keep the lead's assignee if valid,
- *  else fall back to defaultAssignee, else null. */
+ * else fall back to defaultAssignee, else null. */
 export function resolveAssignee(
   leadAssignedTo: number | null,
   validUserIds: Set<number>,

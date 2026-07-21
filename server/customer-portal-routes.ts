@@ -955,27 +955,27 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
     // Level ladder - sesuai program Sahabat Panduan
     const LADDER = [
       {
-        level: "new", label: "Pelanggan Biasa", emoji: "", threshold: 0,
+        level: "new", label: "Pelanggan Biasa", threshold: 0,
         color: "#64748b", reward: "Voucher Rp 50K per referral sukses",
       },
       {
-        level: "perunggu", label: "Sahabat Perunggu", emoji: "", threshold: 5,
+        level: "perunggu", label: "Sahabat Perunggu", threshold: 5,
         color: "#b45309", reward: "Voucher Rp 200K + Speed Boost 2x/minggu",
       },
       {
-        level: "perak", label: "Sahabat Perak", emoji: "", threshold: 10,
+        level: "perak", label: "Sahabat Perak", threshold: 10,
         color: "#94a3b8", reward: "Internet GRATIS 12 bulan + Sertifikat Mitra",
       },
       {
-        level: "emas", label: "Sahabat Emas", emoji: "", threshold: 20,
+        level: "emas", label: "Sahabat Emas", threshold: 20,
         color: "#f59e0b", reward: "Internet GRATIS 24 bulan + Upgrade speed permanen",
       },
       {
-        level: "platinum", label: "Sahabat Platinum", emoji: "", threshold: 30,
+        level: "platinum", label: "Sahabat Platinum", threshold: 30,
         color: "#3b82f6", reward: "Internet GRATIS 36 bulan + Cash Rp 2jt + Ambassador",
       },
       {
-        level: "berlian", label: "Sahabat Berlian", emoji: "", threshold: 50,
+        level: "berlian", label: "Sahabat Berlian", threshold: 50,
         color: "#a855f7", reward: "Internet GRATIS 60 bulan + Cash Rp 5jt + Trainer",
       },
     ];
@@ -989,16 +989,15 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
           current: totalRefs,
           remaining: nextLevelInfo.threshold - totalRefs,
           reward: nextLevelInfo.reward,
-          emoji: nextLevelInfo.emoji,
         }
       : null;
 
     // Tenure info (secondary display)
     const TENURE_CFG: Record<string, any> = {
-      tetangga: { label: "< 1 tahun", emoji: "" },
-      keluarga: { label: "1-3 tahun", emoji: "" },
-      sahabat:  { label: "3-5 tahun", emoji: "" },
-      abadi:    { label: "5+ tahun", emoji: "" },
+      tetangga: { label: "< 1 tahun" },
+      keluarga: { label: "1-3 tahun" },
+      sahabat:  { label: "3-5 tahun" },
+      abadi:    { label: "5+ tahun" },
     };
 
     sendOk(res, {
@@ -1007,7 +1006,6 @@ customerPortalRouter.get("/api/portal/loyalty", async (req: Request, res: Respon
         tier,                               // pelanggan | rtrw | desa
         level,                              // new | perunggu | perak | emas | platinum | berlian | ambassador
         levelLabel: currentLevelInfo.label,
-        levelEmoji: currentLevelInfo.emoji,
         levelColor: currentLevelInfo.color,
         currentReward: currentLevelInfo.reward,
         totalSuccessfulReferrals: totalRefs,
@@ -1066,7 +1064,7 @@ customerPortalRouter.get("/api/portal/loyalty/referrals", async (req: Request, r
 /**
  * Helper: load redemption catalog dari settings (JSON), fallback ke default.
  */
-async function loadSpeedBoostCatalog(): Promise<Array<{ key: string; label: string; description: string; pointsCost: number; speedMultiplier: number; durationHours: number; emoji: string }>> {
+async function loadSpeedBoostCatalog(): Promise<Array<{ key: string; label: string; description: string; pointsCost: number; speedMultiplier: number; durationHours: number }>> {
   const raw = await storage.getSetting("speed_boost_catalog");
   if (raw) {
     try {
@@ -1075,10 +1073,10 @@ async function loadSpeedBoostCatalog(): Promise<Array<{ key: string; label: stri
     } catch { /* fall through to default */ }
   }
   return [
-    { key: "boost_2x_6h",  label: "Speed 2× - 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6,  emoji: "" },
-    { key: "boost_2x_24h", label: "Speed 2× - 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24, emoji: "" },
-    { key: "boost_3x_6h",  label: "Speed 3× - 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6,  emoji: "" },
-    { key: "boost_3x_24h", label: "Speed 3× - 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24, emoji: "" },
+    { key: "boost_2x_6h",  label: "Speed 2× - 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6 },
+    { key: "boost_2x_24h", label: "Speed 2× - 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24 },
+    { key: "boost_3x_6h",  label: "Speed 3× - 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6 },
+    { key: "boost_3x_24h", label: "Speed 3× - 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24 },
   ];
 }
 
@@ -1322,7 +1320,7 @@ customerPortalRouter.post("/api/portal/csat/:token", async (req: Request, res: R
     if (!rating || rating < 1 || rating > 5) return sendErr(res, "Rating harus 1-5");
     const csat = await storage.submitCsatResponse(String(req.params.token), Number(rating), feedback);
     if (!csat) return sendErr(res, "Survey tidak ditemukan", 404);
-    sendOk(res, { rating: csat.rating, message: "Terima kasih atas feedback Anda " });
+    sendOk(res, { rating: csat.rating, message: "Terima kasih atas feedback Anda" });
   } catch (e: any) { sendErr(res, e.message, 500); }
 });
 

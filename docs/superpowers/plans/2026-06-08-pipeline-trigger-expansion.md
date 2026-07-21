@@ -93,9 +93,9 @@ export function isEventTriggerType(t: string): t is EventTriggerType {
 }
 
 /** Does a rule fire for this card event?
- *  - type mismatch → false
- *  - field_updated: no configured fieldId → any field; else only when changedFieldIds includes it
- *  - card_updated / assignee_changed → always (the route decides when to dispatch) */
+ * - type mismatch → false
+ * - field_updated: no configured fieldId → any field; else only when changedFieldIds includes it
+ * - card_updated / assignee_changed → always (the route decides when to dispatch) */
 export function eventRuleMatches(
   rule: { triggerType: string; triggerConfig: string | null },
   eventType: string,
@@ -169,7 +169,7 @@ In `server/pipeline-automation.ts`, replace the existing `runStageEnterAutomatio
 
 ```ts
 /** Evaluate a set of rules against a card: conditions → actions.
- *  dedup=true keeps once-per-card behavior (stage_enter); dedup=false fires every time (events). */
+ * dedup=true keeps once-per-card behavior (stage_enter); dedup=false fires every time (events). */
 async function runRulesForCard(
   rules: PipelineRule[],
   card: PipelineCard,

@@ -12,7 +12,7 @@ test("normalizes known aliases to canonical", () => {
 });
 
 test("is case/space insensitive and falls back to 'other'", () => {
-  assert.equal(canonicalLeadSource("  Meta_Ads "), "meta_leads");
+  assert.equal(canonicalLeadSource(" Meta_Ads "), "meta_leads");
   assert.equal(canonicalLeadSource("unknown_xyz"), "other");
   assert.equal(canonicalLeadSource(null), "other");
   assert.equal(canonicalLeadSource(undefined), "other");

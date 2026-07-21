@@ -52,7 +52,7 @@ Add (keeping the existing `parseConditions`/`evaluateConditions` for per-group A
 
 ```ts
 /** Parse stored conditions into AND-groups. Accepts legacy flat array (→ one group)
- *  or { groups: [...] }. Drops empty conditions/groups. Malformed → []. */
+ * or { groups: [...] }. Drops empty conditions/groups. Malformed → []. */
 export function parseConditionGroups(raw: string | null): RuleCondition[][] {
   if (!raw) return [];
   let parsed: any;

@@ -598,9 +598,9 @@ if (existing.name === "System-Admin") {
 const isAdmin = req.authUser.role === "Administrator" || req.authUser.role === "admin";
 // → ganti (expand untuk include both System-Admin + Admin):
 const isAdmin = req.authUser.role === "System-Admin"
-              || req.authUser.role === "Admin"
-              || req.authUser.role === "admin"
-              || req.authUser.isSystemAdmin;
+ || req.authUser.role === "Admin"
+ || req.authUser.role === "admin"
+ || req.authUser.isSystemAdmin;
 ```
 
 **Line ~8146** (telegram notify role list):
@@ -618,7 +618,7 @@ const supervisorIds = supervisors.filter((u: any) => u.role === "Administrator" 
 // → ganti:
 const supervisorIds = supervisors.filter((u: any) =>
   u.role === "System-Admin" || u.role === "Admin" || u.role === "Administrator" /* legacy */
-  || u.role === "admin" || u.role === "Supervisor"
+ || u.role === "admin" || u.role === "Supervisor"
 ).map((u: any) => u.id);
 
 // Line 241:
@@ -722,7 +722,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
   // Authz: System-Admin atau (Admin di mitra yang sama dengan write permission)
   const isSelfMitra = req.authUser.activeMitraId === mitraId;
   const canManage = req.authUser.isSystemAdmin
-                 || (isSelfMitra && (req.authUser.roleName === "Admin" || req.authUser.roleName === "System-Admin"));
+ || (isSelfMitra && (req.authUser.roleName === "Admin" || req.authUser.roleName === "System-Admin"));
   if (!canManage) return sendError(res, "Forbidden - only System-Admin or Admin in this mitra can change roles", 403);
 
   // Lookup target role

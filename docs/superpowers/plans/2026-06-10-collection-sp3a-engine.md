@@ -56,14 +56,14 @@ test("buildCollectionSnapshot defaults status fields", () => {
 (a) Extend the key union:
 ```ts
 export type CollectionAttrKey =
-  | "days_overdue" | "outstanding_amount" | "invoice_due_date"
-  | "last_payment_date" | "billing_status";
+ | "days_overdue" | "outstanding_amount" | "invoice_due_date"
+ | "last_payment_date" | "billing_status";
 ```
 →
 ```ts
 export type CollectionAttrKey =
-  | "days_overdue" | "outstanding_amount" | "invoice_due_date"
-  | "last_payment_date" | "billing_status" | "collection_status" | "writeoff_status";
+ | "days_overdue" | "outstanding_amount" | "invoice_due_date"
+ | "last_payment_date" | "billing_status" | "collection_status" | "writeoff_status";
 ```
 
 (b) Append two entries to `COLLECTION_ATTRS` (before the closing `];`):
@@ -307,8 +307,8 @@ git commit -m "feat(collection): pure engine decisions (decideEntry, decideCardL
 - [ ] **Step 1: Write the engine**
 ```ts
 /** Collection engine - runs per billing sync (current tenant). Drives the card lifecycle from
- *  collection_config + SP1 snapshots. Loop-safe: mutates via storage, dispatches stage-enter automations
- *  once; never re-entered. NOT a route - called by the billing-sync worker inside withMitra. */
+ * collection_config + SP1 snapshots. Loop-safe: mutates via storage, dispatches stage-enter automations
+ * once; never re-entered. NOT a route - called by the billing-sync worker inside withMitra. */
 import { storage } from "./storage.js";
 import { applyRuleActions, runStageEnterAutomations } from "./pipeline-automation.js";
 import { buildCollectionSnapshot } from "../shared/collectionMetrics.js";

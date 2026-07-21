@@ -54,8 +54,8 @@ In `shared/leadSources.ts`:
 - Add `"pipeline"` to the `CanonicalLeadSource` union:
 ```ts
 export type CanonicalLeadSource =
-  | "canvassing" | "prospect_finder" | "coverage_check"
-  | "meta_leads" | "tiktok_leads" | "referral" | "inbound" | "pipeline" | "other";
+ | "canvassing" | "prospect_finder" | "coverage_check"
+ | "meta_leads" | "tiktok_leads" | "referral" | "inbound" | "pipeline" | "other";
 ```
 - Add alias entry in `ALIASES`:
 ```ts
@@ -132,7 +132,7 @@ Expected: FAIL - module not found.
 ```ts
 // shared/cardToLead.ts
 /** Pure: derive a lead prefill from a pipeline card (title + custom field values). No I/O.
- *  Auto-detect by field type: first phone-type → phone; first coordinate-type → lat/lng. */
+ * Auto-detect by field type: first phone-type → phone; first coordinate-type → lat/lng. */
 import { parseCoordinate } from "./pipelineFieldTypes.js";
 
 export interface CardFieldMeta { id: number; type: string }

@@ -5,25 +5,25 @@
 > Project di working directory ini adalah **copy untuk deploy ke cPanel** di `workspace.jabnet.id` dengan DB MySQL `jabnet_fiber`.
 > **Setup cPanel:** lihat [CPANEL-SETUP.md](CPANEL-SETUP.md). Pola umum: [CPANEL-CONVENTIONS.md](CPANEL-CONVENTIONS.md).
 
-##  Status Migrasi cPanel + MySQL (v4.3.0 - COMPLETE)
+## Status Migrasi cPanel + MySQL (v4.3.0 - COMPLETE)
 
 | Komponen | Status |
 |---|---|
-| `drizzle.config.ts` → MySQL dialect dengan env loading |  Phase 1A |
-| `shared/schema.ts` → 65 tabel ported ke `mysqlTable` |  Phase 1A |
-| `package.json` → swap `better-sqlite3` → `mysql2`, add `dotenv` |  Phase 1A |
-| `server/index.ts` → dotenv from `JABNET_PRIVATE_ROOT` + worker gates |  Phase 1A |
-| `server/broadcast-worker.ts` → MySQL |  Phase 1A |
-| `tools/migrate-sqlite-to-mysql.mjs` → data migration script |  Phase 1A |
-| `.github/workflows/build.yml` → GHA build + deploy branch |  Phase 1A |
-| `.env.example`, `.gitignore` → MySQL vars + secret protection |  Phase 1A |
-| `CPANEL-SETUP.md` → step-by-step cPanel setup |  Phase 1A |
-| `server/storage.ts` refactor - hapus `.returning()` + raw sqlite |  **Phase 1B done** (commit `31ab0e3`) |
-| `server/storage.ts` cleanup - replace 88 broken `.all()`/`.run()` calls dengan `.execute()` |  done (commit `1ffb4fc`) |
-| Performance optimization Phase A-D (indexes, dashboard, map viewport, perm cache) |  done (commits `d5c6209`…`006521e`) |
-| Performance Phase E - N+1 query batching (dashboard, loyalty, reconcile, portal Mikrotik) |  done (commits `b64215a`, `8a62acc`, `b658359`) |
-| Performance Phase F - bundle split, pause-on-blur polling, server response cache |  done (commits `2e63e27`, `0738f89`, `7857f97`) |
-| Google Maps API key runtime via `/api/public-config` (no rebuild needed) |  done |
+| `drizzle.config.ts` → MySQL dialect dengan env loading | Phase 1A |
+| `shared/schema.ts` → 65 tabel ported ke `mysqlTable` | Phase 1A |
+| `package.json` → swap `better-sqlite3` → `mysql2`, add `dotenv` | Phase 1A |
+| `server/index.ts` → dotenv from `JABNET_PRIVATE_ROOT` + worker gates | Phase 1A |
+| `server/broadcast-worker.ts` → MySQL | Phase 1A |
+| `tools/migrate-sqlite-to-mysql.mjs` → data migration script | Phase 1A |
+| `.github/workflows/build.yml` → GHA build + deploy branch | Phase 1A |
+| `.env.example`, `.gitignore` → MySQL vars + secret protection | Phase 1A |
+| `CPANEL-SETUP.md` → step-by-step cPanel setup | Phase 1A |
+| `server/storage.ts` refactor - hapus `.returning()` + raw sqlite | **Phase 1B done** (commit `31ab0e3`) |
+| `server/storage.ts` cleanup - replace 88 broken `.all()`/`.run()` calls dengan `.execute()` | done (commit `1ffb4fc`) |
+| Performance optimization Phase A-D (indexes, dashboard, map viewport, perm cache) | done (commits `d5c6209`…`006521e`) |
+| Performance Phase E - N+1 query batching (dashboard, loyalty, reconcile, portal Mikrotik) | done (commits `b64215a`, `8a62acc`, `b658359`) |
+| Performance Phase F - bundle split, pause-on-blur polling, server response cache | done (commits `2e63e27`, `0738f89`, `7857f97`) |
+| Google Maps API key runtime via `/api/public-config` (no rebuild needed) | done |
 
 **Build status:** `npm run build` ✓ sukses (esbuild bundle 1MB). `npm run typecheck`: **0 errors** (genuine, was previously stale at 88).
 **Production status:** LIVE di `https://workspace.jabnet.id` - login/dashboard/map operasional.
@@ -87,33 +87,33 @@ async getOdpsByIds(odpIds: number[]): Promise<Map<number, Odp>> {
 ```
 ftth-v411/
 +- client/              # React app
-|  +- App.tsx           # Router + lazy routes (45+ pages)
-|  +- main.tsx          # React entry
-|  +- index.css         # Tailwind + design tokens (sky/blue primary)
-|  +- pages/            # All page components
-|  |  +- portal/        # Customer portal (PortalLogin/Verify/Dashboard)
-|  |  +- UsersPage.tsx  # Enterprise user mgmt with detail drawer + bulk actions
-|  |  +- RolesPage.tsx  # Role + permission matrix with preview dialog
-|  |  +- LoyaltyAdminPage.tsx  # JABNET Sahabat program admin
-|  |  +- PublicApiPage.tsx     # Open API key management
-|  |  +- AnnouncementsPage.tsx # News/feature update broadcast
-|  |  +- BugReportsPage.tsx    # In-app bug tracking
-|  |  +- … (Marketing, Collection, Map, etc.)
-|  +- components/
-|  |  +- layout/         # Sidebar, Layout, BottomNav
-|  |  +- notifications/  # NotificationBell (top-right floating)
-|  |  +- ui/             # shadcn primitives
-|  +- context/AuthContext.tsx   # Auth via localStorage `ftth_user`
+| +- App.tsx           # Router + lazy routes (45+ pages)
+| +- main.tsx          # React entry
+| +- index.css         # Tailwind + design tokens (sky/blue primary)
+| +- pages/            # All page components
+| | +- portal/        # Customer portal (PortalLogin/Verify/Dashboard)
+| | +- UsersPage.tsx  # Enterprise user mgmt with detail drawer + bulk actions
+| | +- RolesPage.tsx  # Role + permission matrix with preview dialog
+| | +- LoyaltyAdminPage.tsx  # JABNET Sahabat program admin
+| | +- PublicApiPage.tsx     # Open API key management
+| | +- AnnouncementsPage.tsx # News/feature update broadcast
+| | +- BugReportsPage.tsx    # In-app bug tracking
+| | +- … (Marketing, Collection, Map, etc.)
+| +- components/
+| | +- layout/         # Sidebar, Layout, BottomNav
+| | +- notifications/  # NotificationBell (top-right floating)
+| | +- ui/             # shadcn primitives
+| +- context/AuthContext.tsx   # Auth via localStorage `ftth_user`
 +- server/
-|  +- index.ts                  # Express bootstrap, mounts 3 routers
-|  +- routes.ts                 # Main router (~3500 lines, all staff endpoints)
-|  +- customer-portal-routes.ts # /api/portal/* (OTP-auth, lightweight)
-|  +- public-api-routes.ts      # /api/public/v1/* (API key bearer auth)
-|  +- storage.ts                # ALL DB access - single class DatabaseStorage (~5000 lines)
-|  +- billing-sync-worker.ts    # Polls billing.jabnet.id every 60-600s
-|  +- traffic-snapshot-worker.ts # Polls Mikrotik PPP every 15min
-|  +- mpwa.ts                    # WhatsApp gateway adapter
-|  +- genieacs.ts                # ONT TR-069 (reboot, WiFi config)
+| +- index.ts                  # Express bootstrap, mounts 3 routers
+| +- routes.ts                 # Main router (~3500 lines, all staff endpoints)
+| +- customer-portal-routes.ts # /api/portal/* (OTP-auth, lightweight)
+| +- public-api-routes.ts      # /api/public/v1/* (API key bearer auth)
+| +- storage.ts                # ALL DB access - single class DatabaseStorage (~5000 lines)
+| +- billing-sync-worker.ts    # Polls billing.jabnet.id every 60-600s
+| +- traffic-snapshot-worker.ts # Polls Mikrotik PPP every 15min
+| +- mpwa.ts                    # WhatsApp gateway adapter
+| +- genieacs.ts                # ONT TR-069 (reboot, WiFi config)
 +- shared/schema.ts              # Drizzle table defs + ALL_PERMISSIONS list
 +- public/                       # Favicons, manifest.json, icons/
 +- tools/                        # backup scripts, db migrations
@@ -375,8 +375,8 @@ Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi ant
 |---|---|---|---|
 | Baru Isolir (`new`) | sistem | 3h | Dihubungi |
 | Dihubungi (`contacted`) | Finance | 4h | Delegasi CS |
-| Delegasi Layanan Pelanggan (`delegasi_cs`)  | CS | 7h | Delegasi Marketing |
-| Delegasi Marketing (`delegasi_marketing`)  | Marketing | 7h | - (write-off by age) |
+| Delegasi Layanan Pelanggan (`delegasi_cs`) | CS | 7h | Delegasi Marketing |
+| Delegasi Marketing (`delegasi_marketing`) | Marketing | 7h | - (write-off by age) |
 | Lunas/Reaktivasi (`paid`) · Churn (`written_off`) | - | - | terminal |
 
 - **Schema**: `collection_stages` + kolom `owner_division` / `sla_days` / `next_stage_key`

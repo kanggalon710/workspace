@@ -53,8 +53,8 @@ In `shared/schema.ts`, find `export type PipelineFieldType =` and add `"coordina
 
 ```ts
 export type PipelineFieldType =
-  | "text" | "textarea" | "number" | "currency" | "date"
-  | "dropdown" | "multiselect" | "checkbox" | "user" | "phone" | "url";
+ | "text" | "textarea" | "number" | "currency" | "date"
+ | "dropdown" | "multiselect" | "checkbox" | "user" | "phone" | "url";
 export const PIPELINE_FIELD_TYPES: PipelineFieldType[] =
   ["text","textarea","number","currency","date","dropdown","multiselect","checkbox","user","phone","url"];
 ```
@@ -63,8 +63,8 @@ Change them to:
 
 ```ts
 export type PipelineFieldType =
-  | "text" | "textarea" | "number" | "currency" | "date"
-  | "dropdown" | "multiselect" | "checkbox" | "user" | "phone" | "url" | "coordinate";
+ | "text" | "textarea" | "number" | "currency" | "date"
+ | "dropdown" | "multiselect" | "checkbox" | "user" | "phone" | "url" | "coordinate";
 export const PIPELINE_FIELD_TYPES: PipelineFieldType[] =
   ["text","textarea","number","currency","date","dropdown","multiselect","checkbox","user","phone","url","coordinate"];
 ```

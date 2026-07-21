@@ -72,7 +72,7 @@ Create `shared/fieldPermissions.ts`:
 
 ```ts
 /** Pure resolver for per-(field × role) access. No DB, no I/O.
- *  Stored in pipeline_fields.config as { fieldPerms: { [roleId]: "hidden"|"view"|"edit" } }. */
+ * Stored in pipeline_fields.config as { fieldPerms: { [roleId]: "hidden"|"view"|"edit" } }. */
 
 export type FieldAccessLevel = "hidden" | "view" | "edit";
 const LEVELS = new Set<FieldAccessLevel>(["hidden", "view", "edit"]);

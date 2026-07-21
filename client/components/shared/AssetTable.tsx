@@ -449,8 +449,8 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
                   {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                     const item = paginatedData[virtualRow.index];
                     return (
-                      <tr 
-                        key={item.id} 
+                      <tr
+                        key={item.id}
                         ref={rowVirtualizer.measureElement}
                         data-index={virtualRow.index}
                         className={`border-b transition-colors ${selectedIds.has(item.id) ? 'bg-primary/5' : 'hover:bg-muted/30'}`}

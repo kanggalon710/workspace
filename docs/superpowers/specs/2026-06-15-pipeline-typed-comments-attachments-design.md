@@ -25,11 +25,11 @@ Polanya sudah ada di `/leads` (`LeadPipelinePage`): dropdown `note/call/whatsapp
 ```
 Composer (CardComments) --multipart {body,type,files[]}--▶ POST /cards/:id/comments
   files: JPEG di-compress (compressImage) sebelum append ke FormData
-        |
+ |
         ▼
 addComment(cardId, authorId, body, type)  → row pipeline_card_comments
   for each file: saveCardAttachment(..., commentId)  → pipeline_card_attachments (comment_id set)
-        |
+ |
 GET /cards/:id  --▶ comments[] tiap comment.attachments[] (group by comment_id)
                     + authorName (batch resolve, anti-N+1)
                     Lampiran generik = attachments WHERE comment_id IS NULL

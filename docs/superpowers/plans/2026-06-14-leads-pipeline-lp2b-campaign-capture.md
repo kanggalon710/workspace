@@ -75,7 +75,7 @@ Expected: FAIL - module not found.
 ```ts
 // shared/adCampaignFields.ts
 /** Pure: ekstrak referensi campaign/ad set/ad dari payload webhook lead iklan. No I/O.
- *  Best-effort: ambil dari key umum (snake_case + camelCase + alias adgroup). */
+ * Best-effort: ambil dari key umum (snake_case + camelCase + alias adgroup). */
 
 export interface AdRef { externalId?: string; name?: string }
 export interface AdRefs { campaign?: AdRef; adSet?: AdRef; adName?: AdRef }
@@ -270,9 +270,9 @@ import { extractAdRefs } from "../shared/adCampaignFields.js";
 export interface ResolvedAdFields { campaign: string | null; adSet: string | null; adName: string | null }
 
 /** Resolve campaign/adSet/adName dari payload webhook. campaign di-resolve ke nama ramah via
- *  registry ad_campaigns (externalId match); fallback nama payload → id → null. adSet/adName:
- *  nama payload → id → null (registry hanya level-campaign). Best-effort: NEVER throws.
- *  MUST dipanggil di dalam withMitra(...) agar getAdCampaignByExternalId ter-scope tenant. */
+ * registry ad_campaigns (externalId match); fallback nama payload → id → null. adSet/adName:
+ * nama payload → id → null (registry hanya level-campaign). Best-effort: NEVER throws.
+ * MUST dipanggil di dalam withMitra(...) agar getAdCampaignByExternalId ter-scope tenant. */
 export async function resolveAdFields(platform: string, payload: any): Promise<ResolvedAdFields> {
   const refs = extractAdRefs(payload);
   let campaign: string | null = null;

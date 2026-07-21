@@ -302,7 +302,7 @@ import { FormField } from "@/components/ui/form-field";
 import type { NotifyDraft } from "@shared/notifyConfig";
 
 /** Reusable notify config form (bell + webhook). Operates on flat NotifyDraft fields.
- *  Used by card-rule actions (RuleActionEditor) + lead rules (PipelineRulesDialog). */
+ * Used by card-rule actions (RuleActionEditor) + lead rules (PipelineRulesDialog). */
 export function NotifyConfigFields({
   value, onChange, users, keyPrefix, assigneeLabel = "Assignee",
 }: {

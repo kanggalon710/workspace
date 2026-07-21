@@ -118,10 +118,10 @@ Insert immediately after the `isSystemAdmin` function (after line 403):
 
 ```ts
 /** Validate a user may be assigned to a card in this pipeline, in the current request context.
- *  Returns null if OK, else an Indonesian error string.
- *  - Always: target user must exist and be active.
- *  - JABNET sysadmin: any existing+active user (cross-tenant, record-only - grants no access).
- *  - Everyone else: target must already have access to the pipeline (existing rule preserved). */
+ * Returns null if OK, else an Indonesian error string.
+ * - Always: target user must exist and be active.
+ * - JABNET sysadmin: any existing+active user (cross-tenant, record-only - grants no access).
+ * - Everyone else: target must already have access to the pipeline (existing rule preserved). */
 async function validateAssignTarget(req: Request, userId: number, pipelineId: number): Promise<string | null> {
   const u = await storage.getUser(userId);
   if (!u || (u as any).isActive === 0) return "User tidak ditemukan atau nonaktif";

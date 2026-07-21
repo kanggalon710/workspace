@@ -99,7 +99,7 @@ Create `shared/fieldRules.ts`:
 
 ```ts
 /** Pure evaluator + helpers for per-field visibility / required rules. No DB, no I/O.
- *  Conditions read other custom field values and the card's current stage. */
+ * Conditions read other custom field values and the card's current stage. */
 
 export type FieldRuleOp = "eq" | "neq" | "contains" | "gt" | "lt" | "empty" | "not_empty";
 export interface FieldRuleCondition { source?: "field" | "stage"; fieldId?: number; op: FieldRuleOp; value?: string }
@@ -165,7 +165,7 @@ export function isFieldRequired(field: { config: string | null; required: number
 }
 
 /** True only for fields that OPT IN via a requiredWhen rule (used for save-blocking enforcement;
- *  static-required fields stay soft/non-blocking). */
+ * static-required fields stay soft/non-blocking). */
 export function hasRequiredWhen(field: { config: string | null }): boolean {
   return parseFieldRules(field.config).requiredWhen.length > 0;
 }
@@ -236,8 +236,8 @@ Add the helper:
 const FIELD_RULE_OPS = new Set(["eq", "neq", "contains", "gt", "lt", "empty", "not_empty"]);
 
 /** Validate visibleWhen/requiredWhen condition groups inside a field's config JSON.
- *  fieldId conditions must reference a field of this pipeline and not the field being edited;
- *  stage conditions must reference a stage of this pipeline. Returns an error string or null. */
+ * fieldId conditions must reference a field of this pipeline and not the field being edited;
+ * stage conditions must reference a stage of this pipeline. Returns an error string or null. */
 async function validateFieldRules(pipelineId: number, selfFieldId: number | null, config: string | null): Promise<string | null> {
   const { visibleWhen, requiredWhen } = parseFieldRules(config);
   if (visibleWhen.length === 0 && requiredWhen.length === 0) return null;

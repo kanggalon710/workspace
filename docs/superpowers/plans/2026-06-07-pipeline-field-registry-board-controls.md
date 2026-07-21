@@ -133,7 +133,7 @@ Create `shared/pipelineFieldTypes.ts`:
 
 ```ts
 /** Single source of truth for pipeline custom field-type metadata + pure decision helpers.
- *  No React, no DB - imported by client (picker, board) and server (validation, singleton guard). */
+ * No React, no DB - imported by client (picker, board) and server (validation, singleton guard). */
 import type { PipelineFieldType, PipelineField } from "./schema.js";
 
 export interface FieldTypeMeta {
@@ -317,7 +317,7 @@ In `server/storage.ts`, add this method immediately after `getShowOnCardValues` 
 
 ```ts
   /** Values for fields the board needs: shown-on-card OR searchable/filterable/sortable.
-   *  Same shape as getShowOnCardValues: { [cardId]: { [fieldId]: value } }. */
+   * Same shape as getShowOnCardValues: { [cardId]: { [fieldId]: value } }. */
   async getBoardCardValues(pipelineId: number): Promise<Record<number, Record<number, string>>> {
     const mitraId = getMitraId();
     const fields = await this.db.select().from(pipelineFields)

@@ -148,7 +148,7 @@ Kalau response tidak ada field tersebut → re-check Step 1.1 (mungkin typo di m
 ```bash
 curl -s "http://localhost:5000/api/loyalty/admin/referrals?limit=500" \
   -H "Authorization: Bearer $TOKEN" \
-  | jq '[.data[] | .refereeStatus] | group_by(.) | map({status: .[0], count: length})'
+ | jq '[.data[] | .refereeStatus] | group_by(.) | map({status: .[0], count: length})'
 ```
 
 Expected: array dengan 1-3 grup, total = jumlah referral. Σ count = total rows.

@@ -13,12 +13,12 @@ Mesin template pipeline **sudah lengkap**: tabel `pipeline_templates` (+ `is_bui
    - `pipeline`: `{ name: "Pipeline Lead", description: "Pipeline prospek/lead pemasaran", color: "#0EA5E9", icon: "users" }`.
    - `stages` (via helper `nowKeyStages`, sesuai #13): `Lead Baru` → `Dihubungi` → `Survey` → `Negosiasi` → `Won` → `Lost`. Warna mengikuti pola preset lain (abu→biru→ungu/amber→hijau menang→merah kalah).
    - `fields` (selaras LP1 field-map / LP4 auto-detect / LP2b campaign):
-     | key | label | type | options | showOnCard |
-     |---|---|---|---|---|
-     | field_0 | Telepon | `phone` | null | 1 |
-     | field_1 | Koordinat | `coordinate` | null | 0 |
-     | field_2 | Sumber | `dropdown` | `["canvassing","prospect_finder","coverage_check","meta_leads","tiktok_leads","referral"]` | 1 |
-     | field_3 | Campaign | `text` | null | 0 |
+ | key | label | type | options | showOnCard |
+ |---|---|---|---|---|
+ | field_0 | Telepon | `phone` | null | 1 |
+ | field_1 | Koordinat | `coordinate` | null | 0 |
+ | field_2 | Sumber | `dropdown` | `["canvassing","prospect_finder","coverage_check","meta_leads","tiktok_leads","referral"]` | 1 |
+ | field_3 | Campaign | `text` | null | 0 |
    - `rules: []` - tanpa auto-wire automation (user konfigurasi sendiri di panel Otomasi).
 
 2. **`shared/pipelineTemplate.test.ts`** - naikkan assertion `BUILTIN_TEMPLATES.length >= 4` → `>= 5`; entri baru otomatis lolos loop shape-check existing. Tambah assertion ringan: ada template bernama "Pipeline Lead" dengan 6 stage + 4 field.

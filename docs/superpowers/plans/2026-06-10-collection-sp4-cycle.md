@@ -79,7 +79,7 @@ Add `nextCycleNumber` to the import line from `./collectionEngine.js`.
 export type EntryDecision = { create: boolean; moveExistingToEntry: boolean; reopenExisting: boolean };
 
 /** Whether/how to bring an overdue customer into collection. `hasReopenableCard` = a terminal
- *  (paid/writeoff) card exists for this customer (used only by reopen mode). */
+ * (paid/writeoff) card exists for this customer (used only by reopen mode). */
 export function decideEntry(snap: CollectionSnapshot, cfg: EngineConfig, hasActiveCard: boolean, hasReopenableCard = false): EntryDecision {
   const none = { create: false, moveExistingToEntry: false, reopenExisting: false };
   if (!cfg.enabled || cfg.entryStageId == null) return none;

@@ -15,7 +15,7 @@ test("extracts campaign/adset/ad from snake_case keys", () => {
 });
 
 test("supports camelCase + adgroup alias; trims; omits empty refs", () => {
-  assert.deepEqual(extractAdRefs({ campaignName: "X", adgroup_id: "  7  ", adName: "" }), {
+  assert.deepEqual(extractAdRefs({ campaignName: "X", adgroup_id: " 7 ", adName: "" }), {
     campaign: { name: "X" },
     adSet: { externalId: "7" },
   });

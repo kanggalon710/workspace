@@ -325,7 +325,7 @@ No unit test (network I/O - follows the `server/genieacs.ts` precedent; verified
 ```ts
 // server/chatwoot.ts
 /** Chatwoot NBI client. Token is account-scoped → isolation enforced by Chatwoot.
- *  Mirrors server/genieacs.ts patterns (timeout, friendly error mapping). */
+ * Mirrors server/genieacs.ts patterns (timeout, friendly error mapping). */
 import { storage } from "./storage.js";
 import { resolveChatwootConfig, isConfigured } from "../shared/chatwootConfig.js";
 
@@ -422,7 +422,7 @@ git commit -m "feat(chatwoot): backend NBI client (config resolve, fetch, testCo
 ```ts
 // server/chatwoot-routes.ts
 /** /api/chatwoot/* - registered on the MAIN authed router (inherits auth + tenantContext).
- *  All routes tenant-scoped (active mitra), permission-gated, audited. Token never leaves backend. */
+ * All routes tenant-scoped (active mitra), permission-gated, audited. Token never leaves backend. */
 import type { Router, Request, Response } from "express";
 import { storage } from "./storage.js";
 import { resolveChatwootConfig, isConfigured, MASK, isMaskedToken } from "../shared/chatwootConfig.js";
@@ -681,7 +681,7 @@ import { useChatwootStatus } from "@/hooks/useChatwoot";
 import { chatwootAccountUrl, chatwootContactsUrl } from "@shared/chatwootLinks";
 
 /** Opens the active mitra's Chatwoot account. `target="contacts"` opens the contacts list.
- *  Hidden unless Chatwoot is enabled + configured (permission already gated server-side on /status). */
+ * Hidden unless Chatwoot is enabled + configured (permission already gated server-side on /status). */
 export function OpenInChatwootButton({ target = "dashboard", size = "sm" }: {
   target?: "dashboard" | "contacts";
   size?: "xs" | "sm" | "default";

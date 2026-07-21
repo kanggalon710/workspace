@@ -411,8 +411,8 @@ function toIntakeCustomer(c: any): IntakeCustomer {
 }
 
 /** Reconcile billing_sync rules for the CURRENT tenant (call inside withMitra).
- *  Create a card for each matching customer without an active card; move an active card
- *  whose customer no longer matches to the rule's resolve stage. */
+ * Create a card for each matching customer without an active card; move an active card
+ * whose customer no longer matches to the rule's resolve stage. */
 export async function runBillingIntakeRules(): Promise<{ created: number; resolved: number }> {
   const result = { created: 0, resolved: 0 };
   const rules = await storage.listBillingSyncRules();

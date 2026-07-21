@@ -88,9 +88,9 @@ function q(id: string): string {
 
 /**
  * The feature may run ONLY when all hold:
- *  1. DEV_DB_SYNC_ENABLED === "true"  (set only in dev's .env)
- *  2. PROD_DB_NAME is set and differs from the current DB_NAME (never copy a DB onto itself)
- *  3. current DB_NAME ends with "_dev" (defence in depth - prod's DB is `jabnet_fiber`)
+ * 1. DEV_DB_SYNC_ENABLED === "true"  (set only in dev's .env)
+ * 2. PROD_DB_NAME is set and differs from the current DB_NAME (never copy a DB onto itself)
+ * 3. current DB_NAME ends with "_dev" (defence in depth - prod's DB is `jabnet_fiber`)
  * On production these env vars are absent, so this returns false there.
  */
 export function devDbSyncAvailable(env: NodeJS.ProcessEnv): boolean {

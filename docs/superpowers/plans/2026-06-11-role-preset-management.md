@@ -351,9 +351,9 @@ After `requireAdmin` (≈ line 1604) add:
 
 ```ts
 /** Authorize a preset mutation. Returns null if allowed, else an Indonesian error string.
- *  - global preset: only System-Admin JABNET (isSystemAdmin).
- *  - tenant preset: only an admin of that same mitra.
- *  - is_system: never delete; edit only by System-Admin JABNET. */
+ * - global preset: only System-Admin JABNET (isSystemAdmin).
+ * - tenant preset: only an admin of that same mitra.
+ * - is_system: never delete; edit only by System-Admin JABNET. */
 function authorizePresetMutation(
   req: Request,
   preset: { scope: string; mitraId: number; isSystem: number },

@@ -101,27 +101,27 @@ Dibuat khusus untuk tema telco.
 ### 4.1 Desktop
 ```
 +------------+-------------------------------------+
-|            | TopBar: breadcrumb · search ·  ·  ·  ·  |
-|  Sidebar   +-------------------------------------+
-|  (navy     |                                     |
-|   gradient |  Content area (dot pattern bg)      |
-|   header,  |                                     |
-|   groups,  |                                     |
-|   profile, |                                     |
-|   version) |                                     |
+| | TopBar: breadcrumb · search ·  ·  ·  · |
+| Sidebar   +-------------------------------------+
+| (navy | |
+| gradient | Content area (dot pattern bg) |
+| header, | |
+| groups, | |
+| profile, | |
+| version) | |
 +------------+-------------------------------------+
 ```
 
 ### 4.2 Mobile
 ```
 +-----------------------------+
-| TopBar: ≡ · Dashboard ·    |
+| TopBar: ≡ · Dashboard · |
 +-----------------------------+
-|                             |
-|  Content area               |
-|                             |
+| |
+| Content area |
+| |
 +-----------------------------+
-| Home · Peta · Aset ·  ·  | ← BottomNav
+| Home · Peta · Aset ·  · | ← BottomNav
 +-----------------------------+
 ```
 Hamburger buka sidebar full-height overlay. Aset/Tools buka BottomSheet.

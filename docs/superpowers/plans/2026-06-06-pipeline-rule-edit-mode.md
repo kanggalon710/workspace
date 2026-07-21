@@ -126,8 +126,8 @@ export function ruleToDraft(r: RuleWithMaps): RuleDraft {
 
 /** Validate a draft and build the create/update request body. Single source of truth. */
 export function draftToPayload(d: RuleDraft):
-  | { ok: true; payload: Record<string, any> }
-  | { ok: false; error: string } {
+ | { ok: true; payload: Record<string, any> }
+ | { ok: false; error: string } {
   let triggerPart: Record<string, any>;
   if (d.triggerType === "stage_enter") {
     if (!d.triggerStageId) return { ok: false, error: "Pilih stage trigger" };

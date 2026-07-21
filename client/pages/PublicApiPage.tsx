@@ -549,10 +549,10 @@ function DocsDialog({ open, onClose, baseUrl }: any) {
             <CodeBlock code={`${baseUrl}/api/public/v1`} />
           </Section>
 
-          <Section title="3. Endpoint Utama - Marketing Bundle ">
+          <Section title="3. Endpoint Utama - Marketing Bundle">
             <p className="text-muted-foreground mb-2 text-xs">Untuk analisis AI harian, fokus di <strong>marketing:read</strong> - endpoint-nya sudah dense dan pre-analyzed.</p>
             <div className="space-y-2 text-xs">
-              <EndpointRow method="GET" path="/marketing/overview" desc=" Dense overview untuk AI: momentum, red flags, top performer, hot spots" scope="marketing:read" />
+              <EndpointRow method="GET" path="/marketing/overview" desc="Dense overview untuk AI: momentum, red flags, top performer, hot spots" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/sessions" desc="Canvassing sessions: active, today, per-canvasser stats" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/performance" desc="Per-canvasser matrix: sessions, duration, reports, prospects" scope="marketing:read" />
               <EndpointRow method="GET" path="/marketing/canvassing/reports" desc="Field reports BI (area_sepi, kompetitor, akses_sulit, dsb)" scope="marketing:read" />

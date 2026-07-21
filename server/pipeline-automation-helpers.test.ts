@@ -85,7 +85,7 @@ test("evaluateConditions: null / empty list → always true", () => {
 });
 
 test("evaluateConditions: eq / neq / contains are case-insensitive and trimmed", () => {
-  const vals = new Map([[1, "  Tinggi "]]);
+  const vals = new Map([[1, " Tinggi "]]);
   assert.equal(evaluateConditions([{ fieldId: 1, op: "eq", value: "tinggi" }], vals), true);
   assert.equal(evaluateConditions([{ fieldId: 1, op: "neq", value: "rendah" }], vals), true);
   assert.equal(evaluateConditions([{ fieldId: 1, op: "contains", value: "ngg" }], vals), true);

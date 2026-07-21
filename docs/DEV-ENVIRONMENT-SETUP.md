@@ -9,9 +9,9 @@ PROD (workspace.jabnet.id)              DEV (dev.workspace.jabnet.id)
 +- App: /home/jabnet/fiber-jabnet/   +- App: /home/jabnet/dev-fiber-jabnet/
 +- DB:  jabnet_fiber                 +- DB:  jabnet_fiber_dev
 +- Env: /home/jabnet/private/        +- Env: /home/jabnet/private/
-|       fiber-jabnet/config/.env     |       fiber-jabnet-dev/config/.env
+| fiber-jabnet/config/.env | fiber-jabnet-dev/config/.env
 +- Uploads: /home/jabnet/private/    +- Uploads: SYMLINK → prod uploads/
-|           fiber-jabnet/uploads/    |           (read-only via env flag)
+| fiber-jabnet/uploads/ | (read-only via env flag)
 +- Branch: main                      +- Branch: dev
 +- MPWA + billing: ENABLED           +- MPWA + billing: DISABLED (env flag)
 ```

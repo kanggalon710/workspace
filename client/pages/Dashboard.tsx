@@ -176,28 +176,28 @@ export default function Dashboard() {
   // -- APLIKASIKAN GLOBAL FILTER PADA METRIK LOKAL --
   const odpListRaw = odpUtil?.odps || [];
   const filteredCustomers = customers ? (globalDistrict !== "__all__" ? customers.filter((c: any) => c.district?.trim() === globalDistrict) : customers) : [];
-  
+
   const totalCustomersCount = globalDistrict !== "__all__" ? filteredCustomers.length : data.totalCustomers;
   // Customer status
   const inactiveCustomers = Math.max(0, totalCustomersCount - activeCustomers - isolirCustomers);
 
   const odpList = globalDistrict !== "__all__" ? odpListRaw.filter((o: any) => o.district?.trim() === globalDistrict) : odpListRaw;
   const avgOdpUtil = odpList.length ? Math.round(odpList.reduce((s, o) => s + (o.usedPct || 0), 0) / odpList.length) : 0;
-  
+
   const activeCustPct = totalCustomersCount > 0 ? (activeCustomers / totalCustomersCount) * 100 : 0;
-  
+
   // -- New Network Health Score Logic --
   const odpUtilScore = (avgOdpUtil / 100) * 30; // max 30
-  
+
   const popPortAvailPct = data.totalPortUsage.total > 0 ? ((data.totalPortUsage.total - data.totalPortUsage.used) / data.totalPortUsage.total) * 100 : 0;
   const popPortScore = (popPortAvailPct / 100) * 20; // max 20
-  
+
   // Actually we don't have total feeder core in easy reach here without passing it from backend, so we compute an approximate or mock max if 0
   const feederDenominator = data.coreFeederSisa + (usedCore > 0 ? usedCore : 24);
-  const feederAvailablePct = feederDenominator > 0 ? (data.coreFeederSisa / feederDenominator) * 100 : 0; 
+  const feederAvailablePct = feederDenominator > 0 ? (data.coreFeederSisa / feederDenominator) * 100 : 0;
   const cFeeder = (feederAvailablePct / 100) * 25; // max 25
 
-  const dataCompletePct = 85; 
+  const dataCompletePct = 85;
   const cData = (dataCompletePct / 100) * 15; // max 15
 
   const cCore = (activeCustPct / 100) * 10; // max 10
@@ -215,7 +215,7 @@ export default function Dashboard() {
   // Alerts computation
   const odpBelowTarget = odpList.filter(o => o.usedPct < 50);
   const alerts = [];
-  
+
   if (data.odpKritisCount > 0) {
     alerts.push({ type: "danger" as const, icon: AlertTriangle, msg: `${data.odpKritisCount} ODP mencapai kapasitas kritis (>80%)`, route: "/odps", color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900" });
   }
@@ -351,7 +351,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className={`md:col-span-1 border-primary/20 transition-all ${showScoreDetails ? 'row-span-2' : ''} bg-gradient-to-br from-primary/10 via-background to-background`}>
           <CardContent className="p-5 flex flex-col h-full">
-            <div 
+            <div
               className="flex justify-between items-center cursor-pointer mb-2 group"
               onClick={() => setShowScoreDetails(!showScoreDetails)}
             >
@@ -360,7 +360,7 @@ export default function Dashboard() {
               </h2>
               {showScoreDetails ? <ChevronUp className="h-4 w-4 text-muted-foreground group-hover:text-primary" /> : <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary" />}
             </div>
-            
+
             <div className="flex items-center gap-5 mt-2">
               <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -419,10 +419,10 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* -- ALERT CENTER & DECISION PANEL -- */}
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-5 gap-4">
-          
+
           {/* ALERT CENTER (60%) */}
           <Card className="md:col-span-3 border-slate-200 dark:border-slate-800 flex flex-col h-full rounded-xl">
             <CardHeader className="pb-3 pt-4 px-5 flex flex-row items-center justify-between space-y-0 relative">
@@ -581,10 +581,10 @@ export default function Dashboard() {
             { label: "OTB", value: otbs?.length ?? 0, icon: Server, color: "text-cyan-500", bg: "bg-cyan-500/10", sub: "Optical Term. Box" },
             { label: "Bestray", value: bestrays?.length ?? 0, icon: Rows3, color: "text-indigo-500", bg: "bg-indigo-500/10", sub: "Slot ODC" },
             { label: "Splitter", value: splitters?.length ?? 0, icon: Split, color: "text-amber-500", bg: "bg-amber-500/10", sub: "Passive splitter" },
-            { 
-              label: "Koneksi Core", value: coreConnections?.length ?? 0, icon: Link2, 
-              color: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "text-red-500" : "text-emerald-500", 
-              bg: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "bg-red-500/10" : "bg-emerald-500/10", 
+            {
+              label: "Koneksi Core", value: coreConnections?.length ?? 0, icon: Link2,
+              color: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "text-red-500" : "text-emerald-500",
+              bg: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "bg-red-500/10" : "bg-emerald-500/10",
               sub: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "Integrasi Core Kosong!" : "Sambungan core aktif",
               alert: (coreConnections?.length === 0 && (odps?.length || 0) > 0)
             },
@@ -624,7 +624,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} className="stroke-muted" />
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={80} />
-                  <Tooltip 
+                  <Tooltip
                     cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
@@ -682,7 +682,7 @@ export default function Dashboard() {
                 <div className={`h-full ${corePercent > 80 ? 'bg-emerald-500' : corePercent > 50 ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${corePercent}%` }} />
               </div>
             </div>
-            
+
             <div className="space-y-3 mt-6">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Breakdown per Segmen</p>
               {cableCoreData.map((seg, i) => (
@@ -697,7 +697,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-6 pt-3 border-t">
               <p className="text-[11px] font-medium flex items-center gap-1.5">
                 {corePercent > 80 ? (
@@ -738,12 +738,12 @@ export default function Dashboard() {
                    </div>
                  );
                })}
-               
+
                <div className="flex justify-between text-sm font-bold pt-4 mt-2 border-t">
                  <span>Total Panjang</span>
                  <span>{formatMeters(cableMeters.total)}</span>
                </div>
-               
+
                {cableMeters.drop === 0 ? (
                  <div className="mt-4 bg-amber-50 dark:bg-amber-950/30 text-amber-600 border border-amber-200 dark:border-amber-800 rounded px-2 py-2 flex items-start gap-2 text-xs font-medium">
                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
@@ -788,7 +788,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* OTB Breakdown Table */}
                 <div className="md:col-span-2 overflow-x-auto text-sm pt-2 md:pt-0">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Distribusi per OTB</p>
@@ -805,7 +805,7 @@ export default function Dashboard() {
                       {(otbs || []).slice(0, 4).map((otb, i) => {
                         const cap = otb.totalCores || 144;
                         // Determine random usage for visual since `usedPorts` isn't directly on `otb` query here
-                        const used = Math.floor(cap * (0.3 + (i * 0.15))); 
+                        const used = Math.floor(cap * (0.3 + (i * 0.15)));
                         const pct = Math.round((used / cap) * 100);
                         const statusColor = pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-amber-500' : 'bg-green-500';
                         const statusText = pct > 80 ? 'Kritis' : pct > 50 ? 'Warning' : 'Aman';
@@ -1085,7 +1085,7 @@ export default function Dashboard() {
                               </td>
                               <td className="px-3 py-2.5 text-center">{validationBadge}</td>
                               <td className="px-3 py-2.5 text-center">
-                                <button 
+                                <button
                                   onClick={() => setLocation(`/map?focus=odp-${odp.id}&lat=${odp.lat}&lng=${odp.lng}`)}
                                   className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 transition-colors px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100"
                                 >
@@ -1213,10 +1213,10 @@ export default function Dashboard() {
                         const odpCount = odpByDistrict.get(district) ?? 0;
                         const odpCap = odpCapByDistrict.get(district) ?? 0;
                         const pct = Math.round((cust / maxCust) * 100);
-                        
+
                         // Penetrasi: Pelanggan / Total Kapasitas ODP di kecamatan tersebut
                         const penetrasiPct = odpCap > 0 ? Math.round((cust / odpCap) * 100) : 0;
-                        
+
                         const isWarning = cust > 0 && odpCount === 0;
 
                         return (
@@ -1333,7 +1333,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} domain={[0, 'auto']} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', fontSize: '12px', background: 'hsl(var(--background)/0.95)', backdropFilter: 'blur(4px)' }}
                     labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: 'hsl(var(--foreground))' }}
                   />
@@ -1344,21 +1344,21 @@ export default function Dashboard() {
                 </RechartsLineChart>
               </ResponsiveContainer>
             </div>
-            
+
             {data.rataPertumbuhanHarian > 0 && (
               <div className="mt-4 pt-3 border-t flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <Activity className="h-4 w-4 text-emerald-500" />
                 <span>
-                  Laju pertumbuhan: <strong className="text-foreground">{data.rataPertumbuhanHarian} pelanggan/hari</strong>. 
-                  {data.hariHinggaPenuh > 0 
-                     ? ` Estimasi port POP penuh dalam ~${Math.round(data.hariHinggaPenuh / 30)} bulan.` 
+                  Laju pertumbuhan: <strong className="text-foreground">{data.rataPertumbuhanHarian} pelanggan/hari</strong>.
+                  {data.hariHinggaPenuh > 0
+                     ? ` Estimasi port POP penuh dalam ~${Math.round(data.hariHinggaPenuh / 30)} bulan.`
                      : " Kapasitas saat ini kritis/penuh."}
                 </span>
               </div>
             )}
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-sm font-medium flex items-center justify-between gap-2">

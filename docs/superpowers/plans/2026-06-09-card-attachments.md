@@ -105,8 +105,8 @@ export function fileExt(name: string): string {
 }
 
 export type AttachmentValidation =
-  | { ok: true; ext: string; mime: string; kind: "image" | "file" }
-  | { ok: false; error: string };
+ | { ok: true; ext: string; mime: string; kind: "image" | "file" }
+ | { ok: false; error: string };
 
 /** Validate by EXTENSION (browser mime is unreliable for zip/docx/xlsx). */
 export function validateAttachment(name: string, sizeBytes: number): AttachmentValidation {
@@ -193,7 +193,7 @@ export function buildAttachmentPath(slug: string, idHint: number | string, ext: 
 }
 
 /** Persist an already-buffered upload under the per-mitra pipeline dir.
- *  Returns the relative path. Honors UPLOADS_READ_ONLY like saveBase64Photo. */
+ * Returns the relative path. Honors UPLOADS_READ_ONLY like saveBase64Photo. */
 export async function saveUploadedFile(
   slug: string, idHint: number | string, buf: Buffer, ext: string,
 ): Promise<string> {
@@ -414,7 +414,7 @@ export interface ParsedFile { fieldName: string; fileName: string; mimeType: str
 export interface ParsedMultipart { files: ParsedFile[]; fields: Record<string, string> }
 
 /** Parse a multipart/form-data request into in-memory files + fields.
- *  Aborts with an error if any single file exceeds maxBytes (no temp files). */
+ * Aborts with an error if any single file exceeds maxBytes (no temp files). */
 export function parseMultipart(req: Request, opts: { maxBytes: number; maxFiles?: number }): Promise<ParsedMultipart> {
   return new Promise((resolve, reject) => {
     let bb;

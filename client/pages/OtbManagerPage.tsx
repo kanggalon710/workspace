@@ -264,8 +264,8 @@ function WorkflowGuide() {
             </CardTitle>
           </div>
           <button className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 p-1 rounded-full transition-colors">
-            <svg 
-              className={`h-4 w-4 transform transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`} 
+            <svg
+              className={`h-4 w-4 transform transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -273,7 +273,7 @@ function WorkflowGuide() {
           </button>
         </div>
       </CardHeader>
-      
+
       <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
         <CardContent>
           <div className="flex flex-wrap items-center gap-2">

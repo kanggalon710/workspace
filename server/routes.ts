@@ -8624,7 +8624,7 @@ router.post("/api/teamspace/cheers", async (req, res) => {
   const cardId = req.body?.cardId ? Number(req.body.cardId) : null;
   const cheer = await storage.createCheer(req.authUser!.id, toUserId, message, cardId);
   await storage.createNotification({
-    userId: toUserId, type: "cheers_received", title: " Kamu dapat Cheers!",
+    userId: toUserId, type: "cheers_received", title: "Kamu dapat Cheers!",
     message: `${req.authUser!.name}: "${message.slice(0, 80)}"`,
     link: "/teamspace/cheers", entityType: "cheer", entityId: cheer.id,
     fromUserId: req.authUser!.id,

@@ -620,12 +620,12 @@ export function PipelineRulesDialog({
                   <FormField label="Batasan stage (opsional)" htmlFor="rule-scope-stage" hint="Kosongkan untuk berlaku di semua stage.">
                     <Combobox
                       options={[
-                        { value: "", label: "- semua stage -" },
+                        { value: "", label: "semua stage" },
                         ...selfStages.map((s) => ({ value: String(s.id), label: s.label })),
                       ]}
                       value={scopeStageId}
                       onChange={(v) => setScopeStageId(v)}
-                      placeholder="- semua stage -"
+                      placeholder="semua stage"
                       searchPlaceholder="Cari stage…"
                     />
                   </FormField>
@@ -720,12 +720,12 @@ export function PipelineRulesDialog({
                   <FormField label="Stage saat selesai/resolve (opsional)" htmlFor="rule-billing-resolve-stage" hint="Stage yang dituju saat pelanggan sudah tidak cocok filter. Kosongkan untuk abaikan.">
                     <Combobox
                       options={[
-                        { value: "", label: "- Abaikan / none -" },
+                        { value: "", label: "Abaikan / none" },
                         ...selfStages.map((s) => ({ value: String(s.id), label: s.label })),
                       ]}
                       value={billingResolveStageId}
                       onChange={(v) => setBillingResolveStageId(v)}
-                      placeholder="- Abaikan / none -"
+                      placeholder="Abaikan / none"
                       searchPlaceholder="Cari stage…"
                     />
                   </FormField>
@@ -819,12 +819,12 @@ export function PipelineRulesDialog({
                 >
                   <Combobox
                     options={[
-                      { value: "", label: "- Semua field -" },
+                      { value: "", label: "Semua field" },
                       ...sourceFields.map((f) => ({ value: String(f.id), label: f.label })),
                     ]}
                     value={fieldUpdatedFieldId}
                     onChange={(v) => setFieldUpdatedFieldId(v)}
-                    placeholder="- Semua field -"
+                    placeholder="Semua field"
                     searchPlaceholder="Cari field…"
                   />
                 </FormField>

@@ -105,7 +105,7 @@ Expected: FAIL - module not found.
 ```ts
 // shared/leadConditions.ts
 /** Pure: kondisi atribut lead untuk rule lead-trigger. No DB, no I/O.
- *  Extend pola source:"billing" → source:"lead", dievaluasi terhadap objek lead saat intake. */
+ * Extend pola source:"billing" → source:"lead", dievaluasi terhadap objek lead saat intake. */
 import type { RuleConditionOp, RuleCondition } from "./schema.js";
 import { canonicalLeadSource } from "./leadSources.js";
 import type { IntakeLead } from "./leadIntake.js";
@@ -164,7 +164,7 @@ export function compareLeadAttr(lead: IntakeLead, attr: string, op: RuleConditio
 }
 
 /** OR-of-AND terhadap lead. Group kosong/none → true. Hanya menilai kondisi source:"lead"
- *  (kondisi non-lead di rule lead dianggap true - UI me-restrict ke lead, ini guard defensif). */
+ * (kondisi non-lead di rule lead dianggap true - UI me-restrict ke lead, ini guard defensif). */
 export function evaluateLeadConditionGroups(groups: RuleCondition[][], lead: IntakeLead): boolean {
   if (!groups || groups.length === 0) return true;
   return groups.some((g) => g.every((c) => {

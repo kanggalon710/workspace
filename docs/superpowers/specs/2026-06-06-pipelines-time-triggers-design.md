@@ -202,7 +202,7 @@ No in-process interval (Passenger spin-down + prod `WORKERS_ENABLED=false` make
 ## 6. UI - `client/components/pipelines/PipelineRulesDialog.tsx`
 
 - New **"Pemicu"** selector at the top of the create form: `Saat masuk stage` (default)
-  | `Berbasis waktu`.
+ | `Berbasis waktu`.
 - `stage_enter` → existing trigger-stage picker (unchanged).
 - `time` → fields: **anchor** select; when `field_date`, a field Combobox filtered to
   `type === "date"`; **offset** (N number + unit `jam`/`hari` + arah `sebelum`/`sesudah`);

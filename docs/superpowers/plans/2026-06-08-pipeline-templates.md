@@ -109,9 +109,9 @@ Create `shared/pipelineTemplate.ts`:
 
 ```ts
 /** Pure transforms for pipeline templates. No DB, no I/O.
- *  Stage/field references are stored in templates by stable key (stage_<i>/field_<i>) and remapped
- *  to fresh DB ids on instantiation. The same rewrite runs in both directions (snapshot vs apply),
- *  so they are inverses. */
+ * Stage/field references are stored in templates by stable key (stage_<i>/field_<i>) and remapped
+ * to fresh DB ids on instantiation. The same rewrite runs in both directions (snapshot vs apply),
+ * so they are inverses. */
 
 export interface TemplateDefinition {
   pipeline: { name: string; description: string | null; color: string; icon: string | null };
@@ -128,7 +128,7 @@ export interface TemplateRule {
 type Mapper = (v: any) => any; // field/stage id<->key in one direction
 
 /** Rewrite the field/stage refs inside a config JSON string (visibleWhen/requiredWhen condition groups).
- *  mapField/mapStage map a single ref value in the desired direction; other config keys are untouched. */
+ * mapField/mapStage map a single ref value in the desired direction; other config keys are untouched. */
 function rewriteConfigRefs(config: string | null, mapField: Mapper, mapStage: Mapper): string | null {
   if (!config) return config;
   let obj: any;

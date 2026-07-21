@@ -85,7 +85,7 @@ Expected: FAIL (module not found)
 ```ts
 // shared/customerStatus.ts
 /** Pure classification of a customer's connection status for badges/metrics.
- *  Shared client + server (ODP detail panel, map, counts). No React, no DB. */
+ * Shared client + server (ODP detail panel, map, counts). No React, no DB. */
 
 export type CustomerConnStatus = "active" | "isolir" | "suspend" | "terminated" | "unknown";
 
@@ -192,8 +192,8 @@ Run: `npx tsx --test shared/opticalPower.test.ts` → FAIL (module not found)
 ```ts
 // shared/opticalPower.ts
 /** Pure optical-power (dBm) classification. Thresholds are CONFIGURABLE per ISP via
- *  app_settings (optical_rx_warn / optical_rx_crit) - never hardcode in UI; defaults
- *  mirror the legacy hardcoded values (-25 / -28) used by GenieACS page + portal. */
+ * app_settings (optical_rx_warn / optical_rx_crit) - never hardcode in UI; defaults
+ * mirror the legacy hardcoded values (-25 / -28) used by GenieACS page + portal. */
 
 export type OpticalLevel = "good" | "warn" | "crit" | "unknown";
 export type OpticalThresholds = { warn: number; crit: number };
@@ -251,15 +251,15 @@ The existing RX block is:
 ```ts
   let rxPower = "";
   const rxRaw = val(raw, "VirtualParameters.RXPower")
-    || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.RXPower");
+ || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.RXPower");
 ```
 Directly AFTER that whole rx block (after `rxPower` is assigned), add:
 ```ts
   // TX power - same decode rule as RX (value > 100 → (n/100) - 40 dBm)
   let txPower = "";
   const txRaw = val(raw, "VirtualParameters.TXPower")
-    || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.TXPower")
-    || val(raw, "InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower");
+ || val(raw, "InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.TXPower")
+ || val(raw, "InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower");
   if (txRaw !== undefined && txRaw !== null && txRaw !== "") {
     const num = Number(txRaw);
     if (Number.isFinite(num)) {
@@ -336,7 +336,7 @@ test("no match → null device", () => {
 ```ts
 // server/ont-match.ts
 /** DRY device↔customer matching shared by /api/customers/ont-status (all customers)
- *  and /api/odps/:id/ont-status (per-ODP panel). Pure - testable without GenieACS. */
+ * and /api/odps/:id/ont-status (per-ODP panel). Pure - testable without GenieACS. */
 import type { ParsedDevice } from "./genieacs.js";
 
 export type DeviceIndexes = {
@@ -503,7 +503,7 @@ Place after the ODP photos routes block:
 
 ```ts
 /** GET /api/odps/:id/detail - mini-dashboard ODP (lazy, dipanggil saat klik di map).
- *  DB-only supaya cepat; data ACS dipisah di /ont-status. */
+ * DB-only supaya cepat; data ACS dipisah di /ont-status. */
 router.get("/api/odps/:id/detail", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
   try {
@@ -548,7 +548,7 @@ Check `storage.getOdp` exists (`grep -n "async getOdp(" server/storage.ts`) - if
 
 ```ts
 /** GET /api/odps/:id/ont-status - optical power ONT semua pelanggan satu ODP.
- *  Device list GenieACS di-cache 60s per-mitra (klik ODP berurutan tidak refetch ACS). */
+ * Device list GenieACS di-cache 60s per-mitra (klik ODP berurutan tidak refetch ACS). */
 router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
   try {
@@ -624,7 +624,7 @@ Imports to add at top of routes.ts: `import { DEFAULT_OPTICAL_THRESHOLDS, type O
 Place next to `/api/map-data/infra` (~routes.ts:2414):
 ```ts
 /** GET /api/map-data/customer-search?q= - cari pelanggan di luar viewport untuk map search.
- *  Hasil menyertakan odpId supaya search bisa menampilkan relasi pelanggan→ODP. */
+ * Hasil menyertakan odpId supaya search bisa menampilkan relasi pelanggan→ODP. */
 router.get("/api/map-data/customer-search", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "map")) return;
   try {
@@ -909,7 +909,7 @@ import { CapacityIndicator } from "./CapacityIndicator";
 import { OdpCustomerList } from "./OdpCustomerList";
 
 /** Shell panel detail aset map - responsive (BottomSheet di mobile, Dialog di desktop).
- *  Generik: aset lain (ODC/OLT/FAT) tinggal pakai shell yang sama tanpa redesign. */
+ * Generik: aset lain (ODC/OLT/FAT) tinggal pakai shell yang sama tanpa redesign. */
 export function MapAssetPanel({ open, onClose, isMobile, title, subtitle, children }: {
   open: boolean; onClose: () => void; isMobile: boolean;
   title: string; subtitle?: string; children: React.ReactNode;

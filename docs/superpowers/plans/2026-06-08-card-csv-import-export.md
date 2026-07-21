@@ -121,7 +121,7 @@ export function buildExportColumns(fields: CsvField[]): ExportColumn[] {
 }
 
 /** Flat row keyed by ExportColumn keys. Custom field values are the RAW stored string (round-trip-safe);
- *  only stage/assignee are resolved (passed in by the caller). */
+ * only stage/assignee are resolved (passed in by the caller). */
 export function formatCardForExport(
   card: { title: string; priority: string; createdAt: string; values?: Record<number, string> },
   fields: CsvField[],

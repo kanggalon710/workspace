@@ -87,7 +87,7 @@ Run: `npx tsx --test shared/chatwootMappers.test.ts`  → FAIL (module not found
 ```ts
 // shared/chatwootMappers.ts
 /** Pure mappers: raw Chatwoot NBI payloads → stable Workspace DTOs. No I/O - testable.
- *  Chatwoot shapes vary by version; access defensively. */
+ * Chatwoot shapes vary by version; access defensively. */
 
 export type Inbox = { id: number; name: string; channelType: string | null };
 export type ConversationSummary = {

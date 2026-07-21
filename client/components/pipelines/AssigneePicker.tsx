@@ -58,7 +58,7 @@ export function AssigneePicker(props: SingleProps | MultiProps) {
   if (props.mode === "single") {
     const excl = new Set(props.excludeIds ?? []);
     const options = [
-      ...(props.includeUnassign ? [{ value: "__unassign__", label: "- Kosongkan (unassign) -" }] : []),
+      ...(props.includeUnassign ? [{ value: "__unassign__", label: "Kosongkan (unassign)" }] : []),
       ...list.filter((u) => !excl.has(u.id)).map((u) => ({ value: String(u.id), label: labelFor(u, effectiveCross), description: u.role || undefined })),
     ];
     return (

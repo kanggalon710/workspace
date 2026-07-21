@@ -388,8 +388,8 @@ Insert after the existing cancel/reject methods:
   }
 
   /** Soft delete redemption - block status 'active'.
-   *  Pending → auto-refund poin sebelum soft-delete.
-   *  Cancelled/expired/rejected → langsung soft-delete (sudah di-refund saat lifecycle action). */
+   * Pending → auto-refund poin sebelum soft-delete.
+   * Cancelled/expired/rejected → langsung soft-delete (sudah di-refund saat lifecycle action). */
   async softDeletePointRedemption(
     id: number,
     staffUserId: number,
@@ -489,7 +489,7 @@ Insert the 4 new methods after the existing tier/refresh-level methods (consolid
 
 ```ts
   /** Atomic points adjust dengan reason - block kalau result < 0.
-   *  Tulis row di point_transactions source='manual_adjust'. */
+   * Tulis row di point_transactions source='manual_adjust'. */
   async adjustSahabatPoints(
     customerId: number,
     delta: number,

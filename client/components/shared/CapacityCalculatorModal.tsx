@@ -18,7 +18,7 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
   const totalCapacity = odpsInDistrict.reduce((acc, o) => acc + (o.capacity || 0), 0);
   const totalUsed = odpsInDistrict.reduce((acc, o) => acc + ((o as any).usedPorts || 0), 0);
   const availablePorts = totalCapacity - totalUsed;
-  
+
   const projectedRemaining = availablePorts - targetCustomers;
   const isDanger = projectedRemaining < 0;
 
@@ -37,7 +37,7 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
             Simulasi Kapasitas Area
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4 mt-2">
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Target Area Eksspansi (Kecamatan)</label>
@@ -55,9 +55,9 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Target Penambahan Pelanggan Baru</label>
-            <Input 
-              type="number" 
-              value={targetCustomers} 
+            <Input
+              type="number"
+              value={targetCustomers}
               onChange={(e) => setTargetCustomers(parseInt(e.target.value) || 0)}
               min={1}
             />
@@ -66,7 +66,7 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
           {district && (
             <div className="mt-6 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-in fade-in duration-300">
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 border-b pb-2">Hasil Prediksi</h4>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-[10px] text-muted-foreground">Kapasitas Port Saat Ini</p>
@@ -79,15 +79,15 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
               </div>
 
               <div className={`mt-2 p-3 rounded-md flex items-start gap-3 border transition-colors duration-300 ${
-                isDanger 
-                  ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900 dark:text-red-400' 
+                isDanger
+                  ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900 dark:text-red-400'
                   : 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-400'
               }`}>
                 {isDanger ? <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" /> : <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />}
                 <div>
                   <p className="font-bold text-sm">{isDanger ? 'Bahaya (Kapasitas Kurang)' : 'Aman (Kapasitas Cukup)'}</p>
                   <p className="text-xs mt-1 leading-snug opacity-90">
-                    {isDanger 
+                    {isDanger
                       ? `Target penetrasi melebihi kapasitas yang ada! Anda kekurangan ${Math.abs(projectedRemaining)} port. Segera rencanakan pemasangan ODP baru di ${district}.`
                       : `Akses target pelanggan baru bisa terpenuhi langsung. Sisa port kosong di wilayah ini setelah ekspansi: ${projectedRemaining} port.`}
                   </p>

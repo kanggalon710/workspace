@@ -1379,10 +1379,10 @@ git commit -m "cleanup: mark legacy /api/map-data as deprecated"
 # Self-Review Checklist (writing-plans)
 
 **Spec coverage:**
--  Phase A indexes - Task A1 (A2 optional)
--  Phase B query refactor - Tasks B1, B2, B3
--  Phase C map viewport - Tasks C1, C2, C3 (optional), C4 deploy
--  Phase D keep-alive/cache/skeleton - Tasks D1, D2, D3 (optional), D4, D5
+- Phase A indexes - Task A1 (A2 optional)
+- Phase B query refactor - Tasks B1, B2, B3
+- Phase C map viewport - Tasks C1, C2, C3 (optional), C4 deploy
+- Phase D keep-alive/cache/skeleton - Tasks D1, D2, D3 (optional), D4, D5
 
 **Placeholder scan:** None - all code blocks have concrete code.
 

@@ -128,7 +128,7 @@ export function RuleActionEditor(props: {
             hint="Kosong = kartu independen. Pilih relasi agar kartu baru tertaut ke entitas yang sama (muncul di 'Kartu Terkait').">
             <Combobox
               options={[
-                { value: "", label: "- Tidak tertaut -" },
+                { value: "", label: "Tidak tertaut" },
                 { value: "mirror", label: "Mirror" },
                 { value: "duplicate", label: "Duplikat" },
                 { value: "linked", label: "Tertaut" },
@@ -136,7 +136,7 @@ export function RuleActionEditor(props: {
               ]}
               value={value.relationType}
               onChange={(v) => patch({ relationType: v })}
-              placeholder="- Tidak tertaut -"
+              placeholder="Tidak tertaut"
             />
           </FormField>
           {value.relationType && (

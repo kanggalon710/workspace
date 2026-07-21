@@ -73,11 +73,11 @@ export const WRITEOFF_ACTIONS: { action: WriteoffAction; label: string }[];
 export interface StageMapRow { minOverdueDays: number; maxOverdueDays: number | null; stageId: number; position: number; }
 
 /** Validate the map: each row min>=0, max null or >=min; rows must not overlap once sorted by min.
- *  Returns null if ok, else an Indonesian error string. */
+ * Returns null if ok, else an Indonesian error string. */
 export function validateStageMap(rows: StageMapRow[]): string | null;
 
 /** Pure resolver used by SP3: the stageId whose [min,max] (max null = open-ended) contains daysOverdue.
- *  Picks the row with the highest matching min (most specific). null if none match. */
+ * Picks the row with the highest matching min (most specific). null if none match. */
 export function stageForOverdue(rows: StageMapRow[], daysOverdue: number): number | null;
 
 export interface CollectionConfigInput {
@@ -92,9 +92,9 @@ export interface CollectionConfigInput {
   writeoffRuleId: number | null;
 }
 /** Enum + numeric sanity: thresholds non-negative ints; writeoffThreshold (if set) >= entryThreshold;
- *  entryMode ∈ ENTRY_MODES; writeoffAction ∈ WRITEOFF_ACTIONS; if writeoffAction=move_stage and a write-off
- *  threshold is set, writeoffStageId required. Returns null or an error string. (Stage-id existence is
- *  checked at the route against the pipeline's stages - not here, since this module has no DB.) */
+ * entryMode ∈ ENTRY_MODES; writeoffAction ∈ WRITEOFF_ACTIONS; if writeoffAction=move_stage and a write-off
+ * threshold is set, writeoffStageId required. Returns null or an error string. (Stage-id existence is
+ * checked at the route against the pipeline's stages - not here, since this module has no DB.) */
 export function validateCollectionConfig(cfg: CollectionConfigInput): string | null;
 ```
 

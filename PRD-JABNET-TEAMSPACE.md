@@ -18,13 +18,13 @@ Audit codebase v4.3.0 menunjukkan JABNET Workspace **sudah memiliki** sebagian b
 | 1 | Autentikasi & profil (FR-1xx) | **[REUSE]** | Staff token auth, `users` table, ProfilePage, avatar, roles |
 | 2 | Perusahaan multi-tenant (FR-2xx) | **[DROP]** sebagian | Single company. Kolom `mitraId` sudah ada di semua tabel (multi-tenant-lite) - cukup, JANGAN bangun company switcher |
 | 3 | Struktur Tim/Workspace (FR-3xx) | **[NEW]** | Entitas `teams` baru; tapi board tugasnya = pipeline eksisting |
-| 4 | Manajemen Tugas/Kanban (FR-4xx) | **[REUSE+EXTEND]**  | Engine pipeline SUDAH LENGKAP: `pipelines`, `pipelineStages`, `pipelineCards`, multi-assignee, followers, komentar bertipe, attachment (card+comment), custom fields + conditional visibility, template, automation rules, capabilities per role, metrics. Gap yang dibangun: checklist, label berwarna, recurring, private card, cover, view List/Kalender/Tabel, Semua Tugas |
+| 4 | Manajemen Tugas/Kanban (FR-4xx) | **[REUSE+EXTEND]** | Engine pipeline SUDAH LENGKAP: `pipelines`, `pipelineStages`, `pipelineCards`, multi-assignee, followers, komentar bertipe, attachment (card+comment), custom fields + conditional visibility, template, automation rules, capabilities per role, metrics. Gap yang dibangun: checklist, label berwarna, recurring, private card, cover, view List/Kalender/Tabel, Semua Tugas |
 | 5 | Chat Grup (FR-5xx) | **[NEW]** | Belum ada; pola polling + pause-on-blur sudah jadi konvensi app |
 | 6 | Pengumuman (FR-6xx) | **[EXTEND]** | `announcements` sudah ada (kategori, severity, pin, draft). Gap: penerima terpilih, toggle Rahasia, expiry otomatis, scoping per tim |
 | 7 | Jadwal/Kalender (FR-7xx) | **[NEW]** | `SlaCalendarPage` ada sebagai precedent UI kalender; event tim + iCal feed dibangun baru |
-| 8 | Pertanyaan/Check-in (FR-8xx) | **[NEW]**  | Worker pattern ada (`billing-sync-worker`); pengiriman via **WhatsApp MPWA eksisting** - keunggulan yang Cicle tidak punya |
+| 8 | Pertanyaan/Check-in (FR-8xx) | **[NEW]** | Worker pattern ada (`billing-sync-worker`); pengiriman via **WhatsApp MPWA eksisting** - keunggulan yang Cicle tidak punya |
 | 9 | Dokumen & File (FR-9xx) | **[NEW]** | Infra upload lengkap (`server/uploads.ts`, `multipart.ts`, `JABNET_UPLOAD_ROOT`) |
-| 10 | Laporan Kinerja + AI (FR-10xx) | **[EXTEND]**  | `/api/users/:id/stats` (productivity counters), `kpiSnapshots`, `pipelineMetrics` sudah ada. Gabungkan metrik tugas internal + metrik ops (tiket, lead, collection, canvassing) → laporan yang JAUH lebih terukur daripada Cicle |
+| 10 | Laporan Kinerja + AI (FR-10xx) | **[EXTEND]** | `/api/users/:id/stats` (productivity counters), `kpiSnapshots`, `pipelineMetrics` sudah ada. Gabungkan metrik tugas internal + metrik ops (tiket, lead, collection, canvassing) → laporan yang JAUH lebih terukur daripada Cicle |
 | 11 | Log Aktivitas (FR-11xx) | **[REUSE]** | `auditLogs` + `pipelineCardActivity` + AuditLogPage sudah ada; tambah event types + filter tim |
 | 12 | Notifikasi (FR-12xx) | **[EXTEND]** | `notifications` table + NotificationBell (poll 30s) sudah ada; tambah tipe baru |
 | 13 | Cheers (FR-13xx) | **[NEW]** | Modul kecil, fase 3 |
@@ -126,11 +126,11 @@ JABNET Workspace (satu aplikasi, sidebar eksisting)
 +-  Group "TEAMSPACE" (permission-filtered, seperti group lain)
     +- Semua Tugas            /teamspace/tasks        (agregasi lintas tim: List/Kalender/Tabel)
     +- Tim Saya               /teamspace/teams        (grid tim yang saya ikuti + arsip)
-    |   +- Halaman Tim        /teamspace/teams/:id    (tab layout, view bisa di-pin/urut ulang):
-    |       1. Ringkasan   2. Tugas (Kanban/List/Kalender/Tabel)
-    |       3. Chat        4. Dokumen & File
-    |       5. Pengumuman  6. Jadwal
-    |       7. Pertanyaan  + tetap: Kinerja, Pengaturan Tim
+ | +- Halaman Tim        /teamspace/teams/:id    (tab layout, view bisa di-pin/urut ulang):
+ | 1. Ringkasan   2. Tugas (Kanban/List/Kalender/Tabel)
+ | 3. Chat        4. Dokumen & File
+ | 5. Pengumuman  6. Jadwal
+ | 7. Pertanyaan  + tetap: Kinerja, Pengaturan Tim
     +- Laporan Kinerja        /teamspace/performance  (lintas tim, filter periode/anggota/tim)
     +- Cheers                 /teamspace/cheers       (fase 3)
 
@@ -372,8 +372,8 @@ Alasan: §0. Tidak ada tabel, endpoint, atau UI yang dibangun.
 | NFR-008 | Accessibility | Status tidak pernah warna-saja: StatusBadge selalu ikon+teks (pola eksisting) |
 | NFR-009 | Data portability | Export CSV tugas (reuse `cardCsv.ts` eksisting!) + dokumen (markdown mentah) - anti lock-in versi sendiri |
 | NFR-010 | Kompatibilitas | Browser modern 2 tahun; mobile-first WAJIB pakai pola eksisting: full-bleed `-m-4 md:-m-6`, sticky `pt-16 md:pt-6`, filter pills scroll-x, BottomNav, BottomSheet. Bundle: modul berat (kalender, editor) = lazy route + chunk terpisah (jaga main bundle ~170KB) |
-| NFR-011  | Testabilitas | Logika murni (formula skor, recurrence, RBAC resolve, iCal builder, filter) ditulis sebagai modul pure di `shared/` dengan unit test - mengikuti konvensi repo (67+ file `*.test.ts` sudah ada) |
-| NFR-012  | Non-regresi | Pipeline ops (leads/collections) TIDAK berubah perilaku: pipeline tim dibedakan via `pipelines.teamId`, tersembunyi dari PipelinesPage ops, dan sebaliknya |
+| NFR-011 | Testabilitas | Logika murni (formula skor, recurrence, RBAC resolve, iCal builder, filter) ditulis sebagai modul pure di `shared/` dengan unit test - mengikuti konvensi repo (67+ file `*.test.ts` sudah ada) |
+| NFR-012 | Non-regresi | Pipeline ops (leads/collections) TIDAK berubah perilaku: pipeline tim dibedakan via `pipelines.teamId`, tersembunyi dari PipelinesPage ops, dan sebaliknya |
 
 ---
 
@@ -398,17 +398,17 @@ Auto-migration eksisting (`upgradePermissionsV412` pattern) otomatis grant `writ
 
 | Aksi | Administrator | `teams:write` (Admin ops) | Manager (di timnya) | Creator (item miliknya) | Member tim | Non-anggota |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Buat/arsip/edit tim apa pun |  |  |  (hanya edit timnya) | - |  |  |
-| Kelola anggota & manager satu tim |  |  |  (timnya) | - |  |  |
-| Atur view & pengaturan tim |  |  |  | - |  |  |
-| Buat/edit list & kartu |  |  |  |  (miliknya) |  (jika `team_tasks` ≥ write) |  |
-| Edit/hapus item orang lain |  |  |  (timnya) |  |  |  |
-| Tandai item Rahasia |  |  |  |  (miliknya) |  |  |
-| Lihat item Rahasia |  | hanya jika penerima | hanya jika penerima |  | hanya jika penerima |  |
-| Buat pengumuman/jadwal/pertanyaan tim |  |  |  | - |  (kecuali di-grant) |  |
-| Jawab check-in yang ditujukan padanya |  |  |  | - |  |  |
-| Lihat laporan kinerja semua tim |  | jika `performance_reports:write` |  (timnya saja) |  |  (dirinya saja) |  |
-| Chat di tim |  |  (jika anggota) |  | - |  |  |
+| Buat/arsip/edit tim apa pun | | | (hanya edit timnya) | - | | |
+| Kelola anggota & manager satu tim | | | (timnya) | - | | |
+| Atur view & pengaturan tim | | | | - | | |
+| Buat/edit list & kartu | | | | (miliknya) | (jika `team_tasks` ≥ write) | |
+| Edit/hapus item orang lain | | | (timnya) | | | |
+| Tandai item Rahasia | | | | (miliknya) | | |
+| Lihat item Rahasia | | hanya jika penerima | hanya jika penerima | | hanya jika penerima | |
+| Buat pengumuman/jadwal/pertanyaan tim | | | | - | (kecuali di-grant) | |
+| Jawab check-in yang ditujukan padanya | | | | - | | |
+| Lihat laporan kinerja semua tim | | jika `performance_reports:write` | (timnya saja) | | (dirinya saja) | |
+| Chat di tim | | (jika anggota) | | - | | |
 
 **Resolusi programatik** (modul pure `shared/teamAccess.ts` + unit test, meniru `resolvePipelineCapabilities`):
 `isAdmin → full` ▸ `teamMembers.role="manager" → kelola tim itu` ▸ `creator → full atas itemnya` ▸ `member + permission key level → aksi standar` ▸ `item Rahasia → hanya creator/penerima/admin`. Board tugas tim memakai resolusi `pipelineAccess` eksisting apa adanya, dengan manager tim diberi capabilities penuh atas pipeline timnya.
@@ -551,7 +551,7 @@ erDiagram
 | Overdue aging | daftar tugas terlambat diurut umur; penghambat = umur > threshold appSettings | idem |
 | Check-in completion | jawaban masuk ÷ (penerima × instance terkirim), per periode | `checkinResponses` |
 | Responsivitas chat | median jeda balasan pertama terhadap pesan yang me-mention (proxy sederhana v1: jumlah pesan/hari aktif) | `teamChatMessages` |
-| **Ops terpadu**  | tiket selesai + SLA on-time %, lead → converted, collection closed + nilai, canvassing reports | `tickets`, `leads`, `collections`, `canvassingLogs` (eksisting) |
+| **Ops terpadu** | tiket selesai + SLA on-time %, lead → converted, collection closed + nilai, canvassing reports | `tickets`, `leads`, `collections`, `canvassingLogs` (eksisting) |
 | Cheers diterima | count per periode | `cheers` |
 
 ### 14.3 Skor & bintang (deterministik - AI hanya merangkum, tidak menilai)

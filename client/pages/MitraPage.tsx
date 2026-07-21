@@ -849,9 +849,6 @@ function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: boolean }) 
               {availableRoles.map((r) => (
                 <SelectItem key={r.id} value={String(r.id)}>
                   {r.name}
-                  {r.name === "System-Admin" && (
-                    <span className="ml-1 text-[10px] text-destructive"></span>
-                  )}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -928,9 +925,6 @@ function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: boolean }) 
                       {availableRoles.map((r) => (
                         <SelectItem key={r.id} value={String(r.id)} className="text-xs">
                           {r.name}
-                          {r.name === "System-Admin" && (
-                            <span className="ml-1 text-[10px] text-destructive"></span>
-                          )}
                         </SelectItem>
                       ))}
                     </SelectContent>

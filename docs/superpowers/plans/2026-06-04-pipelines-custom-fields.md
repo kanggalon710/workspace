@@ -85,8 +85,8 @@ export const pipelineCardValues = mysqlTable("pipeline_card_values", {
 export type PipelineField = typeof pipelineFields.$inferSelect;
 export type PipelineCardValue = typeof pipelineCardValues.$inferSelect;
 export type PipelineFieldType =
-  | "text" | "textarea" | "number" | "currency" | "date"
-  | "dropdown" | "multiselect" | "checkbox" | "user" | "phone" | "url";
+ | "text" | "textarea" | "number" | "currency" | "date"
+ | "dropdown" | "multiselect" | "checkbox" | "user" | "phone" | "url";
 export const PIPELINE_FIELD_TYPES: PipelineFieldType[] =
   ["text","textarea","number","currency","date","dropdown","multiselect","checkbox","user","phone","url"];
 ```

@@ -10,7 +10,7 @@ const fields = [
 
 test("name from title; phone from phone field; lat/lng from coordinate field", () => {
   const values = { 10: "abaikan", 11: "08123456", 12: JSON.stringify({ lat: -7.1, lng: 107.9 }) };
-  assert.deepEqual(detectLeadPrefill("  Budi Santoso ", values, fields), {
+  assert.deepEqual(detectLeadPrefill(" Budi Santoso ", values, fields), {
     name: "Budi Santoso", phone: "08123456", lat: -7.1, lng: 107.9,
   });
 });

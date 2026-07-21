@@ -64,7 +64,7 @@ export function aggregate(values: (string | number | null | undefined)[], agg: M
 //  count = number of non-empty values; distinct = distinct non-empty; sum/avg/min/max over numeric-parsed values (0 when none)
 
 /** Format for display. currency→"Rp " + id-ID thousands (decimals default 0); percentage→value+"%"; number→id-ID.
- *  prefix/suffix wrap the formatted number; decimals overrides default. */
+ * prefix/suffix wrap the formatted number; decimals overrides default. */
 export function formatMetricValue(value: number, opts: { type: MetricType; prefix?: string | null; suffix?: string | null; decimals?: number | null }): string;
 ```
 Tests: `aggregate` (sum/avg/min/max numeric incl. non-numeric skipped; count non-empty; distinct); `formatMetricValue` (currency/percentage/number, prefix/suffix, decimals).

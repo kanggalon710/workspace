@@ -14,26 +14,26 @@ Copy file ini ke repo project baru (dengan slug yang disesuaikan).
 ```
 /home/jabnet/
 +-- repositories/                          ← semua git clone (= webroot Apache)
-|   +-- cpanel-pelanggan-db/                  project pelanggan-cpanel.jabnet.id
-|   +-- billing-app/                          contoh project depan
-|   +-- <repo-slug>/
+| +-- cpanel-pelanggan-db/                  project pelanggan-cpanel.jabnet.id
+| +-- billing-app/                          contoh project depan
+| +-- <repo-slug>/
 |
 +-- private/                               ← semua secret, di luar webroot
-|   +-- pelanggan-cpanel/
-|   |   +-- config/.env                       (chmod 600)
-|   |   +-- logs/                             (chmod 700)
-|   +-- billing-app/
-|   |   +-- config/.env
-|   |   +-- logs/
-|   +-- <project-slug>/
-|   |   +-- config/.env
-|   |   +-- logs/
-|   +-- shared/                            ← opsional: cred dipakai bareng (jarang)
-|       +-- config/.env
+| +-- pelanggan-cpanel/
+| | +-- config/.env                       (chmod 600)
+| | +-- logs/                             (chmod 700)
+| +-- billing-app/
+| | +-- config/.env
+| | +-- logs/
+| +-- <project-slug>/
+| | +-- config/.env
+| | +-- logs/
+| +-- shared/                            ← opsional: cred dipakai bareng (jarang)
+| +-- config/.env
 |
 +-- backups/                               ← dump DB & snapshot di luar webroot
-|   +-- pelanggan-cpanel/
-|   +-- <project-slug>/
+| +-- pelanggan-cpanel/
+| +-- <project-slug>/
 |
 +-- folder_proyek/                         ← DEPRECATED, jangan dipakai lagi
 ```
@@ -57,10 +57,10 @@ Copy file ini ke repo project baru (dengan slug yang disesuaikan).
 +-- frontend/                          # Next.js (kalau project punya UI)
 +-- backend/                           # PHP API (kalau project punya backend)
 +-- deploy/
-|   +-- .htaccess                      # → di-copy ke root webroot oleh GHA
-|   +-- api.htaccess                   # → di-copy ke api/ oleh GHA
+| +-- .htaccess                      # → di-copy ke root webroot oleh GHA
+| +-- api.htaccess                   # → di-copy ke api/ oleh GHA
 +-- private/
-|   +-- config/.env.example            # template, BOLEH commit
+| +-- config/.env.example            # template, BOLEH commit
 +-- .github/workflows/build.yml        # GHA: build + force-push ke branch `deploy`
 +-- .gitignore                         # block .env, node_modules, dst.
 +-- CPANEL-CONVENTIONS.md              # copy dokumen ini
@@ -84,8 +84,8 @@ deploy branch root/
 +-- index.html, _next/, <route>/...        # frontend static export
 +-- .htaccess                              # dari deploy/.htaccess
 +-- api/
-|   +-- index.php, lib/, endpoints/...     # backend PHP
-|   +-- .htaccess                          # dari deploy/api.htaccess
+| +-- index.php, lib/, endpoints/...     # backend PHP
+| +-- .htaccess                          # dari deploy/api.htaccess
 +-- .build-sha
 +-- .build-time
 ```
@@ -173,13 +173,13 @@ git push origin main  --------►   trigger GHA
                                   build (npm ci, build)
                                   compose payload
                                   force-push → deploy --►  branch `deploy` updated
-                                                                |
+ |
                                                                 ▼
                                   ◄---- click "Update from Remote" di Git VC
-                                                                |
+ |
                                                                 ▼
                                                           webroot updated (1 step)
-                                                                |
+ |
                                                                 ▼
                                                           site live
 ```

@@ -117,8 +117,8 @@ Create `shared/collectionMetrics.ts`:
 import type { RuleConditionOp } from "./schema.js";
 
 export type CollectionAttrKey =
-  | "days_overdue" | "outstanding_amount" | "invoice_due_date"
-  | "last_payment_date" | "billing_status";
+ | "days_overdue" | "outstanding_amount" | "invoice_due_date"
+ | "last_payment_date" | "billing_status";
 
 export interface CollectionAttrMeta {
   key: CollectionAttrKey;
@@ -187,7 +187,7 @@ export function attrValue(snap: CollectionSnapshot, key: CollectionAttrKey): num
 }
 
 /** Compare a snapshot attr against a rule value using an existing RuleConditionOp.
- *  Numeric attrs compare numerically; date/text compare as strings (ISO dates sort chronologically). */
+ * Numeric attrs compare numerically; date/text compare as strings (ISO dates sort chronologically). */
 export function compareAttr(
   snap: CollectionSnapshot,
   key: CollectionAttrKey,

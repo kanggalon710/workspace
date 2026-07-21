@@ -11,30 +11,30 @@
 JABNET Workspace v4.1.10 memiliki fondasi teknis yang solid (React 18 + TypeScript + Tailwind + shadcn/ui), namun 10 tahun pengalaman menunjukkan beberapa gap yang perlu ditutup untuk naik level ke platform ISP enterprise-grade:
 
 ### Strengths (Tetap Dipertahankan)
--  HSL design tokens dengan dark mode support
--  Permission-based navigation (39 keys × 6 roles)
--  Lazy-loaded routes + keyboard shortcuts (Cmd+M, Cmd+D)
--  Sidebar collapsible dengan auto-expand grup aktif
--  Bottom-nav mobile dengan safe-area insets
--  Consistent Lucide icons
--  Recharts responsive dengan customization
+- HSL design tokens dengan dark mode support
+- Permission-based navigation (39 keys × 6 roles)
+- Lazy-loaded routes + keyboard shortcuts (Cmd+M, Cmd+D)
+- Sidebar collapsible dengan auto-expand grup aktif
+- Bottom-nav mobile dengan safe-area insets
+- Consistent Lucide icons
+- Recharts responsive dengan customization
 
 ### Gaps yang Ditemukan (Prioritas)
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | Hardcoded hex colors di chart & asset components | HIGH |  Partial fix |
-| 2 | Tidak ada Skeleton component yang reusable | HIGH |  Fixed |
-| 3 | Empty state tidak konsisten (blank page) | HIGH |  Fixed |
-| 4 | PageLoader generic (tidak kontekstual) | MEDIUM |  Fixed |
-| 5 | 404 page minimal | MEDIUM |  Fixed |
-| 6 | No ErrorBoundary - single error crash app | HIGH |  Fixed |
-| 7 | Form validation via manual register() (tanpa zod) | HIGH |  Planned |
-| 8 | StatusBadge tidak ada (duplicate badge code) | MEDIUM |  Fixed |
-| 9 | KPI tile repeated across pages | MEDIUM |  Fixed |
-| 10 | No pagination / virtual scroll (1000+ items) | HIGH |  Planned |
-| 11 | No breadcrumbs untuk deep routes | MEDIUM |  Planned |
-| 12 | Accessibility: missing aria-labels, no keyboard nav for kanban | MEDIUM |  Planned |
+| 1 | Hardcoded hex colors di chart & asset components | HIGH | Partial fix |
+| 2 | Tidak ada Skeleton component yang reusable | HIGH | Fixed |
+| 3 | Empty state tidak konsisten (blank page) | HIGH | Fixed |
+| 4 | PageLoader generic (tidak kontekstual) | MEDIUM | Fixed |
+| 5 | 404 page minimal | MEDIUM | Fixed |
+| 6 | No ErrorBoundary - single error crash app | HIGH | Fixed |
+| 7 | Form validation via manual register() (tanpa zod) | HIGH | Planned |
+| 8 | StatusBadge tidak ada (duplicate badge code) | MEDIUM | Fixed |
+| 9 | KPI tile repeated across pages | MEDIUM | Fixed |
+| 10 | No pagination / virtual scroll (1000+ items) | HIGH | Planned |
+| 11 | No breadcrumbs untuk deep routes | MEDIUM | Planned |
+| 12 | Accessibility: missing aria-labels, no keyboard nav for kanban | MEDIUM | Planned |
 
 ---
 

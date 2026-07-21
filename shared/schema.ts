@@ -1821,7 +1821,7 @@ export const insertPoleSchema = createInsertSchema(poles).omit({ id: true });
 
 export const insertCableSchema = createInsertSchema(cables, {
   name: z.string().min(1, "Nama Kabel FO wajib diisi"),
-  cableType: z.enum(["feeder", "distribusi", "drop"], { 
+  cableType: z.enum(["feeder", "distribusi", "drop"], {
     required_error: "Tipe kabel wajib dipilih",
     invalid_type_error: "Tipe kabel harus feeder, distribusi, atau drop"
   })
@@ -3229,7 +3229,7 @@ export interface DashboardStats {
   cableMeters: { feeder: number; distribution: number; drop: number; total: number };
   totalCoreUsage: { total: number; used: number };
   totalPortUsage: { total: number; used: number };
-  
+
   // Realtime Capacity Metrics
   portTersediaTotal: number;
   odpKritisCount: number;

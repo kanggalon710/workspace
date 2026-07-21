@@ -23,7 +23,7 @@ for i in $(seq 1 30); do podman exec jabtc mysqladmin ping -uroot -pp --silent 2
 DB_HOST=127.0.0.1 DB_PORT=33306 DB_USER=root DB_PASSWORD=p DB_NAME=jabnet_fiber npx drizzle-kit push --force
 npm run build
 # run server in the Bash tool's run_in_background mode (NOT plain &, which dies with the shell):
-#   DB_HOST=127.0.0.1 DB_PORT=33306 DB_USER=root DB_PASSWORD=p DB_NAME=jabnet_fiber WORKERS_ENABLED=false PORT=3002 NODE_ENV=production SESSION_SECRET=x node dist/index.mjs
+# DB_HOST=127.0.0.1 DB_PORT=33306 DB_USER=root DB_PASSWORD=p DB_NAME=jabnet_fiber WORKERS_ENABLED=false PORT=3002 NODE_ENV=production SESSION_SECRET=x node dist/index.mjs
 # teardown at the end: podman rm -f jabtc
 ```
 
@@ -94,7 +94,7 @@ Expected: FAIL - cannot find module `./cardCommentTypes.js`.
 Create `shared/cardCommentTypes.ts`:
 ```ts
 /** Pure catalog of pipeline card comment/entry types. No DB, no I/O, no JSX.
- *  `icon` is a Lucide component name resolved in the UI; `color` is a Tailwind text token. */
+ * `icon` is a Lucide component name resolved in the UI; `color` is a Tailwind text token. */
 export interface CardCommentType {
   key: string;
   label: string;
@@ -346,8 +346,8 @@ git commit -m "feat(pipelines): storage for typed comments + comment-linked atta
 Above the `// -- Card attachments --` block (`server/routes.ts:5570`), add a module-level helper (place it near the other top-level helpers like `validateTriggerConfig`, i.e. outside the route registration but in the same module scope). It encapsulates the per-file loop body currently inline at `server/routes.ts:5585-5594`:
 ```ts
 /** Validate + persist one uploaded file as a card attachment row. Shared by the
- *  generic attachments endpoint (commentId=null) and the comment endpoint. Returns
- *  the created row, or throws an Error whose message is safe to surface (400). */
+ * generic attachments endpoint (commentId=null) and the comment endpoint. Returns
+ * the created row, or throws an Error whose message is safe to surface (400). */
 async function saveOneAttachment(opts: {
   slug: string; cardId: number; pipelineId: number; commentId: number | null;
   file: { fileName: string; buffer: Buffer }; uploadedBy: number;

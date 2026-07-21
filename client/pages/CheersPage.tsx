@@ -84,7 +84,6 @@ export default function CheersPage() {
               {(rows ?? []).map((c) => (
                 <Card key={c.id} variant="elevated" padding="sm">
                   <div className="flex items-start gap-3">
-                    <span className="text-xl" aria-hidden="true"></span>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-muted-foreground">
                         {box === "received"

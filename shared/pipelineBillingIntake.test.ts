@@ -109,7 +109,7 @@ test("normalizeDateValue: extracts YYYY-MM-DD without timezone shift", () => {
   assert.equal(normalizeDateValue("2026-06-09"), "2026-06-09");
   assert.equal(normalizeDateValue("2026-06-09 00:00:00"), "2026-06-09"); // tz-safe: no off-by-one
   assert.equal(normalizeDateValue("2026-06-09T17:30:00Z"), "2026-06-09");
-  assert.equal(normalizeDateValue("  2026-06-09  "), "2026-06-09");
+  assert.equal(normalizeDateValue(" 2026-06-09 "), "2026-06-09");
   assert.equal(normalizeDateValue(""), "");
   assert.equal(normalizeDateValue("not-a-date"), "");
 });

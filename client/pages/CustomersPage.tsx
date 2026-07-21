@@ -2381,7 +2381,7 @@ function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClose: () 
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 py-4 border-b">
           <DialogTitle className="flex items-center gap-2">
-            <span className="text-amber-500"></span> Audit & Auto-Pair ONT
+            Audit & Auto-Pair ONT
           </DialogTitle>
           <DialogDescription>
             Cari pasangan ONT dari GenieACS untuk customer yang punya PPPoE tapi belum match. Pakai fuzzy matching.

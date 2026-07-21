@@ -46,7 +46,7 @@ export const FORMULA_TERM_KEYS = ["a","b","c","d","e","f","g","h"];   // max 8 t
 /** Validate an expression against the set of defined term keys. */
 export function parseFormula(expr: string, allowedKeys: string[]): { ok: true } | { ok: false; error: string };
 /** Evaluate with standard precedence + parens. Divide-by-zero → 0. Throws on parse error
- *  (caller - the engine - catches and renders a zero tile). Unknown identifier → throws. */
+ * (caller - the engine - catches and renders a zero tile). Unknown identifier → throws. */
 export function evaluateFormula(expr: string, values: Record<string, number>): number;
 ```
 Implementation: a tokenizer (numbers incl. decimals, identifiers `[a-z]`, operators `+ - * /`,

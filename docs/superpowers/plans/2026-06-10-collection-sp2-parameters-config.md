@@ -224,7 +224,7 @@ export function validateStageMap(rows: StageMapRow[]): string | null {
 }
 
 /** SP3 resolver: stageId whose [min,max] (max null = open-ended) contains daysOverdue; most-specific
- *  (highest matching min). null if none match. */
+ * (highest matching min). null if none match. */
 export function stageForOverdue(rows: StageMapRow[], daysOverdue: number): number | null {
   let best: StageMapRow | null = null;
   for (const r of rows) {

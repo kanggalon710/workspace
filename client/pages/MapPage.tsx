@@ -128,7 +128,7 @@ function AssetQuickForm({ type, lat, lng, district, village, address, isEdit, in
   const [formData, setFormData] = useState<Record<string, any>>({
     lat, lng, status: "active", district, village, address, ...initialData
   });
-  
+
   // Re-sync if QuickForm props update from reverse-geocode
   useEffect(() => {
     setFormData(prev => ({
@@ -637,7 +637,7 @@ export default function MapPage() {
     const lat = params.get("lat");
     const lng = params.get("lng");
     const z = params.get("z");
-    
+
     if (lat && lng) {
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
@@ -726,7 +726,7 @@ export default function MapPage() {
         if (odp && odp.lat && odp.lng) {
           formData.odpId = startOdpId;
           const cust = await createCustomer.mutateAsync(formData);
-          
+
           await createCable.mutateAsync({
              name: `Drop ${formData.name}`,
              code: `CBL-DRP-${Date.now().toString().slice(-4)}`,

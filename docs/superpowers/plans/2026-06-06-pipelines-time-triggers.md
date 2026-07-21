@@ -407,7 +407,7 @@ In `server/pipeline-automation.ts`, add this function (it is the EXACT action lo
 
 ```ts
 /** Run a rule's action against a card. Returns true if a mutation happened.
- *  Loop-safe: mutates via storage directly, never re-invokes the automation service. */
+ * Loop-safe: mutates via storage directly, never re-invokes the automation service. */
 export async function applyRuleAction(rule: PipelineRule, card: PipelineCard, actorId: number): Promise<boolean> {
   if (rule.actionType === "create_card") {
     const targetStages = await storage.listStages(rule.targetPipelineId!);
@@ -535,7 +535,7 @@ Append to `server/pipeline-automation.ts`:
 
 ```ts
 /** One evaluation pass over ALL enabled time-trigger rules (every mitra).
- *  Driven by the cron-hit tick endpoint. Best-effort: never throws. */
+ * Driven by the cron-hit tick endpoint. Best-effort: never throws. */
 export async function runTimeTriggers(): Promise<{ evaluated: number; fired: number }> {
   let evaluated = 0, fired = 0;
   let rules: PipelineRule[] = [];
@@ -628,8 +628,8 @@ import { runTimeTriggers } from "./pipeline-automation.js";
 export const pipelinesTickRouter = Router();
 
 /** Cron-driven evaluation of time-based pipeline automation rules.
- *  Guarded by a shared secret (header X-Automation-Secret == PIPELINE_TICK_SECRET).
- *  Intentionally NOT behind staff auth and NOT gated by WORKERS_ENABLED. */
+ * Guarded by a shared secret (header X-Automation-Secret == PIPELINE_TICK_SECRET).
+ * Intentionally NOT behind staff auth and NOT gated by WORKERS_ENABLED. */
 pipelinesTickRouter.post("/api/pipelines/automation/tick", async (req: Request, res: Response) => {
   const secret = process.env.PIPELINE_TICK_SECRET;
   if (!secret) return res.status(503).json({ success: false, error: "tick disabled (PIPELINE_TICK_SECRET unset)" });

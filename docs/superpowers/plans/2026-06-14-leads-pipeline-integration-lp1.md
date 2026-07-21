@@ -76,14 +76,14 @@ Expected: FAIL - `Cannot find module './leadSources.ts'`.
 ```ts
 // shared/leadSources.ts
 /** Canonical lead-source registry. Single source of truth for normalisasi + label.
- *  Tidak mengubah nilai `source` yang tersimpan - hanya dipakai saat matching rule + label UI. */
+ * Tidak mengubah nilai `source` yang tersimpan - hanya dipakai saat matching rule + label UI. */
 
 export type CanonicalLeadSource =
-  | "canvassing" | "prospect_finder" | "coverage_check"
-  | "meta_leads" | "tiktok_leads" | "referral" | "inbound" | "other";
+ | "canvassing" | "prospect_finder" | "coverage_check"
+ | "meta_leads" | "tiktok_leads" | "referral" | "inbound" | "other";
 
 /** Alias mentah (lowercased) → kanonik. Mencakup nilai yang BENAR-BENAR ditulis kode hari ini
- *  (landing_page, meta_ads, tiktok_ads) plus variasi wajar. */
+ * (landing_page, meta_ads, tiktok_ads) plus variasi wajar. */
 const ALIASES: Record<string, CanonicalLeadSource> = {
   canvassing: "canvassing",
   prospect_finder: "prospect_finder", finder: "prospect_finder",
@@ -212,7 +212,7 @@ Expected: FAIL - module not found.
 ```ts
 // shared/leadIntake.ts
 /** Pure helpers + catalog untuk lead-trigger pipeline intake. No DB, no I/O.
- *  Paralel shared/pipelineBillingIntake.ts. */
+ * Paralel shared/pipelineBillingIntake.ts. */
 import { normalizeDateValue } from "./pipelineBillingIntake.ts";
 import { canonicalLeadSource } from "./leadSources.ts";
 
@@ -387,7 +387,7 @@ export type RuleTriggerType = "stage_enter" | "time" | "billing_sync" | "card_up
 Ganti dengan:
 ```ts
 export type RuleTriggerType = "stage_enter" | "time" | "billing_sync" | "card_updated" | "assignee_changed" | "field_updated"
-  | "lead_created" | "lead_updated" | "lead_assigned" | "lead_stage_changed" | "lead_converted";
+ | "lead_created" | "lead_updated" | "lead_assigned" | "lead_stage_changed" | "lead_converted";
 ```
 
 - [ ] **Step 2: Add `leadCardLinks` table + types**
@@ -661,7 +661,7 @@ import type { IntakeLead } from "../shared/leadIntake.js";
 export type LeadEventType = "created" | "updated" | "assigned" | "stage_changed" | "converted";
 
 /** Emit lead event → jalankan intake di tenant lead. Sinkron best-effort, NEVER throws.
- *  Tenant diambil dari lead.mitraId (webhook publik tak punya req context). */
+ * Tenant diambil dari lead.mitraId (webhook publik tak punya req context). */
 export async function emitLeadEvent(eventType: LeadEventType, lead: IntakeLead, actorId: number): Promise<void> {
   try {
     const mitraId = Number(lead.mitraId ?? 1) || 1;
@@ -846,7 +846,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Di interface draft (cari `triggerType: "stage_enter" | ... | "field_updated";` ~line 97) tambahkan union lead:
 ```ts
   triggerType: "stage_enter" | "time" | "billing_sync" | "card_updated" | "assignee_changed" | "field_updated"
-    | "lead_created" | "lead_updated" | "lead_assigned" | "lead_stage_changed" | "lead_converted";
+ | "lead_created" | "lead_updated" | "lead_assigned" | "lead_stage_changed" | "lead_converted";
 ```
 Tambah field draft lead (dekat field billing):
 ```ts

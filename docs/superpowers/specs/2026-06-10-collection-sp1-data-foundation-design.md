@@ -42,8 +42,8 @@ the dedicated collection engine pass, new triggers (`days_overdue_reached`, `pay
 
 ```ts
 export type CollectionAttrKey =
-  | "days_overdue" | "outstanding_amount" | "invoice_due_date"
-  | "last_payment_date" | "billing_status";
+ | "days_overdue" | "outstanding_amount" | "invoice_due_date"
+ | "last_payment_date" | "billing_status";
 
 export interface CollectionAttrMeta { key: CollectionAttrKey; label: string; valueType: "number" | "currency" | "date" | "text"; }
 export const COLLECTION_ATTRS: CollectionAttrMeta[];   // the 5 above, Indonesian labels
@@ -72,8 +72,8 @@ export function buildCollectionSnapshot(c: BillingCustomer, nowMs: number): Coll
 export function attrValue(snap: CollectionSnapshot, key: CollectionAttrKey): number | string | null;
 
 /** Compare an attr against a rule value with an existing RuleConditionOp. number attrs compare numerically;
- *  date/text compare as strings (date strings are ISO YYYY-MM-DD so lexical = chronological). empty/not_empty
- *  check null/"" . Mirrors the semantics of the existing field-condition evaluator. */
+ * date/text compare as strings (date strings are ISO YYYY-MM-DD so lexical = chronological). empty/not_empty
+ * check null/"" . Mirrors the semantics of the existing field-condition evaluator. */
 export function compareAttr(snap: CollectionSnapshot, key: CollectionAttrKey, op: RuleConditionOp, value: string | undefined): boolean;
 ```
 `RuleConditionOp` is imported from `./schema.js` (existing: `eq|neq|contains|gt|lt|empty|not_empty`).

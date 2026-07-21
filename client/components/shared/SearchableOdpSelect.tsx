@@ -18,7 +18,7 @@ export function SearchableOdpSelect({
   value,
   onChange,
   odps,
-  placeholder = "- Pilih ODP -",
+  placeholder = "Pilih ODP",
   nullLabel = "(tidak ada)",
   allowNull = true,
   disabled = false,

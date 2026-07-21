@@ -72,7 +72,7 @@ Expected: FAIL - `parseConditionGroups`/`evaluateConditionGroups` not exported.
 Append to `server/pipeline-automation-helpers.ts` (it already has `parseConditions` + `evaluateConditions` + imports `RuleCondition`):
 ```ts
 /** Parse stored conditions into AND-groups. Accepts a legacy flat array (→ one group)
- *  or { groups: [...] }. Drops malformed entries + empty groups. Malformed → []. */
+ * or { groups: [...] }. Drops malformed entries + empty groups. Malformed → []. */
 export function parseConditionGroups(raw: string | null): RuleCondition[][] {
   if (!raw) return [];
   let parsed: any;

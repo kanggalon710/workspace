@@ -36,22 +36,22 @@ import { SahabatDetailDrawer } from "@/components/sahabat/SahabatDetailDrawer";
 type Tab = "summary" | "discounts" | "leaderboard" | "referrals" | "points";
 
 // Sahabat level config - sesuai program JABNET Sahabat
-const LEVEL_CFG: Record<string, { label: string; emoji: string; color: string; bg: string; threshold: number; hex: string }> = {
-  new:       { label: "Pelanggan",    emoji: "", color: "text-slate-700 dark:text-slate-300",  bg: "bg-slate-100 dark:bg-slate-900",     threshold: 0,   hex: "#64748b" },
-  perunggu:  { label: "Perunggu",     emoji: "", color: "text-amber-800 dark:text-amber-200",  bg: "bg-amber-100 dark:bg-amber-950/40",  threshold: 5,   hex: "#b45309" },
-  perak:     { label: "Perak",        emoji: "", color: "text-slate-700 dark:text-slate-200",  bg: "bg-slate-200 dark:bg-slate-800/40",  threshold: 10,  hex: "#94a3b8" },
-  emas:      { label: "Emas",         emoji: "", color: "text-yellow-700 dark:text-yellow-200",bg: "bg-yellow-100 dark:bg-yellow-950/40",threshold: 20,  hex: "#f59e0b" },
-  platinum:  { label: "Platinum",     emoji: "", color: "text-blue-700 dark:text-blue-200",    bg: "bg-blue-100 dark:bg-blue-950/40",    threshold: 30,  hex: "#3b82f6" },
-  berlian:   { label: "Berlian",      emoji: "", color: "text-purple-700 dark:text-purple-200",bg: "bg-purple-100 dark:bg-purple-950/40",threshold: 50,  hex: "#a855f7" },
-  ambassador:{ label: "Ambassador",   emoji: "", color: "text-pink-700 dark:text-pink-200",    bg: "bg-pink-100 dark:bg-pink-950/40",    threshold: 100, hex: "#ec4899" },
+const LEVEL_CFG: Record<string, { label: string; color: string; bg: string; threshold: number; hex: string }> = {
+  new:       { label: "Pelanggan",  color: "text-slate-700 dark:text-slate-300",  bg: "bg-slate-100 dark:bg-slate-900",     threshold: 0,   hex: "#64748b" },
+  perunggu:  { label: "Perunggu",   color: "text-amber-800 dark:text-amber-200",  bg: "bg-amber-100 dark:bg-amber-950/40",  threshold: 5,   hex: "#b45309" },
+  perak:     { label: "Perak",      color: "text-slate-700 dark:text-slate-200",  bg: "bg-slate-200 dark:bg-slate-800/40",  threshold: 10,  hex: "#94a3b8" },
+  emas:      { label: "Emas",       color: "text-yellow-700 dark:text-yellow-200",bg: "bg-yellow-100 dark:bg-yellow-950/40",threshold: 20,  hex: "#f59e0b" },
+  platinum:  { label: "Platinum",   color: "text-blue-700 dark:text-blue-200",    bg: "bg-blue-100 dark:bg-blue-950/40",    threshold: 30,  hex: "#3b82f6" },
+  berlian:   { label: "Berlian",    color: "text-purple-700 dark:text-purple-200",bg: "bg-purple-100 dark:bg-purple-950/40",threshold: 50,  hex: "#a855f7" },
+  ambassador:{ label: "Ambassador", color: "text-pink-700 dark:text-pink-200",    bg: "bg-pink-100 dark:bg-pink-950/40",    threshold: 100, hex: "#ec4899" },
 };
 
 // Legacy tenure badge - display sekunder
-const BADGE_CFG: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
-  tetangga: { label: "<1 thn", emoji: "", color: "text-slate-700 dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-900" },
-  keluarga: { label: "1-3 thn", emoji: "", color: "text-sky-700 dark:text-sky-300", bg: "bg-sky-50 dark:bg-sky-950/40" },
-  sahabat:  { label: "3-5 thn", emoji: "", color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-50 dark:bg-amber-950/40" },
-  abadi:    { label: "5+ thn",  emoji: "", color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-100 dark:bg-yellow-950/40" },
+const BADGE_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  tetangga: { label: "<1 thn", color: "text-slate-700 dark:text-slate-300", bg: "bg-slate-100 dark:bg-slate-900" },
+  keluarga: { label: "1-3 thn", color: "text-sky-700 dark:text-sky-300", bg: "bg-sky-50 dark:bg-sky-950/40" },
+  sahabat:  { label: "3-5 thn", color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-50 dark:bg-amber-950/40" },
+  abadi:    { label: "5+ thn",  color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-100 dark:bg-yellow-950/40" },
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -964,8 +964,8 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
                 const pct = totalLevelCount > 0 ? (count / totalLevelCount) * 100 : 0;
                 return (
                   <div key={key} className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-lg shrink-0" style={{ background: `${cfg.hex}22` }}>
-                      {cfg.emoji}
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" style={{ background: `${cfg.hex}22`, color: cfg.hex }}>
+                      {cfg.label.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between text-xs mb-1">
@@ -1056,7 +1056,7 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
                       <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                         <span className="font-mono">{l.sahabatCode ?? l.customerBillingId}</span>
                         <span>·</span>
-                        <span className="flex items-center gap-0.5">{lvl.emoji} {lvl.label}</span>
+                        <span className="flex items-center gap-0.5">{lvl.label}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -1132,7 +1132,6 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
                 if (!cfg) return null;
                 return (
                   <div key={key} className="text-center p-3 rounded-lg border bg-muted/20">
-                    <div className="text-2xl mb-1">{cfg.emoji}</div>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{cfg.label}</div>
                     <div className="text-lg font-bold mt-0.5 tabular-nums">{count}</div>
                   </div>
@@ -1197,7 +1196,7 @@ function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }: any) {
                 </span>
               )}
               <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${lvl.bg} ${lvl.color}`}>
-                {lvl.emoji} {lvl.label}
+                {lvl.label}
               </span>
               {isDeleted && (
                 <span className="no-underline ml-1 text-[10px] px-1.5 py-0.5 rounded-md bg-destructive/15 text-destructive font-semibold">
@@ -1398,7 +1397,7 @@ function LeaderboardTable({ leaderboard, loading, onKit, onOpenDetail }: any) {
                   </td>
                   <td className="py-3 px-4">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${lvl.bg} ${lvl.color}`}>
-                      {lvl.emoji} {lvl.label}
+                      {lvl.label}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-orange-600 tabular-nums">{l.currentStreak}</td>
@@ -1409,7 +1408,6 @@ function LeaderboardTable({ leaderboard, loading, onKit, onOpenDetail }: any) {
                   </td>
                   <td className="py-3 px-4">
                     <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
-                      <span>{tn.emoji}</span>
                       <span className="font-mono">{l.tenureMonths}m</span>
                     </span>
                   </td>
@@ -2949,10 +2947,8 @@ type RewardItem = {
   pointsCost: number;
   speedMultiplier: number;
   durationHours: number;
-  emoji: string;
 };
 
-const EMOJI_PRESETS: string[] = [];
 
 function PointConfigDialog({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -2984,10 +2980,10 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
     } else {
       // Default catalog kalau belum ada di settings
       setCatalog([
-        { key: "boost_2x_6h",  label: "Speed 2× - 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6,  emoji: "" },
-        { key: "boost_2x_24h", label: "Speed 2× - 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24, emoji: "" },
-        { key: "boost_3x_6h",  label: "Speed 3× - 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6,  emoji: "" },
-        { key: "boost_3x_24h", label: "Speed 3× - 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24, emoji: "" },
+        { key: "boost_2x_6h",  label: "Speed 2× - 6 jam",   description: "Pakai untuk meeting, download kerjaan, atau streaming sebentar.", pointsCost: 50,  speedMultiplier: 2, durationHours: 6 },
+        { key: "boost_2x_24h", label: "Speed 2× - 24 jam",  description: "Cocok untuk weekend gaming atau movie marathon.",                pointsCost: 150, speedMultiplier: 2, durationHours: 24 },
+        { key: "boost_3x_6h",  label: "Speed 3× - 6 jam",   description: "Boost maksimal singkat, untuk download besar urgent.",            pointsCost: 250, speedMultiplier: 3, durationHours: 6 },
+        { key: "boost_3x_24h", label: "Speed 3× - 24 jam",  description: "Boost maksimal seharian.",                                         pointsCost: 600, speedMultiplier: 3, durationHours: 24 },
       ]);
     }
     setHydrated(true);
@@ -3210,7 +3206,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                     <button
                       onClick={() => {
                         setEditingIdx(-1);
-                        setDraftReward({ key: "", label: "", description: "", pointsCost: 100, speedMultiplier: 2, durationHours: 6, emoji: "" });
+                        setDraftReward({ key: "", label: "", description: "", pointsCost: 100, speedMultiplier: 2, durationHours: 6 });
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border bg-card hover:bg-muted/40 shrink-0"
                     >
@@ -3232,7 +3228,6 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                               editingIdx === idx ? "bg-primary/5" : "hover:bg-muted/30"
                             }`}
                           >
-                            <div className="w-8 text-center text-base shrink-0 select-none">{r.emoji}</div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-baseline gap-2">
                                 <span className="font-medium text-sm text-foreground">{r.label}</span>
@@ -3300,30 +3295,6 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                               className="font-mono text-sm mt-1"
                               disabled={editingIdx !== -1}
                             />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Emoji</Label>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Input
-                                value={draftReward.emoji}
-                                onChange={(e) => setDraftReward({ ...draftReward, emoji: e.target.value })}
-                                placeholder=""
-                                className="text-2xl text-center w-16 shrink-0"
-                                maxLength={4}
-                              />
-                              <div className="flex flex-wrap gap-1">
-                                {EMOJI_PRESETS.map(e => (
-                                  <button
-                                    key={e}
-                                    type="button"
-                                    onClick={() => setDraftReward({ ...draftReward, emoji: e })}
-                                    className="w-7 h-7 rounded hover:bg-muted text-lg"
-                                  >
-                                    {e}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
                           </div>
                         </div>
 

@@ -76,7 +76,7 @@ Replace the single `font-bold text-lg` h1 + crowded toolbar with a clean header 
 - **Create dialog** gains description (textarea) + icon (`IconPicker`) + color → `createPipeline({ name, description, icon, color })`.
 - Each pipeline card shows its **icon** (resolved + color-tinted) next to the name; description already shown.
 - A per-card **kebab menu** (writable): Edit · Arsip · Hapus → `PipelineSettingsDialog` (reused; or Edit opens it, Arsip/Hapus inline with confirm).
--  **Archived view**: archived pipelines hidden by default; an "Arsip" toggle/section lists them with a **Pulihkan** action (`updatePipeline({ id, isArchived: 0 })`). (The list query already filters; confirm `usePipelines` supports an archived flag - the hook has `usePipelines(includeArchived)`.)
+- **Archived view**: archived pipelines hidden by default; an "Arsip" toggle/section lists them with a **Pulihkan** action (`updatePipeline({ id, isArchived: 0 })`). (The list query already filters; confirm `usePipelines` supports an archived flag - the hook has `usePipelines(includeArchived)`.)
 
 ## 7. Files
 

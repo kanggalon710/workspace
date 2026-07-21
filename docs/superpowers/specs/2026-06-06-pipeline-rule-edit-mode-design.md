@@ -68,8 +68,8 @@ export type RuleDraft = {
 export function emptyDraft(): RuleDraft;          // the current resetForm defaults
 export function ruleToDraft(r: RuleWithMaps): RuleDraft;   // hydration (edit)
 export function draftToPayload(d: RuleDraft):
-  | { ok: true; payload: Record<string, any> }
-  | { ok: false; error: string };                 // validation + request body
+ | { ok: true; payload: Record<string, any> }
+ | { ok: false; error: string };                 // validation + request body
 ```
 
 - `RuleWithMaps`, `PipelineRuleActionType`, `DraftCondition` imported **type-only**

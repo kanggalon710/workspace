@@ -240,18 +240,18 @@ curl -I https://workspace.jabnet.id/api/auth/me
 
 ---
 
-##  Phase 1B - Storage.ts Refactor (Belum Dikerjakan)
+## Phase 1B - Storage.ts Refactor (Belum Dikerjakan)
 
 Sebelum aplikasi bisa benar-benar serve traffic, file `server/storage.ts` butuh refactor:
 
 | Item | Count | Status |
 |---|---|---|
-| `.returning()` calls (tidak supported di MySQL Drizzle) | 114 |  TODO |
-| Raw `sqlite.prepare/exec/transaction` calls | 89 |  TODO (akan throw runtime error) |
-| Constructor bootstrap (CREATE TABLE, ALTER, seed) | 1402 lines |  removed (Phase 1A) |
-| Schema port (`shared/schema.ts`) | 65 tables |  done (Phase 1A) |
-| Migration script | - |  done (Phase 1A) |
-| Deploy infrastructure (GHA, env, docs) | - |  done (Phase 1A) |
+| `.returning()` calls (tidak supported di MySQL Drizzle) | 114 | TODO |
+| Raw `sqlite.prepare/exec/transaction` calls | 89 | TODO (akan throw runtime error) |
+| Constructor bootstrap (CREATE TABLE, ALTER, seed) | 1402 lines | removed (Phase 1A) |
+| Schema port (`shared/schema.ts`) | 65 tables | done (Phase 1A) |
+| Migration script | - | done (Phase 1A) |
+| Deploy infrastructure (GHA, env, docs) | - | done (Phase 1A) |
 
 **Pattern refactor `.returning()`:**
 
@@ -280,13 +280,13 @@ edit code
 git push origin main  --►    GHA build
                              (npm ci, build)
                              force-push → deploy --► branch updated
-                                                         |
+ |
                                                          ▼
                                   ◄-- klik "Update from Remote" di Git VC
-                                                         |
+ |
                                                          ▼
                                   ◄-- klik Restart Application di Node.js App
-                                                         |
+ |
                                                          ▼
                                                     site live
 ```
@@ -325,14 +325,14 @@ Total manual step: 3 klik (Update + Restart + verify).
 
 ---
 
-##  Domain Switch: fiber.jabnet.id → workspace.jabnet.id (domain-only)
+## Domain Switch: fiber.jabnet.id → workspace.jabnet.id (domain-only)
 
 Ganti URL public tanpa rename dir/repo. Internal naming tetap `fiber-jabnet`. Disrupsi: **~5 menit**
 (app restart). Aman dilakukan saat traffic rendah.
 
 ### Prasyarat (sudah selesai)
--  DNS A record `workspace.jabnet.id` → IP cPanel
--  Subdomain `workspace.jabnet.id` dibuat di cPanel (apapun docroot-nya - akan di-override
+- DNS A record `workspace.jabnet.id` → IP cPanel
+- Subdomain `workspace.jabnet.id` dibuat di cPanel (apapun docroot-nya - akan di-override
   saat re-bind Node.js App di Step 1)
 
 ### Step 1 - Re-bind Node.js App ke domain baru

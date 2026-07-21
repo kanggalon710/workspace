@@ -78,8 +78,8 @@ Expected: FAIL (Cannot find module './roleLabel.js')
 ```ts
 // client/lib/roleLabel.ts
 /** Display label for a user's role: prefer the dynamic role name (roles.name via
- *  roleName from /auth/me|login), fall back to the legacy users.role text.
- *  Never invents a default - callers decide their own fallback. */
+ * roleName from /auth/me|login), fall back to the legacy users.role text.
+ * Never invents a default - callers decide their own fallback. */
 export function roleLabel(
   u: { roleName?: string | null; role?: string | null } | null | undefined,
 ): string {
@@ -367,9 +367,9 @@ Expected: FAIL (Cannot find module './dragScroll.js')
 ```ts
 // client/components/pipelines/dragScroll.ts
 /** Pure edge-proximity auto-scroll math for HTML5 drag-and-drop.
- *  pos = pointer coordinate (clientX/clientY), [start,end] = container bounds on that axis.
- *  Returns a scroll delta: negative near the start edge, positive near the end edge, else 0.
- *  Containers smaller than two edge zones never scroll (both zones would overlap). */
+ * pos = pointer coordinate (clientX/clientY), [start,end] = container bounds on that axis.
+ * Returns a scroll delta: negative near the start edge, positive near the end edge, else 0.
+ * Containers smaller than two edge zones never scroll (both zones would overlap). */
 export function edgeScrollDelta(
   pos: number,
   start: number,
@@ -641,8 +641,8 @@ Append to `shared/pipelineCapabilities.ts`:
 
 ```ts
 /** Roles whose pipeline access is FIXED at full and cannot be granted/reduced per-pipeline:
- *  the seeded per-mitra "Admin" and JABNET "System-Admin" (both isSystem). Mirrors the
- *  server-side isPipelineAdmin(req) short-circuit - grants for these roles are meaningless. */
+ * the seeded per-mitra "Admin" and JABNET "System-Admin" (both isSystem). Mirrors the
+ * server-side isPipelineAdmin(req) short-circuit - grants for these roles are meaningless. */
 export function isAdminLockedRole(role: { name?: string | null; isSystem?: number | null }): boolean {
   return (role.isSystem ?? 0) === 1 && (role.name === "Admin" || role.name === "System-Admin");
 }
@@ -850,7 +850,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 After the closing brace of `requireAdmin` (routes.ts ~line 1605), add:
 ```ts
 /** Tenant isolation untuk endpoint user-by-id: non-sysadmin hanya boleh menyentuh user
- *  yang member mitra aktifnya. 404 (bukan 403) supaya keberadaan user mitra lain tidak bocor. */
+ * yang member mitra aktifnya. 404 (bukan 403) supaya keberadaan user mitra lain tidak bocor. */
 async function requireUserInScope(req: Request, res: Response, targetUserId: number): Promise<boolean> {
   if (req.authUser!.isSystemAdmin) return true;
   const memberIds = await storage.getUserIdsInMitra(req.authUser!.activeMitraId ?? 1);

@@ -224,8 +224,8 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { method: "GET", path: "/schema",  scope: null, desc: "This schema (no auth)" },
 
       // ====== MARKETING BUNDLE (priority untuk AI daily analysis) ======
-      { method: "GET", path: "/marketing/daily-report",      scope: "marketing:read", desc: " Daily report tim marketing: KPI hari ini, per-canvasser & per-sales, hourly heatmap, pipeline snapshot, source breakdown. Default: hari ini. Query: ?date=YYYY-MM-DD" },
-      { method: "GET", path: "/marketing/overview",          scope: "marketing:read", desc: " ONE-SHOT dense JSON untuk AI: today vs yesterday vs week, momentum, top performer, hot spots, red flags, actionable insights. Query: ?from=&to=" },
+      { method: "GET", path: "/marketing/daily-report",      scope: "marketing:read", desc: "Daily report tim marketing: KPI hari ini, per-canvasser & per-sales, hourly heatmap, pipeline snapshot, source breakdown. Default: hari ini. Query: ?date=YYYY-MM-DD" },
+      { method: "GET", path: "/marketing/overview",          scope: "marketing:read", desc: "ONE-SHOT dense JSON untuk AI: today vs yesterday vs week, momentum, top performer, hot spots, red flags, actionable insights. Query: ?from=&to=" },
       { method: "GET", path: "/marketing/canvassing/sessions", scope: "marketing:read", desc: "Canvassing sessions - active, today, week. Per-canvasser stats: duration, checkIns, prospects, reports" },
       { method: "GET", path: "/marketing/canvassing/reports",  scope: "marketing:read", desc: "Field reports (BI). Query: ?type=&severity=&userId=&from=&to=&limit=" },
       { method: "GET", path: "/marketing/canvassing/performance", scope: "marketing:read", desc: "Per-canvasser performance matrix: sessions, duration, leads, conversion. Query: ?from=&to=" },
@@ -248,7 +248,7 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { method: "GET", path: "/reports/daily",     scope: "reports:read", desc: "Summary hari ini (default). Query: ?from=ISO&to=ISO" },
       { method: "GET", path: "/reports/weekly",    scope: "reports:read", desc: "Summary 7 hari terakhir" },
       { method: "GET", path: "/reports/range",     scope: "reports:read", desc: "Summary per range custom. Query: ?from=ISO&to=ISO (max 180 hari)" },
-      { method: "GET", path: "/reports/executive", scope: "reports:read", desc: " ONE-SHOT untuk AI: revenue + subscriber + collections + ops-ringkas, semua + deltaPct + redFlags/greenLights + trend. Query: ?period=&from=&to=" },
+      { method: "GET", path: "/reports/executive", scope: "reports:read", desc: "ONE-SHOT untuk AI: revenue + subscriber + collections + ops-ringkas, semua + deltaPct + redFlags/greenLights + trend. Query: ?period=&from=&to=" },
       // Finance
       { method: "GET", path: "/finance/overview",     scope: "finance:read",   desc: "Point-in-time: MRR (+delta), ARPU, revenue-at-risk, billingStatus dist, breakdown by package/type/district" },
       { method: "GET", path: "/finance/timeseries",   scope: "finance:read",   desc: "Trend dari snapshot. Query: ?metric=mrr|active|isolir|revenue_at_risk&period=daily|weekly|monthly|quarterly&from=&to=" },

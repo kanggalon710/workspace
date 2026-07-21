@@ -40,12 +40,12 @@ Engine tetap **card-centric**. Lead **bukan** card - ia masuk lewat *intake serv
 
 ```
 Lead mutation (8 titik)  --►  emitLeadEvent(type, lead, actorId)     [server/lead-events.ts]
-                                      |  sinkron, best-effort, never throws
+ | sinkron, best-effort, never throws
                                       ▼
                          runLeadIntake(type, lead, actorId)           [server/lead-intake.ts]
-                                      |  load rule lead-trigger (mitra=lead.mitraId, indexed)
-                                      |  filter source → cek dedup (lead_card_links / phone)
-                                      |  create | update | reopen | ignore
+ | load rule lead-trigger (mitra=lead.mitraId, indexed)
+ | filter source → cek dedup (lead_card_links / phone)
+ | create | update | reopen | ignore
                                       ▼
                          storage.* (loop-safe, storage-direct)  +  lead_card_links  +  audit
 ```
@@ -72,8 +72,8 @@ Dibuat via startup `CREATE TABLE IF NOT EXISTS` (pola existing di `storage.ts`).
 Single source of truth - menyelesaikan inkonsistensi nilai `source` (kode menulis `landing_page`/`meta_ads`/`tiktok_ads`, beda dari ekspektasi spec):
 ```ts
 export type CanonicalLeadSource =
-  | "canvassing" | "prospect_finder" | "coverage_check"
-  | "meta_leads" | "tiktok_leads" | "referral" | "inbound" | "other";
+ | "canvassing" | "prospect_finder" | "coverage_check"
+ | "meta_leads" | "tiktok_leads" | "referral" | "inbound" | "other";
 
 // normalisasi alias → kanonik
 canonicalLeadSource("landing_page")  // "coverage_check"

@@ -282,7 +282,7 @@ export function evaluateConditions(conditions: RuleCondition[] | null, values: M
 }
 
 /** Safe-parse + shape-guard an action_config JSON string for a given action type.
- *  Returns null on malformed / missing-key / create_card (which uses legacy columns). */
+ * Returns null on malformed / missing-key / create_card (which uses legacy columns). */
 export function parseActionConfig(
   type: string,
   raw: string | null,

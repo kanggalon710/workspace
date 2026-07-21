@@ -631,13 +631,13 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.5.0] - 2026-04-07 - Cek Lokasi Coverage (Tool Internal CS)
 
-###  Fitur Baru: Halaman Cek Coverage untuk Customer Service
+### Fitur Baru: Halaman Cek Coverage untuk Customer Service
 
 **Tujuan**: Memberi tim Customer Service tool internal untuk dengan cepat mengecek apakah suatu lokasi calon pelanggan tercover jaringan FTTH JABNET dan ODP mana yang harus dipakai. Halaman ini diakses **setelah login**, bukan publik.
 
 > **Catatan iterasi**: Fitur ini awalnya didesain sebagai tool publik di halaman login (untuk calon pelanggan self-service), tapi setelah review dianggap lebih cocok sebagai **tool internal CS**. Endpoint publik dan form pendaftaran lead anonymous dihapus, fitur direlokasi ke halaman terproteksi `/coverage-check` dengan informasi yang jauh lebih kaya.
 
-###  UI: `CoverageCheckPage` (`/coverage-check`)
+### UI: `CoverageCheckPage` (`/coverage-check`)
 
 - **4 metode input lokasi target** (semua bisa dipakai):
   1. **Klik di peta interaktif** Google Maps (paling intuitif)
@@ -652,10 +652,10 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 - **Panel hasil** (3 card stack):
   1. **Verdict** - 4 status warna:
-     -  `covered` (≤ 250 m + port available)
-     -  `covered_full` (≤ 250 m tapi penuh)
-     -  `marginal` (250-500 m)
-     -  `out_of_coverage` (> 500 m)
+     - `covered` (≤ 250 m + port available)
+     - `covered_full` (≤ 250 m tapi penuh)
+     - `marginal` (250-500 m)
+     - `out_of_coverage` (> 500 m)
   2. **ODP Terbaik (Rekomendasi)** - ODP terdekat yang masih punya port available + active:
      - Nama, kode, alamat, kecamatan/desa, splitter type, status
      - Badge kapasitas (port tersedia / total)
@@ -668,7 +668,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 - **Layout responsive**: 12-column grid (peta 7 kolom + panel 5 kolom di desktop, stack di mobile)
 
-###  Backend Changes (`server/routes.ts`)
+### Backend Changes (`server/routes.ts`)
 
 - **Endpoint baru `POST /api/coverage-check`** (auth-protected, semua role login)
   - Input: `{ lat, lng }`
@@ -688,16 +688,16 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 - **Konstanta `COVERAGE_RADIUS_METERS = 250`** (drop cable standar FTTH)
 
-###  Perubahan dari iterasi sebelumnya yang dihapus
+### Perubahan dari iterasi sebelumnya yang dihapus
 
--  Section "Cek Lokasi Coverage FTTH" di `LoginPage.tsx` (revert ke versi original - login form saja)
--  `POST /api/public/check-coverage` (replaced dengan `/api/coverage-check` auth-protected)
--  `POST /api/public/leads` (lead form anonymous tidak diperlukan untuk tool internal)
--  Rate limiting publik (`publicRateBuckets`, `checkPublicRateLimit`) - tidak relevan karena auth-protected
--  Bounding box geografis (`PUBLIC_LAT_RANGE`, `PUBLIC_LNG_RANGE`) - internal user bisa cek dimanapun
--  Exception `/public/` di global auth guard
+- Section "Cek Lokasi Coverage FTTH" di `LoginPage.tsx` (revert ke versi original - login form saja)
+- `POST /api/public/check-coverage` (replaced dengan `/api/coverage-check` auth-protected)
+- `POST /api/public/leads` (lead form anonymous tidak diperlukan untuk tool internal)
+- Rate limiting publik (`publicRateBuckets`, `checkPublicRateLimit`) - tidak relevan karena auth-protected
+- Bounding box geografis (`PUBLIC_LAT_RANGE`, `PUBLIC_LNG_RANGE`) - internal user bisa cek dimanapun
+- Exception `/public/` di global auth guard
 
-###  File yang berubah
+### File yang berubah
 
 | File | Perubahan |
 |---|---|
@@ -708,7 +708,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 | `server/routes.ts` | Hapus 2 endpoint publik, tambah `POST /api/coverage-check` |
 | `CHANGELOG.md` | Update entry v2.5.0 dengan pivot |
 
-###  Akses
+### Akses
 
 - Group `UTAMA` di Sidebar (tanpa role restriction) → semua role login bisa akses (admin, operator, marketing, marketing_spv, viewer)
 - Endpoint `/api/coverage-check` di-protect oleh global auth guard
@@ -717,7 +717,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.4.2] - 2026-04-07 - Customer Field Protection from Billing Sync
 
-###  Fitur Baru: Proteksi Field Manual
+### Fitur Baru: Proteksi Field Manual
 
 **Masalah yang dipecahkan**: Sebelumnya, setiap kali sync billing dijalankan, semua field pelanggan (alamat, koordinat, kecamatan, desa, dll) akan ditimpa data dari billing JABNET - termasuk perbaikan manual yang sudah dilakukan operator.
 
@@ -749,7 +749,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Saat tidak ada lock: panel biru info "Proteksi Sync Otomatis" - menjelaskan field yang diedit akan otomatis dilindungi
   - Saat ada lock: panel kuning menampilkan badge field yang dilindungi + cara reset
 
-###  Backend Changes
+### Backend Changes
 
 - **Schema**: Tambah kolom `manual_overrides TEXT` di tabel `customers` (auto-migration)
 - **`storage.updateCustomer()`**: Auto-detect changed billing-synced fields, append ke manualOverrides
@@ -757,7 +757,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - **`storage.clearCustomerOverrides()`**: Method baru untuk reset overrides (semua atau spesifik)
 - **API baru**: `POST /api/customers/:id/clear-overrides` - buka proteksi field
 
-###  Flow Lengkap
+### Flow Lengkap
 
 1. Operator sync billing → 700 pelanggan masuk dengan data billing
 2. Operator edit alamat pelanggan #123 di FTTH Tools (alamat di billing salah/tidak lengkap)
@@ -770,7 +770,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.4.1] - 2026-04-06 - Customer Filters, District View & Pagination
 
-###  Fitur Baru
+### Fitur Baru
 
 - **Halaman Pelanggan - Filter Komprehensif**
   - Filter Kecamatan: dropdown semua kecamatan dari data pelanggan aktual, dengan jumlah pelanggan
@@ -813,7 +813,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Kolom "Kecamatan / Desa" terpisah di tabel
   - Badge jenis pelanggan (Rumahan/Bisnis) di kolom nama
 
-###  UI/UX
+### UI/UX
 - Layout filter: panel 4-kolom grid, compact & responsive
 - Quick filter pills: badge kecamatan/desa aktif di search bar
 - Active filter count badge pada tombol Filter
@@ -823,7 +823,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.4] - 2026-04-06 - Deep Bug Fix, Analytics ODP Distance & Business Decision
 
-###  Fitur Baru
+### Fitur Baru
 
 - **Halaman Keputusan Bisnis** (`/marketing/bisnis`)
   - Analisis laporan lapangan untuk strategi marketing
@@ -850,7 +850,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 - **Kontak halaman** - Tombol export CSV di header
 
-###  Bug Fix Kritis
+### Bug Fix Kritis
 
 - **Canvassing tidak muncul di desktop web**
   - Root cause: CSS height chain break - `h-full` dengan `absolute inset-0` child tidak mendapat tinggi
@@ -900,7 +900,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - **Marketing SPV tidak bisa lihat semua sesi**
   - Fix: `marketing_spv` diperlakukan sebagai supervisor di sessions list
 
-###  UI/UX
+### UI/UX
 - Sidebar: Tambah menu "Keputusan Bisnis" (TrendingUp icon) di group Marketing Tools
 - Bottom Nav: Tambah "Keputusan Bisnis" di submenu Marketing Tools
 - FieldReportForm: Hapus stale `!title` check di useEffect
@@ -912,7 +912,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.3] - 2026-04-03 - Marketing CRM: Canvassing + Lead Pipeline
 
-###  Fitur Baru
+### Fitur Baru
 
 - **Role `marketing`** - User baru dengan akses khusus Marketing Tools (Canvassing, Lead Pipeline, Prospect Finder). Tidak bisa akses aset jaringan/core management.
 
@@ -953,7 +953,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 - **API helper `api.patch()`** - tambah method PATCH di `client/lib/api.ts`
 
-###  Sidebar Restructure
+### Sidebar Restructure
   - Group baru: **MARKETING TOOLS** (hanya admin + marketing)
   - Items: Canvassing (MapPinned), Lead Pipeline (ListChecks), Prospect Finder (Search)
   - Group TOOLS & ASET JARINGAN: hanya admin + operator
@@ -963,7 +963,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.2] - 2026-04-03 - Prospect Finder + Auth & UI Finalisasi
 
-###  Fitur Baru
+### Fitur Baru
 - **Prospect Finder** (`/prospects`)
   - Temukan calon pelanggan di sekitar infrastruktur (ODP/ODC/POP) via Google Places API (New)
   - Filter berdasarkan 5 kategori: Korporat, Pendidikan, Kesehatan, Komersial, Pemerintah
@@ -973,7 +973,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
   - Export hasil ke CSV
   - Sidebar navigation item "Prospect Finder" dengan ikon Crosshair
 
-###  Bug Fix
+### Bug Fix
 - **Login twice bug** - setelah login berhasil, halaman kadang balik ke login lagi karena race condition antara `setLocation("/")` dan state update React. Fix: `LoginPage` sekarang render `<Redirect to="/" />` saat user sudah terisi, tanpa `setLocation`.
 - **Blank setelah update/restart** - app tampil kosong/tidak bisa diklik jika token di localStorage tidak sinkron dengan server. Fix: token divalidasi ke `/api/auth/me` saat startup.
 - **Tidak redirect ke login saat 401** - semua request API yang return 401 kini otomatis dispatch event `auth:unauthorized` → AuthContext langsung clear session → redirect ke login.
@@ -981,18 +981,18 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - **Prospect Finder: unsupported place types** - tipe `clinic`, `office`, `corporate_office`, `preschool`, `hotel` tidak valid di Places API (New). Fix: diganti ke tipe yang didukung (`doctor`, `accounting`, `lodging`, dll).
 - **Prospect Finder: API key referrer blocked** - request dari backend tidak memiliki header `Referer`. Fix: tambah header `Referer: APP_URL` pada semua request ke Google Places API.
 
-###  Security & Hardening
+### Security & Hardening
 - Session cookie diperketat: `secure: true` (production), `httpOnly: true`, `sameSite: "lax"`
 - Warning log saat `SESSION_SECRET` tidak diset di production
 - TypeScript: `next: Function` → `next: NextFunction` di authMiddleware
 
-###  UI/UX
+### UI/UX
 - **Sidebar collapsible** - tombol `◀` di header sidebar untuk menyembunyikan sidebar (desktop), map jadi full-width. State tersimpan di `localStorage`. Tab `▶` muncul di tepi kiri untuk expand kembali.
 - **Popup/InfoWindow redesign** - layout simetris dengan aksen warna full-width di atas, tombol X di dalam container, stat cards rapi, port bar lebih prominent.
 - **InfoWindow CSS override** - hapus semua padding/background default Google Maps, sembunyikan tombol X native Google Maps, gunakan close button custom di dalam popup.
 - **ODP marker warna gradasi usage** - warna marker dan header popup mengikuti persentase port terpakai: Merah (0%=kosong) → Orange (1-33%) → Kuning (34-66%) → Hijau (67-99%) → Biru (100%=penuh). Berlaku di marker, label, popup, dan progress bar.
 
-###  Config & DevOps
+### Config & DevOps
 - File `.env.example` lengkap dengan dokumentasi setiap variabel
 - `APP_URL` dan `GOOGLE_MAPS_API_KEY` baca dari environment variable
 - React Query retry: tidak retry untuk error 401/403 agar tidak hang
@@ -1001,7 +1001,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v2.0] - 2026-03-28 - Security Overhaul & Core Management
 
-###  Fitur Baru
+### Fitur Baru
 - **Core Management** - OTB Manager, Bestray, Splitter, Core Manager, Koneksi Core
 - **Splitter Chain** - visualisasi hierarki splitter dari POP → ODC → ODP
 - **Power Budget Calculator** - kalkulasi link budget FTTH
@@ -1009,7 +1009,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - **Log Aktivitas** - audit log semua aksi user (login, CRUD aset)
 - **Manajemen User** - CRUD user, role admin/operator
 
-###  Security
+### Security
 - Password hashing ganti dari SHA-256 (tanpa salt) ke **bcrypt cost 12**
 - Auto-upgrade hash lama ke bcrypt saat login berhasil (zero-downtime migration)
 - Rate limiting login: 5 percobaan / 5 menit → lockout 15 menit
@@ -1020,7 +1020,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 - Password admin default dari env var `ADMIN_DEFAULT_PASSWORD`
 - Global auth guard: semua `/api/*` (kecuali login) wajib token valid
 
-###  Bug Fix
+### Bug Fix
 - Map page blank setelah brute-force test mengunci akun di memory
 - Vite HMR stale cache menyebabkan MapPage tidak update
 - Panel z-index conflict: utility buttons tertutup panel layer
@@ -1029,7 +1029,7 @@ ALTER TABLE users ADD COLUMN notes TEXT;
 
 ## [v1.0] - 2026-03-25 - Initial Release
 
-###  Fitur Awal
+### Fitur Awal
 - Dashboard statistik jaringan
 - Peta interaktif Google Maps dengan marker POP, ODC, ODP, Pelanggan, Tiang, Kabel
 - CRUD aset: POP, ODC, ODP, Pelanggan, Tiang, Kabel

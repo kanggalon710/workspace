@@ -1257,7 +1257,7 @@ function PointsTab({ apiFetch, qc }: any) {
       const expiredOne = currentRedemptions.find(r => r.id === prevActiveIdRef.current && r.status === "expired");
       if (expiredOne) {
         toast.success(` Boost ${expiredOne.rewardLabel} selesai`, {
-          description: "Speed kembali ke paket normal. Kumpulin point lagi untuk boost berikutnya ",
+          description: "Speed kembali ke paket normal. Kumpulin point lagi untuk boost berikutnya",
           duration: 6000,
         });
       }
@@ -1312,7 +1312,7 @@ function PointsTab({ apiFetch, qc }: any) {
           <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(circle at 90% 10%, rgba(255,255,255,0.5), transparent 40%), radial-gradient(circle at 10% 90%, rgba(250,204,21,0.4), transparent 50%)" }} />
           <div className="relative p-5 flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center shadow-lg shrink-0 ring-2 ring-white/30">
-              <span className="text-3xl"></span>
+              <Zap className="w-7 h-7 text-white" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] uppercase tracking-widest font-bold opacity-90">Boost Aktif!</div>
@@ -1740,7 +1740,7 @@ https://fiber-tools.arkanova.id/coverage-check`;
       {campaignData?.isActive && campaignData.campaign && (
         <div className="p-4 rounded-xl bg-gradient-to-r from-fuchsia-500 via-violet-500 to-purple-600 text-white shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0"></div>
+            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center shrink-0"><Gift className="w-5 h-5 text-white" /></div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] uppercase tracking-widest font-semibold opacity-90">Promo Berjalan</div>
               <div className="font-bold text-base truncate">{campaignData.campaign.name}</div>
@@ -1764,8 +1764,8 @@ https://fiber-tools.arkanova.id/coverage-check`;
 
           <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-4 min-w-0">
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-4xl md:text-5xl shrink-0 shadow-lg">
-                {sahabat.levelEmoji}
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0 shadow-lg">
+                <Award className="w-8 h-8 md:w-10 md:h-10 text-white" />
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] md:text-xs uppercase tracking-widest font-semibold opacity-90">
@@ -1792,7 +1792,6 @@ https://fiber-tools.arkanova.id/coverage-check`;
             <div className="relative z-10 mt-6 p-4 rounded-xl bg-white/15 backdrop-blur">
               <div className="flex items-center justify-between text-xs mb-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xl">{progressToNext.emoji}</span>
                   <span className="font-semibold">
                     {progressToNext.remaining} lagi ke <strong>{progressToNext.toLabel}</strong>
                   </span>
@@ -1960,14 +1959,14 @@ https://fiber-tools.arkanova.id/coverage-check`;
                   style={active ? { borderColor: l.color, background: `${l.color}14` } : {}}
                 >
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                    className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                     style={{
                       background: hit ? l.color : "transparent",
                       color: hit ? "white" : l.color,
                       border: hit ? "none" : `2px dashed ${l.color}50`,
                     }}
                   >
-                    {l.emoji}
+                    {l.threshold}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

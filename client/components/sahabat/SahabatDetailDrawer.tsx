@@ -31,17 +31,17 @@ const REWARD_PRESETS: Array<{
   discountType: string;
   discountValue: number;
   description: string;
-  icon: string;
+  icon?: string;
 }> = [
-  { key: "voucher_50k",   label: "Voucher Indomaret 50K", discountType: "voucher_indomaret", discountValue: 50000,   description: "Voucher Indomaret Rp 50.000", icon: "" },
-  { key: "voucher_100k",  label: "Voucher Indomaret 100K", discountType: "voucher_indomaret", discountValue: 100000,  description: "Voucher Indomaret Rp 100.000", icon: "" },
-  { key: "voucher_200k",  label: "Voucher Indomaret 200K", discountType: "voucher_indomaret", discountValue: 200000,  description: "Voucher Indomaret Rp 200.000 - milestone", icon: "" },
-  { key: "free_30d",      label: "GRATIS 1 bulan",         discountType: "free_days",         discountValue: 30,       description: "Internet gratis 30 hari",         icon: "" },
-  { key: "free_90d",      label: "GRATIS 3 bulan",         discountType: "free_days",         discountValue: 90,       description: "Internet gratis 90 hari",         icon: "" },
-  { key: "free_365d",     label: "GRATIS 12 bulan",        discountType: "free_days",         discountValue: 365,      description: "Internet GRATIS 12 bulan - milestone Perak", icon: "" },
-  { key: "speed_5",       label: "Speed Boost +5 Mbps",    discountType: "speed_upgrade",      discountValue: 5,        description: "Upgrade speed +5 Mbps", icon: "" },
-  { key: "speed_10",      label: "Speed Boost +10 Mbps",   discountType: "speed_upgrade",      discountValue: 10,       description: "Upgrade speed +10 Mbps", icon: "" },
-  { key: "cash_2jt",      label: "Cash Bonus Rp 2jt",      discountType: "cash_bonus",         discountValue: 2000000,  description: "Cash bonus Rp 2.000.000 - Platinum reward", icon: "" },
+  { key: "voucher_50k",   label: "Voucher Indomaret 50K", discountType: "voucher_indomaret", discountValue: 50000,   description: "Voucher Indomaret Rp 50.000" },
+  { key: "voucher_100k",  label: "Voucher Indomaret 100K", discountType: "voucher_indomaret", discountValue: 100000,  description: "Voucher Indomaret Rp 100.000" },
+  { key: "voucher_200k",  label: "Voucher Indomaret 200K", discountType: "voucher_indomaret", discountValue: 200000,  description: "Voucher Indomaret Rp 200.000 - milestone" },
+  { key: "free_30d",      label: "GRATIS 1 bulan",         discountType: "free_days",         discountValue: 30,       description: "Internet gratis 30 hari" },
+  { key: "free_90d",      label: "GRATIS 3 bulan",         discountType: "free_days",         discountValue: 90,       description: "Internet gratis 90 hari" },
+  { key: "free_365d",     label: "GRATIS 12 bulan",        discountType: "free_days",         discountValue: 365,      description: "Internet GRATIS 12 bulan - milestone Perak" },
+  { key: "speed_5",       label: "Speed Boost +5 Mbps",    discountType: "speed_upgrade",      discountValue: 5,        description: "Upgrade speed +5 Mbps" },
+  { key: "speed_10",      label: "Speed Boost +10 Mbps",   discountType: "speed_upgrade",      discountValue: 10,       description: "Upgrade speed +10 Mbps" },
+  { key: "cash_2jt",      label: "Cash Bonus Rp 2jt",      discountType: "cash_bonus",         discountValue: 2000000,  description: "Cash bonus Rp 2.000.000 - Platinum reward" },
   { key: "percent_10",    label: "Diskon 10% sebulan",     discountType: "percent",            discountValue: 10,       description: "Diskon 10% untuk 1 periode tagihan", icon: "%" },
   { key: "percent_25",    label: "Diskon 25% sebulan",     discountType: "percent",            discountValue: 25,       description: "Diskon 25% untuk 1 periode tagihan", icon: "%" },
 ];
@@ -575,7 +575,7 @@ function IssueRewardDialog({ open, onOpenChange, customerId, customerName, onSuc
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
-                    <span>{p.icon}</span>
+                    {p.icon && <span>{p.icon}</span>}
                     <span className="truncate">{p.label}</span>
                   </div>
                 </button>

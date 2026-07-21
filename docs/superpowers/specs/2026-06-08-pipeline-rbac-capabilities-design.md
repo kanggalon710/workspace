@@ -80,16 +80,16 @@ readers / the board's coarse `writable`) live in the shared module.
 - Re-gate (keep `requireWritePermission("pipelines")` as the outer gate; replace `requirePipelineEdit` with the
   capability):
 
-  | Route(s) | Capability |
-  |---|---|
-  | PATCH pipeline, POST archive, GET+PUT `/access` | `manage` |
-  | DELETE pipeline | `delete` |
-  | stages POST/PATCH/DELETE/reorder | `stages` |
-  | fields POST/PATCH/DELETE/reorder | `fields` |
-  | rules GET/POST/PATCH/DELETE | `automation` |
-  | cards POST/PATCH/move/DELETE, comments POST/DELETE, followers, values PUT | `cards` |
-  | all GET (pipeline detail, stages, cards, card detail, comments, followers, fields, photo) | `view` |
-  | POST `/api/pipelines` (create) | unchanged - global `pipelines:write` only |
+ | Route(s) | Capability |
+ |---|---|
+ | PATCH pipeline, POST archive, GET+PUT `/access` | `manage` |
+ | DELETE pipeline | `delete` |
+ | stages POST/PATCH/DELETE/reorder | `stages` |
+ | fields POST/PATCH/DELETE/reorder | `fields` |
+ | rules GET/POST/PATCH/DELETE | `automation` |
+ | cards POST/PATCH/move/DELETE, comments POST/DELETE, followers, values PUT | `cards` |
+ | all GET (pipeline detail, stages, cards, card detail, comments, followers, fields, photo) | `view` |
+ | POST `/api/pipelines` (create) | unchanged - global `pipelines:write` only |
 
 - The list endpoint (`GET /api/pipelines`) keeps returning a `level: "view"|"edit"` per pipeline (derived via
   `deriveLevel`) so the board's existing coarse `writable` keeps working, **plus** a `capabilities: string[]`

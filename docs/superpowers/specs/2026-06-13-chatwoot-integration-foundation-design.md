@@ -5,7 +5,7 @@
 
 ---
 
-##  REVISION 2026-06-13 (post-discovery) - READ FIRST
+## REVISION 2026-06-13 (post-discovery) - READ FIRST
 
 During implementation we discovered a **pre-existing, already-multi-tenant Chatwoot integration** (shipped in the first commit, "v4.2.5"). The greenfield assumption in the original sections below is **wrong**. What already exists, per-mitra:
 
