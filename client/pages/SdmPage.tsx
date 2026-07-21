@@ -1,7 +1,7 @@
 /** Modul SDM / HRD Fase 1 (adaptasi SDM_Jabnet.xlsx): Catat Kehadiran harian,
  *  Rekap bulanan (laporan kehadiran), dan Cuti (self-service + approval HR).
  *  Karyawan = user aktif apps (langsung "ngelink" - tanpa master data ganda). */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -181,82 +181,128 @@ function HrDashboardSection({ onGoApproval, onGoCuti }: { onGoApproval: () => vo
   );
 }
 
-/** FR-HR-12xx: formulir KPI berbobot + penilaian 1-5 + rekap skor 0-100. */
-function KpiSection({ users, nameOf }: { users: any[]; nameOf: (id: number | null) => string | null }) {
-  const qc = useQueryClient();
-  const period = new Date().toISOString().slice(0, 7);
-  const { data } = useQuery({ queryKey: ["/api/hr/kpi"], queryFn: () => api.get<{ forms: any[]; assessments: any[] }>(`/hr/kpi`) });
-  const [formName, setFormName] = useState("");
-  const [formQ, setFormQ] = useState("Kualitas kerja; 3\nKecepatan respon; 2\nKedisiplinan; 2\nKerja sama tim; 1");
-  const [assess, setAssess] = useState({ formId: "", userId: "", scores: {} as Record<number, number> });
-  const saveForm = useMutation({
-    mutationFn: () => api.post(`/hr/kpi/forms`, {
-      name: formName,
-      questions: formQ.split(/\n/).map((l) => { const [text, w] = l.split(";"); return { text: text?.trim(), weight: Number(w) || 1 }; }).filter((q) => q.text),
-    }),
-    onSuccess: () => { toast.success("Formulir KPI dibuat"); setFormName(""); qc.invalidateQueries({ queryKey: ["/api/hr/kpi"] }); },
-    onError: (e: any) => toast.error(e?.message || "Gagal"),
-  });
-  const form = (data?.forms ?? []).find((f) => f.id === Number(assess.formId));
-  const questions: Array<{ text: string; weight: number }> = (() => { try { return form ? JSON.parse(form.questions) : []; } catch { return []; } })();
-  const submitAssess = useMutation({
-    mutationFn: () => api.post<{ total: number }>(`/hr/kpi/assess`, {
-      formId: Number(assess.formId), userId: Number(assess.userId), period,
-      scores: questions.map((_, i) => assess.scores[i] ?? 3),
-    }),
-    onSuccess: (r: any) => { toast.success(`Penilaian tersimpan - skor ${r.total}/100`); setAssess({ formId: "", userId: "", scores: {} }); qc.invalidateQueries({ queryKey: ["/api/hr/kpi"] }); },
-    onError: (e: any) => toast.error(e?.message || "Gagal"),
-  });
-  return (
-    <>
-      <PageSection title="Formulir Penilaian" description="Satu baris satu pertanyaan: teks; bobot">
-        <div className="flex flex-wrap items-start gap-2">
-          <input value={formName} placeholder="Nama formulir (mis. KPI Teknisi Q3)" onChange={(e) => setFormName(e.target.value)} className="h-9 w-64 rounded-lg border bg-background px-2.5 text-sm" />
-          <textarea value={formQ} onChange={(e) => setFormQ(e.target.value)} className="h-24 w-full max-w-md rounded-lg border bg-background p-2.5 font-mono-tight text-xs" />
-          <Button size="sm" loading={saveForm.isPending} disabled={!formName.trim()} onClick={() => saveForm.mutate()}>Buat Formulir</Button>
-        </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">{(data?.forms ?? []).length} formulir tersedia.</p>
-      </PageSection>
+/** KPI Otomatis (data-driven): skor per karyawan dihitung dari output kerja nyata
+ *  (tiket/lead/collection/canvassing) + kehadiran vs target per role. Tanpa isi manual. */
+const kpiBarColor = (s: number) => (s >= 80 ? "#22C55E" : s >= 60 ? "#F59E0B" : "#EF4444");
+const kpiTextColor = (s: number) => (s >= 80 ? "text-success" : s >= 60 ? "text-amber-600" : "text-destructive");
 
-      <PageSection title={`Nilai Karyawan - Periode ${period}`} description="Skor 1 (kurang) sampai 5 (sangat baik) per pertanyaan; total tertimbang 0-100">
-        <div className="flex flex-wrap gap-2">
-          <select value={assess.formId} onChange={(e) => setAssess((p) => ({ ...p, formId: e.target.value, scores: {} }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
-            <option value="">Pilih formulir…</option>
-            {(data?.forms ?? []).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-          </select>
-          <select value={assess.userId} onChange={(e) => setAssess((p) => ({ ...p, userId: e.target.value }))} className="h-9 rounded-lg border bg-background px-2 text-sm">
-            <option value="">Pilih karyawan…</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.name || u.username}</option>)}
-          </select>
+function KpiSection({ writable }: { writable: boolean }) {
+  const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
+  const [cfgOpen, setCfgOpen] = useState(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ["/api/hr/kpi/auto", period],
+    queryFn: () => api.get<{ period: string; count: number; rows: any[] }>(`/hr/kpi/auto?period=${period}`),
+  });
+  const rows = data?.rows ?? [];
+
+  return (
+    <PageSection
+      title="KPI Otomatis"
+      description="Skor dihitung otomatis dari output kerja nyata (tiket/lead/collection/canvassing) + kehadiran, dibanding target per role. Tidak perlu penilaian manual."
+      actions={<span className="flex items-center gap-2">
+        <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Periode KPI" />
+        {writable && <Button size="sm" variant="outline" onClick={() => setCfgOpen((v) => !v)}>Target &amp; Bobot</Button>}
+      </span>}>
+      {cfgOpen && writable && <KpiConfigEditor onClose={() => setCfgOpen(false)} />}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Menghitung skor…</p>
+      ) : rows.length === 0 ? (
+        <EmptyState icon={BarChart3} size="sm" title="Belum ada data KPI" description="Tandai karyawan resmi di tab Karyawan, dan pastikan ada data output/kehadiran pada periode ini." />
+      ) : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <Card key={r.userId} padding="md" className="space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold">{r.name}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {r.roleLabel} · hadir {r.attendance.hadir} · alpha {r.attendance.alpha} · telat {r.attendance.late}
+                  </div>
+                </div>
+                <div className={`shrink-0 text-2xl font-bold tabular-nums ${kpiTextColor(r.total)}`}>
+                  {r.total}<span className="text-xs text-muted-foreground">/100</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-x-5 gap-y-1.5 sm:grid-cols-2">
+                {r.breakdown.map((b: any) => (
+                  <div key={b.key}>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">
+                        {b.label}{" "}
+                        {b.kind === "count" && b.target != null && <span className="tabular-nums">({b.value}/{b.target})</span>}
+                        {b.kind === "rate" && <span className="tabular-nums">({b.value}%)</span>}
+                        <span className="ml-1 text-[10px] opacity-60">bobot {b.weight}</span>
+                      </span>
+                      <span className="font-semibold tabular-nums">{b.score}</span>
+                    </div>
+                    <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full" style={{ width: `${b.score}%`, backgroundColor: kpiBarColor(b.score) }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
         </div>
-        {form && assess.userId && (
-          <Card padding="md" className="mt-2 space-y-2">
-            {questions.map((q, i) => (
-              <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="min-w-0 flex-1">{q.text} <span className="text-[10px] text-muted-foreground">(bobot {q.weight})</span></span>
-                <span className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((v) => (
-                    <button key={v} type="button" onClick={() => setAssess((p) => ({ ...p, scores: { ...p.scores, [i]: v } }))}
-                      className={`size-8 rounded-full border text-xs font-bold transition-colors ${(assess.scores[i] ?? 3) === v ? "border-primary bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>{v}</button>
-                  ))}
-                </span>
-              </div>
-            ))}
-            <Button size="sm" loading={submitAssess.isPending} onClick={() => submitAssess.mutate()}>Simpan Penilaian</Button>
-          </Card>
-        )}
-        {(data?.assessments ?? []).length > 0 && (
-          <Card padding="none" className="mt-3 divide-y overflow-hidden">
-            {(data?.assessments ?? []).slice(0, 15).map((a) => (
-              <div key={a.id} className="flex items-center gap-2 px-4 py-2 text-sm">
-                <span className="flex-1 truncate">{nameOf(a.userId)} <span className="text-xs text-muted-foreground">· {a.period} · dinilai {nameOf(a.assessorId)}</span></span>
-                <b className={`tabular-nums ${a.total >= 80 ? "text-success" : a.total >= 60 ? "" : "text-destructive"}`}>{Math.round(a.total)}/100</b>
-              </div>
-            ))}
-          </Card>
-        )}
-      </PageSection>
-    </>
+      )}
+    </PageSection>
+  );
+}
+
+/** Editor target + bobot per role (disimpan sekali, dipakai untuk semua perhitungan KPI). */
+function KpiConfigEditor({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ["/api/hr/kpi/config"], queryFn: () => api.get<{ templates: any[] }>(`/hr/kpi/config`) });
+  const [tpls, setTpls] = useState<any[] | null>(null);
+  useEffect(() => { if (data?.templates && !tpls) setTpls(JSON.parse(JSON.stringify(data.templates))); }, [data, tpls]);
+  const save = useMutation({
+    mutationFn: () => api.put(`/hr/kpi/config`, { templates: tpls }),
+    onSuccess: () => {
+      toast.success("Target & bobot tersimpan");
+      qc.invalidateQueries({ queryKey: ["/api/hr/kpi/auto"] });
+      qc.invalidateQueries({ queryKey: ["/api/hr/kpi/config"] });
+      onClose();
+    },
+    onError: (e: any) => toast.error(e?.message || "Gagal menyimpan"),
+  });
+  if (!tpls) return null;
+  const setMetric = (ti: number, mi: number, patch: any) =>
+    setTpls((p) => { const c = JSON.parse(JSON.stringify(p)); Object.assign(c[ti].metrics[mi], patch); return c; });
+  return (
+    <Card padding="md" className="mb-3 space-y-3 bg-muted/20">
+      <p className="text-xs text-muted-foreground">
+        Atur target (untuk metrik hitungan) dan bobot per role. Skor tiap metrik 0-100 (count = value/target, rate = kehadiran/ketepatan),
+        total = rata-rata tertimbang. Bobot tidak wajib berjumlah 100 (dinormalisasi otomatis).
+      </p>
+      <div className="max-h-[50vh] space-y-2 overflow-y-auto">
+        {tpls.map((t, ti) => (
+          <div key={t.role} className="rounded-lg border bg-background p-2.5">
+            <div className="mb-1.5 text-xs font-semibold">{t.label} <span className="text-muted-foreground">({t.role})</span></div>
+            <div className="space-y-1">
+              {t.metrics.map((m: any, mi: number) => (
+                <div key={m.key} className="flex flex-wrap items-center gap-2 text-[11px]">
+                  <span className="w-36 truncate">{m.label}</span>
+                  {m.kind === "count" ? (
+                    <label className="flex items-center gap-1">target
+                      <input type="number" min={1} value={m.target ?? 0} onChange={(e) => setMetric(ti, mi, { target: Math.max(1, Number(e.target.value) || 1) })}
+                        className="h-7 w-16 rounded border bg-background px-1.5 tabular-nums" />
+                    </label>
+                  ) : <span className="w-[92px] text-muted-foreground">rate 0-100</span>}
+                  <label className="flex items-center gap-1">bobot
+                    <input type="number" min={0} value={m.weight} onChange={(e) => setMetric(ti, mi, { weight: Math.max(0, Number(e.target.value) || 0) })}
+                      className="h-7 w-14 rounded border bg-background px-1.5 tabular-nums" />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" loading={save.isPending} onClick={() => save.mutate()}>Simpan</Button>
+        <Button size="sm" variant="ghost" onClick={onClose}>Tutup</Button>
+      </div>
+    </Card>
   );
 }
 
@@ -803,7 +849,7 @@ export default function SdmPage() {
         </>
       )}
 
-      {tab === "kpi" && writable && <KpiSection users={activeUsers} nameOf={nameOf} />}
+      {tab === "kpi" && writable && <KpiSection writable={writable} />}
 
       {tab === "payroll" && writable && <PettyCashSection users={activeUsers} nameOf={nameOf} />}
 

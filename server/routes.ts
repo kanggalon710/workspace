@@ -8264,6 +8264,75 @@ router.post("/api/hr/kpi/assess", async (req, res) => {
   sendSuccess(res, { total });
 });
 
+// -- KPI Otomatis (data-driven): skor dari output kerja nyata + kehadiran vs target per role --
+router.get("/api/hr/kpi/config", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  try {
+    const { DEFAULT_KPI_TEMPLATES } = await import("../shared/kpiAuto.js");
+    const raw = await storage.getSetting("hr_kpi_auto_config");
+    let templates = DEFAULT_KPI_TEMPLATES;
+    if (raw) { try { const p = JSON.parse(raw); if (Array.isArray(p) && p.length) templates = p; } catch { /* pakai default */ } }
+    sendSuccess(res, { templates });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+router.put("/api/hr/kpi/config", async (req, res) => {
+  if (!req.authUser || !hasWritePermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  try {
+    const { templates } = req.body ?? {};
+    if (!Array.isArray(templates) || templates.length === 0) return sendError(res, "templates wajib array", 400);
+    // Validasi ringan: tiap template punya role + metrics array dengan weight numeric.
+    for (const t of templates) {
+      if (!t || typeof t.role !== "string" || !Array.isArray(t.metrics)) return sendError(res, "format template tidak valid", 400);
+      for (const m of t.metrics) {
+        if (!m || typeof m.key !== "string" || (m.kind !== "count" && m.kind !== "rate") || !(Number(m.weight) >= 0))
+          return sendError(res, "format metrik tidak valid", 400);
+      }
+    }
+    await storage.setSetting("hr_kpi_auto_config", JSON.stringify(templates), "hr");
+    sendSuccess(res, { saved: true });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+router.get("/api/hr/kpi/auto", async (req, res) => {
+  if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);
+  const period = String(req.query.period ?? "").slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(period)) return sendError(res, "period wajib YYYY-MM", 400);
+  try {
+    const { DEFAULT_KPI_TEMPLATES, computeKpiScore, templateForRole } = await import("../shared/kpiAuto.js");
+    const raw = await storage.getSetting("hr_kpi_auto_config");
+    let templates = DEFAULT_KPI_TEMPLATES;
+    if (raw) { try { const p = JSON.parse(raw); if (Array.isArray(p) && p.length) templates = p; } catch { /* default */ } }
+
+    const fromIso = new Date(`${period}-01T00:00:00`).toISOString();
+    const endD = new Date(`${period}-01T00:00:00`); endD.setMonth(endD.getMonth() + 1); endD.setSeconds(endD.getSeconds() - 1);
+    const toIso = endD.toISOString();
+
+    const [employees, opsMap, attMap] = await Promise.all([
+      storage.listEmployees(),
+      storage.getOpsStatsForUsers(fromIso, toIso),
+      storage.getAttendanceKpiStatsForMonth(period),
+    ]);
+    const rows = employees
+      .filter((e) => e.isEmployee === 1)
+      .map((e) => {
+        const ops = opsMap.get(e.id) ?? { ticketsResolved: 0, leadsWon: 0, collectionsClosed: 0, canvassingReports: 0 };
+        const att = attMap.get(e.id) ?? { hadir: 0, alpha: 0, late: 0, onTime: 0, attendanceRate: 100, punctualRate: 100 };
+        const metricValues: Record<string, number> = {
+          tickets: ops.ticketsResolved, leads: ops.leadsWon, collections: ops.collectionsClosed,
+          canvassing: ops.canvassingReports, attendance: att.attendanceRate, punctual: att.punctualRate,
+        };
+        const tpl = templateForRole(templates, String(e.role ?? ""));
+        const result = computeKpiScore(tpl, metricValues);
+        return {
+          userId: e.id, name: e.name || e.username, role: e.role, roleLabel: tpl.label,
+          total: result.total, breakdown: result.breakdown,
+          attendance: { hadir: att.hadir, alpha: att.alpha, late: att.late },
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+    sendSuccess(res, { period, count: rows.length, rows });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
 // -- FR-HR-703: petty cash --
 router.get("/api/hr/pettycash", async (req, res) => {
   if (!req.authUser || !hasPermission(req, "hr_sdm")) return sendError(res, "Akses ditolak", 403);

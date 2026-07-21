@@ -3864,10 +3864,10 @@ export class DatabaseStorage implements IStorage {
   /** Registry karyawan: akun user DALAM mitra aktif + flag isEmployee.
    *  QA BUG1: users tak punya kolom mitra_id - WAJIB filter via user_mitras
    *  supaya HR tidak melihat staf tenant lain (cross-tenant PII leak). */
-  async listEmployees(): Promise<Array<{ id: number; name: string; username: string; isActive: number | null; isEmployee: number; position: string | null; department: string | null; employeeId: string | null }>> {
+  async listEmployees(): Promise<Array<{ id: number; name: string; username: string; role: string | null; isActive: number | null; isEmployee: number; position: string | null; department: string | null; employeeId: string | null }>> {
     const inMitra = await this.getUserIdsInMitra(getMitraId());
     const rows = await this.db.select({
-      id: users.id, name: users.name, username: users.username, isActive: users.isActive,
+      id: users.id, name: users.name, username: users.username, role: users.role, isActive: users.isActive,
       isEmployee: users.isEmployee, position: users.position, department: users.department, employeeId: users.employeeId,
     }).from(users).orderBy(asc(users.name));
     return (rows as any[]).filter((u) => inMitra.has(u.id)) as any;
@@ -3907,6 +3907,39 @@ export class DatabaseStorage implements IStorage {
       [mitraId, `${month}-%`],
     );
     return (rows as any[]).map((r) => ({ userId: Number(r.userId), status: String(r.status), c: Number(r.c) }));
+  }
+
+  /** Statistik kehadiran per user untuk 1 bulan (dipakai KPI otomatis).
+   *  attendanceRate = hadir/(hadir+alpha); punctualRate = onTime/hadir (checkIn <= lateThreshold). */
+  async getAttendanceKpiStatsForMonth(month: string, lateThreshold = "08:15"): Promise<Map<number, {
+    hadir: number; alpha: number; late: number; onTime: number; attendanceRate: number; punctualRate: number;
+  }>> {
+    const mitraId = getMitraId();
+    const [rows]: any = await this.pool.execute(
+      `SELECT user_id AS uid, status, check_in AS checkIn FROM hr_attendance WHERE mitra_id = ? AND date LIKE ?`,
+      [mitraId, `${month}-%`],
+    );
+    const map = new Map<number, { hadir: number; alpha: number; late: number; onTime: number; attendanceRate: number; punctualRate: number }>();
+    const ensure = (uid: number) => {
+      let m = map.get(uid);
+      if (!m) { m = { hadir: 0, alpha: 0, late: 0, onTime: 0, attendanceRate: 0, punctualRate: 0 }; map.set(uid, m); }
+      return m;
+    };
+    for (const r of (rows as any[])) {
+      const uid = Number(r.uid); const st = String(r.status);
+      const ci = r.checkIn ? String(r.checkIn).slice(0, 5) : null;
+      const m = ensure(uid);
+      if (st === "hadir") {
+        m.hadir++;
+        if (ci && ci > lateThreshold) m.late++; else m.onTime++; // tanpa checkIn = tidak dihukum
+      } else if (st === "alpha") m.alpha++;
+    }
+    for (const m of map.values()) {
+      const denom = m.hadir + m.alpha;
+      m.attendanceRate = denom > 0 ? Math.round((m.hadir / denom) * 100) : 100;
+      m.punctualRate = m.hadir > 0 ? Math.round((m.onTime / m.hadir) * 100) : 100;
+    }
+    return map;
   }
 
   async createLeave(rec: { userId: number; startDate: string; endDate: string; type: string; reason?: string | null }): Promise<HrLeave> {

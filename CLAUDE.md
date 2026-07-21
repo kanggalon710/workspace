@@ -415,6 +415,23 @@ Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi ant
   - Agregasi reuse `getOpsStatsForUsers` + `getAllUsers` (sama seperti teamspace/performance).
     Scope terdaftar di `VALID_API_SCOPES` (routes.ts) + `/schema` + picker `/api-keys`.
 
+### v5.5 - SDM: absen isi jam + KPI Otomatis (data-driven)
+
+- **Catat Kehadiran** kini bisa isi + adjust **jam masuk/keluar** per karyawan
+  (bukan status saja). Draft menampung status+checkIn+checkOut; pre-fill dari data
+  tersimpan; isi jam auto set status "hadir". Backend `upsertAttendance` sudah
+  dukung checkIn/checkOut sejak awal.
+- **KPI Otomatis** menggantikan penilaian manual-subjektif. Skor per karyawan
+  dihitung dari output kerja nyata (tiket/lead/collection/canvassing via
+  `getOpsStatsForUsers`) + kehadiran (`getAttendanceKpiStatsForMonth`:
+  attendanceRate + punctualRate) dibanding **target per role**. Logika murni
+  `shared/kpiAuto.ts` (`computeKpiScore`, `templateForRole`, DEFAULT_KPI_TEMPLATES)
+  + 8 unit test. Endpoint: `GET /api/hr/kpi/auto?period=YYYY-MM` (skor+breakdown
+  per karyawan diurut), `GET/PUT /api/hr/kpi/config` (target+bobot per role,
+  disimpan di app_settings `hr_kpi_auto_config`). Client `KpiSection` = dashboard
+  skor + editor Target & Bobot. Endpoint manual lama (`/hr/kpi`, `/forms`,
+  `/assess`) masih ada tapi tak dipakai UI.
+
 Arsitektur singkat v5.x:
 - **Navigasi berbasis divisi**: `client/lib/divisions.ts` = satu sumber kebenaran
   (Sidebar/Beranda/hub `/divisi/:key` semua baca dari sini). Dashboard lama → `/dashboard-jaringan` (NOC).
