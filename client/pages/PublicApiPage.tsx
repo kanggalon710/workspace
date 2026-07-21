@@ -25,6 +25,8 @@ const ALL_SCOPES = [
   { key: "customers:read", label: "Subscriber Base", desc: "Jumlah pelanggan by status/paket/wilayah, aktivasi baru, net adds. Agregat (tanpa PII)."  },
   { key: "sahabat:read", label: "Program JABNET Sahabat (Basic)", desc: "Stats program, leaderboard, referral list. Untuk deep-dive funnel pakai marketing:read"  },
   { key: "tickets:read", label: "Work Orders / Tickets", desc: "Tiket aktif, stats per status, SLA info"  },
+  { key: "divisions:read", label: "Analisa Divisi (Team Performance)", desc: "Output pekerjaan tim PER DIVISI (Marketing/Teknik/NOC/Layanan/Keuangan/HRD) — tiket/lead/collection/canvassing daily->weekly->monthly + snapshot KPI per divisi. GET /divisions & /divisions/:key. Untuk AI agent laporan mingguan tim.", recommended: true },
+  { key: "teamspace:read", label: "Teamspace (Tugas & Kinerja Tim)", desc: "Ringkasan tugas per tim + kinerja per anggota (selesai/terlambat + output ops). Agregat, tanpa isi chat/dokumen."  },
 ];
 
 export default function PublicApiPage() {

@@ -9682,7 +9682,7 @@ router.post("/api/loyalty/admin/streak-adjust", async (req: Request, res: Respon
 
 // ========== PUBLIC API KEY MANAGEMENT (admin only) ==========
 
-const VALID_API_SCOPES = ["marketing:read", "marketing:write", "reports:read", "leads:read", "collections:read", "sahabat:read", "tickets:read", "finance:read", "customers:read", "*"];
+const VALID_API_SCOPES = ["marketing:read", "marketing:write", "reports:read", "leads:read", "collections:read", "sahabat:read", "tickets:read", "finance:read", "customers:read", "teamspace:read", "divisions:read", "*"];
 
 /** GET /api/api-keys — list all keys (hash never exposed) */
 router.get("/api/api-keys", async (req: Request, res: Response) => {

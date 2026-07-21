@@ -215,6 +215,7 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       { key: "finance:read", desc: "Revenue & billing (aggregate): MRR, ARPU, revenue-at-risk, billing status, collections recovery/aging. No PII." },
       { key: "customers:read", desc: "Subscriber base (aggregate): counts by status/package/type/district/village + activations. No PII." },
       { key: "teamspace:read", desc: "Teamspace (kolaborasi tim internal): ringkasan tugas per tim + kinerja per anggota. Aggregate, no isi chat/dokumen." },
+      { key: "divisions:read", desc: "Analisa pekerjaan tim PER DIVISI (Marketing/Teknik/NOC/Layanan/Keuangan/HRD): output tim daily->weekly->monthly + snapshot KPI domain. Untuk AI agent laporan divisi." },
       { key: "*", desc: "All scopes (admin keys)" },
     ],
     endpoints: [
@@ -274,6 +275,10 @@ publicApiRouter.get("/api/public/v1/schema", (_req, res) => {
       // ══════ TEAMSPACE (v5.0 — kolaborasi tim internal) ══════
       { method: "GET", path: "/teamspace/tasks", scope: "teamspace:read", desc: "Ringkasan tugas per tim (total/selesai/terlambat) + daftar kartu ringkas. Query: ?detail=1 untuk daftar kartu" },
       { method: "GET", path: "/teamspace/performance", scope: "teamspace:read", desc: "Kinerja per anggota: tugas selesai/dikerjakan/terlambat + output ops (tiket/lead/collection/canvassing). Query: ?from=&to= (default 30 hari)" },
+
+      // ══════ DIVISIONS — analisa pekerjaan tim per divisi (daily->weekly) ══════
+      { method: "GET", path: "/divisions", scope: "divisions:read", desc: "ONE-SHOT semua divisi: output tim (tiket/lead/collection/canvassing) + snapshot KPI domain per divisi. Query: ?period=daily|weekly|monthly|quarterly ATAU ?from=&to=" },
+      { method: "GET", path: "/divisions/:key", scope: "divisions:read", desc: "Detail 1 divisi (marketing|teknik|noc|cs|keuangan|hrd): per-anggota output diurut kontribusi + totals + snapshot KPI. Query: ?period= atau ?from=&to=" },
     ],
     examples: {
       dailyReport: "curl -H 'Authorization: Bearer jbk_live_xxx' https://fiber-tools.arkanova.id/api/public/v1/reports/daily",
@@ -1066,6 +1071,128 @@ publicApiRouter.get("/api/public/v1/teamspace/tasks", requireScope("teamspace:re
       });
     }
     res.json(out);
+  } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
+});
+
+// ==================== DIVISIONS (v5.4) — analisa pekerjaan tim per divisi ====================
+// ONE-SHOT untuk AI agent: output tim (tiket/lead/collection/canvassing) per DIVISI,
+// windowed daily→weekly→monthly + snapshot KPI domain. Anggota dipetakan dari role.
+
+const DIVISION_DEFS: { key: string; label: string; roles: string[] }[] = [
+  { key: "marketing", label: "Marketing", roles: ["marketing", "marketing_spv"] },
+  { key: "teknik", label: "Operasional & Technical Support", roles: ["operator", "teknisi", "teknik"] },
+  { key: "noc", label: "NOC", roles: ["noc"] },
+  { key: "cs", label: "Layanan Pelanggan", roles: ["cs", "customer_service"] },
+  { key: "keuangan", label: "Keuangan", roles: ["finance", "keuangan"] },
+  { key: "hrd", label: "HRD", roles: ["hrd", "hr"] },
+];
+const ROLE_TO_DIVISION: Record<string, string> = {};
+for (const d of DIVISION_DEFS) for (const r of d.roles) ROLE_TO_DIVISION[r] = d.key;
+
+/** Hitung jendela waktu ISO dari period (daily/weekly/monthly/quarterly) atau from/to eksplisit. */
+function periodWindow(p: { period: string; from?: string; to?: string }): { fromIso: string; toIso: string; label: string } {
+  const now = new Date();
+  if (p.from || p.to) {
+    const f = p.from ?? p.to!;
+    const t = p.to ?? p.from!;
+    return { fromIso: new Date(`${f}T00:00:00`).toISOString(), toIso: new Date(`${t}T23:59:59`).toISOString(), label: `${f}..${t}` };
+  }
+  const days = p.period === "daily" ? 1 : p.period === "weekly" ? 7 : p.period === "quarterly" ? 90 : 30;
+  const from = p.period === "daily"
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+    : new Date(now.getTime() - days * 86400_000);
+  return { fromIso: from.toISOString(), toIso: now.toISOString(), label: p.period };
+}
+
+type OpsRow = { ticketsResolved: number; leadsWon: number; collectionsClosed: number; canvassingReports: number };
+const EMPTY_OPS: OpsRow = { ticketsResolved: 0, leadsWon: 0, collectionsClosed: 0, canvassingReports: 0 };
+const sumOps = (a: OpsRow, b: OpsRow): OpsRow => ({
+  ticketsResolved: a.ticketsResolved + b.ticketsResolved,
+  leadsWon: a.leadsWon + b.leadsWon,
+  collectionsClosed: a.collectionsClosed + b.collectionsClosed,
+  canvassingReports: a.canvassingReports + b.canvassingReports,
+});
+
+/** Agregasi output tim per divisi untuk window tertentu (dipakai kedua endpoint). */
+async function buildDivisionAggregates(fromIso: string, toIso: string) {
+  const [users, opsMap] = await Promise.all([
+    storage.getAllUsers(),
+    storage.getOpsStatsForUsers(fromIso, toIso),
+  ]);
+  const byDivision = new Map<string, { members: any[]; totals: OpsRow }>();
+  for (const d of DIVISION_DEFS) byDivision.set(d.key, { members: [], totals: { ...EMPTY_OPS } });
+  for (const u of users) {
+    const divKey = ROLE_TO_DIVISION[String((u as any).role ?? "").toLowerCase()];
+    if (!divKey) continue; // admin/role lintas-divisi tidak dihitung ke satu divisi
+    const ops = opsMap.get(u.id) ?? { ...EMPTY_OPS };
+    const bucket = byDivision.get(divKey)!;
+    bucket.members.push({
+      userId: u.id, name: (u as any).name ?? (u as any).username, username: (u as any).username,
+      role: (u as any).role, active: (u as any).isActive === 1, ops,
+    });
+    bucket.totals = sumOps(bucket.totals, ops);
+  }
+  return byDivision;
+}
+
+publicApiRouter.get("/api/public/v1/divisions", requireScope("divisions:read"), async (req, res) => {
+  try {
+    const win = periodWindow(parsePeriod(req));
+    const [byDivision, dash, colStats] = await Promise.all([
+      buildDivisionAggregates(win.fromIso, win.toIso),
+      storage.getDashboardStats().catch(() => null as any),
+      storage.getCollectionStats().catch(() => null as any),
+    ]);
+    const divisions = DIVISION_DEFS.map((d) => {
+      const agg = byDivision.get(d.key)!;
+      const snapshot: Record<string, number> = {};
+      if (dash) {
+        if (d.key === "marketing") { snapshot.newCustomerPerDay = dash.rataPertumbuhanHarian; snapshot.activeCustomers = dash.activeCustomers; }
+        if (d.key === "noc" || d.key === "cs") { snapshot.activeCustomers = dash.activeCustomers; snapshot.isolirCustomers = dash.isolirCustomers; }
+        if (d.key === "teknik") { snapshot.odpKritis = dash.odpKritisCount; snapshot.coreFeederSisa = dash.coreFeederSisa; }
+      }
+      if (colStats && (d.key === "keuangan" || d.key === "cs")) { snapshot.openCollections = colStats.total; snapshot.outstandingRp = colStats.totalOverdue; }
+      return {
+        key: d.key, label: d.label, memberCount: agg.members.length,
+        teamOutput: agg.totals, snapshot,
+      };
+    });
+    res.json({ period: win.label, window: { from: win.fromIso, to: win.toIso }, generatedAt: new Date().toISOString(), divisions });
+  } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
+});
+
+publicApiRouter.get("/api/public/v1/divisions/:key", requireScope("divisions:read"), async (req, res) => {
+  try {
+    const key = String(req.params.key).toLowerCase();
+    const def = DIVISION_DEFS.find((d) => d.key === key);
+    if (!def) return res.status(404).json({ error: "not_found", message: `Divisi "${key}" tidak dikenal. Pilihan: ${DIVISION_DEFS.map((d) => d.key).join(", ")}` });
+    const win = periodWindow(parsePeriod(req));
+    const byDivision = await buildDivisionAggregates(win.fromIso, win.toIso);
+    const agg = byDivision.get(key)!;
+    // Member diurut dari kontribusi terbanyak (untuk analisa top/bottom performer).
+    const members = [...agg.members].sort((a, b) => {
+      const sa = a.ops.ticketsResolved + a.ops.leadsWon + a.ops.collectionsClosed + a.ops.canvassingReports;
+      const sb = b.ops.ticketsResolved + b.ops.leadsWon + b.ops.collectionsClosed + b.ops.canvassingReports;
+      return sb - sa;
+    });
+    const snapshot: Record<string, number> = {};
+    if (key === "keuangan" || key === "cs") {
+      const cs = await storage.getCollectionStats().catch(() => null as any);
+      if (cs) { snapshot.openCollections = cs.total; snapshot.outstandingRp = cs.totalOverdue; snapshot.avgAgeDays = cs.avgAgeDays; }
+    }
+    if (["teknik", "noc", "cs", "marketing"].includes(key)) {
+      const dash = await storage.getDashboardStats().catch(() => null as any);
+      if (dash) {
+        if (key === "teknik") { snapshot.odpKritis = dash.odpKritisCount; snapshot.coreFeederSisa = dash.coreFeederSisa; snapshot.totalOdp = dash.totalOdps; }
+        if (key === "noc" || key === "cs") { snapshot.activeCustomers = dash.activeCustomers; snapshot.isolirCustomers = dash.isolirCustomers; snapshot.totalCustomers = dash.totalCustomers; }
+        if (key === "marketing") { snapshot.newCustomerPerDay = dash.rataPertumbuhanHarian; snapshot.activeCustomers = dash.activeCustomers; }
+      }
+    }
+    res.json({
+      key, label: def.label, period: win.label, window: { from: win.fromIso, to: win.toIso },
+      generatedAt: new Date().toISOString(),
+      memberCount: members.length, teamOutput: agg.totals, snapshot, members,
+    });
   } catch (e: any) { res.status(500).json({ error: "internal", message: e.message }); }
 });
 

@@ -396,6 +396,25 @@ Pipeline penagihan jadi **ladder SOP terukur ~1 bulan** dengan auto-delegasi ant
 - **Marketing 2 pipeline**: (1) `/leads` lead dari canvassing (auto-integrasi lama: `createLead`→
   `emitLeadEvent`→pipeline card), (2) `/collections/marketing` reaktivasi (delegasi collection).
 
+### v5.4b — Beranda divisi = dashboard data + Public API per-divisi
+
+- **Beranda tiap divisi** (`DivisionHubPage`) bukan lagi grid modul (navigasi ada di
+  sidebar) — kini **dashboard laporan**: KPI diperkaya + breakdown (pipeline collection
+  per tahap untuk Keuangan/CS/Marketing, kapasitas core/port untuk Teknik/NOC) dari
+  endpoint existing (`/dashboard`, `/collections/stats`).
+- **Emoji dihapus menyeluruh** dari UI staff (bulk-strip + konversi glyph fungsional ke
+  Lucide di peta/tickets/customers/field-picker). Tanda tipografis (✓ ○ ☑ ☎) dipertahankan.
+  DIKECUALIKAN sadar: konten pesan WhatsApp/broadcast (dikirim ke pelanggan) + emoji
+  program loyalti/Sahabat (tier & reward pilihan admin, ikut ke pesan WA).
+- **Public API per-divisi** (scope `divisions:read`) untuk AI agent analisa kerja tim
+  daily→weekly→monthly:
+  - `GET /api/public/v1/divisions?period=daily|weekly|monthly|quarterly` (atau `?from=&to=`)
+    — semua divisi: output tim (tiket/lead/collection/canvassing) + snapshot KPI domain.
+  - `GET /api/public/v1/divisions/:key` — 1 divisi: per-anggota output diurut kontribusi +
+    totals + snapshot. Anggota dipetakan dari `role` (ROLE_TO_DIVISION di public-api-routes).
+  - Agregasi reuse `getOpsStatsForUsers` + `getAllUsers` (sama seperti teamspace/performance).
+    Scope terdaftar di `VALID_API_SCOPES` (routes.ts) + `/schema` + picker `/api-keys`.
+
 Arsitektur singkat v5.x:
 - **Navigasi berbasis divisi**: `client/lib/divisions.ts` = satu sumber kebenaran
   (Sidebar/Beranda/hub `/divisi/:key` semua baca dari sini). Dashboard lama → `/dashboard-jaringan` (NOC).
