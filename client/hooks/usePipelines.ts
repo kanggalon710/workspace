@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api, getAuthHeaders } from "@/lib/api";
 import { compressImage } from "@/lib/imageCompress";
 import type { Pipeline, PipelineStage, PipelineCard, PipelineField, PipelineRule, RuleCondition, TimeTriggerConfig } from "@shared/schema";
@@ -155,7 +156,9 @@ export function usePipelineMutations(pipelineId?: number) {
       onSettled: invalidate,
     }),
     createCard: useMutation({ mutationFn: (b: any) => api.post(`/pipelines/${pipelineId}/cards`, b), onSuccess: invalidate }),
-    updateCard: useMutation({ mutationFn: ({ cardId, ...b }: any) => api.patch(`/pipelines/cards/${cardId}`, b), onSuccess: invalidate }),
+    // Semua edit inline kartu (judul/prioritas/assignee/deskripsi/tenggat) lewat sini - beri
+    // konfirmasi "berhasil" standar supaya user tahu perubahan tersimpan (sebelumnya senyap).
+    updateCard: useMutation({ mutationFn: ({ cardId, ...b }: any) => api.patch(`/pipelines/cards/${cardId}`, b), onSuccess: () => { invalidate(); toast.success("Perubahan disimpan"); } }),
     moveCard: useMutation({ mutationFn: ({ cardId, toStageId, toPosition }: any) => api.post(`/pipelines/cards/${cardId}/move`, { toStageId, toPosition }), onSuccess: invalidate }),
     deleteCard: useMutation({ mutationFn: (cardId: number) => api.delete(`/pipelines/cards/${cardId}`), onSuccess: invalidate }),
     addComment: useMutation({

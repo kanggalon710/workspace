@@ -1480,7 +1480,7 @@ export default function IntegrationPage() {
             >
               Test Koneksi
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => window.location.href = "/devices"}>
+            <Button size="sm" variant="outline-primary" onClick={() => window.location.href = "/devices"}>
               Buka Perangkat ONT →
             </Button>
           </div>
@@ -1752,7 +1752,7 @@ export default function IntegrationPage() {
               {billReconciling ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-1" />}
               Reconcile
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => (window.location.href = "/customers")}>
+            <Button size="sm" variant="outline-primary" onClick={() => (window.location.href = "/customers")}>
               Buka Pelanggan
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
@@ -2100,7 +2100,7 @@ export default function IntegrationPage() {
               </Button>
             </div>
 
-            <Button size="sm" variant="ghost" onClick={() => window.location.href = "/mpwa"}>
+            <Button size="sm" variant="outline-primary" onClick={() => window.location.href = "/mpwa"}>
               Buka Template MPWA →
             </Button>
           </div>

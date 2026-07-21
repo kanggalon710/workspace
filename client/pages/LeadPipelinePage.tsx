@@ -16,7 +16,7 @@ import {
   StickyNote, ChevronRight, ChevronLeft, LayoutGrid, List, Star,
   Home, Briefcase, Building2, GraduationCap, HelpCircle, TrendingUp,
   UserPlus, Eye, Loader2, Pencil, Trash2, Camera, Clock, Move, Upload,
-  Flame, Zap, AlertTriangle, Calendar,
+  Flame, Zap, AlertTriangle, Calendar, SlidersHorizontal, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1279,14 +1279,7 @@ export default function LeadPipelinePage() {
               <ListChecks className="h-5 w-5 md:h-6 md:w-6 text-white" strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg md:text-xl font-bold tracking-tight">Lead Pipeline</h1>
-                {isSupervisor && (
-                  <span className="inline-flex items-center gap-1 text-2xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
-                    <Star className="h-2.5 w-2.5" /> SPV
-                  </span>
-                )}
-              </div>
+              <h1 className="text-lg md:text-xl font-bold tracking-tight">Lead Pipeline</h1>
               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                 Lead dari canvassing / prospect finder - kelola sampai jadi pelanggan.
               </p>
@@ -1328,102 +1321,56 @@ export default function LeadPipelinePage() {
           </div>
         </div>
 
-        {/* Stats row - compact, 4 kolom 1 baris */}
-        <div className="grid grid-cols-4 gap-1.5 md:gap-2">
-          <div className="rounded-lg border border-border bg-card px-2 py-1.5 md:px-3 md:py-2 border-l-[3px] border-l-primary">
-            <div className="text-[9px] md:text-2xs text-muted-foreground uppercase tracking-wider font-semibold truncate">Total</div>
-            <div className="text-base md:text-lg font-black text-primary tabular-nums leading-tight">{timeFiltered.length}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-2 py-1.5 md:px-3 md:py-2 border-l-[3px] border-l-warning">
-            <div className="text-[9px] md:text-2xs text-muted-foreground uppercase tracking-wider font-semibold truncate">Active</div>
-            <div className="text-base md:text-lg font-black text-warning tabular-nums leading-tight">{activeLeads}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-2 py-1.5 md:px-3 md:py-2 border-l-[3px] border-l-success">
-            <div className="text-[9px] md:text-2xs text-muted-foreground uppercase tracking-wider font-semibold truncate">Won</div>
-            <div className="text-base md:text-lg font-black text-success tabular-nums leading-tight">{wonLeads}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card px-2 py-1.5 md:px-3 md:py-2 border-l-[3px] border-l-info">
-            <div className="text-[9px] md:text-2xs text-muted-foreground uppercase tracking-wider font-semibold truncate">Konversi</div>
-            <div className="text-base md:text-lg font-black text-info tabular-nums leading-tight">{convRate}%</div>
-          </div>
-        </div>
-
-        {/* Time range filter (by tanggal lead masuk) */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Filter bar ringkas: periode + tahap (dropdown) + total ringkas. Fokus ke pipeline;
+            KPI detail (won/konversi) ada di Dashboard divisi, tidak diulang di sini. */}
+        <div className="flex items-center gap-2 flex-wrap pb-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" /> Periode masuk
+            <SlidersHorizontal className="h-3.5 w-3.5" /> Filter
           </span>
-          {(["all", "7d", "30d", "custom"] as RangePreset[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setRangePreset(p)}
-              className={cn(
-                "text-xs font-semibold px-3 h-7 rounded-full border transition-colors",
-                rangePreset === p
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-              )}
+          {/* Periode masuk */}
+          <div className="relative">
+            <select
+              value={rangePreset}
+              onChange={(e) => setRangePreset(e.target.value as RangePreset)}
+              aria-label="Periode masuk"
+              className="h-8 pl-3 pr-8 rounded-lg border border-border bg-card text-xs font-semibold text-foreground appearance-none cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
-              {RANGE_LABELS[p]}
-            </button>
-          ))}
+              {(["all", "7d", "30d", "custom"] as RangePreset[]).map((p) => (
+                <option key={p} value={p}>Periode: {RANGE_LABELS[p]}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          </div>
+          {/* Tahap - hanya relevan di List (Kanban sudah menampilkan semua tahap sebagai kolom) */}
+          {view === "list" && (
+            <div className="relative">
+              <select
+                value={stageFilter}
+                onChange={(e) => setStageFilter(e.target.value as LeadStage | "all")}
+                aria-label="Tahap"
+                className="h-8 pl-3 pr-8 rounded-lg border border-border bg-card text-xs font-semibold text-foreground appearance-none cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="all">Tahap: Semua ({timeFiltered.length})</option>
+                {LEAD_STAGES.map((s) => (
+                  <option key={s} value={s}>{LEAD_STAGE_LABELS[s]} ({timeFiltered.filter(l => l.stage === s).length})</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            </div>
+          )}
+          {/* Custom date range */}
           {rangePreset === "custom" && (
             <div className="flex items-center gap-1.5">
-              <Input
-                type="date"
-                value={customFrom}
-                max={customTo || undefined}
-                onChange={(e) => setCustomFrom(e.target.value)}
-                className="h-7 w-[140px] text-xs"
-              />
+              <Input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="h-8 w-[140px] text-xs" />
               <span className="text-xs text-muted-foreground">s/d</span>
-              <Input
-                type="date"
-                value={customTo}
-                min={customFrom || undefined}
-                onChange={(e) => setCustomTo(e.target.value)}
-                className="h-7 w-[140px] text-xs"
-              />
+              <Input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="h-8 w-[140px] text-xs" />
             </div>
           )}
           {rangePreset === "custom" && !customRangeValid && (
             <span className="text-2xs text-destructive">Pilih tanggal mulai ≤ tanggal akhir</span>
           )}
-        </div>
-
-        {/* Stage filter chips */}
-        <div className="flex gap-1.5 flex-wrap pb-2">
-          <button
-            onClick={() => setStageFilter("all")}
-            className={cn(
-              "text-xs font-semibold px-3 h-7 rounded-full border transition-colors",
-              stageFilter === "all"
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border bg-card text-muted-foreground hover:bg-muted"
-            )}
-          >
-            Semua ({timeFiltered.length})
-          </button>
-          {LEAD_STAGES.map((s) => {
-            const count = timeFiltered.filter(l => l.stage === s).length;
-            const active = stageFilter === s;
-            return (
-              <button
-                key={s}
-                onClick={() => setStageFilter(s)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 text-xs font-semibold px-3 h-7 rounded-full border transition-colors",
-                  active ? "text-white border-current" : "border-border bg-card text-muted-foreground hover:bg-muted"
-                )}
-                style={active ? { backgroundColor: LEAD_STAGE_COLORS[s] } : undefined}
-              >
-                {!active && (
-                  <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: LEAD_STAGE_COLORS[s] }} />
-                )}
-                {LEAD_STAGE_LABELS[s]} <span className="tabular-nums opacity-80">({count})</span>
-              </button>
-            );
-          })}
+          {/* Total ringkas (bukan KPI - sekadar konteks jumlah kartu yang tampil) */}
+          <span className="ml-auto text-xs text-muted-foreground tabular-nums">{timeFiltered.length} lead</span>
         </div>
       </div>
 

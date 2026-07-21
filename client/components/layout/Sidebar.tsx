@@ -422,7 +422,7 @@ export function Sidebar() {
                                 return (
                                   <div key={child.path ?? child.label} className="group/item relative">
                                     <button
-                                      onClick={() => { if (child.path) { setLocation(child.path); setMobileOpen(false); } }}
+                                      onClick={() => { if (child.path) { setLocation(child.path); setMobileOpen(false); setNavQuery(""); } }}
                                       className={cn(
                                         "w-full flex items-center gap-2 pl-3 pr-7 py-1.5 rounded-md text-[13px] transition-all",
                                         isActive
@@ -461,7 +461,7 @@ export function Sidebar() {
                     return (
                       <div key={item.path} className="group/item relative">
                         <button
-                          onClick={() => { setLocation(item.path!); setMobileOpen(false); }}
+                          onClick={() => { setLocation(item.path!); setMobileOpen(false); setNavQuery(""); }}
                           className={cn(
                             "w-full flex items-center gap-2.5 pl-3 pr-7 py-2 rounded-lg text-sm transition-all",
                             isActive
