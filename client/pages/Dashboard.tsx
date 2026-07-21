@@ -393,7 +393,7 @@ export default function Dashboard() {
                   const isRed = det.pct < 40;
                   const isYellow = det.pct >= 40 && det.pct < 70;
                   const statusColor = isRed ? "text-red-500" : isYellow ? "text-amber-500" : "text-emerald-500";
-                  const indicator = isRed ? "🔴" : isYellow ? "🟡" : "🟢";
+                  const indicator = "●";
                   return (
                     <div key={i} className="flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs">
@@ -401,7 +401,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-1.5">
                           <span className={`text-[10px] ${statusColor} font-bold`}>{det.pct}%</span>
                           <span className="text-muted-foreground text-[9px] opacity-70">[{det.score}/{det.weight}]</span>
-                          <span className="text-[10px]">{indicator}</span>
+                          <span className={`text-[10px] ${statusColor}`}>{indicator}</span>
                         </div>
                       </div>
                       <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -495,7 +495,7 @@ export default function Dashboard() {
             {
               label: "Isolir", value: isolirCustomers, icon: UserX,
               color: "text-orange-500", bg: "bg-orange-500/10", sub: "Dibatasi billing", route: "/customers",
-              pill: isolirCustomers > 0 ? "⚠️ Tindak lanjuti" : null, pillColor: "text-orange-600 bg-orange-50 border-orange-200"
+              pill: isolirCustomers > 0 ? "Tindak lanjuti" : null, pillColor: "text-orange-600 bg-orange-50 border-orange-200"
             },
             {
               label: "Non-Aktif/Churn", value: Math.max(0, inactiveCustomers), icon: Wifi,
@@ -585,7 +585,8 @@ export default function Dashboard() {
               label: "Koneksi Core", value: coreConnections?.length ?? 0, icon: Link2, 
               color: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "text-red-500" : "text-emerald-500", 
               bg: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "bg-red-500/10" : "bg-emerald-500/10", 
-              sub: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "⚠️ Integrasi Core Kosong!" : "Sambungan core aktif" 
+              sub: (coreConnections?.length === 0 && (odps?.length || 0) > 0) ? "Integrasi Core Kosong!" : "Sambungan core aktif",
+              alert: (coreConnections?.length === 0 && (odps?.length || 0) > 0)
             },
           ].map((item) => (
             <Card key={item.label}>
@@ -597,7 +598,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-2xl font-bold">{formatNumber(item.value)}</p>
                     <p className="text-xs font-medium">{item.label}</p>
-                    <p className={`text-[10px] ${item.sub.includes('⚠️') ? 'text-red-500 font-semibold' : 'text-muted-foreground'}`}>{item.sub}</p>
+                    <p className={`text-[10px] ${(item as any).alert ? 'text-red-500 font-semibold' : 'text-muted-foreground'}`}>{item.sub}</p>
                   </div>
                 </div>
               </CardContent>
@@ -878,7 +879,7 @@ export default function Dashboard() {
         </div>
 
         <p className="text-xs text-muted-foreground mb-4">
-          🎯 Target penetrasi: setiap ODP minimal <strong>80%</strong> terisi — maksimal <strong>100%</strong> (penuh = sukses)
+          Target penetrasi: setiap ODP minimal <strong>80%</strong> terisi — maksimal <strong>100%</strong> (penuh = sukses)
         </p>
 
         {!odpUtil ? (
@@ -904,7 +905,7 @@ export default function Dashboard() {
                     {
                       label: "Rata-rata Utilisasi",
                       value: `${avgPct}%`,
-                      sub: avgPct >= 80 ? "✅ Di atas target" : "⚠️ Di bawah target 80%",
+                      sub: avgPct >= 80 ? "Di atas target" : "Di bawah target 80%",
                       icon: TrendingUp,
                       color: avgPct >= 80 ? "text-green-500" : "text-orange-500",
                       bg: avgPct >= 80 ? "bg-green-500/10" : "bg-orange-500/10",

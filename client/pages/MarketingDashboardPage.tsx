@@ -487,7 +487,7 @@ export default function MarketingDashboardPage() {
 
             <div className="space-y-2">
               {data.teamPerformance.slice(0, 6).map((m, i) => {
-                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+                const medal = i < 3 ? `#${i + 1}` : null;
                 return (
                   <div
                     key={m.id}

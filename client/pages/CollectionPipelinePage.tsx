@@ -90,7 +90,7 @@ const ACTIVITY_CFG: Record<string, { label: string; icon: any; color: string }> 
 };
 
 /** division: undefined = board penuh (Keuangan/Finance). "cs"/"marketing" = view ter-scope
- *  SOP delegasi — hanya menampilkan kartu di stage milik divisi tsb (cross-check delegasi). */
+ * SOP delegasi — hanya menampilkan kartu di stage milik divisi tsb (cross-check delegasi). */
 export default function CollectionPipelinePage({ division }: { division?: "cs" | "marketing" } = {}) {
   const { user, canWrite } = useAuth();
   const qc = useQueryClient();
@@ -326,7 +326,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
       id,
       stage: targetStage,
       issueType: !isTerminal && stageIssueType ? stageIssueType : undefined,
-      promiseDate: stagePromiseDate || undefined,  // opsional di stage manapun
+      promiseDate: stagePromiseDate || undefined, // opsional di stage manapun
       closeReason: targetRole === "writeoff" ? (stageCloseReason || "manual_write_off") : undefined,
       note: stageNote.trim() || undefined,
       photoData: stagePhoto ?? undefined,
@@ -819,7 +819,7 @@ function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; o
               <span className="text-sm text-muted-foreground">hari setelah jatuh tempo</span>
             </div>
             <p className="text-[11px] text-muted-foreground bg-blue-50 dark:bg-blue-950/30 rounded p-2">
-              💡 Contoh: <strong>3 hari</strong> = pelanggan masuk collection 3 hari setelah jatuh tempo tagihan (preventif, sebelum diisolir).
+               Contoh: <strong>3 hari</strong> = pelanggan masuk collection 3 hari setelah jatuh tempo tagihan (preventif, sebelum diisolir).
               Atur 0 untuk trigger di hari yang sama.
             </p>
           </div>
@@ -834,7 +834,7 @@ function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; o
               <span className="text-sm text-muted-foreground">hari (0 = nonaktif)</span>
             </div>
             <p className="text-[11px] text-muted-foreground bg-amber-50 dark:bg-amber-950/30 rounded p-2">
-              ⚠️ Collection yang sudah open &gt; N hari akan otomatis di-move ke stage <strong>written_off</strong>.
+               Collection yang sudah open &gt; N hari akan otomatis di-move ke stage <strong>written_off</strong>.
               Contoh: <strong>90 hari</strong> untuk cleanup pelanggan yang tidak ada harapan bayar.
               Set 0 untuk menonaktifkan (harus manual write-off).
             </p>
@@ -1549,7 +1549,7 @@ function StageDeleteDialog({ target, stages, cardCount, onClose, onDeleted }: {
               <div className="flex-1">
                 <div className="text-sm font-medium text-red-600 dark:text-red-400">Hapus permanen semua kartu</div>
                 <div className="text-[11px] text-muted-foreground">
-                  ⚠️ Semua kartu di stage ini beserta riwayat aktivitasnya akan dihapus permanen. Tidak bisa dibatalkan.
+                   Semua kartu di stage ini beserta riwayat aktivitasnya akan dihapus permanen. Tidak bisa dibatalkan.
                 </div>
                 {mode === "purge" && cardCount > 0 && (
                   <div className="mt-2">

@@ -1,5 +1,5 @@
 /** Teamspace Fase 3 — Cheers / apresiasi antar-rekan (FR-1203):
- *  kirim kudos, riwayat diterima/dikirim, leaderboard 30 hari. */
+ * kirim kudos, riwayat diterima/dikirim, leaderboard 30 hari. */
 import { useMemo, useState } from "react";
 import { useCheers, useCheersLeaderboard, useCheerMutations } from "@/hooks/useTeamspace";
 import { useAssignableUsers } from "@/hooks/usePipelines";
@@ -33,7 +33,7 @@ export default function CheersPage() {
     if (!toUser || !message.trim()) return;
     try {
       await sendCheer.mutateAsync({ toUserId: Number(toUser), message: message.trim() });
-      toast.success("Cheers terkirim 🎉");
+      toast.success("Cheers terkirim ");
       setShowSend(false);
       setToUser(""); setMessage("");
     } catch (e: any) {
@@ -84,7 +84,7 @@ export default function CheersPage() {
               {(rows ?? []).map((c) => (
                 <Card key={c.id} variant="elevated" padding="sm">
                   <div className="flex items-start gap-3">
-                    <span className="text-xl" aria-hidden="true">🎉</span>
+                    <span className="text-xl" aria-hidden="true"></span>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-muted-foreground">
                         {box === "received"
@@ -115,7 +115,7 @@ export default function CheersPage() {
                     {i + 1}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm">{nameOf(r.userId)}</span>
-                  <span className="text-xs font-bold tabular-nums">{r.count} 🎉</span>
+                  <span className="text-xs font-bold tabular-nums">{r.count} </span>
                 </li>
               ))}
             </ol>
@@ -126,7 +126,7 @@ export default function CheersPage() {
       {showSend && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowSend(false); }}>
           <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
-            <DialogTitle>Kirim Cheers 🎉</DialogTitle>
+            <DialogTitle>Kirim Cheers </DialogTitle>
             <div className="space-y-3.5">
               <div>
                 <span className="mb-1 block text-xs font-medium">Untuk rekan</span>
@@ -145,7 +145,7 @@ export default function CheersPage() {
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowSend(false)}>Batal</Button>
                 <Button onClick={submit} loading={sendCheer.isPending} disabled={!toUser || !message.trim()}>
-                  Kirim 🎉
+                  Kirim
                 </Button>
               </div>
             </div>

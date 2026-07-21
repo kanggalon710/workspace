@@ -9967,6 +9967,20 @@ export class DatabaseStorage implements IStorage {
         try { await this.applyCollectionSopLadder(Number(m.id)); }
         catch (e: any) { console.warn(`[migration] SOP ladder mitra ${m.id}: ${e.message}`); }
       }
+      // Bersihkan emoji + artefak mojibake ("Lunas ?") dari label stage — tampilan profesional.
+      try {
+        const [allStageRows]: any = await this.pool.execute(`SELECT id, label FROM collection_stages`);
+        const stripEmoji = (s: string) => s
+          .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2705}\u{274C}\u{FE0F}\u{20E3}]/gu, "")
+          .replace(/\s*\?\s*$/g, "")   // buang "?" artefak emoji yang gagal simpan (utf8mb4)
+          .replace(/\s{2,}/g, " ").trim();
+        for (const r of (allStageRows as any[])) {
+          const cleaned = stripEmoji(String(r.label ?? ""));
+          if (cleaned && cleaned !== r.label) {
+            await this.pool.execute(`UPDATE collection_stages SET label = ? WHERE id = ?`, [cleaned, r.id]);
+          }
+        }
+      } catch (e: any) { console.warn(`[migration] clean stage labels: ${e.message}`); }
     } catch (e: any) {
       console.warn(`[migration] collection_stages setup failed: ${e.message}`);
     }

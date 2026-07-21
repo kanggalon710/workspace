@@ -6,7 +6,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { getDivision, DIVISIONS } from "@/lib/divisions";
+import { getDivision } from "@/lib/divisions";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageContainer, PageSection } from "@/components/ui/page-container";
 import { Card } from "@/components/ui/card";
@@ -144,21 +144,6 @@ export default function DivisionHubPage() {
             })}
           </div>
         )}
-      </PageSection>
-
-      {/* Divisi lain yang bisa diakses (lintas-akses admin/spv) */}
-      <PageSection title="Divisi Lain">
-        <div className="flex flex-wrap gap-1.5">
-          {DIVISIONS.filter((d) => d.key !== division.key).map((d) => {
-            const DIcon = d.icon;
-            return (
-              <button key={d.key} type="button" onClick={() => navigate(`/divisi/${d.key}`)}
-                className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-elev-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary active:scale-95">
-                <DIcon className="size-3.5 text-muted-foreground" /> {d.short}
-              </button>
-            );
-          })}
-        </div>
       </PageSection>
     </PageContainer>
   );

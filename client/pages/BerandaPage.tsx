@@ -1,6 +1,6 @@
 /** Beranda (v5.1): pengganti dashboard global — pemilih divisi.
- *  Role dengan divisi utama (ROLE_HOME_DIVISION) langsung diarahkan ke hub-nya;
- *  admin / role lintas divisi melihat grid semua divisi yang boleh diakses. */
+ * Role dengan divisi utama (ROLE_HOME_DIVISION) langsung diarahkan ke hub-nya;
+ * admin / role lintas divisi melihat grid semua divisi yang boleh diakses. */
 import { useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -96,7 +96,7 @@ export default function BerandaPage() {
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">JABNET Workspace</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight-display">
-            Halo, {user?.name?.split(" ")[0] ?? "Tim"} 👋
+            Halo, {user?.name?.split(" ")[0] ?? "Tim"}
           </h1>
           <p className="mt-1 text-sm text-white/70">Pilih divisi untuk mulai bekerja — tiap divisi punya dashboard & modulnya sendiri.</p>
         </div>

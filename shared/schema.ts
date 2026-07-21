@@ -1444,8 +1444,8 @@ export const COLLECTION_STAGE_LABELS: Record<CollectionStage, string> = {
   delegasi_marketing: "Delegasi Marketing",
   dikunjungi: "Sudah Dikunjungi",
   issue: "Bermasalah",
-  paid: "Lunas / Reaktivasi ✅",
-  written_off: "Churn / Write-Off ❌",
+  paid: "Lunas / Reaktivasi",
+  written_off: "Churn / Write-Off",
 };
 
 export const COLLECTION_STAGE_COLORS: Record<CollectionStage, string> = {
@@ -1917,8 +1917,8 @@ export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
   contacted: "Dihubungi",
   interested: "Tertarik",
   negotiation: "Negosiasi",
-  won: "Closing ✅",
-  lost: "Tidak Jadi ❌",
+  won: "Closing",
+  lost: "Tidak Jadi",
 };
 export const LEAD_STAGE_COLORS: Record<LeadStage, string> = {
   new: "#6B7280",

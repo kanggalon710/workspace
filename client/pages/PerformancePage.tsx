@@ -1,7 +1,7 @@
 /** Teamspace Fase 3 — Laporan Kinerja terpadu (FR-10xx + FR-1006 + §14):
- *  distribusi status (donut), on-time & cycle time, skor deterministik per anggota
- *  (bintang 1-5), output ops (tiket/lead/collection/canvassing), Kemungkinan
- *  Penghambat (> threshold hari), dan saran AI (Claude) dari angka aktual. */
+ * distribusi status (donut), on-time & cycle time, skor deterministik per anggota
+ * (bintang 1-5), output ops (tiket/lead/collection/canvassing), Kemungkinan
+ * Penghambat (> threshold hari), dan saran AI (Claude) dari angka aktual. */
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
@@ -134,7 +134,7 @@ export default function PerformancePage() {
       const o = row.original.ops;
       return (
         <span className="text-[10px] text-muted-foreground">
-          🎫{o.ticketsResolved} · 🎯{o.leadsWon} · 💰{o.collectionsClosed} · 📍{o.canvassingReports}
+          {o.ticketsResolved} · {o.leadsWon} · {o.collectionsClosed} · {o.canvassingReports}
         </span>
       );
     } },
@@ -256,8 +256,8 @@ export default function PerformancePage() {
                 </p>
               )}
               <div className="mt-3 border-t pt-2 text-[10px] text-muted-foreground">
-                Output ops periode ini: 🎫 {opsTotals.ticketsResolved} tiket selesai · 🎯 {opsTotals.leadsWon} lead won ·
-                💰 {opsTotals.collectionsClosed} collection closed · 📍 {opsTotals.canvassingReports} laporan canvassing
+                Output ops periode ini: {opsTotals.ticketsResolved} tiket selesai · {opsTotals.leadsWon} lead won ·
+                 {opsTotals.collectionsClosed} collection closed · {opsTotals.canvassingReports} laporan canvassing
               </div>
             </Card>
           </div>
