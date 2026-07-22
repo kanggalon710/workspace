@@ -31,6 +31,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
+import { EmptyInbox, EmptySearch } from "@/components/illustrations";
 import { SkeletonList } from "@/components/ui/skeleton";
 import {
   ClipboardList, Plus, Settings, Search, AlertCircle, Clock, CheckCircle2,
@@ -361,6 +362,7 @@ export default function TicketingPage() {
             ) : tickets.length === 0 ? (
               <EmptyState
                 icon={FileText}
+                illustration={(search || statusFilter !== "all" || categoryFilter !== "all" || priorityFilter !== "all") ? <EmptySearch /> : <EmptyInbox />}
                 title="Tidak ada tiket ditemukan"
                 description={search || statusFilter !== "all" || categoryFilter !== "all" || priorityFilter !== "all"
                   ? "Coba ubah filter pencarian"
