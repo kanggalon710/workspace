@@ -748,7 +748,8 @@ export function PipelineRulesDialog({
                         (f) => row.attr && attrCompatibleWithFieldType(row.attr, f.type ?? ""),
                       );
                       return (
-                      <div key={row._key} className="flex items-center gap-2">
+                      <div key={row._key} className="flex flex-wrap items-center gap-2">
+                        <div className="min-w-0 flex-1">
                         <Combobox
                           options={BILLING_ATTRS.map((a) => ({ value: a.key, label: a.label }))}
                           value={row.attr}
@@ -761,7 +762,9 @@ export function PipelineRulesDialog({
                           searchPlaceholder="Cari atribut…"
                           clearable={false}
                         />
+                        </div>
                         <span className="text-muted-foreground text-xs">→</span>
+                        <div className="min-w-0 flex-1">
                         <Combobox
                           options={compatTargets.map((f) => ({ value: String(f.id), label: f.label }))}
                           value={row.targetFieldId}
@@ -774,6 +777,7 @@ export function PipelineRulesDialog({
                           searchPlaceholder="Cari field…"
                           clearable={false}
                         />
+                        </div>
                         {row.attr && compatTargets.length === 0 && (
                           <Button
                             type="button"
@@ -891,7 +895,8 @@ export function PipelineRulesDialog({
                       Peta field lead → field kartu
                     </legend>
                     {leadFieldMap.map((row, i) => (
-                      <div key={row._key} className="flex items-center gap-2">
+                      <div key={row._key} className="flex flex-wrap items-center gap-2">
+                        <div className="min-w-0 flex-1">
                         <Combobox
                           options={LEAD_ATTRS.map((a) => ({ value: a.key, label: a.label }))}
                           value={row.attr}
@@ -904,7 +909,9 @@ export function PipelineRulesDialog({
                           searchPlaceholder="Cari atribut…"
                           clearable={false}
                         />
+                        </div>
                         <span className="text-muted-foreground text-xs">→</span>
+                        <div className="min-w-0 flex-1">
                         <Combobox
                           options={sourceFields.map((f) => ({ value: String(f.id), label: f.label }))}
                           value={row.targetFieldId}
@@ -917,6 +924,7 @@ export function PipelineRulesDialog({
                           searchPlaceholder="Cari field…"
                           clearable={false}
                         />
+                        </div>
                         <Button
                           type="button"
                           variant="ghost"

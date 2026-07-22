@@ -176,9 +176,9 @@ export function AudienceBuilder({
                   <div className="font-bold uppercase tracking-wider mb-1">Sample (10 teratas):</div>
                   {previewMut.data.sample.map((s: any) => (
                     <div key={s.id} className="flex items-center gap-2">
-                      <span className="font-mono">#{s.customerId}</span>
-                      <span className="truncate flex-1">{s.name}</span>
-                      <span className="text-[10px]">{s.district ?? "-"}</span>
+                      <span className="font-mono shrink-0">#{s.customerId}</span>
+                      <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                      <span className="shrink-0 text-[10px]">{s.district ?? "-"}</span>
                     </div>
                   ))}
                 </div>

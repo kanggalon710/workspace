@@ -350,7 +350,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                 BUG-003: di board tim, hard-delete DISEMBUNYIKAN - pakai "Arsipkan" (reversible,
                 di bagian Aksi). Pipeline ops (lead/collection) tetap punya Hapus Kartu. */}
             {writable && (!isTeamBoard || cf.hasEditable) && (
-              <div className="shrink-0 flex items-center justify-between gap-3 border-t bg-background px-5 py-3">
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t bg-background px-5 py-3">
                 {/* Two-step delete so the now-prominent button can't fire on a single mis-tap. */}
                 {!isTeamBoard ? (
                 <Button

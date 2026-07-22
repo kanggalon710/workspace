@@ -76,13 +76,13 @@ export function CardComments({ comments, canComment, onSend, sending }: {
 
       {canComment && (
         <div className="mt-2 space-y-2">
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Tipe entri"
               className="h-9 shrink-0 rounded-md border border-input bg-transparent px-2 text-xs">
               {CARD_COMMENT_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
             <Input inputSize="sm" value={body} onChange={(e) => setBody(e.target.value)}
-              placeholder="Tulis catatan…" aria-label="Isi komentar" />
+              placeholder="Tulis catatan…" aria-label="Isi komentar" className="min-w-[140px] flex-1" />
             <Button type="button" size="sm" variant="outline" onClick={() => inputRef.current?.click()} aria-label="Lampirkan">
               <Paperclip className="size-4" />
             </Button>

@@ -338,7 +338,7 @@ export function CampaignWizard({ open, onClose }: { open: boolean; onClose: () =
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider">Rate Limit (jeda antar pesan)</label>
-                <div className="flex items-center gap-2 mt-1.5">
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   {[1000, 2000, 3000, 5000].map(ms => (
                     <button
                       key={ms}
