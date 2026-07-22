@@ -718,7 +718,7 @@ function TierUpgradeDialog({ open, onOpenChange, customerId, customerName, curre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ubah Tier Sahabat</DialogTitle>
           <DialogDescription>

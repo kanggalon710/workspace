@@ -337,9 +337,9 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
 
       {/* -- Bulk Action Bar -- */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-4 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="flex items-center justify-between flex-wrap gap-2 bg-primary/5 border border-primary/20 rounded-lg px-4 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
           <span className="text-sm font-medium">{selectedIds.size} item dipilih</span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={exportSelectedCSV}>
               <Download className="h-3 w-3" /> Export
             </Button>
