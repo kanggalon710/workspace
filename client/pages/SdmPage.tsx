@@ -621,10 +621,10 @@ export default function SdmPage() {
     <PageContainer>
       <PageHeader icon={IdCard} title="SDM" description="Kehadiran, absensi, dan cuti karyawan - terhubung langsung ke akun user" accent="violet"
         breadcrumbs={[{ label: "HRD", path: "/divisi/hrd" }, { label: "SDM" }]}>
-        <div className="flex items-center border-b -mb-2">
+        <div className="flex items-center border-b -mb-2 overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
           {tabs.map((t) => (
             <button key={t.key} type="button" onClick={() => setTab(t.key as any)} aria-current={tab === t.key ? "page" : undefined}
-              className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${tab === t.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${tab === t.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <t.icon className="size-4" /> {t.label}
             </button>
           ))}
@@ -818,12 +818,12 @@ export default function SdmPage() {
           </PageSection>
 
           <PageSection title="Slip Gaji" description="Generate menghitung: kehadiran (alpha), lembur approved, cuti tidak dibayar, BPJS, PPh 21 TER"
-            actions={<span className="flex items-center gap-2">
+            actions={<span className="flex flex-wrap items-center justify-end gap-2">
               <input type="month" value={payPeriod} onChange={(e) => setPayPeriod(e.target.value)}
                 className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Periode payroll" />
               <Button size="sm" loading={genPayroll.isPending} onClick={() => genPayroll.mutate()}>Generate</Button>
-              <a href={`/api/hr/payroll/export?period=${payPeriod}`} className="text-xs text-primary underline">Jurnal CSV</a>
-              <a href={`/api/hr/payroll/export-pph?period=${payPeriod}`} className="text-xs text-primary underline">PPh 21 CSV</a>
+              <a href={`/api/hr/payroll/export?period=${payPeriod}`} className="text-xs text-primary underline whitespace-nowrap">Jurnal CSV</a>
+              <a href={`/api/hr/payroll/export-pph?period=${payPeriod}`} className="text-xs text-primary underline whitespace-nowrap">PPh 21 CSV</a>
             </span>}>
             {(payslips ?? []).length === 0 ? (
               <EmptyState icon={BarChart3} size="sm" title="Belum ada slip" description="Isi komponen gaji lalu klik Generate." />
