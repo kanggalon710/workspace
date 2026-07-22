@@ -10529,6 +10529,14 @@ async function collectionScopedOwnershipOK(req: Request, res: Response, colId: n
   if (!division || owner !== division) { sendError(res, "Kartu ini bukan delegasi divisi Anda", 403); return false; }
   return true;
 }
+/** Boleh kelola stage pipeline collection: izin 'collections' penuh ATAU izin divisi
+ *  CS/Marketing (customers/leads). Pipeline collection dipakai lintas-divisi (SOP delegasi),
+ *  jadi tiap divisi yang terlibat boleh atur stage-nya. */
+function collectionStageMgmtOK(req: Request): boolean {
+  return hasWritePermission(req, "collections")
+      || hasWritePermission(req, "customers")
+      || hasWritePermission(req, "leads");
+}
 
 router.get("/api/collections", async (req: Request, res: Response) => {
   const division = collectionScopedDivision(req);
@@ -10575,7 +10583,7 @@ router.get("/api/collections/stages", async (req: Request, res: Response) => {
 });
 
 router.post("/api/collections/stages", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const { label, color, role } = req.body ?? {};
     if (!label || typeof label !== "string" || !label.trim()) return sendError(res, "Judul stage wajib diisi");
@@ -10592,7 +10600,7 @@ router.post("/api/collections/stages", async (req: Request, res: Response) => {
 });
 
 router.patch("/api/collections/stages/reorder", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const ids = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x)) : [];
     if (ids.length === 0) return sendError(res, "orderedIds wajib");
@@ -10601,7 +10609,7 @@ router.patch("/api/collections/stages/reorder", async (req: Request, res: Respon
 });
 
 router.patch("/api/collections/stages/:id", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const { label, color, role, ownerDivision, slaDays, nextStageKey } = req.body ?? {};
     const row = await storage.updateCollectionStage(Number(req.params.id), { label, color, role, ownerDivision, slaDays, nextStageKey });
@@ -10611,7 +10619,7 @@ router.patch("/api/collections/stages/:id", async (req: Request, res: Response) 
 });
 
 router.delete("/api/collections/stages/:id", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const mode = req.body?.mode === "purge" ? "purge" : "migrate";
     const targetKey = req.body?.targetKey;

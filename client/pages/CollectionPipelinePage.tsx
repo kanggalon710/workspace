@@ -35,6 +35,7 @@ import {
   CheckCircle2, XCircle, Loader2, RefreshCw, Calendar, DollarSign, FileText,
   PhoneCall, StickyNote, ArrowRight, Navigation, Edit, Trash2, Users as UsersIcon,
   Settings, History, Info, Camera, Upload, Move, GripVertical, Plus, ListTree,
+  SlidersHorizontal, ChevronDown,
 } from "lucide-react";
 
 // -- Stage metadata context (dinamis per-mitra) ------------------------------
@@ -422,9 +423,10 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             </p>
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
-            {/* Kelola pipeline & settings hanya untuk board penuh (izin collections) - bukan view scoped. */}
-            {!division && canWrite("collections") && (
-              <Button size="sm" variant="outline" onClick={() => setPipelineMgrOpen(true)} title="Kelola pipeline (stage)" className="h-8 gap-1.5 px-2.5">
+            {/* Kelola pipeline (stage + SLA) - tersedia di board penuh DAN view scoped CS/Marketing
+                (permintaan user: tiap divisi bisa atur pipeline-nya). Gated izin edit divisi. */}
+            {canEdit && (
+              <Button size="sm" variant="outline" onClick={() => setPipelineMgrOpen(true)} title="Kelola pipeline (stage + SLA)" className="h-8 gap-1.5 px-2.5">
                 <ListTree className="h-4 w-4" />
                 <span className="hidden sm:inline text-xs">Kelola Pipeline</span>
               </Button>
@@ -444,52 +446,27 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           </div>
         </div>
 
-        {/* Stats header. Scoped view: hitung dari kartu divisi (bukan stats global). */}
-        {division ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            <StatCard label="Total Delegasi" value={enriched.length} color="#EF4444" />
-            <StatCard label="Total Tagihan" value={fmtRp(enriched.reduce((s, c) => s + (c.openedAmount ?? 0), 0))} color="#F59E0B" compact />
-            <StatCard label="Avg Age" value={`${enriched.length ? Math.round(enriched.reduce((s, c) => s + daysSince(c.openedAt), 0) / enriched.length) : 0}h`} color="#6366F1" />
-          </div>
-        ) : (
-          <>
-            <div className="md:hidden grid grid-cols-2 gap-2">
-              <StatCard label="Total Open" value={(stats as any)?.total ?? 0} color="#EF4444" />
-              <StatCard label="Total Tagihan" value={fmtRp((stats as any)?.totalOverdue)} color="#F59E0B" compact />
-            </div>
-            <div className="md:hidden grid grid-cols-3 gap-2">
-              <MiniStat label="Avg Age" value={`${(stats as any)?.avgAgeDays ?? 0}h`} color="#6366F1" />
-              <MiniStat label="Janji" value={(stats as any)?.byStage?.promised ?? 0} color="#F59E0B" />
-              <MiniStat label="Bermasalah" value={(stats as any)?.byStage?.issue ?? 0} color="#DC2626" />
-            </div>
-            <div className="hidden md:grid grid-cols-5 gap-2">
-              <StatCard label="Total Open" value={(stats as any)?.total ?? 0} color="#EF4444" />
-              <StatCard label="Total Tagihan" value={fmtRp((stats as any)?.totalOverdue)} color="#F59E0B" compact />
-              <StatCard label="Avg Age" value={`${(stats as any)?.avgAgeDays ?? 0}h`} color="#6366F1" />
-              <StatCard label="Janji Bayar" value={(stats as any)?.byStage?.promised ?? 0} color="#F59E0B" />
-              <StatCard label="Bermasalah" value={(stats as any)?.byStage?.issue ?? 0} color="#DC2626" />
-            </div>
-          </>
-        )}
-
-        {/* Stage filter chips */}
-        <div className="flex gap-1.5 flex-nowrap overflow-x-auto no-scrollbar -mx-3 md:mx-0 px-3 md:px-0 pb-2 md:flex-wrap">
-          <button
-            onClick={() => setSelectedStage("all")}
-            className={`text-xs px-3 py-1 rounded-full border whitespace-nowrap shrink-0 ${selectedStage === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border"}`}
-          >
-            Semua ({enriched.length})
-          </button>
-          {stages.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setSelectedStage(s.key)}
-              className={`text-xs px-3 py-1 rounded-full border whitespace-nowrap shrink-0 ${selectedStage === s.key ? "text-white border-current" : "border-border"}`}
-              style={selectedStage === s.key ? { backgroundColor: s.color } : undefined}
+        {/* Filter ringkas (dropdown) - fokus ke pipeline. KPI (total open/tagihan/aging/janji/
+            bermasalah) sudah tersedia di Dashboard divisi, tidak diulang di sini. */}
+        <div className="flex items-center gap-2 flex-wrap pb-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <SlidersHorizontal className="h-3.5 w-3.5" /> Filter
+          </span>
+          <div className="relative">
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value as CollectionStage | "all")}
+              aria-label="Filter tahap"
+              className="h-8 pl-3 pr-8 rounded-lg border border-border bg-card text-xs font-semibold text-foreground appearance-none cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
-              {s.label} ({(stats as any)?.byStage?.[s.key] ?? 0})
-            </button>
-          ))}
+              <option value="all">Tahap: Semua ({enriched.length})</option>
+              {stages.map((s) => (
+                <option key={s.key} value={s.key}>{s.label} ({(stats as any)?.byStage?.[s.key] ?? 0})</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          </div>
+          <span className="ml-auto text-xs text-muted-foreground tabular-nums">{enriched.length} kartu</span>
         </div>
       </div>
 
@@ -738,11 +715,12 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
       {/* Settings Dialog (parameter collection) */}
       <CollectionSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} isAdmin={user?.isSystemAdmin === true} />
 
-      {/* Pipeline Manager (CRUD stage) */}
+      {/* Pipeline Manager (CRUD stage) - selalu pakai SEMUA stage (allStagesData) supaya
+          manajer divisi bisa mengatur ladder penuh (SLA, owner, next stage), bukan cuma subset. */}
       <PipelineManagerDialog
         open={pipelineMgrOpen}
         onClose={() => setPipelineMgrOpen(false)}
-        stages={stages}
+        stages={allStagesData}
         cardCounts={(stats as any)?.byStage ?? {}}
       />
     </div>
