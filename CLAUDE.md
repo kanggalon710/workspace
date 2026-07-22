@@ -4,6 +4,7 @@
 > Versi: **v4.3.0** (cPanel MySQL port - LIVE di workspace.jabnet.id) · 51+ React pages · 39 permission keys · 6 system roles.
 > Project di working directory ini adalah **copy untuk deploy ke cPanel** di `workspace.jabnet.id` dengan DB MySQL `jabnet_fiber`.
 > **Setup cPanel:** lihat [CPANEL-SETUP.md](CPANEL-SETUP.md). Pola umum: [CPANEL-CONVENTIONS.md](CPANEL-CONVENTIONS.md).
+> **Alur kerja & deploy (dev → main → deploy):** lihat [WORKFLOW.md](WORKFLOW.md).
 
 ## Status Migrasi cPanel + MySQL (v4.3.0 - COMPLETE)
 

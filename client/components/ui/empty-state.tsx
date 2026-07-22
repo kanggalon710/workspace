@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Inbox, type LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
 interface EmptyStateAction {
@@ -10,6 +11,12 @@ interface EmptyStateAction {
 
 interface EmptyStateProps {
   icon?: LucideIcon;
+  /**
+   * Optional brand SVG illustration (from `@/components/illustrations`). When
+   * provided it replaces the icon badge for a richer, more finished empty state.
+   * e.g. `illustration={<EmptyUsers className="h-36" />}`
+   */
+  illustration?: ReactNode;
   title: string;
   description?: string;
   action?: EmptyStateAction;
@@ -19,6 +26,13 @@ interface EmptyStateProps {
   /** Visual variant - neutral (default), info (blue), warning (amber), success (green) */
   variant?: "neutral" | "info" | "warning" | "success";
 }
+
+/** Illustration heights per size — keeps the art proportional to the state. */
+const illoSizeMap = {
+  sm: "h-24",
+  md: "h-36",
+  lg: "h-44",
+};
 
 const sizeMap = {
   sm: {
@@ -77,6 +91,7 @@ const variantMap = {
  */
 export function EmptyState({
   icon: Icon = Inbox,
+  illustration,
   title,
   description,
   action,
@@ -96,15 +111,21 @@ export function EmptyState({
         className
       )}
     >
-      <div
-        className={cn(
-          "inline-flex items-center justify-center rounded-2xl mb-4",
-          s.iconBox,
-          v.bg
-        )}
-      >
-        <Icon className={cn(s.icon, v.icon)} strokeWidth={1.5} />
-      </div>
+      {illustration ? (
+        <div className={cn("mb-4 flex items-center justify-center text-foreground/70", illoSizeMap[size], "[&>svg]:h-full [&>svg]:w-auto")}>
+          {illustration}
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "inline-flex items-center justify-center rounded-2xl mb-4",
+            s.iconBox,
+            v.bg
+          )}
+        >
+          <Icon className={cn(s.icon, v.icon)} strokeWidth={1.5} />
+        </div>
+      )}
       <h3 className={cn("font-semibold text-foreground mb-1.5", s.title)}>
         {title}
       </h3>

@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  EmptyInbox, EmptyUsers, EmptySearch, EmptyDisconnected,
+  EmptySuccess, EmptyLocation, NotFoundIllustration, SahabatBadge,
+} from "@/components/illustrations";
 import { DataTable, type ColumnDef } from "@/components/ui/data-table";
 import { FormField, FormRow, FormSection } from "@/components/ui/form-field";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
@@ -393,6 +397,68 @@ export default function ShowcasePage() {
               description="3 ODP mencapai kapasitas > 80%. Segera rencanakan split port tambahan."
               action={{ label: "Lihat ODP", onClick: () => toast.info("Navigate") }}
               size="sm"
+            />
+          </Card>
+        </div>
+      </PageSection>
+
+      {/* --- Brand Illustrations --- */}
+      <PageSection title="Ilustrasi Brand" description="Spot illustration SVG hand-crafted (network/fiber theme) — tajam di semua ukuran, ikut warna brand.">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[
+                { el: <EmptyInbox className="h-28" />, label: "Empty / No Data" },
+                { el: <EmptyUsers className="h-28" />, label: "No Users" },
+                { el: <EmptySearch className="h-28" />, label: "No Search Result" },
+                { el: <EmptyDisconnected className="h-28" />, label: "Error / Disconnected" },
+                { el: <EmptySuccess className="h-28" />, label: "Success / All Clear" },
+                { el: <EmptyLocation className="h-28" />, label: "No Location" },
+                { el: <NotFoundIllustration className="h-28" />, label: "404 / Not Found" },
+              ].map((it) => (
+                <div key={it.label} className="flex flex-col items-center justify-end gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 text-foreground/70">
+                  {it.el}
+                  <span className="text-2xs font-medium text-muted-foreground text-center">{it.label}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </PageSection>
+
+      {/* --- Sahabat Tier Badges --- */}
+      <PageSection title="Badge Tier Sahabat" description="Medali loyalti per tingkat — bintang, berlian, & mahkota dengan warna metalik.">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap items-end justify-center gap-6">
+              {(["new", "perunggu", "perak", "emas", "platinum", "berlian", "ambassador"] as const).map((t) => (
+                <div key={t} className="flex flex-col items-center gap-2">
+                  <SahabatBadge tier={t} ribbon className="w-14 h-14" />
+                  <span className="text-2xs font-semibold capitalize text-muted-foreground">{t}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </PageSection>
+
+      {/* --- EmptyState with Illustration --- */}
+      <PageSection title="EmptyState + Ilustrasi" description="Prop illustration baru: EmptyState jadi lebih niat pakai spot illustration.">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card padding="none">
+            <EmptyState
+              illustration={<EmptyUsers />}
+              title="Belum ada anggota tim"
+              description="Undang rekan kerja untuk mulai kolaborasi di teamspace."
+              action={{ label: "Undang Anggota", onClick: () => toast.success("Buka undangan...") }}
+            />
+          </Card>
+          <Card padding="none">
+            <EmptyState
+              illustration={<EmptySearch />}
+              title="Pencarian tidak menemukan hasil"
+              description="Coba kata kunci lain atau reset filter untuk melihat semua data."
+              action={{ label: "Reset Filter", variant: "outline", onClick: () => toast.info("Reset") }}
             />
           </Card>
         </div>

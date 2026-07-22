@@ -153,7 +153,6 @@ export function Sidebar() {
       return next;
     });
   }, []);
-  const [navQuery, setNavQuery] = useState("");
 
   // Auto-expand group when navigating to a page in a collapsed group
   useEffect(() => {
@@ -215,12 +214,7 @@ export function Sidebar() {
     () => favorites.map((p) => flatLeaves.find((l) => l.path === p)).filter((x): x is FlatLeaf => !!x),
     [favorites, flatLeaves],
   );
-  const q = navQuery.trim().toLowerCase();
-  const filteredLeaves = q
-    ? flatLeaves.filter((l) => l.label.toLowerCase().includes(q) || l.groupLabel.toLowerCase().includes(q))
-    : null;
-
-  /** Baris menu flat (dipakai Favorit + hasil filter) dengan tombol pin di hover. */
+  /** Baris menu flat (dipakai Favorit) dengan tombol pin di hover. */
   const renderFlatLeaf = (leaf: FlatLeaf, showGroup: boolean) => {
     const isActive = isPathActive(location, leaf.path);
     const isFav = favorites.includes(leaf.path);
@@ -228,7 +222,7 @@ export function Sidebar() {
     return (
       <div key={leaf.path} className="group/item relative">
         <button
-          onClick={() => { setLocation(leaf.path); setMobileOpen(false); setNavQuery(""); }}
+          onClick={() => { setLocation(leaf.path); setMobileOpen(false); }}
           className={cn(
             "w-full flex items-center gap-2.5 pl-3 pr-7 py-2 rounded-lg text-sm transition-all",
             isActive ? "bg-primary text-white font-medium shadow-elev-sm" : "text-white/70 hover:text-white hover:bg-white/10"
@@ -282,44 +276,10 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Quick filter menu */}
-      <div className="px-3 pt-3">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40 pointer-events-none" />
-          <input
-            value={navQuery}
-            onChange={(e) => setNavQuery(e.target.value)}
-            placeholder="Filter menu…"
-            className="w-full rounded-lg bg-white/5 border border-white/10 pl-8 pr-7 py-1.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary/60 focus:bg-white/10 transition-colors"
-          />
-          {navQuery && (
-            <button
-              type="button"
-              aria-label="Bersihkan filter menu"
-              onClick={() => setNavQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Navigation (fully scrollable) */}
-      <nav className="flex-1 p-3 overflow-y-auto space-y-1">
-        {/* -- Hasil filter (flat, semua grup) -- */}
-        {filteredLeaves && (
-          <div className="space-y-0.5">
-            {filteredLeaves.length === 0 ? (
-              <p className="px-3 py-4 text-xs text-white/40">Tidak ada menu cocok "{navQuery}".</p>
-            ) : (
-              filteredLeaves.map((l) => renderFlatLeaf(l, true))
-            )}
-          </div>
-        )}
-
+      <nav className="flex-1 p-3 pt-4 overflow-y-auto space-y-1">
         {/* -- Favorit (pinned, persist per-browser) -- */}
-        {!filteredLeaves && favLeaves.length > 0 && (
+        {favLeaves.length > 0 && (
           <div>
             <p className="text-[10px] uppercase text-amber-300/70 px-3 mb-1 font-semibold tracking-wider flex items-center gap-1.5">
               <Star className="h-3 w-3 fill-current" /> Favorit
@@ -330,7 +290,7 @@ export function Sidebar() {
           </div>
         )}
 
-        {!filteredLeaves && visibleGroups.map((group) => {
+        {visibleGroups.map((group) => {
           const isCollapsible = group.collapsible !== false;
           const isExpanded = !isCollapsible || expanded.has(group.key);
           const GroupIcon = group.icon;
@@ -422,7 +382,7 @@ export function Sidebar() {
                                 return (
                                   <div key={child.path ?? child.label} className="group/item relative">
                                     <button
-                                      onClick={() => { if (child.path) { setLocation(child.path); setMobileOpen(false); setNavQuery(""); } }}
+                                      onClick={() => { if (child.path) { setLocation(child.path); setMobileOpen(false); } }}
                                       className={cn(
                                         "w-full flex items-center gap-2 pl-3 pr-7 py-1.5 rounded-md text-[13px] transition-all",
                                         isActive
@@ -461,7 +421,7 @@ export function Sidebar() {
                     return (
                       <div key={item.path} className="group/item relative">
                         <button
-                          onClick={() => { setLocation(item.path!); setMobileOpen(false); setNavQuery(""); }}
+                          onClick={() => { setLocation(item.path!); setMobileOpen(false); }}
                           className={cn(
                             "w-full flex items-center gap-2.5 pl-3 pr-7 py-2 rounded-lg text-sm transition-all",
                             isActive
