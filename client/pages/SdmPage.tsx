@@ -124,8 +124,10 @@ function HrDashboardSection({ onGoApproval, onGoCuti }: { onGoApproval: () => vo
         {rows.slice(0, 6).map((r) => (
           <div key={r.k} className="flex items-center gap-2 text-xs">
             <span className="w-24 shrink-0 truncate capitalize">{r.k}</span>
-            <span className="h-3 rounded-full" style={{ width: `${(r.c / max) * 100}%`, minWidth: 8, backgroundColor: color }} />
-            <span className="tabular-nums text-muted-foreground">{r.c}</span>
+            <span className="h-3 min-w-0 flex-1 overflow-hidden rounded-full bg-muted/40">
+              <span className="block h-3 rounded-full" style={{ width: `${(r.c / max) * 100}%`, minWidth: 8, backgroundColor: color }} />
+            </span>
+            <span className="w-5 shrink-0 text-right tabular-nums text-muted-foreground">{r.c}</span>
           </div>
         ))}
       </div>
@@ -199,7 +201,7 @@ function KpiSection({ writable }: { writable: boolean }) {
     <PageSection
       title="KPI Otomatis"
       description="Skor dihitung otomatis dari output kerja nyata (tiket/lead/collection/canvassing) + kehadiran, dibanding target per role. Tidak perlu penilaian manual."
-      actions={<span className="flex items-center gap-2">
+      actions={<span className="flex flex-wrap items-center gap-2">
         <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 rounded-lg border bg-background px-2.5 text-sm tabular-nums" aria-label="Periode KPI" />
         {writable && <Button size="sm" variant="outline" onClick={() => setCfgOpen((v) => !v)}>Target &amp; Bobot</Button>}
       </span>}>
@@ -670,10 +672,10 @@ export default function SdmPage() {
 
       {tab === "kehadiran" && readable && (
         <PageSection title="Catat Kehadiran" description="Klik status per karyawan lalu Simpan - bisa dikoreksi kapan saja"
-          actions={<span className="flex items-center gap-2">
+          actions={<span className="flex flex-wrap items-center gap-2">
             {writable && (
               <Button type="button" size="sm" variant="outline" leftIcon={<Upload className="size-4" />} onClick={() => setShowImport(true)}>
-                Import Mesin
+                <span className="hidden sm:inline">Import Mesin</span><span className="sm:hidden">Import</span>
               </Button>
             )}
             <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setDraft({}); }}
@@ -799,18 +801,20 @@ export default function SdmPage() {
                 const cur = (salaries ?? []).find((s) => s.userId === u.id);
                 const ed = salaryEdit[u.id] ?? { baseSalary: String(cur?.baseSalary ?? ""), fixedAllowance: String(cur?.fixedAllowance ?? "") };
                 return (
-                  <div key={u.id} className="flex flex-wrap items-center gap-2 px-4 py-2 text-sm">
-                    <span className="min-w-32 flex-1 truncate">{u.name || u.username}</span>
-                    <input type="number" placeholder="Gaji pokok" value={ed.baseSalary}
-                      onChange={(e) => setSalaryEdit((p) => ({ ...p, [u.id]: { ...ed, baseSalary: e.target.value } }))}
-                      className="h-8 w-32 rounded-lg border bg-background px-2 text-xs tabular-nums" />
-                    <input type="number" placeholder="Tunjangan tetap" value={ed.fixedAllowance}
-                      onChange={(e) => setSalaryEdit((p) => ({ ...p, [u.id]: { ...ed, fixedAllowance: e.target.value } }))}
-                      className="h-8 w-32 rounded-lg border bg-background px-2 text-xs tabular-nums" />
-                    <Button size="xs" variant="outline" loading={saveSalary.isPending}
-                      onClick={() => saveSalary.mutate({ userId: u.id, baseSalary: Number(ed.baseSalary) || 0, fixedAllowance: Number(ed.fixedAllowance) || 0 })}>
-                      Simpan
-                    </Button>
+                  <div key={u.id} className="flex flex-col gap-2 px-4 py-2.5 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:py-2">
+                    <span className="min-w-0 truncate sm:min-w-32 sm:flex-1">{u.name || u.username}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input type="number" placeholder="Gaji pokok" value={ed.baseSalary}
+                        onChange={(e) => setSalaryEdit((p) => ({ ...p, [u.id]: { ...ed, baseSalary: e.target.value } }))}
+                        className="h-8 w-[calc(50%-0.25rem)] min-w-0 rounded-lg border bg-background px-2 text-xs tabular-nums sm:w-32" />
+                      <input type="number" placeholder="Tunjangan tetap" value={ed.fixedAllowance}
+                        onChange={(e) => setSalaryEdit((p) => ({ ...p, [u.id]: { ...ed, fixedAllowance: e.target.value } }))}
+                        className="h-8 w-[calc(50%-0.25rem)] min-w-0 rounded-lg border bg-background px-2 text-xs tabular-nums sm:w-32" />
+                      <Button size="xs" variant="outline" loading={saveSalary.isPending}
+                        onClick={() => saveSalary.mutate({ userId: u.id, baseSalary: Number(ed.baseSalary) || 0, fixedAllowance: Number(ed.fixedAllowance) || 0 })}>
+                        Simpan
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -859,7 +863,7 @@ export default function SdmPage() {
             <Card padding="none" className="divide-y overflow-hidden">
               {(hrCfg?.locations ?? []).map((l: any) => (
                 <div key={l.id} className="flex items-center gap-2 px-4 py-2 text-sm">
-                  <span className="flex-1">{l.name} <span className="text-xs tabular-nums text-muted-foreground">({l.lat}, {l.lng}) · {l.radiusM} m</span></span>
+                  <span className="min-w-0 flex-1">{l.name} <span className="text-xs tabular-nums text-muted-foreground">({l.lat}, {l.lng}) · {l.radiusM} m</span></span>
                   {writable && <Button size="icon-sm" variant="ghost" aria-label="Hapus" onClick={async () => { await api.delete(`/hr/locations/${l.id}`); invalidateCfg(); }}><X className="size-4" /></Button>}
                 </div>
               ))}
@@ -898,10 +902,10 @@ export default function SdmPage() {
                   const cur = hrCfg?.shifts?.assignments.find((a) => a.userId === u.id)?.shiftId ?? "";
                   return (
                     <div key={u.id} className="flex items-center gap-2 px-4 py-2 text-sm">
-                      <span className="flex-1 truncate">{u.name || u.username}</span>
+                      <span className="min-w-0 flex-1 truncate">{u.name || u.username}</span>
                       <select value={cur} disabled={!writable}
                         onChange={(e) => saveCfg.mutate({ path: `/hr/schedule`, body: { userId: u.id, shiftId: e.target.value ? Number(e.target.value) : null } })}
-                        className="h-8 rounded-lg border bg-background px-2 text-xs">
+                        className="h-8 max-w-[55%] shrink-0 rounded-lg border bg-background px-2 text-xs sm:max-w-none">
                         <option value="">Tanpa shift</option>
                         {(hrCfg?.shifts?.shifts ?? []).map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.startTime})</option>)}
                       </select>
@@ -923,10 +927,10 @@ export default function SdmPage() {
                   const cur = (roster ?? []).find((r) => r.userId === u.id)?.shiftId ?? "";
                   return (
                     <div key={u.id} className="flex items-center gap-2 px-4 py-2 text-sm">
-                      <span className="flex-1 truncate">{u.name || u.username}</span>
+                      <span className="min-w-0 flex-1 truncate">{u.name || u.username}</span>
                       <select value={cur} disabled={!writable}
                         onChange={(e) => saveCfg.mutate({ path: `/hr/roster`, body: { userId: u.id, date: rosterDate, shiftId: e.target.value ? Number(e.target.value) : null } })}
-                        className="h-8 rounded-lg border bg-background px-2 text-xs">
+                        className="h-8 max-w-[55%] shrink-0 rounded-lg border bg-background px-2 text-xs sm:max-w-none">
                         <option value="">Ikut jadwal tetap</option>
                         {(hrCfg?.shifts?.shifts ?? []).map((s: any) => <option key={s.id} value={s.id}>{s.name} ({s.startTime})</option>)}
                       </select>
@@ -972,8 +976,8 @@ export default function SdmPage() {
             <Card padding="none" className="divide-y overflow-hidden">
               {(hrCfg?.holidays ?? []).map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 px-4 py-2 text-sm">
-                  <span className="tabular-nums text-muted-foreground">{h.date}</span>
-                  <span className="flex-1">{h.name}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{h.date}</span>
+                  <span className="min-w-0 flex-1 truncate">{h.name}</span>
                   {writable && <Button size="icon-sm" variant="ghost" aria-label="Hapus" onClick={async () => { await api.delete(`/hr/holidays/${h.id}`); invalidateCfg(); }}><X className="size-4" /></Button>}
                 </div>
               ))}
@@ -1102,7 +1106,7 @@ export default function SdmPage() {
       {/* Import karyawan massal (FR-HR-103): buat akun + tandai karyawan */}
       {showEmpImport && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowEmpImport(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)]">
+          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
             <DialogTitle>Import Karyawan Massal</DialogTitle>
             <p className="text-xs text-muted-foreground">
               Satu baris satu karyawan: <code className="rounded bg-muted px-1 font-mono-tight">username, nama, NIK, jabatan, departemen</code>.
