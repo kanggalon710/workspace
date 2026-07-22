@@ -590,31 +590,31 @@ function DistrictCard({
 
       {isExpanded && (
         <div className="border-t px-3 py-2 space-y-1 bg-muted/20">
-          <div className="flex items-center gap-4 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            <span className="flex-1">Desa / Kelurahan</span>
-            <span className="w-14 text-center">Total</span>
-            <span className="w-14 text-center">Aktif</span>
-            <span className="w-14 text-center">Isolir</span>
-            <span className="w-14"></span>
+          <div className="flex items-center gap-1.5 sm:gap-4 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <span className="flex-1 min-w-0">Desa / Kelurahan</span>
+            <span className="w-9 sm:w-14 text-center shrink-0">Total</span>
+            <span className="w-9 sm:w-14 text-center shrink-0">Aktif</span>
+            <span className="w-9 sm:w-14 text-center shrink-0">Isolir</span>
+            <span className="w-11 sm:w-14 shrink-0"></span>
           </div>
           {d.villages.sort((a, b) => b.total - a.total).map(v => (
-            <div key={v.name} className="flex items-center gap-4 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors">
-              <span className="flex-1 text-xs font-medium truncate">{v.name || "Tidak diketahui"}</span>
-              <span className="w-14 text-center text-xs font-bold">{v.total}</span>
-              <span className="w-14 text-center text-xs text-green-600 font-medium">{v.active}</span>
-              <span className="w-14 text-center text-xs text-yellow-600 font-medium">{v.suspended > 0 ? v.suspended : "-"}</span>
-              <Button variant="ghost" size="sm" className="h-6 w-14 px-1 text-[10px]"
+            <div key={v.name} className="flex items-center gap-1.5 sm:gap-4 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors">
+              <span className="flex-1 min-w-0 text-xs font-medium truncate">{v.name || "Tidak diketahui"}</span>
+              <span className="w-9 sm:w-14 text-center text-xs font-bold shrink-0">{v.total}</span>
+              <span className="w-9 sm:w-14 text-center text-xs text-green-600 font-medium shrink-0">{v.active}</span>
+              <span className="w-9 sm:w-14 text-center text-xs text-yellow-600 font-medium shrink-0">{v.suspended > 0 ? v.suspended : "-"}</span>
+              <Button variant="ghost" size="sm" className="h-6 w-11 sm:w-14 px-1 text-[10px] shrink-0"
                 onClick={() => onFilterVillage(d.district, v.name)}>
                 Lihat
               </Button>
             </div>
           ))}
-          <div className="flex items-center gap-4 px-2 py-1.5 border-t mt-1">
-            <span className="flex-1 text-xs font-bold">Total</span>
-            <span className="w-14 text-center text-xs font-bold">{d.total}</span>
-            <span className="w-14 text-center text-xs font-bold text-green-600">{d.active}</span>
-            <span className="w-14 text-center text-xs font-bold text-yellow-600">{d.suspended > 0 ? d.suspended : "-"}</span>
-            <span className="w-14"></span>
+          <div className="flex items-center gap-1.5 sm:gap-4 px-2 py-1.5 border-t mt-1">
+            <span className="flex-1 min-w-0 text-xs font-bold">Total</span>
+            <span className="w-9 sm:w-14 text-center text-xs font-bold shrink-0">{d.total}</span>
+            <span className="w-9 sm:w-14 text-center text-xs font-bold text-green-600 shrink-0">{d.active}</span>
+            <span className="w-9 sm:w-14 text-center text-xs font-bold text-yellow-600 shrink-0">{d.suspended > 0 ? d.suspended : "-"}</span>
+            <span className="w-11 sm:w-14 shrink-0"></span>
           </div>
           {/* Type breakdown */}
           <div className="flex gap-3 px-2 pt-1">

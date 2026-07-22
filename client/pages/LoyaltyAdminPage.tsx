@@ -1243,7 +1243,7 @@ function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }: any) {
         </div>
 
       {d.status === "pending" && (
-        <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t">
+        <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t flex-wrap">
           {isExpired ? (
             <span className="text-xs text-rose-600 font-medium inline-flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" /> Expired {fmtDate(d.expiresAt)}
@@ -1255,7 +1255,7 @@ function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }: any) {
             </span>
           )}
           {canEdit && (
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap">
               <Button size="icon-xs" variant="ghost" onClick={onEdit} title="Edit diskon">
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -1297,7 +1297,7 @@ function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }: any) {
         </div>
       )}
       {d.status === "cancelled" && (
-        <div className="mt-3 pt-3 border-t text-[11px] text-rose-600 flex items-center gap-2">
+        <div className="mt-3 pt-3 border-t text-[11px] text-rose-600 flex items-center gap-2 flex-wrap">
           <XCircle className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1">
             Dibatalkan {fmtDate(d.appliedAt ?? d.createdAt)}
@@ -2379,7 +2379,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
               return (
                 <div
                   key={r.id}
-                  className={`relative px-5 py-4 flex items-start gap-4 transition-colors ${
+                  className={`relative px-5 py-4 flex items-start gap-4 flex-wrap transition-colors ${
                     isDeleted
                       ? "opacity-50 line-through"
                       : almostExpired
@@ -2478,7 +2478,7 @@ function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeletedChange 
 
                   {/* Actions */}
                   {canEdit && (
-                    <div className="flex gap-1.5 shrink-0 pt-0.5 items-center">
+                    <div className="flex gap-1.5 shrink-0 pt-0.5 items-center flex-wrap w-full sm:w-auto justify-end sm:justify-start">
                       {r.status === "pending" && (
                         <>
                           <Button
@@ -3074,8 +3074,8 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             {/* Tab nav - clean underline style */}
-            <div className="px-6 border-b">
-              <div className="flex gap-6">
+            <div className="px-6 border-b overflow-x-auto no-scrollbar">
+              <div className="flex gap-6 w-max min-w-full">
                 {([
                   { key: "earn", label: "Earn Rules", count: totalPotentialMonthlyEarn, suffix: "pts/bulan max" },
                   { key: "catalog", label: "Catalog Reward", count: totalConfigured, suffix: "reward" },
@@ -3084,7 +3084,7 @@ function PointConfigDialog({ onClose }: { onClose: () => void }) {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`relative py-3 text-sm transition-colors ${
+                    className={`relative py-3 text-sm transition-colors shrink-0 whitespace-nowrap ${
                       activeTab === key
                         ? "text-foreground font-semibold"
                         : "text-muted-foreground hover:text-foreground font-medium"

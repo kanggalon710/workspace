@@ -1272,6 +1272,7 @@ export default function Dashboard() {
                     <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       Kelurahan / Desa - {demoFilterDistrict}
                     </div>
+                    <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left">
@@ -1301,6 +1302,7 @@ export default function Dashboard() {
                         })}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 )}
               </CardContent>
