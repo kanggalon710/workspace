@@ -353,6 +353,16 @@ function getSettingValue(
 // Main page
 // ---------------------------------------------------------------------------
 
+// Kategori integrasi untuk tab navigasi (satu aplikasi/integrasi per waktu).
+const INTEGRATION_TABS: Array<{ key: string; label: string }> = [
+  { key: "all", label: "Semua" },
+  { key: "maps", label: "Peta & Lokasi" },
+  { key: "jaringan", label: "Jaringan (MikroTik / ONT)" },
+  { key: "billing", label: "Billing & Penagihan" },
+  { key: "pesan", label: "Pesan (WA / Telegram / Meta)" },
+  { key: "data", label: "Data & API" },
+];
+
 export default function IntegrationPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -366,6 +376,10 @@ export default function IntegrationPage() {
   const [showApiRef, setShowApiRef] = useState(false);
   const toggleGuide = (key: string) =>
     setExpandedGuides((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  // Tab navigasi integrasi - tampilkan satu kategori/aplikasi per waktu (biar tidak pusing).
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const show = (cat: string) => activeTab === "all" || activeTab === cat;
 
   // ---------------------------------------------------------------------------
   // Fetch all settings
@@ -992,6 +1006,19 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card 1 - Google Maps Platform                                     */}
       {/* ================================================================= */}
+      {/* Navigasi kategori integrasi - pilih satu aplikasi/integrasi supaya tidak pusing */}
+      <div className="sticky top-0 z-10 py-2 -mx-1 px-1 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70 rounded-xl">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {INTEGRATION_TABS.map((t) => (
+            <button key={t.key} type="button" onClick={() => setActiveTab(t.key)}
+              className={`shrink-0 px-3 h-9 rounded-lg text-xs font-semibold border transition-colors ${activeTab === t.key ? "bg-primary text-primary-foreground border-primary shadow-elev-sm" : "bg-card border-border text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {show("maps") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           {/* Header row */}
@@ -1120,10 +1147,12 @@ export default function IntegrationPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card 2 - MikroTik RouterOS                                        */}
       {/* ================================================================= */}
+      {show("jaringan") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           {/* Header row */}
@@ -1336,10 +1365,12 @@ export default function IntegrationPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card 2b - GenieACS TR-069                                         */}
       {/* ================================================================= */}
+      {show("jaringan") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -1486,11 +1517,12 @@ export default function IntegrationPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card - Billing Sync (billing.jabnet.id) - JABNET-root only        */}
       {/* ================================================================= */}
-      {isSystemAdmin && (
+      {isSystemAdmin && show("billing") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -1774,6 +1806,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card - Migrasi Collections ke Pipeline                            */}
       {/* ================================================================= */}
+      {show("billing") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between flex-wrap gap-2">
@@ -1873,10 +1906,12 @@ export default function IntegrationPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card - MPWA (WhatsApp Gateway)                                    */}
       {/* ================================================================= */}
+      {show("pesan") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -2106,10 +2141,12 @@ export default function IntegrationPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card - Telegram Bot                                                */}
       {/* ================================================================= */}
+      {show("pesan") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -2284,6 +2321,7 @@ export default function IntegrationPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card - Omnichannel Integration (v4.2.5)                               */}
@@ -2293,6 +2331,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card - Meta Conversions API (CAPI)                                 */}
       {/* ================================================================= */}
+      {show("pesan") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -2358,10 +2397,12 @@ export default function IntegrationPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Card - Export / Import Data                                        */}
       {/* ================================================================= */}
+      {show("data") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           {/* Header row */}
@@ -2468,10 +2509,12 @@ export default function IntegrationPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ================================================================= */}
       {/* Referensi API Internal (Collapsible)                              */}
       {/* ================================================================= */}
+      {show("data") && (
       <Card>
         <CardContent className="p-6 space-y-4">
           <button
@@ -2543,6 +2586,7 @@ export default function IntegrationPage() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

@@ -204,19 +204,23 @@ router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
 
 /** Baca konfigurasi self-update dari app_settings (global). */
 async function loadSelfUpdateConfig(): Promise<SelfUpdateConfig> {
-  const [enabled, repo, branch, token, runNpm] = await Promise.all([
+  const [enabled, repo, branch, token, runNpm, build] = await Promise.all([
     storage.getSetting("self_update_enabled"),
     storage.getSetting("self_update_repo"),
     storage.getSetting("self_update_branch"),
     storage.getSetting("self_update_github_token"),
     storage.getSetting("self_update_run_npm"),
+    storage.getSetting("self_update_build"),
   ]);
+  const buildMode = build === "always" || build === "never" ? build : "auto";
   return {
     enabled: enabled === "true",
     repo: (repo || "kanggalon710/workspace").trim(),
-    branch: (branch || "deploy").trim(),
+    // Kosong = auto-detect branch yang sedang ter-checkout di cPanel (paling universal).
+    branch: (branch || "").trim(),
     token: token && token.trim() ? token.trim() : null,
     runNpm: runNpm !== "false",
+    build: buildMode,
   };
 }
 
@@ -356,7 +360,8 @@ router.get("/api/system/update/check", async (req: Request, res: Response) => {
     }
     const cfg = await loadSelfUpdateConfig();
     const result = await checkForUpdate(cfg);
-    const payload = { ...result, enabled: cfg.enabled, repo: cfg.repo, branch: cfg.branch, tokenSet: !!cfg.token };
+    // result.branch = branch efektif (hasil auto-detect kalau config kosong).
+    const payload = { ...result, enabled: cfg.enabled, repo: cfg.repo, tokenSet: !!cfg.token, buildMode: cfg.build };
     _updateCheckCache = { at: Date.now(), data: payload };
     if (result.updateAvailable && result.remote.sourceSha) {
       await notifyAdminsOfUpdate(result.remote.sourceSha, result.remote.sourceShaShort || result.remote.sourceSha.slice(0, 7));
@@ -10529,6 +10534,14 @@ async function collectionScopedOwnershipOK(req: Request, res: Response, colId: n
   if (!division || owner !== division) { sendError(res, "Kartu ini bukan delegasi divisi Anda", 403); return false; }
   return true;
 }
+/** Boleh kelola stage pipeline collection: izin 'collections' penuh ATAU izin divisi
+ *  CS/Marketing (customers/leads). Pipeline collection dipakai lintas-divisi (SOP delegasi),
+ *  jadi tiap divisi yang terlibat boleh atur stage-nya. */
+function collectionStageMgmtOK(req: Request): boolean {
+  return hasWritePermission(req, "collections")
+      || hasWritePermission(req, "customers")
+      || hasWritePermission(req, "leads");
+}
 
 router.get("/api/collections", async (req: Request, res: Response) => {
   const division = collectionScopedDivision(req);
@@ -10575,7 +10588,7 @@ router.get("/api/collections/stages", async (req: Request, res: Response) => {
 });
 
 router.post("/api/collections/stages", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const { label, color, role } = req.body ?? {};
     if (!label || typeof label !== "string" || !label.trim()) return sendError(res, "Judul stage wajib diisi");
@@ -10592,7 +10605,7 @@ router.post("/api/collections/stages", async (req: Request, res: Response) => {
 });
 
 router.patch("/api/collections/stages/reorder", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const ids = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x)) : [];
     if (ids.length === 0) return sendError(res, "orderedIds wajib");
@@ -10601,7 +10614,7 @@ router.patch("/api/collections/stages/reorder", async (req: Request, res: Respon
 });
 
 router.patch("/api/collections/stages/:id", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const { label, color, role, ownerDivision, slaDays, nextStageKey } = req.body ?? {};
     const row = await storage.updateCollectionStage(Number(req.params.id), { label, color, role, ownerDivision, slaDays, nextStageKey });
@@ -10611,7 +10624,7 @@ router.patch("/api/collections/stages/:id", async (req: Request, res: Response) 
 });
 
 router.delete("/api/collections/stages/:id", async (req: Request, res: Response) => {
-  if (!requireWritePermission(req, res, "collections")) return;
+  if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const mode = req.body?.mode === "purge" ? "purge" : "migrate";
     const targetKey = req.body?.targetKey;
