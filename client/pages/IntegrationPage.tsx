@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { DevDbSyncCard } from "@/components/integrations/DevDbSyncCard";
 import { AppUpdateCard } from "@/components/integrations/AppUpdateCard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,6 +62,9 @@ import {
   User as UserIcon,
   Users,
   Building2,
+  MapPin,
+  Wifi,
+  ChevronLeft,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -353,14 +356,17 @@ function getSettingValue(
 // Main page
 // ---------------------------------------------------------------------------
 
-// Kategori integrasi untuk tab navigasi (satu aplikasi/integrasi per waktu).
-const INTEGRATION_TABS: Array<{ key: string; label: string }> = [
-  { key: "all", label: "Semua" },
-  { key: "maps", label: "Peta & Lokasi" },
-  { key: "jaringan", label: "Jaringan (MikroTik / ONT)" },
-  { key: "billing", label: "Billing & Penagihan" },
-  { key: "pesan", label: "Pesan (WA / Telegram / Meta)" },
-  { key: "data", label: "Data & API" },
+// Daftar integrasi - tiap item = 1 "menu terpisah" (halaman /integrations/:key), pola
+// seperti Beranda -> hub divisi. accent = warna aksen kartu hub.
+const INTEGRATION_SECTIONS: Array<{ key: string; label: string; desc: string; icon: any; accent: string }> = [
+  { key: "maps",     label: "Google Maps",        desc: "API key peta & geolokasi aset jaringan",       icon: MapPin,        accent: "text-emerald-600 bg-emerald-500/10" },
+  { key: "mikrotik", label: "MikroTik RouterOS",  desc: "Router, PPP secret, isolir profile",           icon: Wifi,          accent: "text-amber-600 bg-amber-500/10" },
+  { key: "acs",      label: "GenieACS (TR-069)",  desc: "Konfigurasi WiFi ONT, reboot, RX power",       icon: Cpu,           accent: "text-sky-600 bg-sky-500/10" },
+  { key: "billing",  label: "Billing Sync",       desc: "Sinkron billing.jabnet.id + migrasi collection", icon: Database,     accent: "text-indigo-600 bg-indigo-500/10" },
+  { key: "whatsapp", label: "WhatsApp (MPWA)",    desc: "Gateway pesan & OTP pelanggan",                icon: MessageCircle, accent: "text-green-600 bg-green-500/10" },
+  { key: "telegram", label: "Telegram Bot",       desc: "Notifikasi internal via bot",                  icon: Send,          accent: "text-cyan-600 bg-cyan-500/10" },
+  { key: "meta",     label: "Meta Conversions",   desc: "Meta CAPI (Conversions API)",                  icon: Zap,           accent: "text-blue-600 bg-blue-500/10" },
+  { key: "data",     label: "Data & API",         desc: "Export/Import data + referensi API internal",  icon: Webhook,       accent: "text-violet-600 bg-violet-500/10" },
 ];
 
 export default function IntegrationPage() {
@@ -377,9 +383,13 @@ export default function IntegrationPage() {
   const toggleGuide = (key: string) =>
     setExpandedGuides((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // Tab navigasi integrasi - tampilkan satu kategori/aplikasi per waktu (biar tidak pusing).
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const show = (cat: string) => activeTab === "all" || activeTab === cat;
+  // Navigasi integrasi berbasis route: /integrations = hub kartu, /integrations/:key = 1 menu.
+  const [, navigate] = useLocation();
+  const [, catParams] = useRoute("/integrations/:cat");
+  const cat = catParams?.cat ?? null;
+  const isHub = !cat;
+  const show = (c: string) => cat === c;
+  const activeSection = INTEGRATION_SECTIONS.find((s) => s.key === cat);
 
   // ---------------------------------------------------------------------------
   // Fetch all settings
@@ -949,18 +959,40 @@ export default function IntegrationPage() {
       {/* Header                                                            */}
       {/* ================================================================= */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Link2 className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Integrasi API</h1>
-          <p className="text-sm text-muted-foreground">
-            Konfigurasi dan kelola semua integrasi API eksternal dari satu
-            tempat.
-          </p>
-        </div>
+        {activeSection ? (
+          <>
+            <button type="button" onClick={() => navigate("/integrations")} aria-label="Kembali ke Integrasi"
+              className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center hover:bg-muted/70 shrink-0">
+              <ChevronLeft className="h-5 w-5 text-foreground" />
+            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <button type="button" onClick={() => navigate("/integrations")} className="hover:text-foreground">Integrasi</button>
+                <span>/</span>
+                <span className="text-foreground font-medium truncate">{activeSection.label}</span>
+              </div>
+              <h1 className="text-xl font-bold text-foreground truncate">{activeSection.label}</h1>
+              <p className="text-sm text-muted-foreground truncate">{activeSection.desc}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Link2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Integrasi API</h1>
+              <p className="text-sm text-muted-foreground">
+                Pilih integrasi untuk diatur - tiap aplikasi punya menu sendiri.
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
+      {/* Hub (tanpa :cat): ringkasan + kartu tiap integrasi. Detail (/integrations/:cat):
+          hanya section yang cocok yang tampil (via show(cat)). */}
+      {isHub && (<>
       {/* ================================================================= */}
       {/* A2 - System Health (ringkasan status semua integrasi inti)        */}
       {/* ================================================================= */}
@@ -1003,21 +1035,29 @@ export default function IntegrationPage() {
       {/* Pembaruan Aplikasi - cek versi GitHub + update sekali klik (admin) */}
       <AppUpdateCard />
 
+      {/* Kartu tiap integrasi - klik menuju halaman menu-nya sendiri (/integrations/:key) */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {INTEGRATION_SECTIONS.map((sec) => (
+          <button key={sec.key} type="button" onClick={() => navigate(`/integrations/${sec.key}`)}
+            className="group flex items-start gap-3.5 rounded-xl border bg-card p-4 text-left transition-all hover:border-primary/40 hover:shadow-elev-md">
+            <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${sec.accent}`}>
+              <sec.icon className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1 text-sm font-bold">
+                {sec.label}
+                <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{sec.desc}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      </>)}
+
       {/* ================================================================= */}
       {/* Card 1 - Google Maps Platform                                     */}
       {/* ================================================================= */}
-      {/* Navigasi kategori integrasi - pilih satu aplikasi/integrasi supaya tidak pusing */}
-      <div className="sticky top-0 z-10 py-2 -mx-1 px-1 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70 rounded-xl">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {INTEGRATION_TABS.map((t) => (
-            <button key={t.key} type="button" onClick={() => setActiveTab(t.key)}
-              className={`shrink-0 px-3 h-9 rounded-lg text-xs font-semibold border transition-colors ${activeTab === t.key ? "bg-primary text-primary-foreground border-primary shadow-elev-sm" : "bg-card border-border text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {show("maps") && (
       <Card>
         <CardContent className="p-6 space-y-5">
@@ -1152,7 +1192,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card 2 - MikroTik RouterOS                                        */}
       {/* ================================================================= */}
-      {show("jaringan") && (
+      {show("mikrotik") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           {/* Header row */}
@@ -1370,7 +1410,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card 2b - GenieACS TR-069                                         */}
       {/* ================================================================= */}
-      {show("jaringan") && (
+      {show("acs") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -1911,7 +1951,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card - MPWA (WhatsApp Gateway)                                    */}
       {/* ================================================================= */}
-      {show("pesan") && (
+      {show("whatsapp") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -2146,7 +2186,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card - Telegram Bot                                                */}
       {/* ================================================================= */}
-      {show("pesan") && (
+      {show("telegram") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -2331,7 +2371,7 @@ export default function IntegrationPage() {
       {/* ================================================================= */}
       {/* Card - Meta Conversions API (CAPI)                                 */}
       {/* ================================================================= */}
-      {show("pesan") && (
+      {show("meta") && (
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-start justify-between gap-4">

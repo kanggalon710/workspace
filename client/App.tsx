@@ -302,6 +302,7 @@ function ProtectedRouter() {
           {/* Integrasi & Tools */}
           <Route path="/integrations">{() => <WithPerm permission="integrations"><IntegrationPage /></WithPerm>}</Route>
           <Route path="/integrations/chatwoot/agents">{() => <WithPerm permission="chatwoot_settings"><ChatwootAgentMapPage /></WithPerm>}</Route>
+          <Route path="/integrations/:cat">{() => <WithPerm permission="integrations"><IntegrationPage /></WithPerm>}</Route>
           <Route path="/mpwa">{() => <WithPerm permission="mpwa"><MpwaPage /></WithPerm>}</Route>
           <Route path="/broadcast">{() => <WithPerm permission="broadcast"><BroadcastPage /></WithPerm>}</Route>
           {/* v4.2.20 (PRD WA Feature v2): 4 submenu */}
