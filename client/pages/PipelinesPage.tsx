@@ -12,6 +12,7 @@ import { IconPicker, resolvePipelineIcon, pipelineTint, PIPELINE_COLOR_SWATCHES,
 import { PipelineSettingsDialog } from "@/components/pipelines/PipelineSettingsDialog";
 import { TemplatePickerDialog } from "@/components/pipelines/TemplatePickerDialog";
 import type { Pipeline } from "@shared/schema";
+import { getDivision } from "@/lib/divisions";
 import { Layers, Plus, MoreVertical, ArchiveRestore, LayoutTemplate, Bookmark } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,14 +30,17 @@ function CardIcon({ p }: { p: Pipeline }) {
   );
 }
 
-export default function PipelinesPage() {
+/** `division` (opsional) menyaring pipeline ke divisi tertentu (mis. HRD/NOC) - board kerja
+ *  per divisi yang bisa dikustom stage/kartunya, terpisah dari daftar /pipelines ops global. */
+export default function PipelinesPage({ division }: { division?: string } = {}) {
   const [, navigate] = useLocation();
   const { canWrite } = useAuth();
   const writable = canWrite("pipelines");
+  const div = division ? getDivision(division) : undefined;
 
   // --- archived toggle ---
   const [showArchived, setShowArchived] = useState(false);
-  const { data: pipelines, isLoading } = usePipelines(showArchived);
+  const { data: pipelines, isLoading } = usePipelines(showArchived, division ?? null);
 
   const { createPipeline, updatePipeline } = usePipelineMutations();
   const { saveAs } = useTemplateMutations();
@@ -63,6 +67,7 @@ export default function PipelinesPage() {
         description: createDesc.trim() || null,
         icon: createIcon,
         color: createColor,
+        ...(division ? { division } : {}),
       });
       toast.success("Pipeline dibuat");
       setShowCreate(false);
@@ -119,9 +124,9 @@ export default function PipelinesPage() {
   return (
     <PageContainer>
       <PageHeader
-        icon={Layers}
-        title="Pipelines"
-        description="Kanban board kustom per mitra"
+        icon={div?.icon ?? Layers}
+        title={div ? `Pipeline ${div.short}` : "Pipelines"}
+        description={div ? `Board kerja ${div.label} yang bisa dikustom stage & kartunya` : "Kanban board kustom per mitra"}
         accent="primary"
         actions={
           <div className="flex items-center gap-2">

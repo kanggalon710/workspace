@@ -37,6 +37,7 @@ const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const AuditLogPage = lazy(() => import("@/pages/AuditLogPage"));
 const UsersPage = lazy(() => import("@/pages/UsersPage"));
 const RolesPage = lazy(() => import("@/pages/RolesPage"));
+const SettingsHubPage = lazy(() => import("@/pages/SettingsHubPage"));
 const CollectionPipelinePage = lazy(() => import("@/pages/CollectionPipelinePage"));
 const LoyaltyAdminPage = lazy(() => import("@/pages/LoyaltyAdminPage"));
 const MpwaPage = lazy(() => import("@/pages/MpwaPage"));
@@ -270,6 +271,8 @@ function ProtectedRouter() {
           <Route path="/collections/cs">{() => <WithPerm permission="customers"><CollectionPipelinePage division="cs" /></WithPerm>}</Route>
           <Route path="/collections/marketing">{() => <WithPerm permission="leads"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
+          {/* Pipeline kerja per-divisi (HRD/NOC dst) - board kustom ter-scope divisi. */}
+          <Route path="/pipelines/divisi/:key">{(params) => <WithPerm permission="pipelines"><PipelinesPage division={params.key} /></WithPerm>}</Route>
           <Route path="/pipelines/:id">{() => <WithPerm permission="pipelines"><PipelineBoardPage /></WithPerm>}</Route>
           {/* Teamspace v5.0 - kolaborasi tim internal */}
           <Route path="/teamspace/tasks">{() => <WithPerm permission="team_tasks"><AllTasksPage /></WithPerm>}</Route>
@@ -313,6 +316,7 @@ function ProtectedRouter() {
           <Route path="/whatsapp/phonebook">{() => <WithPerm permission="phonebooks"><PhonebookPage /></WithPerm>}</Route>
           <Route path="/audit-logs">{() => <WithPerm permission="audit_logs"><AuditLogPage /></WithPerm>}</Route>
           <Route path="/mitra">{() => <WithPerm requireSystemAdmin><MitraPage /></WithPerm>}</Route>
+          <Route path="/pengaturan" component={SettingsHubPage} />
           <Route path="/users">{() => <WithPerm permission="user_management"><UsersPage /></WithPerm>}</Route>
           <Route path="/roles">{() => <WithPerm permission="user_management"><RolesPage /></WithPerm>}</Route>
           <Route>

@@ -517,6 +517,7 @@ export const pipelines = mysqlTable("pipelines", {
   isArchived: int("is_archived").notNull().default(0),
   restricted: int("restricted").notNull().default(0),
   teamId: int("team_id"),                    // Teamspace: pipeline milik tim (NULL = pipeline ops biasa)
+  division: varchar("division", { length: 32 }), // Divisi pemilik (hrd|noc|dst) - pipeline kerja per divisi (NULL = pipeline ops global)
   createdBy: int("created_by").notNull(),
   updatedBy: int("updated_by"),
   createdAt: text("created_at").notNull(),

@@ -174,7 +174,15 @@ export function AppUpdateCard() {
 
         {!check?.enabled && (
           <p className="text-[11px] text-amber-600 dark:text-amber-400">
-            Tombol "Update Sekarang" nonaktif. Aktifkan lewat "Pengaturan Update" agar bisa diklik.
+            Tombol "Update Sekarang" nonaktif.{" "}
+            <button
+              type="button"
+              className="underline underline-offset-2 font-medium hover:text-amber-700"
+              onClick={() => { setShowConfig(true); setEnabled(true); }}
+            >
+              Aktifkan update sekali klik
+            </button>{" "}
+            lalu simpan pengaturan.
           </p>
         )}
 

@@ -376,7 +376,9 @@ router.post("/api/system/update/apply", async (req: Request, res: Response) => {
   try {
     const cfg = await loadSelfUpdateConfig();
     if (!cfg.enabled) return sendError(res, "Update otomatis dinonaktifkan. Aktifkan dulu di Integrasi (self_update_enabled).", 403);
-    if (!cfg.repo || !cfg.branch) return sendError(res, "Repo/branch update belum di-set.", 400);
+    // Branch boleh kosong = auto-deteksi branch yang sedang ter-checkout (resolveBranch di runSelfUpdate).
+    // Hanya repo yang wajib. (Bug lama: menolak branch kosong padahal UI menyarankan kosong = auto.)
+    if (!cfg.repo) return sendError(res, "Repo update belum di-set.", 400);
     const result = await runSelfUpdate(cfg);
     try { await logAudit(req, "UPDATE", "system", 0, `Self-update ${result.newBuild.sourceShaShort ?? "?"}`, { ok: result.ok, restart: result.restartTriggered }); } catch { /* - */ }
     _updateCheckCache = null; // reset cache supaya cek berikutnya akurat
@@ -5226,9 +5228,14 @@ async function validateTriggerConfig(
   router.get("/api/pipelines", async (req, res) => {
     if (!requirePipelinesFeature(req, res)) return;
     const includeArchived = req.query.archived === "1";
+    // Divisi: ?division=hrd => hanya pipeline divisi itu. Tanpa param => hanya pipeline ops global
+    // (division NULL), agar pipeline kerja divisi tidak bocor ke daftar /pipelines umum.
+    const division = typeof req.query.division === "string" && req.query.division.trim() ? req.query.division.trim() : null;
     // Teamspace: pipeline milik tim disembunyikan dari daftar ops (NFR-012) -
     // board tim diakses via /api/teamspace/* + GET /api/pipelines/:id.
-    const all = (await storage.listPipelines(includeArchived)).filter((p) => (p as any).teamId == null);
+    const all = (await storage.listPipelines(includeArchived))
+      .filter((p) => (p as any).teamId == null)
+      .filter((p) => (((p as any).division ?? null) === division));
     const admin = isPipelineAdmin(req);
     const grantMap = (!admin && req.authUser!.effectiveRoleId)
       ? await storage.getGrantCapabilitiesMapForRole(req.authUser!.effectiveRoleId) : {};
@@ -5250,9 +5257,10 @@ async function validateTriggerConfig(
 
   router.post("/api/pipelines", async (req, res) => {
     if (!requireWritePipelinesFeature(req, res)) return;
-    const { name, description, color, icon } = req.body ?? {};
+    const { name, description, color, icon, division } = req.body ?? {};
     if (!name || typeof name !== "string") return sendError(res, "Nama pipeline wajib diisi", 400);
-    sendSuccess(res, await storage.createPipeline({ name, description, color, icon }, req.authUser!.id));
+    const div = typeof division === "string" && division.trim() ? division.trim() : null;
+    sendSuccess(res, await storage.createPipeline({ name, description, color, icon, division: div }, req.authUser!.id));
   });
 
   // NOTE: reorder must be registered BEFORE /:id routes to avoid Express capturing "reorder" as :id param

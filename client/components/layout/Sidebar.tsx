@@ -69,8 +69,9 @@ const navGroups: NavGroup[] = [
     // Manajemen User + Role kembali ke sini (bukan HRD).
     key: "manajemen", label: "Pengaturan", icon: Settings,
     items: [
+      { label: "Beranda Pengaturan", path: "/pengaturan", icon: Settings, hub: true },
       { label: "Manajemen User", path: "/users", icon: UserCog, permission: "user_management" },
-      { label: "Manajemen Role", path: "/roles", icon: KeyRound, permission: "user_management" },
+      { label: "Manajemen Role & Hak Akses", path: "/roles", icon: KeyRound, permission: "user_management" },
       { label: "Pengumuman", path: "/announcements", icon: Megaphone },
       { label: "Lapor Bug", path: "/bugs", icon: Bug },
       { label: "Integrasi API", path: "/integrations", icon: Link2, permission: "integrations" },

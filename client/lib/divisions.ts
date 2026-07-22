@@ -85,6 +85,7 @@ export const DIVISIONS: Division[] = [
       { label: "Sesi Aktif", path: "/billing/sessions", icon: Activity, permission: "sessions" },
       { label: "Perangkat ONT", path: "/devices", icon: Cpu, permission: "devices" },
       { label: "Router MikroTik", path: "/billing/routers", icon: Wifi, permission: "routers" },
+      { label: "Pipeline NOC (Kustom)", path: "/pipelines/divisi/noc", icon: Kanban, permission: "pipelines" },
     ],
   },
   {
@@ -120,6 +121,7 @@ export const DIVISIONS: Division[] = [
     description: "SDM: data karyawan, kehadiran, cuti, produktivitas staff",
     modules: [
       { label: "SDM (Karyawan, Kehadiran, Cuti)", path: "/hrd/sdm", icon: CalendarCheck2, permission: "hr_sdm" },
+      { label: "Pipeline HRD (Kustom)", path: "/pipelines/divisi/hrd", icon: Kanban, permission: "pipelines" },
       { label: "Activity & Produktivitas", path: "/audit-logs", icon: ClipboardList, permission: "audit_logs" },
     ],
   },

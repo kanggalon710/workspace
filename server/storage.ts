@@ -2147,7 +2147,7 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
-  async createPipeline(data: { name: string; description?: string; color?: string; icon?: string; }, userId: number): Promise<Pipeline> {
+  async createPipeline(data: { name: string; description?: string; color?: string; icon?: string; division?: string | null; }, userId: number): Promise<Pipeline> {
     const mitraId = getMitraId();
     const existing = await this.listPipelines(true);
     const maxPos = existing.reduce((m, p) => Math.max(m, p.position), -1);
@@ -2155,6 +2155,7 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.insert(pipelines).values({
       mitraId, name: data.name, description: data.description ?? null,
       color: data.color ?? "#0EA5E9", icon: data.icon ?? null,
+      division: data.division ?? null,
       position: maxPos + 1, isArchived: 0, createdBy: userId, createdAt: now,
     } as any);
     const insertId = Number((result[0] as any).insertId);
@@ -10218,6 +10219,19 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (e: any) {
       console.warn(`[migration] pipelines.restricted add failed: ${e.message}`);
+    }
+    // Pipeline per-divisi (HRD/NOC dst) - kolom `division`. Additive, idempotent.
+    try {
+      const [colRows]: any = await this.pool.execute(
+        `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pipelines' AND COLUMN_NAME = 'division'`
+      );
+      if (Number((colRows as any[])[0]?.cnt ?? 0) === 0) {
+        await this.pool.execute(`ALTER TABLE pipelines ADD COLUMN division VARCHAR(32) NULL`);
+        console.log("[migration] Added column pipelines.division ✓");
+      }
+    } catch (e: any) {
+      console.warn(`[migration] pipelines.division add failed: ${e.message}`);
     }
     try {
       await this.db.execute(sql`

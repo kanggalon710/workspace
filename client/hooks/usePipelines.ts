@@ -59,10 +59,14 @@ export type RelationSearchResult = { id: number; label: string; subtitle: string
 
 const KEY = "pipelines";
 
-export function usePipelines(includeArchived = false) {
+export function usePipelines(includeArchived = false, division?: string | null) {
+  const params = new URLSearchParams();
+  if (includeArchived) params.set("archived", "1");
+  if (division) params.set("division", division);
+  const qs = params.toString();
   return useQuery({
-    queryKey: [KEY, "list", includeArchived],
-    queryFn: () => api.get<(Pipeline & { level?: "view" | "edit"; restricted?: number; capabilities?: string[] })[]>(`/pipelines${includeArchived ? "?archived=1" : ""}`),
+    queryKey: [KEY, "list", includeArchived, division ?? null],
+    queryFn: () => api.get<(Pipeline & { level?: "view" | "edit"; restricted?: number; capabilities?: string[] })[]>(`/pipelines${qs ? `?${qs}` : ""}`),
   });
 }
 
