@@ -30,6 +30,7 @@ import {
   Award, ChevronRight, ArrowUp, Zap, Info, Plus, Printer, Wallet, ShieldAlert,
   Settings, Pencil, Trash2, Clock, ArrowRight, MoreHorizontal,
 } from "lucide-react";
+import { SahabatBadge, type SahabatTier } from "@/components/illustrations";
 import { SahabatKitDialog } from "@/components/sahabat/SahabatKitDialog";
 import { SahabatDetailDrawer } from "@/components/sahabat/SahabatDetailDrawer";
 
@@ -352,7 +353,17 @@ export default function LoyaltyAdminPage() {
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 kanban-scrollbar">
-        {tab === "summary" && <SummaryTab summary={summary} leaderboard={leaderboard} canEdit={canEdit} />}
+        {tab === "summary" && (
+          <>
+            {/* Sahabat reward hero strip (AI-generated), full-bleed, fades into page */}
+            <div className="relative -mt-4 -mx-4 md:-mx-6 mb-4 h-24 md:h-32 overflow-hidden">
+              <img src="/brand/sahabat-hero.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-right" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/30 to-transparent" />
+            </div>
+            <SummaryTab summary={summary} leaderboard={leaderboard} canEdit={canEdit} />
+          </>
+        )}
 
         {tab === "discounts" && (
           <div className="space-y-3">
@@ -964,9 +975,7 @@ function SummaryTab({ summary, leaderboard, canEdit }: any) {
                 const pct = totalLevelCount > 0 ? (count / totalLevelCount) * 100 : 0;
                 return (
                   <div key={key} className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" style={{ background: `${cfg.hex}22`, color: cfg.hex }}>
-                      {cfg.label.charAt(0)}
-                    </div>
+                    <SahabatBadge tier={key as SahabatTier} className="w-8 h-8 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="font-semibold">{cfg.label}</span>

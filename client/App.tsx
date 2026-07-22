@@ -9,6 +9,7 @@ import { CustomerPortalAuthProvider } from "@/context/CustomerPortalAuthContext"
 import { SidebarProvider } from "@/context/SidebarContext";
 import { GoogleMapsProvider } from "@/context/GoogleMapsContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { NotFoundIllustration } from "@/components/illustrations";
 
 // -- Lazy-loaded pages --
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -316,6 +317,7 @@ function ProtectedRouter() {
           <Route>
             <div className="flex items-center justify-center min-h-[70vh] p-6">
               <div className="text-center max-w-md">
+                <NotFoundIllustration className="h-36 md:h-44 w-auto mx-auto mb-2 text-muted-foreground/60" />
                 <div className="relative inline-block mb-4">
                   <h1 className="text-7xl md:text-8xl font-black bg-gradient-to-br from-sky-500 to-blue-700 bg-clip-text text-transparent select-none">
                     404

@@ -61,11 +61,18 @@ export default function PortalLoginPage() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
       {/* --- LEFT / TOP: Hero (mobile: top gradient band · desktop: full left pane) --- */}
-      <aside className="relative overflow-hidden text-white lg:w-1/2 lg:min-h-screen bg-mesh">
+      <aside className="relative overflow-hidden text-white lg:w-1/2 lg:min-h-screen bg-sidebar">
+        {/* Fiber-to-the-home hero photo (AI-generated, brand-matched) */}
+        <img
+          src="/brand/portal-hero.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         {/* Grid pattern overlay */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-30" />
-        {/* Gradient veil */}
-        <div className="absolute inset-0 bg-gradient-to-br from-sidebar/95 via-sidebar/80 to-transparent" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-20" />
+        {/* Gradient veil — keeps hero copy legible over the photo */}
+        <div className="absolute inset-0 bg-gradient-to-br from-sidebar/90 via-sidebar/70 to-sidebar/25" />
 
         <div className="relative z-10 flex flex-col justify-between px-6 pt-8 pb-6 lg:p-12 xl:p-16 min-h-[320px] lg:min-h-screen">
           {/* Top - Brand */}

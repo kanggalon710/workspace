@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { EmptyUsers, EmptySearch } from "@/components/illustrations";
 import { SkeletonList } from "@/components/ui/skeleton";
 
 // -- Category config (theme-aware) ------------------------------------------
@@ -512,7 +513,7 @@ export default function ContactsPage() {
       ) : filtered.length === 0 ? (
         <Card padding="none">
           <EmptyState
-            icon={User}
+            illustration={search.trim() ? <EmptySearch /> : <EmptyUsers />}
             title="Tidak ada kontak ditemukan"
             description={
               search.trim()

@@ -30,6 +30,9 @@ import {
   ListChecks, Timer, Ban,
 } from "lucide-react";
 
+/** Divisi yang punya banner hero (AI-generated) di /public/brand/divisi. */
+const BANNER_DIVISIONS = new Set(["marketing", "teknik", "noc", "cs", "keuangan", "hrd", "teamspace"]);
+
 const fmtRp = (n: any) => (n == null ? "Rp 0" : `Rp ${Number(n).toLocaleString("id-ID")}`);
 const fmt = (v: any) => (v == null ? "-" : String(v));
 const pct = (used: number, total: number) => (total > 0 ? Math.round((used / total) * 100) : 0);
@@ -303,9 +306,18 @@ export default function DivisionHubPage() {
   }
 
   const hasData = tiles.length > 0 || breakdowns.length > 0;
+  const bannerSrc = BANNER_DIVISIONS.has(division.key) ? `/brand/divisi/${division.key}.jpg` : undefined;
 
   return (
     <PageContainer>
+      {bannerSrc && (
+        <div className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-4 h-32 md:h-44 overflow-hidden">
+          <img src={bannerSrc} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" />
+          {/* fade the photo into the page background (theme-aware) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
+        </div>
+      )}
       <PageHeader
         icon={division.icon}
         title={division.label}

@@ -1758,6 +1758,18 @@ https://fiber-tools.arkanova.id/coverage-check`;
           className="relative p-6 md:p-8 text-white"
           style={{ background: `linear-gradient(135deg, ${sahabat.levelColor}ee 0%, ${sahabat.levelColor}aa 100%)` }}
         >
+          {/* Reward art (AI-generated) — gift & gold bokeh peeking from the right */}
+          <img
+            src="/brand/sahabat-hero.jpg"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right opacity-30"
+          />
+          {/* level-color veil keeps the level label legible over the art */}
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(90deg, ${sahabat.levelColor}f2 0%, ${sahabat.levelColor}99 42%, transparent 92%)` }}
+          />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: "radial-gradient(circle at 90% 10%, rgba(255,255,255,0.4), transparent 40%)",
           }} />
