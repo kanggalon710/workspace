@@ -805,7 +805,7 @@ function PowerBudgetCalculator() {
 
         {/* Result card */}
         <div className={cn("rounded-md border p-4", statusBg)}>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium">Daya di Pelanggan (RX Power)</p>
               <p className={cn("text-2xl font-bold font-mono", statusColor)}>
@@ -933,7 +933,7 @@ export default function SplitterChainPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 border-b">
+      <div className="flex gap-1 border-b overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
         {([
           { key: "list", label: "Daftar Splitter" },
           { key: "tree", label: "Visualisasi Rantai" },
@@ -943,7 +943,7 @@ export default function SplitterChainPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+              "px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0",
               activeTab === tab.key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground",

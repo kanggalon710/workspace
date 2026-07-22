@@ -322,16 +322,16 @@ export default function BestrayManagerPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Bestray Manager</h1>
           <p className="text-sm text-muted-foreground">
             Kelola slot bestray di setiap ODC
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={filterOdcId} onValueChange={setFilterOdcId}>
-            <SelectTrigger className="w-52">
+            <SelectTrigger className="w-full sm:w-52">
               <SelectValue placeholder="Filter ODC" />
             </SelectTrigger>
             <SelectContent>

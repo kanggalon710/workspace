@@ -272,7 +272,7 @@ export default function PowerBudgetPage() {
             <CardTitle className="text-lg">Konstanta Referensi</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border overflow-hidden">
+            <div className="rounded-lg border overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
@@ -385,7 +385,7 @@ export default function PowerBudgetPage() {
               {localBreakdown && (
                 <div>
                   <p className="text-sm font-medium mb-3">Rincian Loss</p>
-                  <div className="rounded-lg border overflow-hidden">
+                  <div className="rounded-lg border overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b bg-muted/50">

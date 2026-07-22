@@ -204,7 +204,7 @@ export default function TicketingPage() {
               <p className="text-sm text-gray-500">Sistem penugasan dan ticketing terintegrasi pelanggan</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild title="ODP Repeat Issues - heatmap & investigasi">
               <Link href="/tickets/heatmap">
                 <AlertCircle className="w-4 h-4 mr-1" /> Heatmap ODP
@@ -315,7 +315,7 @@ export default function TicketingPage() {
         </Card>
 
         {/* v4.2.18 (F.1): View mode tabs + bulk action bar */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex items-center rounded-md border bg-card p-0.5">
             {(["list", "kanban"] as const).map(m => (
               <button
@@ -1207,7 +1207,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
                   <Label className="text-sm">Catatan Resolusi</Label>
                   <Textarea value={resolutionText} onChange={(e) => setResolutionText(e.target.value)} placeholder="Jelaskan penyelesaian..." rows={2} className="bg-white" />
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center flex-wrap gap-3">
                   <div className="space-y-1">
                     <Label className="text-sm">Durasi Aktual (menit)</Label>
                     <Input type="number" min={1} value={actualDuration} onChange={(e) => setActualDuration(e.target.value)} className="w-[140px] bg-white" placeholder="menit" />
@@ -1523,11 +1523,11 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
                 stages.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
                 return (
                   <div key={cat.id} className="rounded-lg border bg-white overflow-hidden">
-                    <div className="flex items-center gap-2 p-2.5">
+                    <div className="flex items-center gap-2 p-2.5 flex-wrap">
                       {editId === cat.id ? (
                         <>
                           <input type="color" className="w-8 h-8 rounded cursor-pointer border-0 p-0" value={editColor} onChange={(e) => setEditColor(e.target.value)} />
-                          <Input className="flex-1 h-8" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                          <Input className="flex-1 min-w-[100px] h-8" value={editName} onChange={(e) => setEditName(e.target.value)} />
                           <Input className="w-14 h-8" type="number" value={editSortOrder} onChange={(e) => setEditSortOrder(e.target.value)} title="Sort order" />
                           <Input className="w-16 h-8" type="number" value={editSla} onChange={(e) => setEditSla(e.target.value)} placeholder="SLA" title="SLA jam" />
                           <Button size="sm" variant="ghost" disabled={updateMut.isPending} onClick={() => {
@@ -1545,7 +1545,7 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
                           <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: cat.color ?? "#6B7280" }} />
                           <button
                             onClick={() => setExpandedId(isExpanded ? null : cat.id)}
-                            className="flex-1 text-sm font-medium text-gray-800 text-left hover:text-blue-600"
+                            className="flex-1 min-w-0 truncate text-sm font-medium text-gray-800 text-left hover:text-blue-600"
                           >
                             {cat.name}
                           </button>
@@ -1638,9 +1638,9 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
             {/* Add new category */}
             <div className="border-t pt-4">
               <p className="text-sm font-medium text-gray-700 mb-2">Tambah Kategori Baru</p>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <input type="color" className="w-8 h-8 rounded cursor-pointer border-0 p-0" value={newColor} onChange={(e) => setNewColor(e.target.value)} />
-                <Input className="flex-1 h-9" placeholder="Nama kategori" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                <Input className="flex-1 min-w-[120px] h-9" placeholder="Nama kategori" value={newName} onChange={(e) => setNewName(e.target.value)} />
                 <Input className="w-20 h-9" placeholder="Ikon" value={newIcon} onChange={(e) => setNewIcon(e.target.value)} title="Nama ikon (opsional)" />
                 <Input className="w-14 h-9" type="number" placeholder="Urut" value={newSortOrder} onChange={(e) => setNewSortOrder(e.target.value)} title="Sort order" />
                 <Input className="w-14 h-9" type="number" placeholder="SLA" value={newSla} onChange={(e) => setNewSla(e.target.value)} title="SLA jam" />

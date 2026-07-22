@@ -167,7 +167,7 @@ export default function CableCoreManagerPage() {
 
       {/* Stats bar */}
       {selectedCableId && hasCores && (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <Card>
             <CardContent className="pt-4 pb-3 text-center">
               <div className="text-2xl font-bold">{stats.total}</div>
