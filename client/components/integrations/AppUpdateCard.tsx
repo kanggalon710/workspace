@@ -27,6 +27,7 @@ type CheckResult = {
   remote: { sourceShaShort: string | null; buildTime: string | null; commitDate: string | null; commitMessage: string | null };
   updateAvailable: boolean; reason: string;
   enabled: boolean; repo: string; branch: string; tokenSet: boolean;
+  sourceCheckout?: boolean; buildMode?: string;
 };
 type ApplyStep = { step: string; ok: boolean; output: string };
 type ApplyResult = { ok: boolean; steps: ApplyStep[]; restartTriggered: boolean; newBuild: BuildInfo };
@@ -193,8 +194,9 @@ export function AppUpdateCard() {
                 <Input inputSize="sm" value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="kanggalon710/workspace" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Branch Deploy</Label>
-                <Input inputSize="sm" value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="deploy" />
+                <Label className="text-xs">Branch</Label>
+                <Input inputSize="sm" value={branch} onChange={(e) => setBranch(e.target.value)} placeholder="kosong = auto-deteksi branch aktif" />
+                <p className="text-[11px] text-muted-foreground">Kosongkan agar server memakai branch yang sedang ter-checkout di cPanel.</p>
               </div>
             </div>
             <div className="space-y-1">
@@ -236,8 +238,11 @@ export function AppUpdateCard() {
           <DialogHeader>
             <DialogTitle>Update aplikasi sekarang?</DialogTitle>
             <DialogDescription className="text-xs">
-              Server akan menarik versi terbaru dari branch <strong>{check?.branch}</strong>, memasang dependency bila berubah,
-              lalu me-restart aplikasi. Proses beberapa detik - jangan tutup halaman.
+              Server akan menarik versi terbaru dari branch <strong>{check?.branch || "(auto)"}</strong>
+              {check?.sourceCheckout
+                ? " lalu build ulang dari source (npm install + build - bisa 1-3 menit)"
+                : " (payload sudah pre-built - cepat)"}
+              , lalu me-restart aplikasi. Jangan tutup halaman sampai selesai.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

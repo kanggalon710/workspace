@@ -12,6 +12,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
 
@@ -21,10 +22,30 @@ const APP_ROOT = process.cwd();
 export type SelfUpdateConfig = {
   enabled: boolean;
   repo: string;      // "owner/repo"
-  branch: string;    // "deploy" (prod) / "deploy-dev"
+  branch: string;    // branch yang di-track cPanel. Kosong = auto-detect branch aktif.
   token: string | null;
-  runNpm: boolean;   // jalankan npm install saat lockfile berubah
+  runNpm: boolean;   // jalankan npm install saat perlu
+  build: "auto" | "always" | "never"; // "auto" = build kalau checkout SOURCE (ada vite.config)
 };
+
+/** Branch git yang sedang ter-checkout (untuk auto-detect kalau config kosong). */
+async function currentBranch(): Promise<string | null> {
+  try {
+    const b = (await execFileAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: APP_ROOT, timeout: 10_000 })).stdout.trim();
+    return b && b !== "HEAD" ? b : null;
+  } catch { return null; }
+}
+
+/** Branch efektif: config kalau diisi, kalau tidak auto-detect branch aktif, fallback "deploy". */
+async function resolveBranch(cfg: SelfUpdateConfig): Promise<string> {
+  if (cfg.branch && cfg.branch.trim()) return cfg.branch.trim();
+  return (await currentBranch()) || "deploy";
+}
+
+/** Checkout SOURCE (bukan payload pre-built) kalau ada vite.config - artinya perlu `npm run build`. */
+function isSourceCheckout(): boolean {
+  return existsSync(path.join(APP_ROOT, "vite.config.ts")) || existsSync(path.join(APP_ROOT, "vite.config.js"));
+}
 
 export type BuildInfo = {
   version: string | null;        // package.json version
@@ -88,6 +109,8 @@ export type UpdateCheck = {
     sourceSha: string | null; sourceShaShort: string | null;
     buildTime: string | null; commitSha: string | null; commitDate: string | null; commitMessage: string | null;
   };
+  branch: string;          // branch efektif yang dicek/di-pull (hasil resolve)
+  sourceCheckout: boolean; // true = checkout source (update akan build), false = payload pre-built
   updateAvailable: boolean;
   reason: string;
 };
@@ -96,14 +119,16 @@ export type UpdateCheck = {
 export async function checkForUpdate(cfg: SelfUpdateConfig): Promise<UpdateCheck> {
   const current = await getBuildInfo();
   const base = { sourceSha: null, sourceShaShort: null, buildTime: null, commitSha: null, commitDate: null, commitMessage: null };
+  const branch = await resolveBranch(cfg);
+  const sourceCheckout = isSourceCheckout();
 
-  if (!cfg.repo) return { current, remote: base, updateAvailable: false, reason: "repo_not_set" };
+  if (!cfg.repo) return { current, remote: base, branch, sourceCheckout, updateAvailable: false, reason: "repo_not_set" };
 
-  // Commit terakhir di branch deploy (untuk pesan + tanggal) + source sha dari .build-sha remote.
+  // Commit terakhir di branch (untuk pesan + tanggal) + source sha dari .build-sha remote (bila ada).
   const [commit, remoteSourceSha, remoteBuildTime] = await Promise.all([
-    ghApi(cfg.repo, `/commits/${encodeURIComponent(cfg.branch)}`, cfg.token).catch(() => null),
-    ghFileContent(cfg.repo, ".build-sha", cfg.branch, cfg.token),
-    ghFileContent(cfg.repo, ".build-time", cfg.branch, cfg.token),
+    ghApi(cfg.repo, `/commits/${encodeURIComponent(branch)}`, cfg.token).catch(() => null),
+    ghFileContent(cfg.repo, ".build-sha", branch, cfg.token),
+    ghFileContent(cfg.repo, ".build-time", branch, cfg.token),
   ]);
 
   const remote = {
@@ -129,7 +154,7 @@ export async function checkForUpdate(cfg: SelfUpdateConfig): Promise<UpdateCheck
   } else {
     reason = "no_local_build_meta";
   }
-  return { current, remote, updateAvailable, reason };
+  return { current, remote, branch, sourceCheckout, updateAvailable, reason };
 }
 
 async function fileHash(file: string): Promise<string | null> {
@@ -152,41 +177,57 @@ async function runGit(args: string[]): Promise<UpdateStep> {
   }
 }
 
-/** Terapkan pembaruan: fetch + reset --hard ke origin/<branch>, npm install bila lockfile berubah,
- *  lalu touch tmp/restart.txt (Passenger reload pada request berikutnya). */
+async function runCmd(step: string, cmd: string, args: string[], timeoutMs: number): Promise<UpdateStep> {
+  try {
+    const { stdout, stderr } = await execFileAsync(cmd, args, { cwd: APP_ROOT, timeout: timeoutMs, maxBuffer: 24 * 1024 * 1024 });
+    return { step, ok: true, output: (stdout + stderr).trim().slice(-3500) };
+  } catch (e: any) {
+    return { step, ok: false, output: String(e?.stderr || e?.stdout || e?.message || e).slice(-3500) };
+  }
+}
+
+/** Terapkan pembaruan: fetch + reset --hard ke origin/<branch>. Kalau checkout SOURCE
+ *  (ada vite.config), jalankan npm install + npm run build agar dist/ ikut ter-update.
+ *  Terakhir touch tmp/restart.txt (Passenger reload pada request berikutnya). */
 export async function runSelfUpdate(cfg: SelfUpdateConfig): Promise<UpdateResult> {
   const steps: UpdateStep[] = [];
+  const branch = await resolveBranch(cfg);
+  const source = isSourceCheckout();
   const lockBefore = await fileHash("package-lock.json");
+  steps.push({ step: "info", ok: true, output: `branch=${branch} · mode=${source ? "SOURCE (perlu build)" : "PRE-BUILT (payload dist)"}` });
 
-  // 1. Fetch branch deploy (shallow) - branch di-force-push, jadi WAJIB reset (bukan merge/pull).
-  steps.push(await runGit(["fetch", "origin", cfg.branch, "--depth=1"]));
-  if (!steps[steps.length - 1].ok) {
-    return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
-  }
+  // 1. Fetch branch dari origin. Deploy branch di-force-push, source branch bisa maju biasa - reset aman untuk keduanya.
+  steps.push(await runGit(["fetch", "origin", branch, "--depth=1"]));
+  if (!steps[steps.length - 1].ok) return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
 
-  // 2. Reset hard ke remote (payload pre-built menimpa dist/ + metadata).
-  steps.push(await runGit(["reset", "--hard", `origin/${cfg.branch}`]));
-  if (!steps[steps.length - 1].ok) {
-    return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
-  }
+  // 2. Reset hard ke remote (menimpa working tree dengan versi terbaru).
+  steps.push(await runGit(["reset", "--hard", `origin/${branch}`]));
+  if (!steps[steps.length - 1].ok) return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
 
-  // 3. npm install HANYA bila package-lock berubah (dependency baru). Best-effort.
+  // 3. Tentukan apakah perlu build (source checkout) - butuh devDeps, jadi install penuh.
+  const doBuild = cfg.build === "always" || (cfg.build !== "never" && source);
   const lockAfter = await fileHash("package-lock.json");
-  if (cfg.runNpm && lockBefore !== lockAfter && lockAfter) {
-    try {
-      const { stdout, stderr } = await execFileAsync(
-        "npm", ["install", "--omit=dev", "--no-audit", "--no-fund"],
-        { cwd: APP_ROOT, timeout: 300_000, maxBuffer: 16 * 1024 * 1024 },
-      );
-      steps.push({ step: "npm install (lockfile berubah)", ok: true, output: (stdout + stderr).trim().slice(-3000) });
-    } catch (e: any) {
-      steps.push({ step: "npm install (lockfile berubah)", ok: false, output: String(e?.stderr || e?.message || e).slice(-3000) });
-    }
+  const lockChanged = lockBefore !== lockAfter;
+  const needInstall = cfg.runNpm && (doBuild || (lockChanged && !!lockAfter) || !existsSync(path.join(APP_ROOT, "node_modules")));
+
+  if (needInstall) {
+    // Build butuh devDependencies (vite/esbuild) -> install penuh. Pre-built cukup --omit=dev.
+    const args = doBuild ? ["install", "--no-audit", "--no-fund"] : ["install", "--omit=dev", "--no-audit", "--no-fund"];
+    steps.push(await runCmd(`npm ${args.join(" ")}`, "npm", args, 420_000));
+    if (!steps[steps.length - 1].ok) return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
   } else {
-    steps.push({ step: "npm install", ok: true, output: lockBefore === lockAfter ? "dilewati - dependency tidak berubah" : "dilewati - dinonaktifkan" });
+    steps.push({ step: "npm install", ok: true, output: "dilewati - tidak perlu (dependency & node_modules sudah sesuai)" });
   }
 
-  // 4. Touch tmp/restart.txt -> Passenger reload proses pada HTTP request berikutnya.
+  // 4. Build dari source bila perlu (menghasilkan dist/ terbaru).
+  if (doBuild) {
+    steps.push(await runCmd("npm run build", "npm", ["run", "build"], 600_000));
+    if (!steps[steps.length - 1].ok) return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
+  } else {
+    steps.push({ step: "npm run build", ok: true, output: "dilewati - payload sudah pre-built (dist/ dari CI)" });
+  }
+
+  // 5. Touch tmp/restart.txt -> Passenger reload proses pada HTTP request berikutnya.
   let restartTriggered = false;
   try {
     const tmpDir = path.join(APP_ROOT, "tmp");
@@ -198,8 +239,7 @@ export async function runSelfUpdate(cfg: SelfUpdateConfig): Promise<UpdateResult
     steps.push({ step: "restart aplikasi (Passenger)", ok: false, output: String(e?.message || e) });
   }
 
-  const npmFailed = steps.some((s) => s.step.startsWith("npm install") && !s.ok);
-  return { ok: !npmFailed, steps, restartTriggered, newBuild: await getBuildInfo() };
+  return { ok: steps.every((s) => s.ok), steps, restartTriggered, newBuild: await getBuildInfo() };
 }
 
 /** Cek keberadaan tmp/ untuk mengetahui apakah restart-file mekanisme tersedia (Passenger). */

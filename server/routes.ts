@@ -204,19 +204,23 @@ router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
 
 /** Baca konfigurasi self-update dari app_settings (global). */
 async function loadSelfUpdateConfig(): Promise<SelfUpdateConfig> {
-  const [enabled, repo, branch, token, runNpm] = await Promise.all([
+  const [enabled, repo, branch, token, runNpm, build] = await Promise.all([
     storage.getSetting("self_update_enabled"),
     storage.getSetting("self_update_repo"),
     storage.getSetting("self_update_branch"),
     storage.getSetting("self_update_github_token"),
     storage.getSetting("self_update_run_npm"),
+    storage.getSetting("self_update_build"),
   ]);
+  const buildMode = build === "always" || build === "never" ? build : "auto";
   return {
     enabled: enabled === "true",
     repo: (repo || "kanggalon710/workspace").trim(),
-    branch: (branch || "deploy").trim(),
+    // Kosong = auto-detect branch yang sedang ter-checkout di cPanel (paling universal).
+    branch: (branch || "").trim(),
     token: token && token.trim() ? token.trim() : null,
     runNpm: runNpm !== "false",
+    build: buildMode,
   };
 }
 
@@ -356,7 +360,8 @@ router.get("/api/system/update/check", async (req: Request, res: Response) => {
     }
     const cfg = await loadSelfUpdateConfig();
     const result = await checkForUpdate(cfg);
-    const payload = { ...result, enabled: cfg.enabled, repo: cfg.repo, branch: cfg.branch, tokenSet: !!cfg.token };
+    // result.branch = branch efektif (hasil auto-detect kalau config kosong).
+    const payload = { ...result, enabled: cfg.enabled, repo: cfg.repo, tokenSet: !!cfg.token, buildMode: cfg.build };
     _updateCheckCache = { at: Date.now(), data: payload };
     if (result.updateAvailable && result.remote.sourceSha) {
       await notifyAdminsOfUpdate(result.remote.sourceSha, result.remote.sourceShaShort || result.remote.sourceSha.slice(0, 7));
