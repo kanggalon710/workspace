@@ -11,8 +11,11 @@ V2 punya dua instance yang mengikuti dua branch deploy:
 
 | Instance | Branch deploy | Source branch | Database | Domain | App dir |
 |---|---|---|---|---|---|
-| **V2 dev** (dibangun sekarang) | `deploy-dev` | `dev` | `jabnet_fiber_v2_dev` | `workspace-dev-v2.jabnet.id` | `~/repositories/fiber-jabnet-V2` |
-| **V2 main** (menyusul) | `deploy` | `main` | `jabnet_fiber_v2` | (belum ditentukan) | `~/repositories/fiber-jabnet-V2-main` |
+| **V2 dev** (LIVE) | `deploy-dev` | `dev` | `jabnet_fiber_v2_dev` | `workspace-dev-v2.jabnet.id` | `~/repositories/workspace-dev` |
+| **V2 main** (menyusul) | `deploy` | `main` | `jabnet_fiber_v2` | (belum ditentukan) | `~/repositories/workspace-main` |
+
+> Slug yang dipakai di server adalah **`workspace-dev`** (bukan `fiber-jabnet-V2`).
+> Private root: `/home/jabnet/private/workspace-dev`. Node.js virtualenv: **22.x**.
 
 DB user untuk keduanya: **`jabnet_crm_user`** (user yang sama dengan prod - lihat
 catatan keamanan di bawah).
@@ -81,8 +84,25 @@ Keduanya bukan penghalang untuk lanjut - tapi keputusan sadar, bukan kelalaian.
 
 ### A. DNS + Subdomain
 
-1. Di registrar/DNS: A record `workspace-dev-v2.jabnet.id` -> `103.194.47.165`.
-   Verifikasi: `dig +short workspace-dev-v2.jabnet.id`
+1. A record `workspace-dev-v2.jabnet.id` -> `103.194.47.165`.
+
+   > **Zona `jabnet.id` TIDAK dikelola dari cPanel.** Nameserver otoritatifnya
+   > `ns1.jabnet.id` (**103.194.46.46**) dan `ns2.jabnet.id` (**103.194.46.253**) -
+   > server lain, menjalankan PowerDNS. Mengedit DNS Zone Editor di cPanel `.47.165`
+   > hanya mengubah salinan lokal yang tidak otoritatif dan **tidak terlihat dunia luar**.
+   > Edit di PowerDNS `103.194.46.46`, lalu purge cache-nya:
+   > ```
+   > pdns_control purge workspace-dev-v2.jabnet.id.
+   > ```
+   >
+   > Verifikasi ke otoritatif langsung, bukan lewat resolver publik yang bisa cache:
+   > ```bash
+   > dig +short @ns1.jabnet.id workspace-dev-v2.jabnet.id   # harus 103.194.47.165
+   > ```
+   >
+   > AutoSSL baru bisa menerbitkan sertifikat setelah DNS benar; sebelum itu domain
+   > memakai sertifikat self-signed. Untuk tes lebih awal, pakai `curl --resolve`
+   > atau entri `/etc/hosts` di laptop.
 2. cPanel -> **Domains** -> Create Subdomain
    - Domain: `workspace-dev-v2.jabnet.id`
    - Document Root: biarkan default; Passenger yang handle setelah Node.js App dibuat
@@ -213,10 +233,27 @@ PROD_DB_NAME              -> hapus baris ini
 Klik **Update from Remote** di Git VC dulu, lalu:
 
 ```bash
-source /home/jabnet/nodevenv/repositories/fiber-jabnet-V2/20/bin/activate && cd /home/jabnet/repositories/fiber-jabnet-V2
+source /home/jabnet/nodevenv/repositories/workspace-dev/22/bin/activate && cd /home/jabnet/repositories/workspace-dev
 
-npm install --production
+npm install --omit=dev --ignore-scripts --no-audit --no-fund
 ```
+
+> **`--ignore-scripts` WAJIB. Jangan pakai tombol "Run NPM Install" cPanel.**
+>
+> Tombol itu menjalankan `npm install` penuh dan akan gagal dengan:
+> ```
+> gyp ERR! configure error
+> SyntaxError: invalid syntax   (gyp/common.py: if CC := os.environ.get(...))
+> ```
+> Penyebabnya berlapis:
+> 1. `better-sqlite3` ditarik sebagai **peerDependency `drizzle-orm`** (`">=7"`) -
+>    jadi `--omit=dev` saja TIDAK cukup, walaupun paket itu ada di devDependencies.
+> 2. Paket itu modul native, dan server hanya punya **Python 3.6.8**. node-gyp
+>    modern butuh Python 3.8+ (operator walrus `:=`), jadi kompilasi mustahil.
+>
+> `--ignore-scripts` aman karena bundle esbuild sudah meng-inline seluruh
+> dependency kecuali `mysql2`, dan tidak ada runtime dep yang butuh postinstall.
+> Hasil: 370 paket dalam ~18 detik.
 
 ### H. Isi schema + data
 
@@ -325,6 +362,44 @@ Kenapa flag-flag itu wajib di cPanel shared hosting:
 
 `MYSQL_PWD` dipakai supaya password tidak muncul di `ps -ef` maupun shell history.
 
+### Kalau sumbernya file dump phpMyAdmin
+
+Dump dari phpMyAdmin berbeda dari `mysqldump --add-drop-table` dan butuh dua
+penanganan tambahan. Keduanya ditemui saat impor Juli 2026:
+
+**1. Tidak ada `DROP TABLE`.** Menimpa ke DB yang sudah berisi tabel akan membuat
+semua `CREATE TABLE` gagal "already exists" dan data lama tercampur. Kosongkan target
+lebih dulu:
+
+```bash
+export MYSQL_PWD='<PASSWORD>'
+T=jabnet_fiber_v2_dev
+mysql -u jabnet_crm_user -N -e \
+  "SELECT CONCAT('DROP TABLE IF EXISTS \`',table_name,'\`;') FROM information_schema.tables WHERE table_schema='$T';" > /tmp/d.sql
+{ echo "SET FOREIGN_KEY_CHECKS=0;"; cat /tmp/d.sql; } | mysql -u jabnet_crm_user "$T"
+```
+
+**2. Wajib `FOREIGN_KEY_CHECKS=0` saat impor.** phpMyAdmin memasang seluruh foreign
+key lewat `ALTER TABLE ADD CONSTRAINT` di akhir file. Data produksi punya baris
+orphan, sehingga impor akan mati di baris terakhir:
+
+```
+ERROR 1452: Cannot add or update a child row: a foreign key constraint fails
+(CONSTRAINT `canvassing_logs_odp_id_odps_id_fk` FOREIGN KEY (`odp_id`) REFERENCES `odps` (`id`))
+```
+
+Ini bukan dump rusak - produksi memang punya `canvassing_logs` yang menunjuk ODP
+terhapus. Impor dengan pengecekan dimatikan supaya struktur prod tersalin apa adanya:
+
+```bash
+{ echo "SET FOREIGN_KEY_CHECKS=0;"; cat /tmp/dump.sql; echo "SET FOREIGN_KEY_CHECKS=1;"; } \
+  | mysql -u jabnet_crm_user jabnet_fiber_v2_dev
+```
+
+Transfer dari laptop: kompres dulu (73 MB turun ke 27 MB, transfer ~8 detik) dan
+cocokkan `md5sum` di kedua sisi. Hapus file dump dari `/tmp` server setelah selesai -
+`/tmp` terbaca proses lain di shared hosting dan isinya PII pelanggan.
+
 Lalu restart app supaya migrasi startup mengisi 39 tabel yang kurang:
 
 ```bash
@@ -355,20 +430,43 @@ keluar. Aksi manual dari UI - kirim broadcast, reboot ONT, ganti profil MikroTik
 kirim WA - tetap bisa ditembakkan dari V2 memakai token asli itu, dan efeknya
 kena ke pelanggan sungguhan.
 
-Kalau V2 tidak dimaksudkan menyentuh dunia nyata, kosongkan setelah impor:
+`mitra_integrations` berbentuk **key-value** (`id, mitra_id, key, value, is_secret,
+updated_at`), bukan satu kolom per integrasi. Periksa dulu apa yang benar-benar terisi:
+
+```sql
+SELECT `key`, mitra_id, is_secret,
+       IF(COALESCE(`value`,'')<>'','TERISI','kosong') AS status
+FROM jabnet_fiber_v2_dev.mitra_integrations
+ORDER BY mitra_id, `key`;
+```
+
+Hasil pemeriksaan pada impor Juli 2026 - jangkauan risikonya ternyata sempit:
+
+| Integrasi | Status | Berefek nyata? |
+|---|---|---|
+| GenieACS (`genieacs_*`) | semua kosong | tidak |
+| MPWA WhatsApp | `mpwa_url`+`mpwa_enabled` terisi, **`mpwa_token` kosong** | tidak - tak bisa kirim |
+| Meta CAPI | kosong | tidak |
+| Google Maps (mitra 1) | terisi | kuota/tagihan GCP |
+| Billing reseller (mitra 7) | id/email/nama/phone + **password terisi** | **ya** |
+| MikroTik (`mikrotik_routers`) | host+username+**password terisi**, `is_active=1` | **ya** |
+
+Jadi yang perlu ditangani hanya dua. Yang paling ringan, memblokir koneksi MikroTik
+tanpa menghilangkan entri (UI tetap 1:1):
+
+```sql
+UPDATE jabnet_fiber_v2_dev.mikrotik_routers SET is_active = 0;
+```
+
+Kalau ingin memutus kredensial billing juga:
 
 ```sql
 UPDATE jabnet_fiber_v2_dev.mitra_integrations
-   SET mpwa_token = NULL, mpwa_url = NULL,
-       genieacs_url = NULL, genieacs_username = NULL, genieacs_password = NULL,
-       billing_api_token = NULL;
-
-UPDATE jabnet_fiber_v2_dev.app_settings
-   SET value = '' WHERE `key` LIKE '%token%' OR `key` LIKE '%secret%';
+   SET `value` = '' WHERE `key` = 'billing_reseller_password';
 ```
 
-Sesuaikan nama kolom dengan schema aktual - cek dulu dengan
-`DESCRIBE jabnet_fiber_v2_dev.mitra_integrations;`
+Untuk paritas fitur, whitelist referrer `*.workspace-dev-v2.jabnet.id/*` di GCP
+Console - tanpa itu peta blank di dev.
 
 ### Data pelanggan asli di domain publik
 
