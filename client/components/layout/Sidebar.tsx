@@ -260,7 +260,7 @@ export function Sidebar() {
             <Radio className="h-4 w-4 text-white" strokeWidth={2.5} />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="font-black text-sm text-white tracking-tight leading-none">JABNET</h1>
+            <h1 className="font-black text-sm text-white tracking-tight leading-none">JABNET <span className="text-white/60 font-bold">Workspace</span></h1>
             <p className="text-[10px] text-white/50 uppercase tracking-[0.15em] font-semibold mt-0.5">
               Fiber Operations
             </p>

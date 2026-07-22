@@ -310,21 +310,40 @@ export default function DivisionHubPage() {
 
   return (
     <PageContainer>
-      {bannerSrc && (
-        <div className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-4 h-32 md:h-44 overflow-hidden">
+      {bannerSrc ? (
+        /* Hero banner: foto jelas terlihat (overlay dominan hanya di bawah utk legibilitas),
+           judul + breadcrumb di-overlay putih. Responsif: tinggi & teks menyesuaikan layar. */
+        <div className="relative -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-4 overflow-hidden">
           <img src={bannerSrc} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" />
-          {/* fade the photo into the page background (theme-aware) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
+          {/* gelap di bawah utk teks, foto tetap tampil di atas */}
+          <div className="absolute inset-0 bg-gradient-to-t from-sidebar via-sidebar/65 to-sidebar/10" />
+          <div className="absolute inset-0 bg-grid-pattern opacity-20" aria-hidden="true" />
+          <div className="relative z-10 flex min-h-[9.5rem] flex-col justify-end px-4 pb-4 pt-6 text-white md:min-h-[13rem] md:px-6 md:pb-5 md:pt-10">
+            <div className="mb-2 flex items-center gap-1.5 text-xs text-white/70">
+              <button type="button" onClick={() => navigate("/")} className="hover:text-white">Beranda</button>
+              <span>/</span>
+              <span className="font-medium text-white">{division.short}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm md:size-12">
+                <division.icon className="size-5 text-white md:size-6" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="truncate text-xl font-black tracking-tight-display md:text-2xl">{division.label}</h1>
+                <p className="line-clamp-2 text-xs text-white/80 md:line-clamp-1 md:text-sm">{division.description}</p>
+              </div>
+            </div>
+          </div>
         </div>
+      ) : (
+        <PageHeader
+          icon={division.icon}
+          title={division.label}
+          description={division.description}
+          accent={division.accent}
+          breadcrumbs={[{ label: "Beranda", path: "/" }, { label: division.short }]}
+        />
       )}
-      <PageHeader
-        icon={division.icon}
-        title={division.label}
-        description={division.description}
-        accent={division.accent}
-        breadcrumbs={[{ label: "Beranda", path: "/" }, { label: division.short }]}
-      />
 
       {tiles.length > 0 && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

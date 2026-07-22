@@ -53,7 +53,7 @@ export default function LoginPage() {
               <Radio className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="font-black text-lg tracking-tight-display leading-none">JABNET</h1>
+              <h1 className="font-black text-lg tracking-tight-display leading-none">JABNET <span className="text-white/60">Workspace</span></h1>
               <p className="text-[10px] text-white/50 uppercase tracking-[0.15em] font-semibold mt-0.5">
                 Fiber Operations
               </p>
