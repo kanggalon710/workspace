@@ -577,7 +577,7 @@ export default function MarketingAdsPage() {
         ) : clusters && clusters.length > 0 ? (
           <>
             {/* Summary bar */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               <Card>
                 <CardContent className="p-4 text-center">
                   <p className="text-xs text-muted-foreground">Total Cluster</p>

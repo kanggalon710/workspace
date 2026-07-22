@@ -447,8 +447,8 @@ export default function ProspectPage() {
       {searched && (
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="min-w-0">
                 <CardTitle className="text-base">Hasil Pencarian</CardTitle>
                 <CardDescription className="text-xs">
                   {mode === "nearby"
@@ -457,9 +457,9 @@ export default function ProspectPage() {
                 </CardDescription>
               </div>
               {results.length > 0 && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button variant="default" size="sm" onClick={handleSaveAll} className="gap-1.5 text-xs">
-                    <UserPlus className="w-3.5 h-3.5" /> Simpan Semua ke Kontak
+                    <UserPlus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Simpan Semua ke Kontak</span><span className="sm:hidden">Simpan Semua</span>
                   </Button>
                   <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5 text-xs">
                     <Download className="w-3.5 h-3.5" /> CSV
