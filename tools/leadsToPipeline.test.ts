@@ -24,7 +24,7 @@ test("LEAD_PIPELINE_STAGES: 6 stages, ordered, with labels+colors", () => {
   assert.equal(s.length, 6);
   assert.deepEqual(s.map((x) => x.key), ["new", "contacted", "interested", "negotiation", "won", "lost"]);
   assert.deepEqual(s.map((x) => x.position), [0, 1, 2, 3, 4, 5]);
-  assert.equal(s[4].label, "Closing ✅");
+  assert.equal(s[4].label, "Closing");
   assert.equal(s[0].color, "#6B7280");
 });
 
