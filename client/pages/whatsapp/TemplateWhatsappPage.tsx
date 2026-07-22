@@ -183,14 +183,14 @@ export default function TemplateWhatsappPage() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 p-2.5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 p-2.5 shrink-0">
             <MessageSquare className="h-5 w-5 text-violet-700" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display">Template Whatsapp</h1>
-            <p className="text-sm text-muted-foreground">Kelola template pesan untuk pelanggan dan reseller</p>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display truncate">Template Whatsapp</h1>
+            <p className="text-sm text-muted-foreground truncate">Kelola template pesan untuk pelanggan dan reseller</p>
           </div>
         </div>
 
@@ -250,7 +250,7 @@ export default function TemplateWhatsappPage() {
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-4 py-3 border-b flex items-center justify-between gap-3 flex-wrap">
           <h2 className="font-bold text-sm">List Template Whatsapp {tab === "unofficial" ? "Unofficial" : "Official"}</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as FilterType)}
@@ -260,13 +260,13 @@ export default function TemplateWhatsappPage() {
               <option value="pelanggan">Pelanggan</option>
               <option value="reseller">Reseller</option>
             </select>
-            <div className="relative">
+            <div className="relative flex-1 min-w-[140px] sm:flex-none">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Cari..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 text-sm w-56 h-8"
+                className="pl-8 text-sm w-full sm:w-56 h-8"
               />
             </div>
           </div>
@@ -281,7 +281,8 @@ export default function TemplateWhatsappPage() {
             <div className="text-xs text-muted-foreground mt-1">Klik dropdown "Tambah Baru" → Template Pelanggan/Reseller.</div>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead className="bg-muted/30 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 text-left w-12">NO</th>
@@ -334,6 +335,7 @@ export default function TemplateWhatsappPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
@@ -565,10 +567,11 @@ function TemplateForm({ template, type, onBack }: {
 
       {/* Section 2: Preview Template */}
       <div className="rounded-xl border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="font-bold text-sm">Preview Template</h2>
           <Button size="xs" variant="ghost-primary" onClick={() => setShowParamModal(true)} leftIcon={<Info className="h-3 w-3" />}>
-            Petunjuk Pengisian Parameter Whatsapp
+            <span className="hidden sm:inline">Petunjuk Pengisian Parameter Whatsapp</span>
+            <span className="sm:hidden">Petunjuk Parameter</span>
           </Button>
         </div>
 

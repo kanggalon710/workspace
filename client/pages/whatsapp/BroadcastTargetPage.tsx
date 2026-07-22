@@ -179,14 +179,14 @@ function BroadcastList({ target, onCreate, onOpenDetail }: Props & { onCreate: (
         <span className="font-bold">List</span>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 p-2.5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 p-2.5 shrink-0">
             <Megaphone className="h-5 w-5 text-violet-700" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display">Broadcast {targetLabel}</h1>
-            <p className="text-sm text-muted-foreground">Riwayat broadcast WhatsApp ke {targetLabel.toLowerCase()}</p>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display truncate">Broadcast {targetLabel}</h1>
+            <p className="text-sm text-muted-foreground truncate">Riwayat broadcast WhatsApp ke {targetLabel.toLowerCase()}</p>
           </div>
         </div>
         <Button onClick={onCreate} className="bg-violet-600 hover:bg-violet-700" leftIcon={<Send className="h-3.5 w-3.5" />}>
@@ -248,7 +248,8 @@ function BroadcastList({ target, onCreate, onOpenDetail }: Props & { onCreate: (
             <div className="text-xs text-muted-foreground mt-1">Klik "Broadcast Baru" untuk kirim WhatsApp ke {targetLabel.toLowerCase()}.</div>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
             <thead className="bg-muted/30 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 w-8"><input type="checkbox" className="h-3 w-3" /></th>
@@ -307,6 +308,7 @@ function BroadcastList({ target, onCreate, onOpenDetail }: Props & { onCreate: (
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
@@ -747,7 +749,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                 </select>
                 {selectedPhonebookId && phonebookContacts.length > 0 && (
                   <div className="mt-2">
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
                       <span className="text-[11px] text-muted-foreground">
                         <span className="font-bold tabular-nums">{selectedContactIds.size}</span> dari <span className="font-bold tabular-nums">{phonebookContacts.length}</span> dipilih
                       </span>
@@ -954,8 +956,8 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                 )}
 
                 {/* Group by + Select All */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Group by:</span>
                     {([
                       { val: "none" as const, label: "Flat" },
@@ -1428,12 +1430,12 @@ function BroadcastDetail({ campaignId, target, onBack }: {
         <span className="font-bold">Detail #{campaignId}</span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button onClick={onBack} className="rounded-md hover:bg-muted p-2 -ml-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        <button onClick={onBack} className="rounded-md hover:bg-muted p-2 -ml-2 shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight-display">{campaign?.name ?? "Loading..."}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight-display truncate">{campaign?.name ?? "Loading..."}</h1>
           {campaign && (() => {
             const effStatus = effectiveStatus(campaign);
             return (
@@ -1454,7 +1456,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
             );
           })()}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
           {campaign?.status === "running" && (
             <Button size="sm" variant="ghost" onClick={() => { if (confirm("Cancel broadcast?")) cancelMut.mutate(); }} className="text-rose-600" leftIcon={<XCircle className="h-3.5 w-3.5" />}>
               Cancel
@@ -1555,7 +1557,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
           </div>
 
           {/* Status tabs */}
-          <div className="flex items-center gap-1 mt-2">
+          <div className="flex items-center gap-1 mt-2 overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
             {([
               { val: "all" as const,     label: "Semua",   count: counts.total },
               { val: "sent" as const,    label: "✓ Terkirim", count: counts.sent },
@@ -1567,7 +1569,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                 key={t.val}
                 onClick={() => setStatusTab(t.val)}
                 className={cn(
-                  "px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider transition",
+                  "px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0",
                   statusTab === t.val ? "bg-primary text-primary-foreground" : "hover:bg-muted/40 text-muted-foreground"
                 )}
               >
@@ -1583,7 +1585,8 @@ function BroadcastDetail({ campaignId, target, onBack }: {
             {search ? "Tidak ada match" : statusTab === "all" ? "Belum ada penerima" : `Tidak ada penerima dengan status "${statusTab}"`}
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[760px]">
             <thead className="bg-muted/30 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left w-10">NO</th>
@@ -1636,6 +1639,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
               })}
             </tbody>
           </table>
+          </div>
         )}
         <div className="px-4 py-2 border-t bg-muted/10 text-[11px] text-muted-foreground">
           Menampilkan {filteredRecipients.length} dari {recipients.length} recipient

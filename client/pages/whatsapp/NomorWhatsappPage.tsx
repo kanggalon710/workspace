@@ -107,14 +107,14 @@ export default function NomorWhatsappPage() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 p-2.5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="rounded-lg bg-gradient-to-br from-violet-100 to-purple-200 p-2.5 shrink-0">
             <Smartphone className="h-5 w-5 text-violet-700" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display">Nomor Whatsapp</h1>
-            <p className="text-sm text-muted-foreground">Daftar device gateway WhatsApp aktif</p>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display truncate">Nomor Whatsapp</h1>
+            <p className="text-sm text-muted-foreground truncate">Daftar device gateway WhatsApp aktif</p>
           </div>
         </div>
         <Button
@@ -128,15 +128,15 @@ export default function NomorWhatsappPage() {
 
       {/* Card */}
       <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="px-4 py-3 border-b flex items-center justify-between gap-3">
+        <div className="px-4 py-3 border-b flex items-center justify-between gap-3 flex-wrap">
           <h2 className="font-bold text-sm">List Nomor Whatsapp</h2>
-          <div className="relative">
+          <div className="relative flex-1 min-w-[140px] sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Cari..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 text-sm w-56 h-8"
+              className="pl-8 text-sm w-full sm:w-56 h-8"
             />
           </div>
         </div>
@@ -151,7 +151,8 @@ export default function NomorWhatsappPage() {
             <div className="text-xs text-muted-foreground mt-1">Klik "Tambah Baru" untuk mendaftarkan gateway WhatsApp pertama.</div>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/30 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 text-left w-12">NO</th>
@@ -221,6 +222,7 @@ export default function NomorWhatsappPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -862,8 +864,8 @@ function DeviceForm({ device, onBack }: { device: WaDevice | null; onBack: () =>
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center justify-between gap-2 sticky bottom-0 bg-background/95 backdrop-blur py-3 -mx-1 px-1 border-t z-10">
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between gap-2 sticky bottom-0 bg-background/95 backdrop-blur py-3 -mx-1 px-1 border-t z-10 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={handleSubmit}
                 loading={saveMut.isPending}

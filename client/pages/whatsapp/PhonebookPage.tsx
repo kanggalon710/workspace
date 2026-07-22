@@ -421,20 +421,20 @@ function PhonebookDetail({ phonebookId, onBack }: { phonebookId: number; onBack:
         <span className="font-bold">{phonebook?.name ?? "..."}</span>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="rounded-md hover:bg-muted p-2 -ml-2"><ArrowLeft className="h-4 w-4" /></button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={onBack} className="rounded-md hover:bg-muted p-2 -ml-2 shrink-0"><ArrowLeft className="h-4 w-4" /></button>
           <div className="h-10 w-10 rounded-lg grid place-items-center shrink-0" style={{ background: phonebook?.color ?? "#7367f0" }}>
             <BookUser className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display">{phonebook?.name ?? "Loading..."}</h1>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight-display truncate">{phonebook?.name ?? "Loading..."}</h1>
+            <p className="text-sm text-muted-foreground truncate">
               {phonebook?.contactCount ?? 0} kontak{phonebook?.description ? ` · ${phonebook.description}` : ""}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="ghost" onClick={exportCsv} leftIcon={<Download className="h-3.5 w-3.5" />}>
             Export CSV
           </Button>
@@ -520,7 +520,8 @@ function PhonebookDetail({ phonebookId, onBack }: { phonebookId: number; onBack:
             <div className="text-xs text-muted-foreground mt-1">Klik "Tambah Kontak" atau "Import" untuk mulai.</div>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-muted/30 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 w-8">
@@ -581,6 +582,7 @@ function PhonebookDetail({ phonebookId, onBack }: { phonebookId: number; onBack:
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

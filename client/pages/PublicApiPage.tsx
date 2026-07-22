@@ -268,11 +268,11 @@ export default function PublicApiPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-[60vh] overflow-auto">
             {usage.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground text-sm">Belum ada log pemakaian</div>
             ) : (
-              <table className="w-full text-xs">
+              <table className="w-full text-xs min-w-[560px]">
                 <thead className="sticky top-0 bg-background border-b">
                   <tr className="text-left text-muted-foreground">
                     <th className="py-2 px-2 font-semibold uppercase text-[10px]">Waktu</th>
