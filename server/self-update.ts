@@ -177,9 +177,12 @@ async function runGit(args: string[]): Promise<UpdateStep> {
   }
 }
 
-async function runCmd(step: string, cmd: string, args: string[], timeoutMs: number): Promise<UpdateStep> {
+async function runCmd(step: string, cmd: string, args: string[], timeoutMs: number, env?: NodeJS.ProcessEnv): Promise<UpdateStep> {
   try {
-    const { stdout, stderr } = await execFileAsync(cmd, args, { cwd: APP_ROOT, timeout: timeoutMs, maxBuffer: 24 * 1024 * 1024 });
+    const { stdout, stderr } = await execFileAsync(cmd, args, {
+      cwd: APP_ROOT, timeout: timeoutMs, maxBuffer: 24 * 1024 * 1024,
+      env: env ? { ...process.env, ...env } : process.env,
+    });
     return { step, ok: true, output: (stdout + stderr).trim().slice(-3500) };
   } catch (e: any) {
     return { step, ok: false, output: String(e?.stderr || e?.stdout || e?.message || e).slice(-3500) };
@@ -211,9 +214,22 @@ export async function runSelfUpdate(cfg: SelfUpdateConfig): Promise<UpdateResult
   const needInstall = cfg.runNpm && (doBuild || (lockChanged && !!lockAfter) || !existsSync(path.join(APP_ROOT, "node_modules")));
 
   if (needInstall) {
-    // Build butuh devDependencies (vite/esbuild) -> install penuh. Pre-built cukup --omit=dev.
-    const args = doBuild ? ["install", "--no-audit", "--no-fund"] : ["install", "--omit=dev", "--no-audit", "--no-fund"];
-    steps.push(await runCmd(`npm ${args.join(" ")}`, "npm", args, 420_000));
+    if (doBuild) {
+      // Build butuh devDependencies (vite/esbuild). Di host NODE_ENV=production (cPanel
+      // Passenger) `npm install` OTOMATIS meng-omit devDeps -> "vite: not found" saat build.
+      // Paksa sertakan devDeps via flag + env (override NODE_ENV/omit apa pun dari host/.npmrc).
+      const args = ["install", "--include=dev", "--no-audit", "--no-fund"];
+      steps.push(await runCmd(`npm ${args.join(" ")}`, "npm", args, 420_000, {
+        NODE_ENV: "development",
+        npm_config_production: "false",
+        npm_config_include: "dev",
+        npm_config_omit: "",
+      }));
+    } else {
+      // Pre-built (branch deploy): cukup dependency runtime.
+      const args = ["install", "--omit=dev", "--no-audit", "--no-fund"];
+      steps.push(await runCmd(`npm ${args.join(" ")}`, "npm", args, 420_000));
+    }
     if (!steps[steps.length - 1].ok) return { ok: false, steps, restartTriggered: false, newBuild: await getBuildInfo() };
   } else {
     steps.push({ step: "npm install", ok: true, output: "dilewati - tidak perlu (dependency & node_modules sudah sesuai)" });
