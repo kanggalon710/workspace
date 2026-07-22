@@ -9599,7 +9599,7 @@ export class DatabaseStorage implements IStorage {
           id_type VARCHAR(12) NULL DEFAULT 'KTP', id_number VARCHAR(32) NULL, kk_number VARCHAR(32) NULL,
           address_ktp VARCHAR(255) NULL, address_domisili VARCHAR(255) NULL,
           education_level VARCHAR(24) NULL, education_institution VARCHAR(128) NULL, education_major VARCHAR(96) NULL,
-          org_unit_id INT NULL, position_id INT NULL, rank VARCHAR(48) NULL,
+          org_unit_id INT NULL, position_id INT NULL, \`rank\` VARCHAR(48) NULL,
           employment_status VARCHAR(16) NULL DEFAULT 'tetap', supervisor_id INT NULL, resign_date VARCHAR(10) NULL,
           bank_name VARCHAR(48) NULL, bank_account VARCHAR(32) NULL, npwp VARCHAR(25) NULL,
           ptkp_status VARCHAR(8) NULL, bpjs_tk_number VARCHAR(24) NULL, bpjs_kes_number VARCHAR(24) NULL,
