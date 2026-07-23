@@ -623,7 +623,7 @@ export default function SdmPage() {
     <PageContainer>
       <PageHeader icon={IdCard} title="SDM" description="Kehadiran, absensi, dan cuti karyawan - terhubung langsung ke akun user" accent="violet"
         breadcrumbs={[{ label: "HRD", path: "/divisi/hrd" }, { label: "SDM" }]}>
-        <div className="flex items-center border-b -mb-2 overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
+        <div className="flex items-center border-b -mb-2 overflow-x-auto no-scrollbar max-w-full">
           {tabs.map((t) => (
             <button key={t.key} type="button" onClick={() => setTab(t.key as any)} aria-current={tab === t.key ? "page" : undefined}
               className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${tab === t.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
