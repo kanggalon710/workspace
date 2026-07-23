@@ -1369,83 +1369,122 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ListTree className="h-5 w-5 text-primary" /> Kelola Pipeline Collection
+        <DialogContent className="max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b space-y-1.5">
+            <DialogTitle className="flex items-center gap-2.5 text-base">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <ListTree className="h-4 w-4" />
+              </span>
+              Kelola Pipeline Collection
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              Ubah judul, warna, urutan (drag ⠿), dan peran sistem. Tambah / hapus stage.
-              Pipeline ini khusus mitra kamu - tidak memengaruhi mitra lain.
+            <DialogDescription className="text-xs leading-relaxed">
+              Ubah nama & warna, seret <span className="inline-flex align-middle"><GripVertical className="h-3 w-3" /></span> untuk mengurutkan,
+              atur peran sistem + SLA auto-delegasi. Pipeline ini khusus mitra kamu.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-2 py-1">
-            {order.map((s) => (
-              <div
-                key={s.id}
-                draggable
-                onDragStart={() => setDragId(s.id)}
-                onDragOver={onDragOver(s.id)}
-                onDrop={commitOrder}
-                onDragEnd={() => setDragId(null)}
-                className={`flex items-center gap-2 rounded-md border p-2 bg-card ${dragId === s.id ? "opacity-50 ring-2 ring-primary/40" : ""}`}
-              >
-                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab shrink-0" />
-                <input
-                  type="color"
-                  defaultValue={s.color}
-                  key={`color-${s.id}-${s.color}`}
-                  onBlur={(e) => { if (e.target.value !== s.color) updateMut.mutate({ id: s.id, data: { color: e.target.value } }); }}
-                  className="h-7 w-7 rounded border cursor-pointer shrink-0 bg-transparent"
-                  title="Warna stage"
-                />
-                <Input
-                  defaultValue={s.label}
-                  key={`label-${s.id}-${s.label}`}
-                  onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== s.label) updateMut.mutate({ id: s.id, data: { label: v } }); }}
-                  className="h-8 text-sm flex-1 min-w-0"
-                />
-                <select
-                  value={s.role}
-                  onChange={(e) => updateMut.mutate({ id: s.id, data: { role: e.target.value } })}
-                  className="h-8 rounded-md border border-input bg-transparent text-xs px-1.5 shrink-0"
-                  title="Peran sistem"
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
+            {order.map((s) => {
+              const owner = (s as any).ownerDivision as string | undefined;
+              const count = cardCounts[s.key] ?? 0;
+              return (
+                <div
+                  key={s.id}
+                  onDragOver={onDragOver(s.id)}
+                  onDrop={commitOrder}
+                  className={`group rounded-xl border bg-card p-3 shadow-elev-sm transition-all ${dragId === s.id ? "opacity-60 ring-2 ring-primary/40" : "hover:border-primary/30"}`}
                 >
-                  {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
-                {/* SOP: SLA hari → auto-delegasi ke stage berikutnya (nextStageKey). Kosong = tidak. */}
-                <input
-                  type="number" min="0" max="365"
-                  defaultValue={(s as any).slaDays ?? ""}
-                  key={`sla-${s.id}-${(s as any).slaDays}`}
-                  onBlur={(e) => { const raw = e.target.value.trim(); const v = raw === "" ? null : Number(raw); const cur = (s as any).slaDays ?? null; if (v !== cur) updateMut.mutate({ id: s.id, data: { slaDays: v } }); }}
-                  className="h-8 w-12 rounded-md border border-input bg-transparent text-xs px-1 shrink-0 text-center tabular-nums"
-                  title="SLA (hari) → auto-delegasi ke stage berikutnya. Kosong = tidak auto."
-                  placeholder="SLA"
-                />
-                {(s as any).ownerDivision && (
-                  <Badge variant="secondary" className="text-[9px] shrink-0 uppercase" title="Divisi penanggung jawab stage ini">{(s as any).ownerDivision}</Badge>
-                )}
-                <Badge variant="secondary" className="text-[10px] shrink-0" title="Jumlah kartu aktif">{cardCounts[s.key] ?? 0}</Badge>
-                <button
-                  onClick={() => setDeleteTarget(s)}
-                  className="text-red-500 hover:bg-red-500/10 rounded p-1 shrink-0"
-                  title="Hapus stage"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-            <p className="text-[10px] text-muted-foreground pt-1">
-              Peran: <strong>Awal</strong> = tujuan auto-open saat isolir · <strong>Lunas</strong> = auto-close saat bayar ·
-              <strong> Write-off</strong> = target auto write-off. Stage berperan Awal/Lunas tidak bisa dihapus sebelum perannya dipindah.
+                  {/* Baris 1: seret + warna + nama (full) + jumlah kartu + hapus */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={() => setDragId(s.id)}
+                      onDragEnd={() => setDragId(null)}
+                      className="shrink-0 cursor-grab rounded-md p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                      title="Seret untuk mengurutkan"
+                      aria-label="Seret untuk mengurutkan"
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </button>
+                    <label className="relative shrink-0" title="Warna stage">
+                      <input
+                        type="color"
+                        defaultValue={s.color}
+                        key={`color-${s.id}-${s.color}`}
+                        onBlur={(e) => { if (e.target.value !== s.color) updateMut.mutate({ id: s.id, data: { color: e.target.value } }); }}
+                        className="size-8 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
+                      />
+                    </label>
+                    <Input
+                      defaultValue={s.label}
+                      key={`label-${s.id}-${s.label}`}
+                      onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== s.label) updateMut.mutate({ id: s.id, data: { label: v } }); }}
+                      className="h-9 flex-1 min-w-0 text-sm font-medium"
+                      placeholder="Nama stage"
+                    />
+                    <span
+                      className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
+                      title="Jumlah kartu aktif di stage ini"
+                    >
+                      {count} <span className="font-normal">kartu</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(s)}
+                      className="shrink-0 rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      title="Hapus stage"
+                      aria-label="Hapus stage"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Baris 2: peran + SLA + owner divisi (sejajar di bawah nama) */}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-8">
+                    <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                      Peran
+                      <select
+                        value={s.role}
+                        onChange={(e) => updateMut.mutate({ id: s.id, data: { role: e.target.value } })}
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs font-normal text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        title="Peran sistem stage ini"
+                      >
+                        {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                      SLA
+                      <input
+                        type="number" min="0" max="365"
+                        defaultValue={(s as any).slaDays ?? ""}
+                        key={`sla-${s.id}-${(s as any).slaDays}`}
+                        onBlur={(e) => { const raw = e.target.value.trim(); const v = raw === "" ? null : Number(raw); const cur = (s as any).slaDays ?? null; if (v !== cur) updateMut.mutate({ id: s.id, data: { slaDays: v } }); }}
+                        className="h-8 w-14 rounded-md border border-input bg-background px-2 text-center text-xs font-normal tabular-nums text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        title="SLA (hari) -> auto-delegasi ke stage berikutnya. Kosong = tidak auto."
+                        placeholder="-"
+                      />
+                      <span className="font-normal text-muted-foreground/70">hari</span>
+                    </label>
+                    {owner && (
+                      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary" title="Divisi penanggung jawab stage ini">
+                        {owner}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <p className="pt-1 text-[11px] leading-relaxed text-muted-foreground">
+              <strong className="text-foreground">Peran:</strong> Awal = tujuan auto-open saat isolir · Lunas = auto-close saat bayar ·
+              Write-off = target auto write-off. Stage berperan Awal/Lunas tidak bisa dihapus sebelum perannya dipindah.
+              <br />
+              <strong className="text-foreground">SLA</strong> = jumlah hari sebelum kartu otomatis di-delegasi ke stage berikutnya. Kosongkan agar tidak otomatis.
             </p>
           </div>
 
-          <div className="pt-3 border-t flex gap-2">
-            <Button variant="outline" onClick={() => createMut.mutate()} disabled={createMut.isPending} className="flex-1">
-              {createMut.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
+          <div className="border-t px-5 py-3 flex gap-2">
+            <Button variant="outline" onClick={() => createMut.mutate()} disabled={createMut.isPending} className="flex-1" leftIcon={createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}>
               Tambah Stage
             </Button>
             <Button onClick={onClose} className="flex-1">Selesai</Button>
