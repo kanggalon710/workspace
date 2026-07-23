@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Redirect, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import {
-  Radio, AlertCircle, Compass, Shield, Zap, Globe,
+  AlertCircle, Compass, Shield, Zap, Globe,
   ArrowRight, CheckCircle2, Lock, Eye, EyeOff, Activity, Sparkles,
 } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
@@ -49,9 +50,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between px-6 pt-8 pb-6 lg:p-12 xl:p-16 min-h-[340px] lg:min-h-screen">
           {/* Top - Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shadow-elev-lg ring-1 ring-white/20">
-              <Radio className="h-5 w-5 text-white" strokeWidth={2.5} />
-            </div>
+            <BrandMark className="w-11 h-11 rounded-xl shadow-elev-lg ring-1 ring-white/20" />
             <div>
               <h1 className="font-black text-lg tracking-tight-display leading-none">JABNET <span className="text-white/60">Workspace</span></h1>
               <p className="text-[10px] text-white/50 uppercase tracking-[0.15em] font-semibold mt-0.5">

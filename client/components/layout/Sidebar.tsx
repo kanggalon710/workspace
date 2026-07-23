@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import {
-  LayoutDashboard, Map, Radio, Box, CircleDot,
+  LayoutDashboard, Map, Box, CircleDot,
   Users, Landmark, Cable, Moon, Sun, Menu, X,
   Server, Rows3, Split, Cpu, Calculator, Link2, GitBranch, FileSpreadsheet,
   ClipboardList, LogOut, UserCog, PanelLeftClose, PanelLeftOpen,
@@ -10,6 +10,7 @@ import {
   Bug, Building2, Kanban, MessageSquare, UsersRound, CheckSquare, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "@/components/BrandMark";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebar } from "@/context/SidebarContext";
@@ -257,9 +258,7 @@ export function Sidebar() {
         {/* Subtle gradient accent */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="relative flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center shrink-0 shadow-elev-md ring-1 ring-white/15">
-            <Radio className="h-4 w-4 text-white" strokeWidth={2.5} />
-          </div>
+          <BrandMark className="w-9 h-9 shrink-0 shadow-elev-md rounded-xl ring-1 ring-white/15" />
           <div className="flex-1 min-w-0">
             <h1 className="font-black text-sm text-white tracking-tight leading-none">JABNET <span className="text-white/60 font-bold">Workspace</span></h1>
             <p className="text-[10px] text-white/50 uppercase tracking-[0.15em] font-semibold mt-0.5">
