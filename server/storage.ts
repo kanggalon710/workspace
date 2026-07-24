@@ -1770,13 +1770,24 @@ export class DatabaseStorage implements IStorage {
       conds.push(inArray(collections.stage, keys));
     }
     if (filter?.assignedTo !== undefined) conds.push(eq(collections.assignedTo, filter.assignedTo));
-    // openOnly: include rows yang masih open (closed_at IS NULL) + closed recently (last 7 days)
-    // supaya collection yang baru "lunas"/"write-off" tetap kelihatan di pipeline sebagai konfirmasi
-    if (filter?.openOnly) {
-      const cutoff = new Date(Date.now() - 7 * 86400_000).toISOString();
-      conds.push(sql`(${collections.closedAt} IS NULL OR ${collections.closedAt} >= ${cutoff})`);
-    }
     if (filter?.customerId) conds.push(eq(collections.customerId, filter.customerId));
+    // openOnly: kartu OPEN (closed_at IS NULL) SELALU lengkap, PLUS kartu recently-closed
+    // (<=7 hari) sebagai konfirmasi "baru lunas/write-off" - TAPI dibatasi keras (200).
+    // Tanpa cap: sekali reconcile massal menutup puluhan ribu kartu (mis. import data
+    // produksi -> reconcile_paid_but_open 134k kartu) query balikin >100k baris, lalu
+    // getAssigneesByCollectionIds membangun IN(...) via sql.join dgn puluhan ribu fragment
+    // -> "Maximum call stack size exceeded" -> board tampak KOSONG. (fix 2026-07-24)
+    if (filter?.openOnly) {
+      const openRows = await this.db.select().from(collections)
+        .where(and(...conds, sql`${collections.closedAt} IS NULL`))
+        .orderBy(desc(collections.createdAt));
+      const cutoff = new Date(Date.now() - 7 * 86400_000).toISOString();
+      const closedRows = await this.db.select().from(collections)
+        .where(and(...conds, sql`${collections.closedAt} IS NOT NULL`, sql`${collections.closedAt} >= ${cutoff}`))
+        .orderBy(desc(collections.closedAt))
+        .limit(200);
+      return [...openRows, ...closedRows];
+    }
     return this.db.select().from(collections).where(and(...conds)).orderBy(desc(collections.createdAt));
   }
 
@@ -5217,21 +5228,28 @@ export class DatabaseStorage implements IStorage {
     const map = new Map<number, Array<{ userId: number; userName: string; username: string }>>();
     if (collectionIds.length === 0) return map;
     const mitraId = getMitraId();
-    const rows: any = ((await this.db.execute(sql`
-      SELECT ca.collection_id AS collectionId, ca.user_id AS userId,
-        COALESCE(u.name, u.username, 'unknown') AS userName,
-        COALESCE(u.username, 'unknown') AS username,
-        ca.assigned_at AS assignedAt
-      FROM collection_assignees ca
-      LEFT JOIN users u ON u.id = ca.user_id
-      WHERE ca.mitra_id = ${mitraId} AND ca.collection_id IN (${sql.join(collectionIds.map((id) => sql`${id}`), sql`, `)})
-      ORDER BY ca.collection_id, ca.assigned_at ASC
-    `))[0] as any);
-    for (const r of rows as any[]) {
-      const cid = Number(r.collectionId);
-      const arr = map.get(cid) ?? [];
-      arr.push({ userId: Number(r.userId), userName: String(r.userName), username: String(r.username) });
-      map.set(cid, arr);
+    // Chunk IN(...): sql.join membangun 1 fragment per id, dan menyebar puluhan ribu
+    // argumen ke builder -> "Maximum call stack size exceeded". Batasi 500/batch supaya
+    // aman berapa pun jumlah id yang masuk. (fix 2026-07-24)
+    const CHUNK = 500;
+    for (let i = 0; i < collectionIds.length; i += CHUNK) {
+      const batch = collectionIds.slice(i, i + CHUNK);
+      const rows: any = ((await this.db.execute(sql`
+        SELECT ca.collection_id AS collectionId, ca.user_id AS userId,
+          COALESCE(u.name, u.username, 'unknown') AS userName,
+          COALESCE(u.username, 'unknown') AS username,
+          ca.assigned_at AS assignedAt
+        FROM collection_assignees ca
+        LEFT JOIN users u ON u.id = ca.user_id
+        WHERE ca.mitra_id = ${mitraId} AND ca.collection_id IN (${sql.join(batch.map((id) => sql`${id}`), sql`, `)})
+        ORDER BY ca.collection_id, ca.assigned_at ASC
+      `))[0] as any);
+      for (const r of rows as any[]) {
+        const cid = Number(r.collectionId);
+        const arr = map.get(cid) ?? [];
+        arr.push({ userId: Number(r.userId), userName: String(r.userName), username: String(r.username) });
+        map.set(cid, arr);
+      }
     }
     return map;
   }
