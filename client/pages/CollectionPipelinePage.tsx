@@ -674,7 +674,6 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
                 ref={stagePhotoInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="hidden"
                 onChange={handleStagePhotoSelect}
               />
