@@ -72,7 +72,7 @@ import {
   buildPermissionMatrixFromPreset, PERMISSION_PRESETS,
   ALL_PERMISSION_KEYS, type PermissionLevel,
   collections, collectionActivities, collectionAssignees,
-  collectionStages, DEFAULT_COLLECTION_STAGES, COLLECTION_STAGE_LABELS, COLLECTION_STAGE_COLORS,
+  collectionStages, DEFAULT_COLLECTION_STAGES, COLLECTION_STAGE_LABELS, COLLECTION_STAGE_LABELS_LEGACY, COLLECTION_STAGE_COLORS,
   type Collection, type InsertCollection,
   type CollectionActivity, type InsertCollectionActivity,
   type CollectionStageRow, type CollectionStageRole,
@@ -1757,15 +1757,23 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== COLLECTION PIPELINE (v4.1.2) ====================
 
-  async getCollections(filter?: { stage?: string; assignedTo?: number; openOnly?: boolean; customerId?: number; ownerDivision?: string }): Promise<Collection[]> {
+  async getCollections(filter?: { stage?: string; assignedTo?: number; openOnly?: boolean; customerId?: number; ownerDivision?: string; activeStagesOnly?: boolean }): Promise<Collection[]> {
     const mitraId = getMitraId();
     const conds: any[] = [eq(collections.mitraId, mitraId)];
     if (filter?.stage) conds.push(eq(collections.stage, filter.stage));
-    // Filter per-divisi penanggung jawab (view pipeline ter-scope CS/Marketing):
-    // hanya kartu yang stage-nya dimiliki divisi tsb.
-    if (filter?.ownerDivision) {
+    // Scope stage: (a) per-divisi penanggung jawab (view CS/Marketing = stage divisi + shared),
+    // dan/atau (b) hanya stage AKTIF (board display; stage nonaktif disembunyikan). Keduanya
+    // butuh daftar stage - ambil sekali. Engine/analytics TIDAK set activeStagesOnly supaya
+    // kartu di stage nonaktif tetap diproses SOP/reconcile.
+    if (filter?.ownerDivision || filter?.activeStagesOnly) {
       const stageRows = await this.getCollectionStages();
-      const keys = stageKeysForDivision(stageRows as any, filter.ownerDivision);
+      let keys = filter?.ownerDivision
+        ? stageKeysForDivision(stageRows as any, filter.ownerDivision)
+        : (stageRows as any[]).map((s) => s.key);
+      if (filter?.activeStagesOnly) {
+        const activeKeys = new Set((stageRows as any[]).filter((s) => Number(s.active ?? 1) !== 0).map((s) => s.key));
+        keys = keys.filter((k) => activeKeys.has(k));
+      }
       if (keys.length === 0) return [];
       conds.push(inArray(collections.stage, keys));
     }
@@ -2062,10 +2070,15 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(collectionStages.mitraId, mitraId), eq(collectionStages.role, role)));
   }
 
-  async updateCollectionStage(id: number, data: { label?: string; color?: string; role?: CollectionStageRole; ownerDivision?: string | null; slaDays?: number | null; nextStageKey?: string | null }): Promise<CollectionStageRow> {
+  async updateCollectionStage(id: number, data: { label?: string; color?: string; role?: CollectionStageRole; ownerDivision?: string | null; slaDays?: number | null; nextStageKey?: string | null; active?: boolean }): Promise<CollectionStageRow> {
     const mitraId = getMitraId();
     const [target] = await this.db.select().from(collectionStages).where(and(eq(collectionStages.id, id), eq(collectionStages.mitraId, mitraId)));
     if (!target) throw new Error("Stage tidak ditemukan");
+    // Nonaktifkan stage pemegang role wajib (entry/paid) ditolak - engine butuh stage ini
+    // (auto-open target / auto-close). Pindahkan role dulu ke stage lain sebelum menonaktifkan.
+    if (data.active === false && (target.role === "entry" || target.role === "paid")) {
+      throw new Error(`Stage "${target.label}" memegang peran sistem (${target.role}) dan tidak bisa dinonaktifkan. Pindahkan peran ke stage lain dulu.`);
+    }
     // Role wajib (entry/paid) unik: kalau set role baru, kosongkan dulu pemegang lama.
     if (data.role && (data.role === "entry" || data.role === "paid" || data.role === "writeoff" || data.role === "dismantel")) {
       await this.clearCollectionStageRole(data.role);
@@ -2074,6 +2087,7 @@ export class DatabaseStorage implements IStorage {
     if (data.label !== undefined) patch.label = data.label;
     if (data.color !== undefined) patch.color = data.color;
     if (data.role !== undefined) patch.role = data.role;
+    if (data.active !== undefined) patch.active = data.active ? 1 : 0;
     // SOP fields - null berarti "kosongkan" (dibedakan dari undefined = jangan sentuh).
     if (data.ownerDivision !== undefined) patch.ownerDivision = data.ownerDivision || null;
     if (data.slaDays !== undefined) patch.slaDays = (data.slaDays == null || Number(data.slaDays) <= 0) ? null : Number(data.slaDays);
@@ -10001,6 +10015,7 @@ export class DatabaseStorage implements IStorage {
         ["owner_division", "ADD COLUMN owner_division VARCHAR(32)"],
         ["sla_days", "ADD COLUMN sla_days INT"],
         ["next_stage_key", "ADD COLUMN next_stage_key VARCHAR(64)"],
+        ["active", "ADD COLUMN active INT NOT NULL DEFAULT 1"],
       ] as const) {
         try { await this.pool.execute(`ALTER TABLE collection_stages ${ddl}`); }
         catch (e: any) { if (e?.errno !== 1060) console.warn(`[migration] collection_stages ${col}: ${e.message}`); }
@@ -10024,6 +10039,20 @@ export class DatabaseStorage implements IStorage {
         try { await this.applyCollectionSopLadder(Number(m.id)); }
         catch (e: any) { console.warn(`[migration] SOP ladder mitra ${m.id}: ${e.message}`); }
       }
+      // Normalisasi label ber-prefiks lama ("CS: Delegasi Masuk" -> "Delegasi Masuk", dst).
+      // Divisi kini ditunjukkan lewat owner_division + grouping UI, bukan prefiks teks.
+      // Idempotent + aman: hanya rename baris yang label-nya MASIH sama persis dengan nilai
+      // lama (tidak menimpa rename custom admin). Cocokkan per stage `key`.
+      try {
+        for (const [key, oldLabel] of Object.entries(COLLECTION_STAGE_LABELS_LEGACY)) {
+          const newLabel = (COLLECTION_STAGE_LABELS as any)[key];
+          if (!newLabel || newLabel === oldLabel) continue;
+          await this.pool.execute(
+            `UPDATE collection_stages SET label = ? WHERE \`key\` = ? AND label = ?`,
+            [newLabel, key, oldLabel],
+          );
+        }
+      } catch (e: any) { console.warn(`[migration] normalize stage labels: ${e.message}`); }
       // Bersihkan emoji + artefak mojibake ("Lunas ?") dari label stage - tampilan profesional.
       try {
         const [allStageRows]: any = await this.pool.execute(`SELECT id, label FROM collection_stages`);

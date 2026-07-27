@@ -470,6 +470,9 @@ export const collectionStages = mysqlTable("collection_stages", {
   slaDays: int("sla_days"),
   // Stage tujuan auto-delegasi saat SLA terlampaui (key stage berikutnya di ladder SOP).
   nextStageKey: varchar("next_stage_key", { length: 64 }),
+  // Aktif/nonaktif: stage nonaktif disembunyikan dari board + target pindah, tapi tetap
+  // tampil di Kelola Pipeline (bisa di-enable lagi). Default aktif.
+  active: int("active").notNull().default(1),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });
@@ -1440,20 +1443,47 @@ export const MPWA_TEMPLATE_CATEGORY_LABELS: Record<MpwaTemplateCategory, string>
 export const COLLECTION_STAGES = ["suspend", "new", "contacted", "delegasi_cs", "cs_kunjungan", "delegasi_marketing", "mkt_visit", "dikunjungi", "issue", "paid", "dismantel", "written_off"] as const;
 export type CollectionStage = typeof COLLECTION_STAGES[number];
 
+// Label stage TANPA prefiks divisi (CS:/Marketing:/Finance) - divisi penanggung jawab
+// ditunjukkan lewat grouping header + field "Divisi penanggung jawab" di Kelola Pipeline,
+// bukan lewat teks label. delegasi_cs & delegasi_marketing sengaja sama-sama "Delegasi
+// Masuk" - dibedakan oleh grup divisinya di UI.
 export const COLLECTION_STAGE_LABELS: Record<CollectionStage, string> = {
   suspend: "Suspend",
   new: "Baru Isolir",
-  contacted: "Dihubungi (Finance)",
-  delegasi_cs: "CS: Delegasi Masuk",
-  cs_kunjungan: "CS: Hubungi & Follow-up",
-  delegasi_marketing: "Marketing: Delegasi Masuk",
-  mkt_visit: "Marketing: Visit / Reaktivasi",
+  contacted: "Dihubungi",
+  delegasi_cs: "Delegasi Masuk",
+  cs_kunjungan: "Hubungi & Follow-up",
+  delegasi_marketing: "Delegasi Masuk",
+  mkt_visit: "Visit / Reaktivasi",
   dikunjungi: "Sudah Dikunjungi",
   issue: "Bermasalah",
   paid: "Reaktivasi / Lunas",
   dismantel: "Dismantel (Bongkar)",
   written_off: "Loss / Churn",
 };
+
+// Label LAMA (ber-prefiks) - dipakai migrasi normalisasi label sekali jalan di server:
+// hanya rename label DB yang masih sama persis dengan nilai lama ini (jangan timpa rename
+// custom admin). Lihat storage.applyCollectionSopLadder / blok migrasi startup.
+export const COLLECTION_STAGE_LABELS_LEGACY: Partial<Record<CollectionStage, string>> = {
+  contacted: "Dihubungi (Finance)",
+  delegasi_cs: "CS: Delegasi Masuk",
+  cs_kunjungan: "CS: Hubungi & Follow-up",
+  delegasi_marketing: "Marketing: Delegasi Masuk",
+  mkt_visit: "Marketing: Visit / Reaktivasi",
+};
+
+// Pilihan "Divisi penanggung jawab stage" untuk dropdown Kelola Pipeline + validasi server.
+// value "all" disimpan sebagai ownerDivision=null (stage shared, tampil di semua view divisi).
+// Nilai owner lama/tak dikenal (mis. "sistem") tetap dipertahankan & dirender apa adanya.
+export const COLLECTION_OWNER_DIVISIONS: Array<{ value: string; label: string }> = [
+  { value: "all",         label: "Semua Divisi (Shared)" },
+  { value: "collections", label: "Collections" },
+  { value: "finance",     label: "Finance / Keuangan" },
+  { value: "cs",          label: "Layanan Pelanggan (CS)" },
+  { value: "marketing",   label: "Marketing" },
+  { value: "legal",       label: "Legal" },
+];
 
 export const COLLECTION_STAGE_COLORS: Record<CollectionStage, string> = {
   suspend: "#F59E0B",

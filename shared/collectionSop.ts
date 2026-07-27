@@ -48,7 +48,22 @@ export function decideSopAdvance(
   return { advance: true, fromStage: currentStageKey, toStage: next, reason: `sla_${sla}d_elapsed` };
 }
 
-/** Stage-stage yang dimiliki 1 divisi tertentu (untuk view pipeline ter-scope). */
+/** Role stage terminal - selalu shared (tampil di semua view divisi). */
+const TERMINAL_ROLES = new Set(["paid", "writeoff", "dismantel"]);
+
+/** Apakah stage ini "shared": owner kosong/"all", ATAU role terminal (paid/writeoff/dismantel).
+ *  Stage shared tampil di board semua divisi (mis. Lunas, Tidak Bisa Dihubungi, Blacklist). */
+export function isSharedStage(stage: SopStageMeta): boolean {
+  const owner = (stage.ownerDivision ?? "").toLowerCase().trim();
+  if (owner === "" || owner === "all") return true;
+  return TERMINAL_ROLES.has(String(stage.role ?? "").toLowerCase());
+}
+
+/** Stage-stage yang tampil untuk 1 divisi (untuk view pipeline ter-scope):
+ *  stage milik divisi itu + semua stage shared. */
 export function stageKeysForDivision(stages: SopStageMeta[], division: string): string[] {
-  return stages.filter((s) => (s.ownerDivision ?? "").toLowerCase() === division.toLowerCase()).map((s) => s.key);
+  const div = division.toLowerCase().trim();
+  return stages
+    .filter((s) => (s.ownerDivision ?? "").toLowerCase().trim() === div || isSharedStage(s))
+    .map((s) => s.key);
 }

@@ -9,10 +9,21 @@ import { InfoRow } from "@/components/pipelines/InfoRow";
 import {
   COLLECTION_ISSUE_TYPES,
   COLLECTION_ISSUE_LABELS,
+  COLLECTION_OWNER_DIVISIONS,
   type CollectionIssueType,
   type Collection,
   type CollectionStageRow,
 } from "@shared/schema";
+import { isSharedStage } from "@shared/collectionSop";
+
+/** Aktif jika kolom active null/1 (0 = nonaktif). Toleran data lama tanpa kolom. */
+const isStageActive = (s: any): boolean => Number(s?.active ?? 1) !== 0;
+/** Label divisi penanggung jawab untuk tampilan (null/"all" = Shared). */
+const ownerDivisionLabel = (owner?: string | null): string => {
+  const v = String(owner ?? "").toLowerCase().trim();
+  if (v === "" || v === "all") return "Semua Divisi (Shared)";
+  return COLLECTION_OWNER_DIVISIONS.find((o) => o.value === v)?.label ?? owner ?? "";
+};
 
 // Stage value sekarang dinamis (custom per-mitra) - sekadar string key.
 type CollectionStage = string;
@@ -97,6 +108,9 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const qc = useQueryClient();
   const scopePerm = division === "cs" ? "customers" : division === "marketing" ? "leads" : "collections";
   const canEdit = canWrite("collections") || canWrite(scopePerm);
+  // Kelola Pipeline (kelola stage + divisi penanggung jawab): HANYA super admin / admin.
+  // Operasi kartu sehari-hari tetap pakai canEdit (izin write divisi).
+  const canManageStages = Boolean(user?.isSystemAdmin) || (user?.roleName ?? "") === "Admin";
   const [, navigate] = useLocation();
 
   // Suffix query param divisi untuk semua endpoint collection (scoping + izin fallback).
@@ -177,23 +191,21 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
     queryFn: () => api.get<CollectionStageRow[]>(withDiv("/collections/stages")),
     staleTime: 60_000,
   });
-  // Scoped view: tampilkan kolom stage milik divisi ini + kolom terminal (Reaktivasi/Lunas,
-  // Dismantel, Loss) supaya CS/Marketing bisa langsung geser kartu ke hasil akhir (otomatis
-  // ke finance saat kartu ditutup). Role terminal = paid | writeoff | dismantel.
+  // Kolom board: hanya stage AKTIF. Scoped view (cs/marketing) = stage milik divisi ini +
+  // stage SHARED (owner kosong/"all" atau role terminal paid/writeoff/dismantel) - lihat
+  // isSharedStage(). Full view (Finance) = semua stage aktif.
   const stages = useMemo(() => {
-    if (!division) return allStagesData;
-    return allStagesData.filter((s) => {
-      const owner = String((s as any).ownerDivision ?? "").toLowerCase();
-      const role = String((s as any).role ?? "none");
-      return owner === division || role === "paid" || role === "writeoff" || role === "dismantel";
-    });
+    const active = allStagesData.filter(isStageActive);
+    if (!division) return active;
+    return active.filter((s) => String((s as any).ownerDivision ?? "").toLowerCase() === division || isSharedStage(s as any));
   }, [allStagesData, division]);
   const stageHelpers = useMemo<StageHelpers>(() => {
     const m = new Map(allStagesData.map((s) => [s.key, s]));
     return {
-      // stages = SEMUA stage (dipakai untuk daftar target pindah-stage di detail),
-      // supaya scoped user tetap bisa memindahkan kartu ke Lunas/Reaktivasi/Bermasalah.
-      stages: allStagesData,
+      // stages = SEMUA stage AKTIF (daftar target pindah-stage di detail) - kartu tak boleh
+      // dipindah ke stage nonaktif. Label/color tetap resolve dari peta lengkap (allStagesData)
+      // supaya kartu yang masih nyangkut di stage nonaktif tetap tampil labelnya.
+      stages: allStagesData.filter(isStageActive),
       label: (k) => m.get(k)?.label ?? k,
       color: (k) => m.get(k)?.color ?? "#6B7280",
       role: (k) => m.get(k)?.role ?? "none",
@@ -425,8 +437,8 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           <div className="flex gap-1.5 items-center shrink-0">
             {/* Kelola pipeline (stage + SLA) - tersedia di board penuh DAN view scoped CS/Marketing
                 (permintaan user: tiap divisi bisa atur pipeline-nya). Gated izin edit divisi. */}
-            {canEdit && (
-              <Button size="sm" variant="outline" onClick={() => setPipelineMgrOpen(true)} title="Kelola pipeline (stage + SLA)" className="h-8 gap-1.5 px-2.5">
+            {canManageStages && (
+              <Button size="sm" variant="outline" onClick={() => setPipelineMgrOpen(true)} title="Kelola pipeline (stage + divisi + SLA) - admin" className="h-8 gap-1.5 px-2.5">
                 <ListTree className="h-4 w-4" />
                 <span className="hidden sm:inline text-xs">Kelola Pipeline</span>
               </Button>
@@ -714,13 +726,16 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
       {/* Settings Dialog (parameter collection) */}
       <CollectionSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} isAdmin={user?.isSystemAdmin === true} />
 
-      {/* Pipeline Manager (CRUD stage) - selalu pakai SEMUA stage (allStagesData) supaya
-          manajer divisi bisa mengatur ladder penuh (SLA, owner, next stage), bukan cuma subset. */}
+      {/* Pipeline Manager (CRUD stage) - terima SEMUA stage (allStagesData); dialog yang
+          meng-scope + grup per divisi sendiri. `division` menentukan view (cs/marketing =
+          hanya divisi itu + shared; undefined = semua, dikelompokkan per owner). */}
       <PipelineManagerDialog
         open={pipelineMgrOpen}
         onClose={() => setPipelineMgrOpen(false)}
         stages={allStagesData}
         cardCounts={(stats as any)?.byStage ?? {}}
+        division={division}
+        canManage={canManageStages}
       />
     </div>
     </StageCtx.Provider>
@@ -1312,11 +1327,21 @@ const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "writeoff", label: "Write-off / Loss" },
 ];
 
-function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
+// Urutan grup owner untuk view penuh (/collections). Shared selalu terakhir.
+const OWNER_GROUP_ORDER = ["collections", "finance", "cs", "marketing", "legal"];
+const groupKeyOf = (s: CollectionStageRow): string =>
+  isSharedStage(s as any) ? "__shared" : (String((s as any).ownerDivision ?? "").toLowerCase().trim() || "__shared");
+const groupRank = (k: string): number => k === "__shared" ? 999 : (OWNER_GROUP_ORDER.indexOf(k) >= 0 ? OWNER_GROUP_ORDER.indexOf(k) : 500);
+const groupLabelOf = (k: string): string =>
+  k === "__shared" ? "Shared (Semua Divisi)" : (COLLECTION_OWNER_DIVISIONS.find((o) => o.value === k)?.label ?? k.toUpperCase());
+
+function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, canManage }: {
   open: boolean;
   onClose: () => void;
   stages: CollectionStageRow[];
   cardCounts: Record<string, number>;
+  division?: "cs" | "marketing";
+  canManage: boolean;
 }) {
   const qc = useQueryClient();
   const invalidate = () => {
@@ -1325,14 +1350,16 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
     qc.invalidateQueries({ queryKey: ["/api/collections/stats"] });
   };
 
-  // Urutan lokal untuk drag-drop; sinkron dari props saat data berubah.
+  // Urutan lokal untuk drag-drop; SELALU daftar penuh (semua stage) - supaya reorder
+  // mengirim posisi lengkap & tidak bentrok dgn stage tersembunyi. Display di-scope/grup.
   const [order, setOrder] = useState<CollectionStageRow[]>(stages);
   useEffect(() => { setOrder(stages); }, [stages]);
   const [dragId, setDragId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CollectionStageRow | null>(null);
 
   const createMut = useMutation({
-    mutationFn: () => api.post("/collections/stages", { label: "Stage Baru", color: "#94A3B8", role: "none" }),
+    // Stage baru mewarisi divisi view (cs/marketing); dari view penuh default "collections".
+    mutationFn: () => api.post("/collections/stages", { label: "Stage Baru", color: "#94A3B8", role: "none", ownerDivision: division ?? "collections" }),
     onSuccess: () => { invalidate(); toast.success("Stage ditambahkan"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1347,9 +1374,13 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
     onError: (e: any) => { toast.error(e.message); invalidate(); },
   });
 
+  // Reorder hanya dalam grup yang sama (owner sama) - agar owner tak berubah karena drag.
   const onDragOver = (overId: number) => (e: React.DragEvent) => {
     e.preventDefault();
     if (dragId === null || dragId === overId) return;
+    const dragged = order.find((s) => s.id === dragId);
+    const over = order.find((s) => s.id === overId);
+    if (!dragged || !over || groupKeyOf(dragged) !== groupKeyOf(over)) return;
     setOrder((prev) => {
       const from = prev.findIndex((s) => s.id === dragId);
       const to = prev.findIndex((s) => s.id === overId);
@@ -1362,7 +1393,146 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
   };
   const commitOrder = () => {
     setDragId(null);
-    reorderMut.mutate(order.map((s) => s.id));
+    reorderMut.mutate(order.map((s) => s.id)); // kirim urutan PENUH
+  };
+
+  // Scope display ke divisi (view CS/Marketing = stage divisi + shared), lalu grup per owner.
+  const visible = division
+    ? order.filter((s) => String((s as any).ownerDivision ?? "").toLowerCase().trim() === division || isSharedStage(s as any))
+    : order;
+  const groups = (() => {
+    const map = new Map<string, CollectionStageRow[]>();
+    for (const s of visible) {
+      const k = groupKeyOf(s);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(s);
+    }
+    return [...map.entries()].map(([key, items]) => ({ key, items })).sort((a, b) => groupRank(a.key) - groupRank(b.key));
+  })();
+
+  const renderStageCard = (s: CollectionStageRow) => {
+    const count = cardCounts[s.key] ?? 0;
+    const active = isStageActive(s);
+    const roleLocked = s.role === "entry" || s.role === "paid"; // tak boleh dinonaktifkan
+    const ownerVal = (() => { const v = String((s as any).ownerDivision ?? "").toLowerCase().trim(); return v === "" ? "all" : v; })();
+    const ownerKnown = COLLECTION_OWNER_DIVISIONS.some((o) => o.value === ownerVal);
+    return (
+      <div
+        key={s.id}
+        onDragOver={onDragOver(s.id)}
+        onDrop={commitOrder}
+        className={`group rounded-xl border bg-card p-3 shadow-elev-sm transition-all ${dragId === s.id ? "opacity-60 ring-2 ring-primary/40" : "hover:border-primary/30"} ${active ? "" : "opacity-60"}`}
+      >
+        {/* Baris 1: seret + warna + nama + jumlah kartu + hapus */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            draggable={canManage}
+            onDragStart={() => setDragId(s.id)}
+            onDragEnd={() => setDragId(null)}
+            className="shrink-0 cursor-grab rounded-md p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+            title="Seret untuk mengurutkan (dalam grup divisi)"
+            aria-label="Seret untuk mengurutkan"
+            disabled={!canManage}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <label className="relative shrink-0" title="Warna stage">
+            <input
+              type="color"
+              defaultValue={s.color}
+              key={`color-${s.id}-${s.color}`}
+              disabled={!canManage}
+              onBlur={(e) => { if (e.target.value !== s.color) updateMut.mutate({ id: s.id, data: { color: e.target.value } }); }}
+              className="size-8 cursor-pointer rounded-lg border border-border bg-transparent p-0.5 disabled:cursor-not-allowed"
+            />
+          </label>
+          <Input
+            defaultValue={s.label}
+            key={`label-${s.id}-${s.label}`}
+            disabled={!canManage}
+            onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== s.label) updateMut.mutate({ id: s.id, data: { label: v } }); }}
+            className="h-9 flex-1 min-w-0 text-sm font-medium"
+            placeholder="Nama stage"
+          />
+          {!active && (
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Nonaktif</span>
+          )}
+          <span
+            className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
+            title="Jumlah kartu aktif di stage ini"
+          >
+            {count} <span className="font-normal">kartu</span>
+          </span>
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(s)}
+              className="shrink-0 rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+              title="Hapus stage"
+              aria-label="Hapus stage"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Baris 2: peran + SLA + divisi penanggung jawab + aktif */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-8">
+          <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            Peran
+            <select
+              value={s.role}
+              disabled={!canManage}
+              onChange={(e) => updateMut.mutate({ id: s.id, data: { role: e.target.value } })}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-normal text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+              title="Peran sistem stage ini"
+            >
+              {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </label>
+          <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground" title="Divisi penanggung jawab stage ini">
+            Divisi
+            <select
+              value={ownerVal}
+              disabled={!canManage}
+              onChange={(e) => updateMut.mutate({ id: s.id, data: { ownerDivision: e.target.value } })}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-normal text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+            >
+              {!ownerKnown && <option value={ownerVal}>{ownerDivisionLabel(ownerVal)}</option>}
+              {COLLECTION_OWNER_DIVISIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            SLA
+            <input
+              type="number" min="0" max="365"
+              defaultValue={(s as any).slaDays ?? ""}
+              key={`sla-${s.id}-${(s as any).slaDays}`}
+              disabled={!canManage}
+              onBlur={(e) => { const raw = e.target.value.trim(); const v = raw === "" ? null : Number(raw); const cur = (s as any).slaDays ?? null; if (v !== cur) updateMut.mutate({ id: s.id, data: { slaDays: v } }); }}
+              className="h-8 w-14 rounded-md border border-input bg-background px-2 text-center text-xs font-normal tabular-nums text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+              title="SLA (hari) -> auto-delegasi ke stage berikutnya. Kosong = tidak auto."
+              placeholder="-"
+            />
+            <span className="font-normal text-muted-foreground/70">hari</span>
+          </label>
+          <label
+            className={`ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium ${roleLocked ? "text-muted-foreground/50" : "text-muted-foreground"}`}
+            title={roleLocked ? "Stage peran sistem (Awal/Lunas) wajib aktif" : "Aktif / nonaktifkan stage"}
+          >
+            <input
+              type="checkbox"
+              checked={active}
+              disabled={!canManage || roleLocked}
+              onChange={(e) => updateMut.mutate({ id: s.id, data: { active: e.target.checked } })}
+              className="size-3.5 rounded border-input accent-primary disabled:cursor-not-allowed"
+            />
+            Aktif
+          </label>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1374,118 +1544,43 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts }: {
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ListTree className="h-4 w-4" />
               </span>
-              Kelola Pipeline Collection
+              Kelola Pipeline Collection{division ? ` — ${division === "cs" ? "Layanan Pelanggan" : "Marketing"}` : ""}
             </DialogTitle>
             <DialogDescription className="text-xs leading-relaxed">
-              Ubah nama & warna, seret <span className="inline-flex align-middle"><GripVertical className="h-3 w-3" /></span> untuk mengurutkan,
-              atur peran sistem + SLA auto-delegasi. Pipeline ini khusus mitra kamu.
+              {division
+                ? <>Stage divisi <strong>{division === "cs" ? "Layanan Pelanggan" : "Marketing"}</strong> + stage <strong>Shared</strong> (dipakai semua divisi). Ubah nama/warna, atur peran, SLA, divisi penanggung jawab, dan aktif/nonaktif. Menyunting stage shared berdampak ke semua divisi.</>
+                : <>Semua stage dikelompokkan per <strong>divisi penanggung jawab</strong>. Seret <span className="inline-flex align-middle"><GripVertical className="h-3 w-3" /></span> untuk mengurutkan dalam grup, atur peran + SLA auto-delegasi + aktif/nonaktif.</>}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2.5">
-            {order.map((s) => {
-              const owner = (s as any).ownerDivision as string | undefined;
-              const count = cardCounts[s.key] ?? 0;
-              return (
-                <div
-                  key={s.id}
-                  onDragOver={onDragOver(s.id)}
-                  onDrop={commitOrder}
-                  className={`group rounded-xl border bg-card p-3 shadow-elev-sm transition-all ${dragId === s.id ? "opacity-60 ring-2 ring-primary/40" : "hover:border-primary/30"}`}
-                >
-                  {/* Baris 1: seret + warna + nama (full) + jumlah kartu + hapus */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      draggable
-                      onDragStart={() => setDragId(s.id)}
-                      onDragEnd={() => setDragId(null)}
-                      className="shrink-0 cursor-grab rounded-md p-1 text-muted-foreground/60 hover:bg-muted hover:text-foreground active:cursor-grabbing"
-                      title="Seret untuk mengurutkan"
-                      aria-label="Seret untuk mengurutkan"
-                    >
-                      <GripVertical className="h-4 w-4" />
-                    </button>
-                    <label className="relative shrink-0" title="Warna stage">
-                      <input
-                        type="color"
-                        defaultValue={s.color}
-                        key={`color-${s.id}-${s.color}`}
-                        onBlur={(e) => { if (e.target.value !== s.color) updateMut.mutate({ id: s.id, data: { color: e.target.value } }); }}
-                        className="size-8 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
-                      />
-                    </label>
-                    <Input
-                      defaultValue={s.label}
-                      key={`label-${s.id}-${s.label}`}
-                      onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== s.label) updateMut.mutate({ id: s.id, data: { label: v } }); }}
-                      className="h-9 flex-1 min-w-0 text-sm font-medium"
-                      placeholder="Nama stage"
-                    />
-                    <span
-                      className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
-                      title="Jumlah kartu aktif di stage ini"
-                    >
-                      {count} <span className="font-normal">kartu</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(s)}
-                      className="shrink-0 rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                      title="Hapus stage"
-                      aria-label="Hapus stage"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Baris 2: peran + SLA + owner divisi (sejajar di bawah nama) */}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 pl-8">
-                    <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                      Peran
-                      <select
-                        value={s.role}
-                        onChange={(e) => updateMut.mutate({ id: s.id, data: { role: e.target.value } })}
-                        className="h-8 rounded-md border border-input bg-background px-2 text-xs font-normal text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        title="Peran sistem stage ini"
-                      >
-                        {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                      </select>
-                    </label>
-                    <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                      SLA
-                      <input
-                        type="number" min="0" max="365"
-                        defaultValue={(s as any).slaDays ?? ""}
-                        key={`sla-${s.id}-${(s as any).slaDays}`}
-                        onBlur={(e) => { const raw = e.target.value.trim(); const v = raw === "" ? null : Number(raw); const cur = (s as any).slaDays ?? null; if (v !== cur) updateMut.mutate({ id: s.id, data: { slaDays: v } }); }}
-                        className="h-8 w-14 rounded-md border border-input bg-background px-2 text-center text-xs font-normal tabular-nums text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        title="SLA (hari) -> auto-delegasi ke stage berikutnya. Kosong = tidak auto."
-                        placeholder="-"
-                      />
-                      <span className="font-normal text-muted-foreground/70">hari</span>
-                    </label>
-                    {owner && (
-                      <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary" title="Divisi penanggung jawab stage ini">
-                        {owner}
-                      </span>
-                    )}
-                  </div>
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            {groups.map((g) => (
+              <div key={g.key} className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${g.key === "__shared" ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+                    {groupLabelOf(g.key)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/70">{g.items.length} stage</span>
+                  <div className="h-px flex-1 bg-border" />
                 </div>
-              );
-            })}
+                {g.items.map(renderStageCard)}
+              </div>
+            ))}
             <p className="pt-1 text-[11px] leading-relaxed text-muted-foreground">
-              <strong className="text-foreground">Peran:</strong> Awal = tujuan auto-open saat isolir · Lunas = auto-close saat bayar ·
-              Write-off = target auto write-off. Stage berperan Awal/Lunas tidak bisa dihapus sebelum perannya dipindah.
+              <strong className="text-foreground">Divisi penanggung jawab</strong> menentukan di board divisi mana stage tampil. <strong>Shared</strong> = tampil di semua divisi (owner "Semua Divisi" atau peran Lunas/Write-off/Dismantel).
+              <br />
+              <strong className="text-foreground">Peran:</strong> Awal = tujuan auto-open saat isolir · Lunas = auto-close saat bayar · Write-off = target auto write-off. Stage peran Awal/Lunas tidak bisa dihapus / dinonaktifkan sebelum perannya dipindah.
               <br />
               <strong className="text-foreground">SLA</strong> = jumlah hari sebelum kartu otomatis di-delegasi ke stage berikutnya. Kosongkan agar tidak otomatis.
             </p>
           </div>
 
           <div className="border-t px-5 py-3 flex gap-2">
-            <Button variant="outline" onClick={() => createMut.mutate()} disabled={createMut.isPending} className="flex-1" leftIcon={createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}>
-              Tambah Stage
-            </Button>
+            {canManage && (
+              <Button variant="outline" onClick={() => createMut.mutate()} disabled={createMut.isPending} className="flex-1" leftIcon={createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}>
+                Tambah Stage{division ? ` (${division === "cs" ? "CS" : "Marketing"})` : ""}
+              </Button>
+            )}
             <Button onClick={onClose} className="flex-1">Selesai</Button>
           </div>
         </DialogContent>

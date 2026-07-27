@@ -35,6 +35,7 @@ import {
   insertOtbSchema, insertBestraySchema, insertSplitterSchema,
   insertCableCoreSchema, insertCoreConnectionSchema,
   LEAD_STAGES, LEAD_STAGE_LABELS,
+  COLLECTION_OWNER_DIVISIONS,
   ALL_PERMISSION_KEYS, type PermissionLevel, checkPermLevel, cleansePermissionMatrix,
   ALL_FEATURES, TEAM_DEFAULT_VIEWS,
   type RuleTriggerType,
@@ -10542,13 +10543,23 @@ async function collectionScopedOwnershipOK(req: Request, res: Response, colId: n
   if (!division || owner !== division) { sendError(res, "Kartu ini bukan delegasi divisi Anda", 403); return false; }
   return true;
 }
-/** Boleh kelola stage pipeline collection: izin 'collections' penuh ATAU izin divisi
- *  CS/Marketing (customers/leads). Pipeline collection dipakai lintas-divisi (SOP delegasi),
- *  jadi tiap divisi yang terlibat boleh atur stage-nya. */
+/** Boleh kelola stage pipeline collection (create/edit/reorder/hapus + set divisi penanggung
+ *  jawab): HANYA super admin (System-Admin) atau admin intra-tenant (role "Admin"). Operasi
+ *  kartu sehari-hari (pindah stage, aktivitas) tetap pakai izin write divisi - tidak lewat sini. */
 function collectionStageMgmtOK(req: Request): boolean {
-  return hasWritePermission(req, "collections")
-      || hasWritePermission(req, "customers")
-      || hasWritePermission(req, "leads");
+  if (isSystemAdmin(req)) return true;
+  return (req.authUser?.roleName ?? "") === "Admin";
+}
+/** Normalisasi + validasi nilai ownerDivision dari body. Return:
+ *  - undefined  → field tidak dikirim (jangan sentuh)
+ *  - null       → "all"/kosong = shared
+ *  - string     → value valid dari COLLECTION_OWNER_DIVISIONS
+ *  Nilai tak dikenal dianggap "jangan sentuh" (undefined) supaya tidak menimpa owner lama. */
+function normalizeOwnerDivision(raw: unknown): string | null | undefined {
+  if (raw === undefined) return undefined;
+  const v = String(raw ?? "").toLowerCase().trim();
+  if (v === "" || v === "all") return null;
+  return COLLECTION_OWNER_DIVISIONS.some((o) => o.value === v) ? v : undefined;
 }
 
 router.get("/api/collections", async (req: Request, res: Response) => {
@@ -10564,6 +10575,7 @@ router.get("/api/collections", async (req: Request, res: Response) => {
       openOnly,
       customerId,
       ownerDivision: division,
+      activeStagesOnly: true, // board: sembunyikan kartu di stage nonaktif
       assignedTo: assignedToMe ? req.authUser!.id : undefined,
     });
     // Batch-load assignees (anti N+1)
@@ -10601,10 +10613,12 @@ router.post("/api/collections/stages", async (req: Request, res: Response) => {
     const { label, color, role } = req.body ?? {};
     if (!label || typeof label !== "string" || !label.trim()) return sendError(res, "Judul stage wajib diisi");
     const row = await storage.createCollectionStage({ label: label.trim(), color, role });
-    // Set SOP fields bila dikirim (opsional saat create).
-    if (req.body?.ownerDivision !== undefined || req.body?.slaDays !== undefined || req.body?.nextStageKey !== undefined) {
+    // Set SOP fields bila dikirim (opsional saat create). ownerDivision divalidasi ke daftar
+    // resmi (all→null). Stage yang dibuat dari view divisi mewarisi divisi tsb (dikirim client).
+    const ownerDivision = normalizeOwnerDivision(req.body?.ownerDivision);
+    if (ownerDivision !== undefined || req.body?.slaDays !== undefined || req.body?.nextStageKey !== undefined) {
       await storage.updateCollectionStage(row.id, {
-        ownerDivision: req.body.ownerDivision, slaDays: req.body.slaDays, nextStageKey: req.body.nextStageKey,
+        ownerDivision, slaDays: req.body.slaDays, nextStageKey: req.body.nextStageKey,
       });
     }
     await logAudit(req, "CREATE", "collection_stage", row.id, row.label, { key: row.key, role: row.role });
@@ -10624,9 +10638,13 @@ router.patch("/api/collections/stages/reorder", async (req: Request, res: Respon
 router.patch("/api/collections/stages/:id", async (req: Request, res: Response) => {
   if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
-    const { label, color, role, ownerDivision, slaDays, nextStageKey } = req.body ?? {};
-    const row = await storage.updateCollectionStage(Number(req.params.id), { label, color, role, ownerDivision, slaDays, nextStageKey });
-    await logAudit(req, "UPDATE", "collection_stage", row.id, row.label, { color: row.color, role: row.role, ownerDivision: row.ownerDivision, slaDays: row.slaDays, nextStageKey: row.nextStageKey });
+    const { label, color, role, slaDays, nextStageKey, active } = req.body ?? {};
+    const ownerDivision = normalizeOwnerDivision(req.body?.ownerDivision);
+    const row = await storage.updateCollectionStage(Number(req.params.id), {
+      label, color, role, ownerDivision, slaDays, nextStageKey,
+      active: active === undefined ? undefined : Boolean(active),
+    });
+    await logAudit(req, "UPDATE", "collection_stage", row.id, row.label, { color: row.color, role: row.role, ownerDivision: row.ownerDivision, slaDays: row.slaDays, nextStageKey: row.nextStageKey, active: row.active });
     sendSuccess(res, row);
   } catch (e: any) { sendError(res, e.message, 500); }
 });

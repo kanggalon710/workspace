@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideSopAdvance, stageKeysForDivision, type SopStageMeta } from "./collectionSop.js";
+import { decideSopAdvance, stageKeysForDivision, isSharedStage, type SopStageMeta } from "./collectionSop.js";
 
 const LADDER: SopStageMeta[] = [
   { key: "new", ownerDivision: "sistem", slaDays: 3, nextStageKey: "contacted", role: "entry" },
@@ -56,9 +56,35 @@ test("next stage hilang dari config → next_missing (tidak crash)", () => {
   assert.equal(decideSopAdvance("a", 5, m, new Set()).reason, "next_missing");
 });
 
-test("stageKeysForDivision - case-insensitive", () => {
-  assert.deepEqual(stageKeysForDivision(LADDER, "cs"), ["delegasi_cs", "cs_kunjungan"]);
-  assert.deepEqual(stageKeysForDivision(LADDER, "MARKETING"), ["delegasi_marketing", "mkt_visit"]);
-  assert.deepEqual(stageKeysForDivision(LADDER, "finance"), ["contacted"]);
-  assert.deepEqual(stageKeysForDivision(LADDER, "nobody"), []);
+test("isSharedStage - owner kosong/all atau role terminal → shared", () => {
+  assert.equal(isSharedStage({ key: "paid", ownerDivision: null, role: "paid" }), true);
+  assert.equal(isSharedStage({ key: "wo", ownerDivision: "marketing", role: "writeoff" }), true); // terminal menang
+  assert.equal(isSharedStage({ key: "x", ownerDivision: "all", role: "none" }), true);
+  assert.equal(isSharedStage({ key: "y", ownerDivision: "", role: "none" }), true);
+  assert.equal(isSharedStage({ key: "z", ownerDivision: undefined, role: "none" }), true);
+  assert.equal(isSharedStage({ key: "cs1", ownerDivision: "cs", role: "none" }), false);
+  assert.equal(isSharedStage({ key: "fin", ownerDivision: "finance", role: "none" }), false);
+});
+
+test("stageKeysForDivision - divisi + stage shared, case-insensitive, urutan terjaga", () => {
+  // Shared di LADDER = paid, dismantel, written_off (role terminal, owner null).
+  assert.deepEqual(stageKeysForDivision(LADDER, "cs"),
+    ["delegasi_cs", "cs_kunjungan", "paid", "dismantel", "written_off"]);
+  assert.deepEqual(stageKeysForDivision(LADDER, "MARKETING"),
+    ["delegasi_marketing", "mkt_visit", "paid", "dismantel", "written_off"]);
+  assert.deepEqual(stageKeysForDivision(LADDER, "finance"),
+    ["contacted", "paid", "dismantel", "written_off"]);
+  // Divisi tanpa stage sendiri tetap dapat stage shared.
+  assert.deepEqual(stageKeysForDivision(LADDER, "nobody"),
+    ["paid", "dismantel", "written_off"]);
+});
+
+test("stageKeysForDivision - stage owner null non-terminal ikut shared", () => {
+  const stages: SopStageMeta[] = [
+    { key: "cs1", ownerDivision: "cs", role: "none" },
+    { key: "issue", ownerDivision: null, role: "none" },   // shared (owner kosong)
+    { key: "mkt1", ownerDivision: "marketing", role: "none" },
+  ];
+  assert.deepEqual(stageKeysForDivision(stages, "cs"), ["cs1", "issue"]);
+  assert.deepEqual(stageKeysForDivision(stages, "marketing"), ["issue", "mkt1"]);
 });
