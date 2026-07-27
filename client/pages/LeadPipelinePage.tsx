@@ -16,8 +16,9 @@ import {
   StickyNote, ChevronRight, ChevronLeft, LayoutGrid, List, Star,
   Home, Briefcase, Building2, GraduationCap, HelpCircle, TrendingUp,
   UserPlus, Eye, Loader2, Pencil, Trash2, Camera, Clock, Move, Upload,
-  Flame, Zap, AlertTriangle, Calendar, SlidersHorizontal, ChevronDown,
+  Flame, Zap, AlertTriangle, Calendar, SlidersHorizontal, ChevronDown, Search,
 } from "lucide-react";
+import { matchesSearch } from "@/lib/search";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1110,6 +1111,7 @@ export default function LeadPipelinePage() {
     localStorage.setItem("lead_pipeline_view", view);
   }, [view]);
   const [stageFilter, setStageFilter] = useState<LeadStage | "all">("all");
+  const [leadSearch, setLeadSearch] = useState(""); // cari: nama, no. HP, alamat
   const [rangePreset, setRangePreset] = useState<RangePreset>("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
@@ -1176,9 +1178,18 @@ export default function LeadPipelinePage() {
     });
   }, [leads, rangePreset, customFrom, customTo, customRangeValid]);
 
-  const filtered = stageFilter === "all" ? timeFiltered : timeFiltered.filter(l => l.stage === stageFilter);
-  // For kanban view, always use time-filtered leads so all columns show data
-  const kanbanSource = view === "kanban" ? timeFiltered : filtered;
+  // Pencarian client-side (nama + no. HP + alamat) - diterapkan sebelum split stage
+  // supaya berlaku di kanban maupun list.
+  const searched = useMemo(() => {
+    if (!leadSearch.trim()) return timeFiltered;
+    return timeFiltered.filter((l) =>
+      matchesSearch(leadSearch, [l.name, (l as any).phone, (l as any).address], (l as any).phone),
+    );
+  }, [timeFiltered, leadSearch]);
+
+  const filtered = stageFilter === "all" ? searched : searched.filter(l => l.stage === stageFilter);
+  // For kanban view, use searched leads (semua stage) so all columns show data
+  const kanbanSource = view === "kanban" ? searched : filtered;
   const byStage = LEAD_STAGES.reduce((acc, s) => {
     acc[s] = kanbanSource.filter(l => l.stage === s);
     return acc;
@@ -1342,6 +1353,28 @@ export default function LeadPipelinePage() {
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           </div>
+          {/* Pencarian: nama / no. HP / alamat */}
+          <div className="relative min-w-[190px] flex-1 sm:flex-none sm:w-60">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={leadSearch}
+              onChange={(e) => setLeadSearch(e.target.value)}
+              placeholder="Cari nama / no. HP / alamat"
+              aria-label="Cari lead"
+              className="h-8 w-full pl-8 pr-8 rounded-lg border border-border bg-card text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground"
+            />
+            {leadSearch && (
+              <button
+                type="button"
+                onClick={() => setLeadSearch("")}
+                aria-label="Bersihkan pencarian"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           {/* Tahap - hanya relevan di List (Kanban sudah menampilkan semua tahap sebagai kolom) */}
           {view === "list" && (
             <div className="relative">
@@ -1371,7 +1404,9 @@ export default function LeadPipelinePage() {
             <span className="text-2xs text-destructive">Pilih tanggal mulai ≤ tanggal akhir</span>
           )}
           {/* Total ringkas (bukan KPI - sekadar konteks jumlah kartu yang tampil) */}
-          <span className="ml-auto text-xs text-muted-foreground tabular-nums">{timeFiltered.length} lead</span>
+          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+            {leadSearch.trim() ? `${searched.length} / ${timeFiltered.length}` : timeFiltered.length} lead
+          </span>
         </div>
       </div>
 
@@ -1458,6 +1493,9 @@ export default function LeadPipelinePage() {
                 onStageChange={(stage) => requestStageChange(lead.id, stage)}
               />
             ))}
+            {filtered.length === 0 && (
+              <div className="py-12 text-center text-sm text-muted-foreground">Tidak ada lead yang cocok.</div>
+            )}
           </div>
         </div>
       )}
