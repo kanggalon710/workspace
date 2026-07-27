@@ -651,7 +651,8 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                       </button>
                     </div>
                   )}
-                  <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+                  {/* Tanpa `capture` supaya browser menampilkan pilihan Kamera / Galeri / File (bukan langsung kamera) */}
+                  <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                 </div>
               </div>
 
@@ -1556,7 +1557,8 @@ export default function LeadPipelinePage() {
                   Pilih / Ambil Foto
                 </Button>
               )}
-              <input ref={stagePhotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleStagePhotoSelect} />
+              {/* Tanpa `capture` supaya browser menampilkan pilihan Kamera / Galeri / File (bukan langsung kamera) */}
+              <input ref={stagePhotoRef} type="file" accept="image/*" className="hidden" onChange={handleStagePhotoSelect} />
             </div>
           </div>
 
