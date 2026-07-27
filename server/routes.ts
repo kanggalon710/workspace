@@ -6575,7 +6575,7 @@ router.post("/api/teamspace/teams", async (req, res) => {
   if (!canCreateTeam({ isAdmin: isPipelineAdmin(req), teamsKeyLevel: teamsKeyLevelOf(req) })) {
     return sendError(res, "Akses ditolak: butuh izin 'teams' (write) untuk membuat tim", 403);
   }
-  const { name, description, icon, color, type, memberIds, managerIds, parentId } = req.body ?? {};
+  const { name, description, icon, color, cardBgColor, type, memberIds, managerIds, parentId } = req.body ?? {};
   if (!name || typeof name !== "string" || !name.trim()) return sendError(res, "Nama tim wajib diisi", 400);
   // FR-302: nested tree - validasi tim induk ada (& belum diarsip).
   let parent: number | null = null;
@@ -6585,7 +6585,7 @@ router.post("/api/teamspace/teams", async (req, res) => {
     parent = p.id;
   }
   const team = await storage.createTeam(
-    { name: name.trim(), description, icon, color, type, parentId: parent },
+    { name: name.trim(), description, icon, color, cardBgColor, type, parentId: parent },
     req.authUser!.id,
   );
   // Anggota awal (pembuat sudah otomatis manager di storage.createTeam).
@@ -6620,7 +6620,7 @@ router.patch("/api/teamspace/teams/:id", async (req, res) => {
   if (!requireTeamspaceAccess(req, res)) return;
   const team = await loadTeamForManage(req, res);
   if (!team) return;
-  const { name, description, icon, color, type, enabledViews, parentId } = req.body ?? {};
+  const { name, description, icon, color, cardBgColor, type, enabledViews, parentId } = req.body ?? {};
   if (name !== undefined && (!name || typeof name !== "string" || !name.trim())) return sendError(res, "Nama tim tidak valid", 400);
   const views = enabledViews !== undefined ? parseEnabledViews(JSON.stringify(enabledViews)) : undefined;
   // FR-302: validasi pindah induk - ada, bukan diri sendiri, dan tidak membentuk siklus
@@ -6641,7 +6641,7 @@ router.patch("/api/teamspace/teams/:id", async (req, res) => {
     }
   }
   const updated = await storage.updateTeam(team.id, {
-    name: name?.trim(), description, icon, color, type,
+    name: name?.trim(), description, icon, color, cardBgColor, type,
     enabledViews: views as string[] | undefined,
     parentId: parentPatch,
   });

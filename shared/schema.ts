@@ -2546,7 +2546,8 @@ export const teams = mysqlTable("teams", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   icon: varchar("icon", { length: 64 }),                   // nama ikon lucide
-  color: varchar("color", { length: 16 }).notNull().default("#8B5CF6"),
+  color: varchar("color", { length: 16 }).notNull().default("#8B5CF6"),  // warna aksen (ikon, progress)
+  cardBgColor: varchar("card_bg_color", { length: 16 }),   // warna latar kartu tim di grid (opsional)
   type: varchar("type", { length: 16 }).notNull().default("TEAM"),   // TEAM | PROJECT
   taskPipelineId: int("task_pipeline_id"),                 // FK pipelines.id (board tugas tim)
   enabledViews: text("enabled_views"),                     // JSON array berurut, default ["summary","tasks"]

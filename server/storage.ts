@@ -2840,7 +2840,7 @@ export class DatabaseStorage implements IStorage {
   /** Buat tim + provision board tugas (pipeline + 4 stage default Cicle-style) dalam satu alur.
    *  Pipeline tim ditandai team_id sehingga tersembunyi dari daftar pipeline ops (NFR-012). */
   async createTeam(
-    data: { name: string; description?: string | null; icon?: string | null; color?: string | null; type?: string | null; parentId?: number | null },
+    data: { name: string; description?: string | null; icon?: string | null; color?: string | null; cardBgColor?: string | null; type?: string | null; parentId?: number | null },
     userId: number,
   ): Promise<Team> {
     const mitraId = getMitraId();
@@ -2848,7 +2848,7 @@ export class DatabaseStorage implements IStorage {
     const type = data.type === "PROJECT" ? "PROJECT" : "TEAM";
     const teamResult = await this.db.insert(teams).values({
       mitraId, name: data.name, description: data.description ?? null,
-      icon: data.icon ?? null, color: data.color ?? "#8B5CF6", type,
+      icon: data.icon ?? null, color: data.color ?? "#8B5CF6", cardBgColor: data.cardBgColor ?? null, type,
       parentId: data.parentId ?? null,                      // FR-302: nested tree
       enabledViews: JSON.stringify(TEAM_DEFAULT_VIEWS),
       createdBy: userId, createdAt: now,
@@ -2881,7 +2881,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateTeam(
     id: number,
-    data: { name?: string; description?: string | null; icon?: string | null; color?: string | null; type?: string; enabledViews?: string[]; parentId?: number | null },
+    data: { name?: string; description?: string | null; icon?: string | null; color?: string | null; cardBgColor?: string | null; type?: string; enabledViews?: string[]; parentId?: number | null },
   ): Promise<Team> {
     const mitraId = getMitraId();
     const before = await this.getTeam(id);
@@ -2891,6 +2891,7 @@ export class DatabaseStorage implements IStorage {
     if (data.description !== undefined) patch.description = data.description;
     if (data.icon !== undefined) patch.icon = data.icon;
     if (data.color !== undefined) patch.color = data.color;
+    if (data.cardBgColor !== undefined) patch.cardBgColor = data.cardBgColor;
     if (data.type !== undefined) patch.type = data.type === "PROJECT" ? "PROJECT" : "TEAM";
     if (data.enabledViews !== undefined) patch.enabledViews = JSON.stringify(data.enabledViews);
     if (data.parentId !== undefined) patch.parentId = data.parentId;   // FR-302
@@ -9862,6 +9863,7 @@ export class DatabaseStorage implements IStorage {
 
     // Kolom baru pada tabel eksisting - cek via information_schema (pola p4cColAdds).
     const colAdds: Array<{ table: string; column: string; ddl: string }> = [
+      { table: "teams", column: "card_bg_color", ddl: "VARCHAR(16) NULL" },
       { table: "pipelines", column: "team_id", ddl: "INT NULL" },
       { table: "pipeline_stages", column: "semantic_type", ddl: "VARCHAR(16) NULL" },
       { table: "pipeline_stages", column: "move_permission", ddl: "TEXT NULL" },
