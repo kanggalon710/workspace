@@ -14,16 +14,12 @@ import {
   type Collection,
   type CollectionStageRow,
 } from "@shared/schema";
-import { isSharedStage } from "@shared/collectionSop";
+import { isSharedStage, parseOwnerDivisions } from "@shared/collectionSop";
 
 /** Aktif jika kolom active null/1 (0 = nonaktif). Toleran data lama tanpa kolom. */
 const isStageActive = (s: any): boolean => Number(s?.active ?? 1) !== 0;
-/** Label divisi penanggung jawab untuk tampilan (null/"all" = Shared). */
-const ownerDivisionLabel = (owner?: string | null): string => {
-  const v = String(owner ?? "").toLowerCase().trim();
-  if (v === "" || v === "all") return "Semua Divisi (Shared)";
-  return COLLECTION_OWNER_DIVISIONS.find((o) => o.value === v)?.label ?? owner ?? "";
-};
+/** Daftar divisi spesifik yang bisa dipilih (tanpa "all" - itu diwakili toggle "Semua Divisi"). */
+const SELECTABLE_OWNER_DIVISIONS = COLLECTION_OWNER_DIVISIONS.filter((o) => o.value !== "all");
 
 // Stage value sekarang dinamis (custom per-mitra) - sekadar string key.
 type CollectionStage = string;
@@ -199,7 +195,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const stages = useMemo(() => {
     const active = allStagesData.filter(isStageActive);
     if (!division) return active;
-    return active.filter((s) => String((s as any).ownerDivision ?? "").toLowerCase() === division || isSharedStage(s as any));
+    return active.filter((s) => parseOwnerDivisions((s as any).ownerDivision).includes(division) || isSharedStage(s as any));
   }, [allStagesData, division]);
   const stageHelpers = useMemo<StageHelpers>(() => {
     const m = new Map(allStagesData.map((s) => [s.key, s]));
@@ -1452,8 +1448,10 @@ const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
 
 // Urutan grup owner untuk view penuh (/collections). Shared selalu terakhir.
 const OWNER_GROUP_ORDER = ["collections", "finance", "cs", "marketing", "legal"];
+// Stage multi-divisi dikelompokkan di bawah divisi PERTAMA di set-nya (biar tak duplikat baris);
+// checkbox di baris menampilkan set lengkapnya. Shared → grup "__shared".
 const groupKeyOf = (s: CollectionStageRow): string =>
-  isSharedStage(s as any) ? "__shared" : (String((s as any).ownerDivision ?? "").toLowerCase().trim() || "__shared");
+  isSharedStage(s as any) ? "__shared" : (parseOwnerDivisions((s as any).ownerDivision)[0] ?? "__shared");
 const groupRank = (k: string): number => k === "__shared" ? 999 : (OWNER_GROUP_ORDER.indexOf(k) >= 0 ? OWNER_GROUP_ORDER.indexOf(k) : 500);
 const groupLabelOf = (k: string): string =>
   k === "__shared" ? "Shared (Semua Divisi)" : (COLLECTION_OWNER_DIVISIONS.find((o) => o.value === k)?.label ?? k.toUpperCase());
@@ -1521,7 +1519,7 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
 
   // Scope display ke divisi (view CS/Marketing = stage divisi + shared), lalu grup per owner.
   const visible = division
-    ? order.filter((s) => String((s as any).ownerDivision ?? "").toLowerCase().trim() === division || isSharedStage(s as any))
+    ? order.filter((s) => parseOwnerDivisions((s as any).ownerDivision).includes(division) || isSharedStage(s as any))
     : order;
   const groups = (() => {
     const map = new Map<string, CollectionStageRow[]>();
@@ -1537,8 +1535,15 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
     const count = cardCounts[s.key] ?? 0;
     const active = isStageActive(s);
     const roleLocked = s.role === "entry" || s.role === "paid"; // tak boleh dinonaktifkan
-    const ownerVal = (() => { const v = String((s as any).ownerDivision ?? "").toLowerCase().trim(); return v === "" ? "all" : v; })();
-    const ownerKnown = COLLECTION_OWNER_DIVISIONS.some((o) => o.value === ownerVal);
+    // SET divisi terpilih; kosong = Shared (tampil ke semua divisi).
+    const ownerSet = parseOwnerDivisions((s as any).ownerDivision);
+    const isShared = ownerSet.length === 0;
+    // Toggle 1 divisi on/off → hitung set baru → CSV (atau null kalau jadi kosong = shared).
+    const toggleDivision = (value: string, checked: boolean) => {
+      const next = checked ? [...ownerSet, value] : ownerSet.filter((d) => d !== value);
+      const csv = SELECTABLE_OWNER_DIVISIONS.filter((o) => next.includes(o.value)).map((o) => o.value).join(",");
+      updateMut.mutate({ id: s.id, data: { ownerDivision: csv || null } });
+    };
     return (
       /* One editable stage row in the pipeline manager */
       <div
@@ -1617,18 +1622,6 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
               {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           </label>
-          <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground" title="Divisi penanggung jawab stage ini">
-            Divisi
-            <select
-              value={ownerVal}
-              disabled={!canManage}
-              onChange={(e) => updateMut.mutate({ id: s.id, data: { ownerDivision: e.target.value } })}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-normal text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
-            >
-              {!ownerKnown && <option value={ownerVal}>{ownerDivisionLabel(ownerVal)}</option>}
-              {COLLECTION_OWNER_DIVISIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </label>
           <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
             SLA
             <input
@@ -1656,6 +1649,37 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
             />
             Aktif
           </label>
+        </div>
+
+        {/* Baris 3: Divisi yang boleh akses stage ini (multi-pilih). "Semua Divisi" = shared. */}
+        <div data-section="pipeline-stage-divisions" className="mt-2.5 pl-8">
+          <div className="text-[11px] font-medium text-muted-foreground mb-1.5">Divisi yang boleh akses</div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {/* Toggle Shared: centang = tampil ke semua divisi (owner=null); pilihan spesifik nonaktif. */}
+            <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground" title="Tampil & bisa diakses semua divisi">
+              <input
+                type="checkbox"
+                checked={isShared}
+                disabled={!canManage}
+                onChange={(e) => { if (e.target.checked) updateMut.mutate({ id: s.id, data: { ownerDivision: null } }); }}
+                className="size-3.5 rounded border-input accent-primary disabled:cursor-not-allowed"
+              />
+              Semua Divisi (Shared)
+            </label>
+            <span className="text-[10px] text-muted-foreground/60">— atau pilih —</span>
+            {SELECTABLE_OWNER_DIVISIONS.map((o) => (
+              <label key={o.value} className={`inline-flex items-center gap-1.5 text-[11px] ${isShared ? "text-muted-foreground/40" : "text-muted-foreground"}`}>
+                <input
+                  type="checkbox"
+                  checked={ownerSet.includes(o.value)}
+                  disabled={!canManage || isShared}
+                  onChange={(e) => toggleDivision(o.value, e.target.checked)}
+                  className="size-3.5 rounded border-input accent-primary disabled:cursor-not-allowed"
+                />
+                {o.label}
+              </label>
+            ))}
+          </div>
         </div>
       </div>
     );

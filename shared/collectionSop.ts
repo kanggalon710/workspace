@@ -51,19 +51,31 @@ export function decideSopAdvance(
 /** Role stage terminal - selalu shared (tampil di semua view divisi). */
 const TERMINAL_ROLES = new Set(["paid", "writeoff", "dismantel"]);
 
-/** Apakah stage ini "shared": owner kosong/"all", ATAU role terminal (paid/writeoff/dismantel).
+/** Parse `owner_division` (kini SET divisi, CSV) → daftar divisi spesifik.
+ *  `null`/kosong/mengandung "all" → [] (penanda SHARED = tampil ke semua divisi).
+ *  Contoh: "cs,marketing" → ["cs","marketing"]; "cs" → ["cs"]; "all"/"" / null → []. */
+export function parseOwnerDivisions(ownerDivision?: string | null): string[] {
+  const parts = String(ownerDivision ?? "")
+    .split(",")
+    .map((p) => p.toLowerCase().trim())
+    .filter(Boolean);
+  if (parts.length === 0 || parts.includes("all")) return [];
+  // Dedupe, urutan pertama-menang.
+  return parts.filter((p, i) => parts.indexOf(p) === i);
+}
+
+/** Apakah stage ini "shared": set divisi kosong/"all", ATAU role terminal (paid/writeoff/dismantel).
  *  Stage shared tampil di board semua divisi (mis. Lunas, Tidak Bisa Dihubungi, Blacklist). */
 export function isSharedStage(stage: SopStageMeta): boolean {
-  const owner = (stage.ownerDivision ?? "").toLowerCase().trim();
-  if (owner === "" || owner === "all") return true;
+  if (parseOwnerDivisions(stage.ownerDivision).length === 0) return true;
   return TERMINAL_ROLES.has(String(stage.role ?? "").toLowerCase());
 }
 
 /** Stage-stage yang tampil untuk 1 divisi (untuk view pipeline ter-scope):
- *  stage milik divisi itu + semua stage shared. */
+ *  stage yang set divisinya memuat divisi itu + semua stage shared. */
 export function stageKeysForDivision(stages: SopStageMeta[], division: string): string[] {
   const div = division.toLowerCase().trim();
   return stages
-    .filter((s) => (s.ownerDivision ?? "").toLowerCase().trim() === div || isSharedStage(s))
+    .filter((s) => parseOwnerDivisions(s.ownerDivision).includes(div) || isSharedStage(s))
     .map((s) => s.key);
 }

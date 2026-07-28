@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideSopAdvance, stageKeysForDivision, isSharedStage, type SopStageMeta } from "./collectionSop.js";
+import { decideSopAdvance, stageKeysForDivision, isSharedStage, parseOwnerDivisions, type SopStageMeta } from "./collectionSop.js";
 
 const LADDER: SopStageMeta[] = [
   { key: "new", ownerDivision: "sistem", slaDays: 3, nextStageKey: "contacted", role: "entry" },
@@ -87,4 +87,28 @@ test("stageKeysForDivision - stage owner null non-terminal ikut shared", () => {
   ];
   assert.deepEqual(stageKeysForDivision(stages, "cs"), ["cs1", "issue"]);
   assert.deepEqual(stageKeysForDivision(stages, "marketing"), ["issue", "mkt1"]);
+});
+
+test("parseOwnerDivisions - CSV set, trim/lowercase/dedupe, all/kosong → [] (shared)", () => {
+  assert.deepEqual(parseOwnerDivisions("cs,marketing"), ["cs", "marketing"]);
+  assert.deepEqual(parseOwnerDivisions(" CS , Marketing "), ["cs", "marketing"]); // trim + lowercase
+  assert.deepEqual(parseOwnerDivisions("cs,cs,marketing"), ["cs", "marketing"]);   // dedupe
+  assert.deepEqual(parseOwnerDivisions("cs"), ["cs"]);                              // legacy single = 1-element set
+  assert.deepEqual(parseOwnerDivisions(""), []);                                    // kosong = shared
+  assert.deepEqual(parseOwnerDivisions(null), []);
+  assert.deepEqual(parseOwnerDivisions(undefined), []);
+  assert.deepEqual(parseOwnerDivisions("all"), []);                                 // "all" = shared
+  assert.deepEqual(parseOwnerDivisions("cs,all,marketing"), []);                    // "all" di mana pun = shared
+});
+
+test("multi-divisi - stage owner set 'cs,marketing' tampil di CS DAN Marketing, bukan Finance", () => {
+  const stages: SopStageMeta[] = [
+    { key: "shared_stage", ownerDivision: "cs,marketing", role: "none" },
+    { key: "cs_only", ownerDivision: "cs", role: "none" },
+    { key: "paid", ownerDivision: null, role: "paid" },
+  ];
+  assert.equal(isSharedStage(stages[0]!), false); // punya divisi spesifik → bukan shared
+  assert.deepEqual(stageKeysForDivision(stages, "cs"), ["shared_stage", "cs_only", "paid"]);
+  assert.deepEqual(stageKeysForDivision(stages, "marketing"), ["shared_stage", "paid"]);
+  assert.deepEqual(stageKeysForDivision(stages, "finance"), ["paid"]); // finance tak termasuk set
 });

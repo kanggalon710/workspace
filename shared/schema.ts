@@ -463,9 +463,9 @@ export const collectionStages = mysqlTable("collection_stages", {
   position: int("position").notNull().default(0),        // urutan drag-drop
   role: varchar("role", { length: 16 }).notNull().default("none"), // none | entry | paid | writeoff
   // -- SOP churn→reaktivasi (v5.3) ------------------------------------------
-  // Divisi penanggung jawab stage ini (finance | cs | marketing | sistem | null).
-  // Dipakai untuk view pipeline ter-scope per divisi (CS & Marketing cross-check delegasi).
-  ownerDivision: varchar("owner_division", { length: 32 }),
+  // SET divisi yang boleh akses stage ini, CSV (mis. "cs,marketing"). null/kosong/"all" = shared
+  // (tampil ke semua divisi). Dipakai untuk view pipeline ter-scope per divisi + write-scoping.
+  ownerDivision: varchar("owner_division", { length: 255 }),
   // SLA: berapa hari kartu boleh diam di stage ini sebelum auto-delegasi ke nextStageKey.
   // null / 0 = tidak ada auto-advance.
   slaDays: int("sla_days"),

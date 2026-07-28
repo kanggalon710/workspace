@@ -20,6 +20,7 @@ import { buildDeviceIndexes, matchCustomerDevice } from "./ont-match.js";
 import { runStageEnterAutomations, dispatchCardEvent } from "./pipeline-automation.js";
 import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { COLLECTION_ATTRS } from "../shared/collectionMetrics.js";
+import { parseOwnerDivisions } from "../shared/collectionSop.js";
 import { shapeRuleActions, parseConditionGroups, parseTimeTriggerConfig } from "./pipeline-automation-helpers.js";
 import { devDbSyncAvailable } from "./dev-db-sync.js";
 import { getBuildInfo, checkForUpdate, runSelfUpdate, passengerRestartSupported, type SelfUpdateConfig } from "./self-update.js";
@@ -10579,8 +10580,8 @@ async function collectionScopedOwnershipOK(req: Request, res: Response, colId: n
   const col = await storage.getCollection(colId);
   if (!col) { sendError(res, "Collection tidak ditemukan", 404); return false; }
   const stages = await storage.getCollectionStages();
-  const owner = String((stages.find((s) => s.key === col.stage) as any)?.ownerDivision ?? "").toLowerCase();
-  if (!division || owner !== division) { sendError(res, "Kartu ini bukan delegasi divisi Anda", 403); return false; }
+  const ownerSet = parseOwnerDivisions((stages.find((s) => s.key === col.stage) as any)?.ownerDivision);
+  if (!division || !ownerSet.includes(division)) { sendError(res, "Kartu ini bukan delegasi divisi Anda", 403); return false; }
   return true;
 }
 /** Boleh kelola stage pipeline collection (create/edit/reorder/hapus + set divisi penanggung
@@ -10590,16 +10591,21 @@ function collectionStageMgmtOK(req: Request): boolean {
   if (isSystemAdmin(req)) return true;
   return (req.authUser?.roleName ?? "") === "Admin";
 }
-/** Normalisasi + validasi nilai ownerDivision dari body. Return:
+/** Normalisasi + validasi SET ownerDivision dari body. Terima CSV string ATAU array. Return:
  *  - undefined  → field tidak dikirim (jangan sentuh)
- *  - null       → "all"/kosong = shared
- *  - string     → value valid dari COLLECTION_OWNER_DIVISIONS
- *  Nilai tak dikenal dianggap "jangan sentuh" (undefined) supaya tidak menimpa owner lama. */
-function normalizeOwnerDivision(raw: unknown): string | null | undefined {
+ *  - null       → "all"/kosong/tak ada valid = shared (tampil ke semua divisi)
+ *  - string     → CSV divisi valid dari COLLECTION_OWNER_DIVISIONS (mis. "cs,marketing")
+ *  Nilai tak dikenal dibuang. */
+function normalizeOwnerDivisions(raw: unknown): string | null | undefined {
   if (raw === undefined) return undefined;
-  const v = String(raw ?? "").toLowerCase().trim();
-  if (v === "" || v === "all") return null;
-  return COLLECTION_OWNER_DIVISIONS.some((o) => o.value === v) ? v : undefined;
+  const parts = (Array.isArray(raw) ? raw : String(raw ?? "").split(","))
+    .map((p) => String(p).toLowerCase().trim())
+    .filter(Boolean);
+  if (parts.length === 0 || parts.includes("all")) return null;
+  const valid = COLLECTION_OWNER_DIVISIONS
+    .map((o) => o.value)
+    .filter((v) => v !== "all" && parts.includes(v)); // urutan kanonik, dedupe, buang tak dikenal
+  return valid.length ? valid.join(",") : null;
 }
 
 router.get("/api/collections", async (req: Request, res: Response) => {
@@ -10655,7 +10661,7 @@ router.post("/api/collections/stages", async (req: Request, res: Response) => {
     const row = await storage.createCollectionStage({ label: label.trim(), color, role });
     // Set SOP fields bila dikirim (opsional saat create). ownerDivision divalidasi ke daftar
     // resmi (all→null). Stage yang dibuat dari view divisi mewarisi divisi tsb (dikirim client).
-    const ownerDivision = normalizeOwnerDivision(req.body?.ownerDivision);
+    const ownerDivision = normalizeOwnerDivisions(req.body?.ownerDivision);
     if (ownerDivision !== undefined || req.body?.slaDays !== undefined || req.body?.nextStageKey !== undefined) {
       await storage.updateCollectionStage(row.id, {
         ownerDivision, slaDays: req.body.slaDays, nextStageKey: req.body.nextStageKey,
@@ -10679,7 +10685,7 @@ router.patch("/api/collections/stages/:id", async (req: Request, res: Response) 
   if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
     const { label, color, role, slaDays, nextStageKey, active } = req.body ?? {};
-    const ownerDivision = normalizeOwnerDivision(req.body?.ownerDivision);
+    const ownerDivision = normalizeOwnerDivisions(req.body?.ownerDivision);
     const row = await storage.updateCollectionStage(Number(req.params.id), {
       label, color, role, ownerDivision, slaDays, nextStageKey,
       active: active === undefined ? undefined : Boolean(active),
