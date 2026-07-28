@@ -180,7 +180,7 @@ import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { buildCollectionSnapshot, resolveCollectionStatus, type CollectionSnapshot } from "../shared/collectionMetrics.js";
 import { decideSopAdvance, stageKeysForDivision, type SopStageMeta } from "../shared/collectionSop.js";
 import { isCardCommentType } from "../shared/cardCommentTypes.js";
-import { tablesToMirror, copyColumns, buildCopySql } from "./dev-db-sync.js";
+import { tablesToMirror, tablesMissingInProd, copyColumns, buildCopySql } from "./dev-db-sync.js";
 
 // ==================== BILLING TYPES ====================
 
@@ -15621,6 +15621,7 @@ export class DatabaseStorage implements IStorage {
    */
   async runDevDbSyncFromProd(prodDb: string): Promise<{
     tables: { table: string; rows: number; ok: boolean; error?: string }[];
+    skippedMissingInProd: string[];
     totalRows: number;
     durationMs: number;
   }> {
@@ -15628,6 +15629,7 @@ export class DatabaseStorage implements IStorage {
     const devDb = process.env.DB_NAME ?? "";
     if (!devDb) throw new Error("DB_NAME env var is not set");
     const results: { table: string; rows: number; ok: boolean; error?: string }[] = [];
+    let skippedMissingInProd: string[] = [];
     const conn = await this.pool.getConnection();
     try {
       await conn.query("SET FOREIGN_KEY_CHECKS=0");
@@ -15639,7 +15641,12 @@ export class DatabaseStorage implements IStorage {
         "SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
         [devDb],
       );
-      const tables = tablesToMirror(prodT.map((r: any) => r.t), devT.map((r: any) => r.t));
+      const prodNames = prodT.map((r: any) => r.t);
+      const devNames = devT.map((r: any) => r.t);
+      const tables = tablesToMirror(prodNames, devNames);
+      // Dev tables absent from prod can't be mirrored (no source) - surface them so an
+      // incomplete "1:1" copy is visible instead of silent (e.g. wrong PROD_DB_NAME).
+      skippedMissingInProd = tablesMissingInProd(prodNames, devNames);
       for (const table of tables) {
         try {
           const [pc]: any = await conn.query(
@@ -15668,7 +15675,7 @@ export class DatabaseStorage implements IStorage {
       conn.release();
     }
     const totalRows = results.filter((r) => r.ok).reduce((a, r) => a + r.rows, 0);
-    return { tables: results, totalRows, durationMs: Date.now() - started };
+    return { tables: results, skippedMissingInProd, totalRows, durationMs: Date.now() - started };
   }
 
   // ===== SP2: Collection Config + Stage Map =====

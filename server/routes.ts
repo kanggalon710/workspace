@@ -188,6 +188,7 @@ router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
       durationMs: result.durationMs,
       perTable: result.tables,
       failed,
+      skippedMissingInProd: result.skippedMissingInProd,
     });
     // Best-effort: trigger a Passenger reload so in-memory caches (route-cache, perm cache,
     // public-config) are rebuilt against the freshly-copied data. Reloads on next HTTP request.

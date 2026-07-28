@@ -32,6 +32,16 @@ export function tablesToMirror(prodTables: string[], devTables: string[]): strin
 }
 
 /**
+ * Tables that exist in DEV but NOT in prod - these CANNOT be mirrored (no source table),
+ * so their dev rows are left untouched. Surfacing them explains an incomplete "1:1" copy
+ * (e.g. teamspace tables when PROD_DB_NAME points at an older schema). Dev order preserved.
+ */
+export function tablesMissingInProd(prodTables: string[], devTables: string[]): string[] {
+  const prod = new Set(prodTables);
+  return devTables.filter((t) => !prod.has(t));
+}
+
+/**
  * Columns present in BOTH schemas for a table. Dev schema is usually NEWER (extra columns),
  * so copying only shared columns avoids "column count mismatch". Empty → caller skips the table.
  */

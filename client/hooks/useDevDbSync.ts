@@ -8,6 +8,8 @@ export interface DevDbSyncResult {
   durationMs: number;
   perTable: DevDbSyncTable[];
   failed: DevDbSyncTable[];
+  /** Tabel yang ada di dev tapi TIDAK di prod → tak bisa disalin (sumber tak ada). */
+  skippedMissingInProd: string[];
 }
 
 /** DEV-ONLY: trigger prod → dev DB copy. On success, refetch everything (UI now shows prod data). */
