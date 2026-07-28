@@ -1533,13 +1533,15 @@ export class DatabaseStorage implements IStorage {
     customersChecked: number;
     mismatchesFound: number;
     fixesApplied: number;
+    opened: number;
+    closed: number;
     errors: number;
     details: Array<{ customerId: number; issue: string; action: string; ok: boolean }>;
   }> {
     const mitraId = getMitraId();
     const allCustomers = await this.getCustomers();
     const details: Array<{ customerId: number; issue: string; action: string; ok: boolean }> = [];
-    let mismatches = 0, fixes = 0, errors = 0;
+    let mismatches = 0, fixes = 0, errors = 0, opened = 0, closed = 0;
 
     // Batched: 1 query for all open collections, then group by customerId
     const allOpenCollections = await this.db.select().from(collections).where(and(sql`${collections.closedAt} IS NULL`, eq(collections.mitraId, mitraId)));
@@ -1552,7 +1554,6 @@ export class DatabaseStorage implements IStorage {
 
     for (const c of allCustomers) {
       const isolir = c.isIsolir === 1;
-      const billingStatus = (c as any).billingStatus;
       const customerName = c.name;
       const open = openByCustomerId.get(c.id) ?? [];
 
@@ -1562,36 +1563,18 @@ export class DatabaseStorage implements IStorage {
         try {
           await this.openCollectionFromCustomer(c.id, "reconcile_isolir_no_collection");
           details.push({ customerId: c.id, issue: `isolir tapi no open collection (${customerName})`, action: "auto-opened", ok: true });
-          fixes++;
+          fixes++; opened++;
         } catch (e: any) {
           errors++;
           details.push({ customerId: c.id, issue: `isolir tapi no open collection (${customerName})`, action: `failed: ${e.message}`, ok: false });
         }
       }
 
-      // CASE 1b: customer overdue tapi belum isolir + no open → open di stage 'suspend' (pre-isolir warning)
-      // Detect overdue via billingStatus (case-insensitive 'overdue'/'tunggakan'/'menunggak') ATAU due_date sudah lewat
-      else if (!isolir && open.length === 0) {
-        const bs = String(billingStatus ?? "").toLowerCase();
-        const dueDateStr = (c as any).dueDate;
-        const isOverdue = bs === "overdue" || bs === "tunggakan" || bs === "menunggak"
-          || (dueDateStr && new Date(dueDateStr).getTime() < Date.now() - 86400_000); // > 1 day past due
-        if (isOverdue) {
-          mismatches++;
-          try {
-            // 3-role model: overdue & isolir sama-sama masuk stage 'entry' (resolusi internal).
-            await this.openCollectionFromCustomer(c.id, "reconcile_overdue_no_collection");
-            details.push({ customerId: c.id, issue: `overdue tapi belum isolir (${customerName})`, action: "auto-opened entry", ok: true });
-            fixes++;
-          } catch (e: any) {
-            errors++;
-            details.push({ customerId: c.id, issue: `overdue tapi belum isolir (${customerName})`, action: `failed: ${e.message}`, ok: false });
-          }
-        }
-      }
-
-      // CASE 2: tidak isolir + lunas tapi ada open collection → close ke stage role 'paid'
-      if (!isolir && billingStatus === "lunas" && open.length > 0) {
+      // CASE 2: TIDAK isolir tapi ada open collection → reaktivasi (customer sudah bayar → is_isolir
+      // jadi false). Kartu di-close ke stage role 'paid' (Lunas). Model: kartu hanya untuk isolir;
+      // begitu tidak isolir lagi, resolusi = Lunas. (Cleanup kartu lama non-isolir ditangani sekali
+      // via cleanupNonIsolirOpenCollections; go-forward, ini menutup reaktivasi.)
+      if (!isolir && open.length > 0) {
         mismatches++;
         try {
           const paidKey = (await this.getCollectionStageKeyByRole("paid")) ?? "paid";
@@ -1599,16 +1582,16 @@ export class DatabaseStorage implements IStorage {
             await this.db.update(collections).set({
               stage: paidKey,
               closedAt: new Date().toISOString(),
-              closeReason: "reconcile_paid_but_open",
+              closeReason: "reconcile_reactivated",
               closedLastPaymentDate: (c as any).lastPaymentDate ?? null,
               updatedAt: new Date().toISOString(),
             } as any).where(and(eq(collections.id, col.id), eq(collections.mitraId, mitraId)));
           }
-          details.push({ customerId: c.id, issue: `lunas+aktif tapi ${open.length} open collection (${customerName})`, action: `auto-closed ${open.length}`, ok: true });
-          fixes++;
+          details.push({ customerId: c.id, issue: `tidak isolir tapi ${open.length} open collection (${customerName})`, action: `auto-closed ${open.length} → Lunas`, ok: true });
+          fixes++; closed += open.length;
         } catch (e: any) {
           errors++;
-          details.push({ customerId: c.id, issue: `lunas+aktif tapi open (${customerName})`, action: `failed: ${e.message}`, ok: false });
+          details.push({ customerId: c.id, issue: `tidak isolir tapi open (${customerName})`, action: `failed: ${e.message}`, ok: false });
         }
       }
     }
@@ -1617,9 +1600,30 @@ export class DatabaseStorage implements IStorage {
       customersChecked: allCustomers.length,
       mismatchesFound: mismatches,
       fixesApplied: fixes,
+      opened,
+      closed,
       errors,
       details: details.slice(0, 100), // cap response size
     };
+  }
+
+  /** One-time cleanup: HAPUS semua open collection yang customer-nya TIDAK isolir (is_isolir != 1).
+   *  Kartu-kartu ini dulu salah dibuka oleh logika overdue lama (bukan isolir). Reuse deleteCollection
+   *  supaya activities/assignee/foto ikut bersih. Dipanggil sekali (flag-guarded) di startup. */
+  async cleanupNonIsolirOpenCollections(): Promise<{ deleted: number }> {
+    const mitraId = getMitraId();
+    const rows: any = ((await this.db.execute(sql`
+      SELECT col.id AS id
+      FROM collections col JOIN customers cu ON cu.id = col.customer_id
+      WHERE col.mitra_id = ${mitraId} AND col.closed_at IS NULL AND (cu.is_isolir IS NULL OR cu.is_isolir <> 1)
+    `))[0] as any);
+    const ids: number[] = (rows ?? []).map((r: any) => Number(r.id));
+    let deleted = 0;
+    for (const id of ids) {
+      try { await this.deleteCollection(id); deleted++; }
+      catch (e: any) { console.error(`[cleanup] hapus collection #${id} gagal: ${e.message}`); }
+    }
+    return { deleted };
   }
 
   /** Helper: open collection dari customer record (utk reconcile + manual trigger).
@@ -10166,6 +10170,20 @@ export class DatabaseStorage implements IStorage {
         try { await this.applyCollectionSopLadder(Number(m.id)); }
         catch (e: any) { console.warn(`[migration] SOP ladder mitra ${m.id}: ${e.message}`); }
       }
+      // One-time (flag-guarded): hapus kartu collection OPEN yang customer-nya tidak isolir. Kartu ini
+      // dulu salah dibuka oleh logika overdue-by-dueDate lama (bukan isolir). Model baru: kartu ⟺ isolir.
+      try {
+        const cleanupDone = await this.getSetting("collections_isolir_cleanup_v1");
+        if (cleanupDone !== "done") {
+          let totalDeleted = 0;
+          for (const mid of [1, ...(mitraRows as any[]).map((m: any) => Number(m.id))]) {
+            try { totalDeleted += (await withMitra(mid, () => this.cleanupNonIsolirOpenCollections())).deleted; }
+            catch (e: any) { console.warn(`[migration] non-isolir cleanup mitra ${mid}: ${e.message}`); }
+          }
+          await this.setSetting("collections_isolir_cleanup_v1", "done", "collection");
+          if (totalDeleted > 0) console.log(`[migration] cleanup non-isolir open collections: ${totalDeleted} deleted`);
+        }
+      } catch (e: any) { console.warn(`[migration] non-isolir cleanup skipped: ${e.message}`); }
       // Normalisasi label ber-prefiks lama ("CS: Delegasi Masuk" -> "Delegasi Masuk", dst).
       // Divisi kini ditunjukkan lewat owner_division + grouping UI, bukan prefiks teks.
       // Idempotent + aman: hanya rename baris yang label-nya MASIH sama persis dengan nilai

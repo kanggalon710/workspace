@@ -842,8 +842,10 @@ function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; o
     mutationFn: () => api.post("/collections/run-thresholds", {}),
     onSuccess: (data: any) => {
       const opened = data?.opened ?? 0;
+      const closed = data?.closed ?? 0;
       const wo = data?.writtenOff ?? 0;
-      toast.success(`Threshold check selesai: ${opened} collection dibuka, ${wo} di-writeoff`);
+      const overdue = data?.overdueMoved ?? 0;
+      toast.success(`Selesai: ${opened} dibuka (isolir), ${closed} ditutup (Lunas), ${wo} write-off, ${overdue} overdue`);
       qc.invalidateQueries({ queryKey: ["/api/collections"] });
       qc.invalidateQueries({ queryKey: ["/api/collections/stats"] });
       qc.invalidateQueries({ queryKey: ["/api/collections/settings"] });
