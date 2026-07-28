@@ -178,7 +178,7 @@ import { computePeriodBuckets, assignCountToBuckets, lastValueInBuckets, buildEx
 import { computeInsertPosition } from "./pipeline-helpers.js";
 import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { buildCollectionSnapshot, resolveCollectionStatus, type CollectionSnapshot } from "../shared/collectionMetrics.js";
-import { decideSopAdvance, stageKeysForDivision, type SopStageMeta } from "../shared/collectionSop.js";
+import { decideSopAdvance, stageKeysForDivision, parseOwnerDivisions, type SopStageMeta } from "../shared/collectionSop.js";
 import { isCardCommentType } from "../shared/cardCommentTypes.js";
 import { tablesToMirror, tablesMissingInProd, copyColumns, buildCopySql } from "./dev-db-sync.js";
 
@@ -1702,7 +1702,7 @@ export class DatabaseStorage implements IStorage {
         const fromLabel = byKey.get(decision.fromStage)?.label ?? decision.fromStage;
         const toMeta = byKey.get(decision.toStage);
         const toLabel = toMeta?.label ?? decision.toStage;
-        const owner = (toMeta as any)?.ownerDivision ?? "";
+        const owner = parseOwnerDivisions((toMeta as any)?.ownerDivision).join(", ");
         await this.moveCollectionStage(col.id, decision.toStage, null, {
           note: `Auto-delegasi SOP: "${fromLabel}" → "${toLabel}"${owner ? ` (divisi ${owner})` : ""} setelah ${Math.floor(daysInStage)} hari.`,
         } as any);
@@ -10060,6 +10060,10 @@ export class DatabaseStorage implements IStorage {
         try { await this.pool.execute(`ALTER TABLE collection_stages ${ddl}`); }
         catch (e: any) { if (e?.errno !== 1060) console.warn(`[migration] collection_stages ${col}: ${e.message}`); }
       }
+      // Multi-divisi: owner_division kini menampung SET (CSV, mis. "cs,marketing"). Lebarkan 32→255.
+      // MODIFY aman dijalankan berulang (idempotent - no-op kalau sudah 255).
+      try { await this.pool.execute(`ALTER TABLE collection_stages MODIFY owner_division VARCHAR(255)`); }
+      catch (e: any) { console.warn(`[migration] collection_stages widen owner_division: ${e.message}`); }
       // Seed mitra 1 (JABNET) dari template default, lalu backfill semua mitra lain (clone dari mitra 1).
       await this.seedCollectionStagesForMitra(1);
       const [mitraRows]: any = await this.pool.execute(`SELECT id FROM mitras WHERE id <> 1`);
