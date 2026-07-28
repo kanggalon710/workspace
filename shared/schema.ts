@@ -445,7 +445,8 @@ export const collectionActivities = mysqlTable("collection_activities", {
   userId: int("user_id"),                          // null = sistem/worker
   type: text("type").notNull(),                        // note | call | whatsapp | visit | stage_change | issue_set | promise_made | auto_opened | auto_closed | payment_detected
   content: text("content"),                            // teks atau JSON {"from":"new","to":"contacted"}
-  photoData: text("photo_data"),                       // base64 (optional evidence foto kunjungan)
+  photoData: text("photo_data"),                       // DEPRECATED: legacy base64 (di-backfill ke filesystem)
+  photoPath: varchar("photo_path", { length: 255 }),   // relatif ke JABNET_UPLOAD_ROOT (foto kunjungan)
   createdAt: text("created_at").notNull(),
 });
 
@@ -1583,7 +1584,8 @@ export const users = mysqlTable("users", {
   notes: text("notes"),                  // Catatan internal (admin only)
   permissions: text("permissions"),       // DEPRECATED: JSON array per-user override; sekarang di roles.permissions
   // v4.2.1 - Profile photo + Telegram integration
-  photoUrl: text("photo_url"),                    // base64 data URL (256x256 square) atau null
+  photoUrl: text("photo_url"),                    // DEPRECATED: legacy base64 data URL (di-backfill ke filesystem)
+  photoPath: varchar("photo_path", { length: 255 }), // relatif ke JABNET_UPLOAD_ROOT (avatar 256x256)
   telegramChatId: text("telegram_chat_id"),       // Chat ID Telegram setelah pairing (string utk safe JSON)
   telegramUsername: text("telegram_username"),    // @handle Telegram (display only)
   telegramLinkedAt: text("telegram_linked_at"),
@@ -2274,7 +2276,8 @@ export const ticketEvidence = mysqlTable("ticket_evidence", {
   mitraId: int("mitra_id").notNull().default(1),
   ticketId: int("ticket_id").notNull(),
   type: text("type").notNull(), // "before" | "during" | "after" | "power_meter" | "ont_serial" | "signature"
-  photoData: text("photo_data"), // base64 encoded image
+  photoData: text("photo_data"), // DEPRECATED: legacy base64 (di-backfill ke filesystem)
+  photoPath: varchar("photo_path", { length: 255 }), // relatif ke JABNET_UPLOAD_ROOT
   lat: double("lat"),
   lng: double("lng"),
   capturedAt: text("captured_at"),

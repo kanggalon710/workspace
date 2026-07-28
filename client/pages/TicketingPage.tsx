@@ -1029,7 +1029,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
   });
 
   // v4.2.16: Evidence (foto bukti)
-  const { data: evidence = [] } = useQuery<Array<{ id: number; type: string; photoData: string | null; capturedAt: string | null; capturedBy: number | null; notes: string | null; lat: number | null; lng: number | null }>>({
+  const { data: evidence = [] } = useQuery<Array<{ id: number; type: string; photoData?: string | null; hasPhoto?: boolean; capturedAt: string | null; capturedBy: number | null; notes: string | null; lat: number | null; lng: number | null }>>({
     queryKey: ["ticket-evidence", ticketId],
     queryFn: () => api.get(`/tickets/${ticketId}/evidence`),
     enabled: ticketId !== null,
@@ -1109,6 +1109,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
 
             {/* v4.2.16: Foto Bukti - upload + gallery */}
             <EvidencePanel
+              ticketId={ticketId}
               evidence={evidence}
               onUpload={(data) => evidenceMut.mutate(data)}
               isUploading={evidenceMut.isPending}
@@ -1820,9 +1821,10 @@ async function compressImageToBase64(file: File, maxSize = 1280, quality = 0.7):
 }
 
 function EvidencePanel({
-  evidence, onUpload, isUploading,
+  ticketId, evidence, onUpload, isUploading,
 }: {
-  evidence: Array<{ id: number; type: string; photoData: string | null; capturedAt: string | null; capturedBy: number | null; notes: string | null }>;
+  ticketId: number | null;
+  evidence: Array<{ id: number; type: string; photoData?: string | null; hasPhoto?: boolean; capturedAt: string | null; capturedBy: number | null; notes: string | null }>;
   onUpload: (data: { type: string; photoData: string; notes?: string }) => void;
   isUploading: boolean;
 }) {
@@ -1877,21 +1879,24 @@ function EvidencePanel({
         </div>
       ) : (
         <div className="p-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-          {evidence.map(e => (
+          {evidence.map(e => {
+            const photoUrl = (e.hasPhoto || e.photoData) ? `/api/tickets/${ticketId}/evidence/${e.id}/photo` : undefined;
+            return (
             <a
               key={e.id}
-              href={e.photoData ?? undefined}
+              href={photoUrl}
               target="_blank"
               rel="noreferrer"
               className="block aspect-square rounded-md overflow-hidden border bg-muted relative group"
               title={`${EVIDENCE_TYPE_LABELS[e.type] || e.type} · ${e.capturedAt ? new Date(e.capturedAt).toLocaleString("id-ID") : ""}`}
             >
-              {e.photoData && <img src={e.photoData} alt="evidence" className="w-full h-full object-cover" />}
+              {photoUrl && <img src={photoUrl} alt="evidence" className="w-full h-full object-cover" />}
               <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-1">
                 {EVIDENCE_TYPE_LABELS[e.type] || e.type}
               </div>
             </a>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -27,7 +27,11 @@ interface AuthUser {
   isSystemAdmin?: boolean;
   /** Nama role (e.g. "Administrator", "Operator"). */
   roleName?: string;
-  /** Foto profil (base64 data URL). */
+  /** True jika user punya foto profil (di-stream via GET /api/users/:id/photo). */
+  hasPhoto?: boolean;
+  /** Cache-buster untuk URL avatar; di-bump saat user ganti foto. */
+  avatarVersion?: number;
+  /** DEPRECATED: legacy base64 data URL (dulu inline; sekarang foto di filesystem). */
   photoUrl?: string | null;
   /** Field opsional lain dari /auth/me. */
   canSeeAllData?: boolean;

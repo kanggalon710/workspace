@@ -83,13 +83,14 @@ export function MultiPhotoUploader({
   slots?: PhotoSlot[];
   maxCount?: number;
   requireGPS?: boolean;
-  initialPhotos?: Array<{ id: number; type: string; photoData: string | null; lat: number | null; lng: number | null; capturedAt: string | null }>;
+  initialPhotos?: Array<{ id: number; type: string; photoData?: string | null; hasPhoto?: boolean; lat: number | null; lng: number | null; capturedAt: string | null }>;
   onChange?: (ids: number[]) => void;
 }) {
   const [photos, setPhotos] = useState<UploadedPhoto[]>(
     initialPhotos.map(p => ({
       id: p.id, type: p.type,
-      dataUrl: p.photoData ?? "",
+      // Foto tersimpan di server → stream via endpoint (base64 legacy juga dilayani endpoint yang sama).
+      dataUrl: (p.hasPhoto || p.photoData) ? `/api/tickets/${ticketId}/evidence/${p.id}/photo` : "",
       gpsLat: p.lat, gpsLng: p.lng,
       capturedAt: p.capturedAt ?? new Date().toISOString(),
       uploading: false,

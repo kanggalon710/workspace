@@ -25,7 +25,7 @@ import { devDbSyncAvailable } from "./dev-db-sync.js";
 import { getBuildInfo, checkForUpdate, runSelfUpdate, passengerRestartSupported, type SelfUpdateConfig } from "./self-update.js";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { streamPhoto, ensureMitraDirs, renameMitraDir, trashMitraDir, saveUploadedFile, streamFile, deletePhoto } from "./uploads.js";
+import { streamPhoto, ensureMitraDirs, renameMitraDir, trashMitraDir, saveUploadedFile, streamFile, deletePhoto, saveBase64Photo } from "./uploads.js";
 import { parseMultipart } from "./multipart.js";
 import { validateAttachment, ATTACHMENT_MAX_BYTES } from "../shared/attachmentRules.js";
 import { emitLeadEvent } from "./lead-events.js";
@@ -267,6 +267,13 @@ async function computeAuthFlags(userId: number, activeMitraId: number) {
     ? ownerEff
     : await storage.getUserEffectivePermissionsAtMitra(userId, activeMitraId);
   return { eff, isSystemAdmin: ownerEff.roleName === "System-Admin" && ownerEff.isSystem };
+}
+
+/** Buang blob avatar (photoUrl base64 + photoPath) dari objek user yang dikirim ke client;
+ *  ganti dengan flag `hasPhoto`. Avatar diambil via GET /api/users/:id/photo. */
+function stripPhoto<T extends { photoUrl?: string | null; photoPath?: string | null }>(u: T): Omit<T, "photoUrl" | "photoPath"> & { hasPhoto: boolean } {
+  const { photoUrl, photoPath, ...rest } = u;
+  return { ...rest, hasPhoto: Boolean(photoPath || photoUrl) } as any;
 }
 
 // ==================== AUTH MIDDLEWARE ====================
@@ -846,7 +853,7 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
     const { password: _, token: __, ...safeUser } = user;
     sendSuccess(res, {
       user: {
-        ...safeUser,
+        ...stripPhoto(safeUser),
         token,
         permLevels: eff.perms,
         roleName: eff.roleName,
@@ -883,7 +890,7 @@ router.get("/api/auth/me", async (req: Request, res: Response) => {
     // Resolve per-mitra permissions. isSystemAdmin is true only for System-Admin role at mitra=1.
     const { eff, isSystemAdmin } = await computeAuthFlags(req.authUser.id, req.authUser.activeMitraId);
     sendSuccess(res, {
-      ...safe,
+      ...stripPhoto(safe),
       permLevels: eff.perms,
       roleName: eff.roleName,
       isSystemAdmin,
@@ -1614,7 +1621,7 @@ router.patch("/api/auth/me", async (req: Request, res: Response) => {
     if (!updated) return sendError(res, "User tidak ditemukan", 404);
     await logAudit(req, "UPDATE", "profile", updated.id, updated.username, { fields: changedFields });
     const { password: _p, token: _t, ...safe } = updated;
-    sendSuccess(res, safe);
+    sendSuccess(res, stripPhoto(safe));
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
@@ -1625,19 +1632,51 @@ router.put("/api/auth/me/photo", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const { photoUrl } = req.body ?? {};
+    // Avatar disimpan ke filesystem (server/uploads.ts), bukan base64 di DB.
+    const existing = await storage.getUserPhotoMeta(req.authUser.id);
     if (photoUrl === null || photoUrl === "") {
-      await storage.updateUser(req.authUser.id, { photoUrl: null });
-      await logAudit(req, "UPDATE", "profile", req.authUser.id, req.authUser.username, { field: "photoUrl", cleared: true });
-      return sendSuccess(res, { photoUrl: null });
+      if (existing?.photoPath) await deletePhoto(existing.photoPath);
+      await storage.updateUser(req.authUser.id, { photoUrl: null, photoPath: null } as any);
+      await logAudit(req, "UPDATE", "profile", req.authUser.id, req.authUser.username, { field: "photo", cleared: true });
+      return sendSuccess(res, { hasPhoto: false });
     }
     if (typeof photoUrl !== "string") return sendError(res, "photoUrl harus string");
     const m = photoUrl.match(/^data:image\/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=]+)$/);
     if (!m) return sendError(res, "Format foto harus data:image/(png|jpeg|webp);base64,...");
     // Estimasi size: base64 encoded ~ 4/3 raw. Max data URL 500KB → raw ~375KB.
     if (photoUrl.length > 500_000) return sendError(res, "Foto terlalu besar (max ~500KB setelah resize di client)");
-    await storage.updateUser(req.authUser.id, { photoUrl });
-    await logAudit(req, "UPDATE", "profile", req.authUser.id, req.authUser.username, { field: "photoUrl", sizeBytes: photoUrl.length });
-    sendSuccess(res, { photoUrl });
+    const slug = await storage.getMitraSlug(req.authUser.activeMitraId);
+    const photoPath = await saveBase64Photo(slug, "avatars", req.authUser.id, photoUrl);
+    if (existing?.photoPath && existing.photoPath !== photoPath) await deletePhoto(existing.photoPath);
+    await storage.updateUser(req.authUser.id, { photoUrl: null, photoPath } as any);
+    await logAudit(req, "UPDATE", "profile", req.authUser.id, req.authUser.username, { field: "photo", sizeBytes: photoUrl.length });
+    sendSuccess(res, { hasPhoto: true });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+/**
+ * GET /api/users/:id/photo - stream avatar user (id-keyed, bisa lihat avatar user lain).
+ * Filesystem (photo_path) → fallback ke legacy base64 (photo_url) untuk data pra-migrasi.
+ */
+router.get("/api/users/:id/photo", async (req: Request, res: Response) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  try {
+    const meta = await storage.getUserPhotoMeta(Number(req.params.id));
+    if (!meta) return sendError(res, "User tidak ditemukan", 404);
+    if (meta.photoPath) {
+      await streamPhoto(meta.photoPath, res);
+      return;
+    }
+    if (meta.photoUrl) {
+      const m = /^data:(image\/[a-z0-9+.-]+);base64,(.+)$/i.exec(meta.photoUrl);
+      if (m) {
+        res.setHeader("Content-Type", m[1]);
+        res.setHeader("Cache-Control", "private, max-age=300");
+        res.send(Buffer.from(m[2], "base64"));
+        return;
+      }
+    }
+    return sendError(res, "Foto tidak tersedia", 404);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
@@ -1789,7 +1828,7 @@ router.get("/api/users", async (req: Request, res: Response) => {
     const mitraNames = await storage.getMitraNamesByUserIds(allUsers.map(u => u.id));
     // Strip passwords and tokens from response
     const safe = allUsers.map(({ password, token, ...u }) => ({
-      ...u,
+      ...stripPhoto(u),
       mitraNames: mitraNames.get(u.id) ?? [],
     }));
     sendSuccess(res, safe);
@@ -1915,7 +1954,7 @@ router.post("/api/users", async (req: Request, res: Response) => {
     }
     await logAudit(req, "CREATE", "user", user.id, user.username);
     const { password: _, token: __, ...safeUser } = user;
-    sendSuccess(res, safeUser, 201);
+    sendSuccess(res, stripPhoto(safeUser), 201);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
@@ -2015,7 +2054,7 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
     }
     await logAudit(req, "UPDATE", "user", id, updated.username, { changes, ip: getClientIp(req) });
     const { password: _, token: __, ...safeUser } = updated;
-    sendSuccess(res, safeUser);
+    sendSuccess(res, stripPhoto(safeUser));
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
@@ -10787,6 +10826,33 @@ router.post("/api/collections/:id/activity", async (req: Request, res: Response)
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+/**
+ * GET /api/collections/activities/:id/photo - stream foto aktivitas collection.
+ * Filesystem (photo_path) → fallback ke legacy base64 (photo_data) untuk data pra-migrasi.
+ */
+router.get("/api/collections/activities/:id/photo", async (req: Request, res: Response) => {
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, false)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const meta = await storage.getCollectionActivityPhotoMeta(Number(req.params.id));
+    if (!meta) return sendError(res, "Aktivitas tidak ditemukan", 404);
+    if (meta.photoPath) {
+      await streamPhoto(meta.photoPath, res);
+      return;
+    }
+    if (meta.photoData) {
+      const m = /^data:(image\/[a-z0-9+.-]+);base64,(.+)$/i.exec(meta.photoData);
+      if (m) {
+        res.setHeader("Content-Type", m[1]);
+        res.setHeader("Cache-Control", "private, max-age=300");
+        res.send(Buffer.from(m[2], "base64"));
+        return;
+      }
+    }
+    return sendError(res, "Foto tidak tersedia", 404);
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
 router.delete("/api/collections/:id", async (req: Request, res: Response) => {
   if (!requireWritePermission(req, res, "collections")) return;
   if (!req.authUser!.isSystemAdmin) return sendError(res, "Hanya admin yang boleh hapus collection", 403);
@@ -12987,6 +13053,32 @@ router.post("/api/tickets/:id/evidence", async (req: Request, res: Response) => 
       lat, lng, capturedAt: new Date().toISOString(), capturedBy: req.authUser!.id, notes,
     });
     sendSuccess(res, { id: evidence.id }, 201);
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+/**
+ * GET /api/tickets/:id/evidence/:evidenceId/photo - stream foto evidence tiket.
+ * Filesystem (photo_path) → fallback ke legacy base64 (photo_data) untuk data pra-migrasi.
+ */
+router.get("/api/tickets/:id/evidence/:evidenceId/photo", async (req: Request, res: Response) => {
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  try {
+    const meta = await storage.getTicketEvidencePhotoMeta(Number(req.params.evidenceId));
+    if (!meta) return sendError(res, "Evidence tidak ditemukan", 404);
+    if (meta.photoPath) {
+      await streamPhoto(meta.photoPath, res);
+      return;
+    }
+    if (meta.photoData) {
+      const m = /^data:(image\/[a-z0-9+.-]+);base64,(.+)$/i.exec(meta.photoData);
+      if (m) {
+        res.setHeader("Content-Type", m[1]);
+        res.setHeader("Cache-Control", "private, max-age=300");
+        res.send(Buffer.from(m[2], "base64"));
+        return;
+      }
+    }
+    return sendError(res, "Foto tidak tersedia", 404);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 

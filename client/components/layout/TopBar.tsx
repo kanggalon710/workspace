@@ -324,8 +324,8 @@ export function TopBar() {
           >
             <div className="relative">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold ring-2 ring-background shadow-elev-sm overflow-hidden">
-                {(user as any)?.photoUrl ? (
-                  <img src={(user as any).photoUrl} alt={user.name} className="w-full h-full object-cover" />
+                {(user as any)?.hasPhoto ? (
+                  <img src={`/api/users/${(user as any).id}/photo?v=${(user as any).avatarVersion ?? 0}`} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
                   user.name.charAt(0).toUpperCase()
                 )}

@@ -13,7 +13,7 @@ import crypto from "crypto";
 import type { Response } from "express";
 import { mimeForExt } from "../shared/attachmentRules.js";
 
-const FEATURES = ["canvassing", "odps", "odcs", "poles", "leads", "bugs", "collections"] as const;
+const FEATURES = ["canvassing", "odps", "odcs", "poles", "leads", "bugs", "collections", "tickets", "avatars"] as const;
 export type PhotoFeature = (typeof FEATURES)[number];
 
 let cachedRoot: string | null = null;
