@@ -431,10 +431,12 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
 
   return (
     <StageCtx.Provider value={stageHelpers}>
-    <div className="flex flex-col h-[calc(100dvh-8rem)] md:h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Header (non-scroll) */}
-      <div className="px-3 md:px-6 pt-3 md:pt-6 space-y-3 md:space-y-4 shrink-0">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+    {/* ============ COLLECTIONS PIPELINE PAGE (root) ============ */}
+    <div data-section="collections-page" data-division={division ?? "all"} className="flex flex-col h-[calc(100dvh-8rem)] md:h-[calc(100vh-4rem)] overflow-hidden">
+      {/* ==== Header (non-scroll): judul + toolbar + filter ==== */}
+      <div data-section="collections-header" className="px-3 md:px-6 pt-3 md:pt-6 space-y-3 md:space-y-4 shrink-0">
+        {/* Title row + action toolbar */}
+        <div data-section="collections-toolbar" className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0 flex-1">
             <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-red-500 shrink-0" />
@@ -468,9 +470,10 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           </div>
         </div>
 
+        {/* ==== Filter bar (tahap dropdown + pencarian + hitung kartu) ==== */}
         {/* Filter ringkas (dropdown) - fokus ke pipeline. KPI (total open/tagihan/aging/janji/
             bermasalah) sudah tersedia di Dashboard divisi, tidak diulang di sini. */}
-        <div className="flex items-center gap-2 flex-wrap pb-2">
+        <div data-section="collections-filters" className="flex items-center gap-2 flex-wrap pb-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
             <SlidersHorizontal className="h-3.5 w-3.5" /> Filter
           </span>
@@ -516,38 +519,46 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         </div>
       </div>
 
-      {/* Content (scrollable area) */}
+      {/* ==== Content area (scrollable): kanban board ATAU list view ==== */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div data-section="collections-loading" className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : viewMode === "kanban" ? (
-        /* === KANBAN - horizontal scroll outer, vertical scroll per-column === */
-        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar snap-x snap-mandatory md:snap-none">
-          <div className="flex gap-3 h-full items-stretch w-max">
+        /* === KANBAN BOARD - horizontal scroll outer, vertical scroll per-column === */
+        <div data-section="kanban-board" className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-6 pb-4 kanban-scrollbar snap-x snap-mandatory md:snap-none">
+          <div data-section="kanban-columns" className="flex gap-3 h-full items-stretch w-max">
             {stages.filter(s => selectedStage === "all" || selectedStage === s.key).map((sRow) => {
               const stage = sRow.key;
               const isDropTarget = dragOverStage === stage;
               return (
+                /* One column per pipeline stage (drop target) */
                 <div
                   key={stage}
+                  data-section="kanban-column"
+                  data-stage={stage}
+                  data-drop-target={isDropTarget ? "true" : undefined}
                   onDragOver={handleColumnDragOver(stage)}
                   onDragLeave={() => setDragOverStage(prev => prev === stage ? null : prev)}
                   onDrop={handleColumnDrop(stage)}
                   className={`w-[82vw] max-w-[19rem] sm:w-72 shrink-0 snap-start flex flex-col h-full rounded-xl p-3 transition-colors ${isDropTarget ? "bg-primary/10 ring-2 ring-primary/40" : "bg-muted/40"}`}
                 >
-                  <div className="flex items-center justify-between mb-3 px-1 shrink-0">
+                  {/* Column header: warna + label + jumlah kartu */}
+                  <div data-section="kanban-column-header" className="flex items-center justify-between mb-3 px-1 shrink-0">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full" style={{ backgroundColor: sRow.color }} />
                       <span className="text-sm font-semibold uppercase tracking-wide">{sRow.label}</span>
                     </div>
                     <Badge variant="secondary" className="text-[10px]">{(byStage[stage] ?? []).length}</Badge>
                   </div>
-                  {/* Per-column scroll area */}
-                  <div className="flex-1 overflow-y-auto column-scrollbar space-y-2 pr-1 pb-2 min-h-0">
+                  {/* Per-column scroll area (daftar kartu) */}
+                  <div data-section="kanban-column-cards" className="flex-1 overflow-y-auto column-scrollbar space-y-2 pr-1 pb-2 min-h-0">
                     {(byStage[stage] ?? []).map((c) => (
+                      /* Draggable card wrapper (satu kartu collection) */
                       <div
                         key={c.id}
+                        data-section="kanban-card"
+                        data-collection-id={c.id}
                         draggable={canEdit}
                         onDragStart={handleDragStart(c.id)}
                         onDragEnd={handleDragEnd}
@@ -557,7 +568,8 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
                       </div>
                     ))}
                     {(byStage[stage] ?? []).length === 0 && (
-                      <div className={`text-xs text-center py-6 border border-dashed rounded-lg transition-colors ${isDropTarget ? "border-primary/60 text-primary bg-primary/5" : "text-muted-foreground"}`}>
+                      /* Empty-column placeholder / drop hint */
+                      <div data-section="kanban-column-empty" className={`text-xs text-center py-6 border border-dashed rounded-lg transition-colors ${isDropTarget ? "border-primary/60 text-primary bg-primary/5" : "text-muted-foreground"}`}>
                         {isDropTarget ? <><Move className="h-4 w-4 inline mr-1" />Drop di sini</> : "Kosong"}
                       </div>
                     )}
@@ -569,20 +581,22 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         </div>
       ) : (
         /* === LIST VIEW - full-page vertical scroll === */
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
+        <div data-section="collections-list" className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 pb-4 kanban-scrollbar">
           <div className="space-y-2 pb-2">
             {searchFiltered.map((c) => (
               <CollectionCard key={c.id} c={c} onClick={() => setDetailId(c.id)} userById={userById} />
             ))}
             {searchFiltered.length === 0 && (
-              <div className="py-12 text-center text-sm text-muted-foreground">Tidak ada kartu yang cocok.</div>
+              <div data-section="collections-list-empty" className="py-12 text-center text-sm text-muted-foreground">Tidak ada kartu yang cocok.</div>
             )}
           </div>
         </div>
       )}
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog - key={detailId} memaksa instance baru tiap kartu supaya state internal
+          (photoViewer, catatan, riwayat) tidak bocor antar-kartu. */}
       <CollectionDetail
+        key={detailId ?? "none"}
         id={detailId}
         division={division}
         onClose={() => setDetailId(null)}
@@ -597,9 +611,9 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         customerById={customerById}
       />
 
-      {/* Stage change confirmation dialog - untuk drag-drop + tombol manual */}
+      {/* ==== Stage-move confirmation dialog - untuk drag-drop + tombol manual ==== */}
       <Dialog open={!!stageDialogFor} onOpenChange={(o) => !o && setStageDialogFor(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent data-section="stage-move-dialog" className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Move className="h-5 w-5 text-primary" />
@@ -627,7 +641,8 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 max-h-[50vh] overflow-y-auto -mx-6 px-6">
+          {/* Body: field kondisional per-peran stage tujuan */}
+          <div data-section="stage-move-fields" className="space-y-3 max-h-[50vh] overflow-y-auto -mx-6 px-6">
             {/* Field berdasar PERAN stage tujuan (bukan key) supaya cocok dengan pipeline custom */}
             {/* Janji Bayar + kategori kendala - opsional, untuk stage non-terminal */}
             {stageDialogFor && stageDialogFor.targetRole !== "paid" && stageDialogFor.targetRole !== "writeoff" && stageDialogFor.targetRole !== "dismantel" && (
@@ -679,7 +694,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             )}
 
             {/* Catatan (semua stage) */}
-            <div>
+            <div data-section="stage-move-note">
               <Label className="text-xs">Catatan / Keterangan</Label>
               <Textarea
                 value={stageNote}
@@ -691,7 +706,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             </div>
 
             {/* Upload foto bukti */}
-            <div>
+            <div data-section="stage-move-photo">
               <Label className="text-xs flex items-center gap-1.5">
                 <Camera className="h-3.5 w-3.5" />
                 Bukti Foto (opsional)
@@ -729,7 +744,8 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             </div>
           </div>
 
-          <div className="flex gap-2 pt-3 border-t">
+          {/* Footer aksi */}
+          <div data-section="stage-move-actions" className="flex gap-2 pt-3 border-t">
             <Button variant="outline" onClick={() => setStageDialogFor(null)} className="flex-1" disabled={stageMut.isPending}>
               Batal
             </Button>
@@ -741,9 +757,9 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
+      {/* ==== Delete-confirm dialog ==== */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-section="collection-delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Collection?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -836,8 +852,9 @@ function CollectionSettingsDialog({ open, onClose, isAdmin }: { open: boolean; o
   };
 
   return (
+    /* ============ COLLECTION SETTINGS DIALOG (parameter) ============ */
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent data-section="collection-settings-dialog" className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
@@ -977,7 +994,8 @@ function CollectionCard({ c, onClick }: { c: CollectionWithCustomer; onClick: ()
   const overflowCount = Math.max(0, assignees.length - VISIBLE);
 
   return (
-    <Card onClick={onClick} className="cursor-pointer hover:shadow-md transition-shadow">
+    /* Collection card (dipakai di kanban column DAN list view) */
+    <Card data-section="collection-card" data-collection-id={c.id} data-stage={stage} onClick={onClick} className="cursor-pointer hover:shadow-md transition-shadow">
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -1101,8 +1119,9 @@ function CollectionDetail({
 
   return (
     <>
+    {/* ============ COLLECTION DETAIL DIALOG ============ */}
     <Dialog open={!!id} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent data-section="collection-detail-dialog" data-collection-id={detail.id} className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
@@ -1119,9 +1138,10 @@ function CollectionDetail({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
+        {/* Scrollable body */}
+        <div data-section="collection-detail-body" className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
           {/* Info billing */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div data-section="collection-info" className="grid grid-cols-2 gap-2 text-xs">
             <InfoRow label="Tagihan" value={fmtRp(detail.openedAmount)} />
             <InfoRow label="Jatuh Tempo" value={fmtDate(detail.openedDueDate)} />
             <InfoRow label="Isolir Sejak" value={fmtDate(detail.openedIsolirDate ?? detail.openedAt)} />
@@ -1131,9 +1151,9 @@ function CollectionDetail({
             {detail.closedAt && <InfoRow label="Lunas" value={fmtDate(detail.closedLastPaymentDate ?? detail.closedAt)} />}
           </div>
 
-          {/* Kontak cepat */}
+          {/* Kontak cepat (telepon / WhatsApp) */}
           {cust?.phone && (
-            <div className="flex gap-2">
+            <div data-section="collection-contact" className="flex gap-2">
               <a href={`tel:${cust.phone}`} className="flex-1">
                 <Button variant="outline" size="sm" className="w-full">
                   <Phone className="h-4 w-4 mr-1.5" /> Telepon
@@ -1157,9 +1177,9 @@ function CollectionDetail({
             />
           )}
 
-          {/* Stage actions */}
+          {/* Stage actions (tombol pindah stage cepat) */}
           {canEdit && !detail.closedAt && (
-            <div>
+            <div data-section="collection-stage-actions">
               <Label className="text-xs mb-1.5 block">Pindah Stage</Label>
               <div className="flex gap-1.5 flex-wrap">
                 {allStages.filter(s => s.key !== stage).map((s) => (
@@ -1176,9 +1196,9 @@ function CollectionDetail({
             </div>
           )}
 
-          {/* Tambah catatan */}
+          {/* Tambah catatan / aktivitas manual */}
           {canEdit && (
-            <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+            <div data-section="collection-add-note" className="border rounded-md p-3 space-y-2 bg-muted/30">
               <Label className="text-xs">Tambah Catatan / Aktivitas</Label>
               <div className="flex gap-2">
                 <select value={noteType} onChange={(e) => setNoteType(e.target.value)}
@@ -1194,8 +1214,8 @@ function CollectionDetail({
             </div>
           )}
 
-          {/* Timeline aktivitas collection ini */}
-          <div>
+          {/* ==== Riwayat Aktivitas (timeline aktivitas collection ini) ==== */}
+          <div data-section="activity-timeline">
             <Label className="text-xs mb-2 block flex items-center gap-1.5">
               <FileText className="h-3.5 w-3.5" /> Riwayat Aktivitas (Collection #{detail.id})
             </Label>
@@ -1210,7 +1230,8 @@ function CollectionDetail({
                 let content = a.content;
                 try { const obj = JSON.parse(a.content ?? ""); if (typeof obj === "object") content = JSON.stringify(obj); } catch { /* plain */ }
                 return (
-                  <div key={a.id} className="flex gap-2 pb-2 border-b text-xs">
+                  /* One activity row (satu entri timeline) */
+                  <div key={a.id} data-section="activity-item" data-activity-id={a.id} data-activity-type={a.type} className="flex gap-2 pb-2 border-b text-xs">
                     <Icon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: cfg.color }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -1218,8 +1239,10 @@ function CollectionDetail({
                         {isSystem && <Badge variant="secondary" className="text-[9px] h-4">SISTEM</Badge>}
                       </div>
                       <div className="text-muted-foreground text-[11px] break-all">{content}</div>
+                      {/* Thumbnail foto bukti (klik → viewer full-screen) */}
                       {(a.photoPath || a.photoData) && (
                         <img
+                          data-section="activity-photo"
                           src={`/api/collections/activities/${a.id}/photo`}
                           alt="foto aktivitas"
                           className="mt-1.5 h-24 w-auto rounded border object-cover cursor-zoom-in"
@@ -1235,8 +1258,8 @@ function CollectionDetail({
             </div>
           </div>
 
-          {/* Riwayat lintas collection (customer history full) */}
-          <div className="border-t pt-4">
+          {/* ==== Riwayat lintas collection (customer history full) ==== */}
+          <div data-section="collection-cross-history" className="border-t pt-4">
             <div className="flex items-center justify-between mb-2">
               <Label className="text-xs flex items-center gap-1.5">
                 <History className="h-3.5 w-3.5" /> Riwayat Lengkap Pelanggan
@@ -1334,9 +1357,9 @@ function CollectionDetail({
             )}
           </div>
 
-          {/* Danger zone - hapus collection, terisolasi di bawah (jauh dari close X) */}
+          {/* ==== Danger zone - hapus collection, terisolasi di bawah (jauh dari close X) ==== */}
           {canEdit && isSystemAdmin && (
-            <div className="mt-6 pt-4 border-t border-dashed border-red-200 dark:border-red-900">
+            <div data-section="collection-danger-zone" className="mt-6 pt-4 border-t border-dashed border-red-200 dark:border-red-900">
               <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60">
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-1.5">
@@ -1360,8 +1383,10 @@ function CollectionDetail({
         </div>
       </DialogContent>
     </Dialog>
+    {/* ==== Full-screen photo viewer (foto aktivitas) ==== */}
     {photoViewer && (
       <div
+        data-section="photo-viewer"
         className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out"
         onClick={() => setPhotoViewer(null)}
       >
@@ -1374,6 +1399,7 @@ function CollectionDetail({
           <X className="h-5 w-5" />
         </button>
         <img
+          key={photoViewer}
           src={photoViewer}
           alt="foto aktivitas"
           className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
@@ -1514,8 +1540,11 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
     const ownerVal = (() => { const v = String((s as any).ownerDivision ?? "").toLowerCase().trim(); return v === "" ? "all" : v; })();
     const ownerKnown = COLLECTION_OWNER_DIVISIONS.some((o) => o.value === ownerVal);
     return (
+      /* One editable stage row in the pipeline manager */
       <div
         key={s.id}
+        data-section="pipeline-stage-row"
+        data-stage-key={s.key}
         onDragOver={onDragOver(s.id)}
         onDrop={commitOrder}
         className={`group rounded-xl border bg-card p-3 shadow-elev-sm transition-all ${dragId === s.id ? "opacity-60 ring-2 ring-primary/40" : "hover:border-primary/30"} ${active ? "" : "opacity-60"}`}
@@ -1634,8 +1663,9 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
 
   return (
     <>
+      {/* ============ PIPELINE MANAGER DIALOG (CRUD stage) ============ */}
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogContent data-section="pipeline-manager-dialog" className="max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
           <DialogHeader className="px-5 pt-5 pb-3 border-b space-y-1.5">
             <DialogTitle className="flex items-center gap-2.5 text-base">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -1650,9 +1680,10 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Body: stage dikelompokkan per divisi penanggung jawab */}
+          <div data-section="pipeline-stage-groups" className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             {groups.map((g) => (
-              <div key={g.key} className="space-y-2.5">
+              <div key={g.key} data-section="pipeline-stage-group" data-group={g.key} className="space-y-2.5">
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${g.key === "__shared" ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
                     {groupLabelOf(g.key)}

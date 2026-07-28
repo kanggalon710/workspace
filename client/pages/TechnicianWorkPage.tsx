@@ -334,7 +334,8 @@ export default function TechnicianWorkPage() {
 
   // Render appropriate mode - RESPONSIVE: mobile single col, desktop 2-col with right rail
   return (
-    <div className="min-h-screen" style={{ background: "#f8fafc", fontFamily: "Inter, sans-serif", color: "#0f172a" }}>
+    /* technician-page: root shell, dispatches active/completed/cancelled mode */
+    <div data-section="technician-page" className="min-h-screen" style={{ background: "#f8fafc", fontFamily: "Inter, sans-serif", color: "#0f172a" }}>
       <div className="mx-auto max-w-md md:max-w-3xl lg:max-w-6xl">
         {mode === "active" && (
           <ActiveMode
@@ -391,8 +392,8 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
 
   return (
     <>
-      {/* Header */}
-      <header className="sticky top-0 z-30" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
+      {/* ==== technician-active-header: ticket number + call/WA quick actions ==== */}
+      <header data-section="technician-active-header" className="sticky top-0 z-30" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 10 }}>
           <Link href="/tickets" className="hover:bg-slate-100 rounded-md" style={{ padding: 4, marginLeft: -4 }}>
             <ArrowLeft style={{ width: 18, height: 18, color: "#475569" }} />
@@ -416,14 +417,14 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
         </div>
       </header>
 
-      {/* RESPONSIVE BODY: mobile single-col, desktop 2-col grid (main + right rail) */}
-      <div className="p-3.5 lg:p-6 lg:grid lg:grid-cols-[1fr_360px] lg:gap-6" style={{ paddingBottom: currentStage ? 96 : 14 }}>
+      {/* ==== technician-active-body: responsive grid (main col + right rail) ==== */}
+      <div data-section="technician-active-body" className="p-3.5 lg:p-6 lg:grid lg:grid-cols-[1fr_360px] lg:gap-6" style={{ paddingBottom: currentStage ? 96 : 14 }}>
 
-        {/* MAIN CONTENT */}
-        <div className="lg:order-1 space-y-3">
-          {/* Customer card - mobile only (desktop pakai versi di right rail) */}
+        {/* ==== technician-active-main: primary work column ==== */}
+        <div data-section="technician-active-main" className="lg:order-1 space-y-3">
+          {/* ==== technician-customer-card: customer + navigation (mobile only) ==== */}
           {customer && (
-            <div className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
+            <div data-section="technician-customer-card" className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                 {category && <Badge color={catColor}>{category.name}</Badge>}
                 {ticket.priority && <PriorityBadge priority={ticket.priority} />}
@@ -453,15 +454,15 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           )}
 
-          {/* v4.2.16: Tim Tugas - mobile only (yang ngerjain bareng di lapangan) */}
+          {/* ==== technician-team: field crew (lead + helpers), mobile only ==== */}
           {team.length > 0 && (
-            <div className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
+            <div data-section="technician-team" className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#64748b", marginBottom: 8 }}>
                 Tim Tugas · {team.length} teknisi
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {team.map(m => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                  <div key={m.id} data-section="technician-team-member" data-member-id={m.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
                     <div style={{
                       height: 28, width: 28, borderRadius: "50%",
                       background: m.role === "lead" ? "#f59e0b" : "#0ea5e9",
@@ -486,9 +487,9 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           )}
 
-          {/* Stage Saat Ini - mobile only */}
+          {/* ==== technician-current-stage: progress + SLA countdown (mobile only) ==== */}
           {currentStage && (
-            <div className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
+            <div data-section="technician-current-stage" className="bg-white lg:hidden" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <Label>Stage Saat Ini</Label>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{currentIdx + 1}/{stages.length} · {currentStage.label}</div>
               <div style={{ marginTop: 10, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
@@ -519,8 +520,8 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           )}
 
-          {/* v4.2.18 (B.7): Action Toolbar - Hold/Resume/Reassign/Escalate/Cancel - mobile + desktop atas */}
-          <div className="lg:hidden">
+          {/* ==== technician-actions-mobile: Hold/Resume/Reassign/Escalate/Cancel toolbar ==== */}
+          <div data-section="technician-actions-mobile" className="lg:hidden">
             <TicketActionToolbar
               ticketId={ticketIdNum}
               ticketStatus={ticket.status}
@@ -528,8 +529,8 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             />
           </div>
 
-          {/* Stages list */}
-          <div>
+          {/* ==== technician-stages: tappable workflow stage ladder ==== */}
+          <div data-section="technician-stages">
             <Label style={{ marginBottom: 8, padding: "0 4px" }}>Stages</Label>
             <div className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden" }}>
               {stages.map((s, i) => {
@@ -541,6 +542,8 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
                 return (
                   <button
                     key={s.key}
+                    data-section="technician-stage"
+                    data-stage={s.key}
                     onClick={clickable ? () => onOpenStage(s.key) : undefined}
                     disabled={!clickable}
                     style={{
@@ -579,8 +582,8 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
           <TicketComments ticketId={ticketIdNum} />
         </div>
 
-        {/* RIGHT RAIL - desktop only (lg+). Sticky-ish for action toolbar + Customer360 + Asset, scrollable for activity */}
-        <aside className="hidden lg:block lg:order-2 space-y-3">
+        {/* ==== technician-right-rail: desktop aside (toolbar + Customer360 + current stage + CTA) ==== */}
+        <aside data-section="technician-right-rail" className="hidden lg:block lg:order-2 space-y-3">
           {/* v4.2.18 (B.7): Action Toolbar di top of right rail */}
           <TicketActionToolbar
             ticketId={ticketIdNum}
@@ -593,9 +596,9 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             <Customer360Panel customerId={ticket.customerId} currentTicketId={ticketIdNum} />
           )}
 
-          {/* Stage Saat Ini */}
+          {/* ==== technician-current-stage-desktop: progress + SLA in right rail ==== */}
           {currentStage && (
-            <div className="bg-white" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
+            <div data-section="technician-current-stage-desktop" className="bg-white" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
               <Label>Stage Saat Ini</Label>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{currentIdx + 1}/{stages.length} · {currentStage.label}</div>
               <div style={{ marginTop: 10, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
@@ -626,9 +629,10 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
             </div>
           )}
 
-          {/* Inline CTA (desktop only - mobile pakai sticky bottom) */}
+          {/* ==== technician-cta-desktop: inline update-stage CTA (right rail) ==== */}
           {currentStage && (
             <button
+              data-section="technician-cta-desktop"
               onClick={() => onOpenStage(currentStage.key)}
               className="active:scale-[0.98] transition-all w-full"
               style={{
@@ -654,9 +658,9 @@ function ActiveMode({ ticket, workflow, stages, currentIdx, completedKeys, categ
         </aside>
       </div>
 
-      {/* MOBILE STICKY CTA - hanya muncul di mobile (lg:hidden) saat ada current stage */}
+      {/* ==== technician-cta-mobile: sticky bottom update-stage CTA (mobile only) ==== */}
       {currentStage && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden" style={{ padding: "12px 14px", background: "linear-gradient(to top, #f8fafc, rgba(248,250,252,0.95) 60%, transparent)" }}>
+        <div data-section="technician-cta-mobile" className="fixed bottom-0 left-0 right-0 z-30 lg:hidden" style={{ padding: "12px 14px", background: "linear-gradient(to top, #f8fafc, rgba(248,250,252,0.95) 60%, transparent)" }}>
           <div className="mx-auto max-w-md">
             <button
               onClick={() => onOpenStage(currentStage.key)}
@@ -719,8 +723,8 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
 
   return (
     <>
-      {/* Header */}
-      <header className="sticky top-0 z-30" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
+      {/* ==== technician-completed-header: ticket number + resolved timestamp ==== */}
+      <header data-section="technician-completed-header" className="sticky top-0 z-30" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 10 }}>
           <Link href="/tickets" className="hover:bg-slate-100 rounded-md" style={{ padding: 4, marginLeft: -4 }}>
             <ArrowLeft style={{ width: 18, height: 18, color: "#475569" }} />
@@ -739,9 +743,9 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
         </div>
       </header>
 
-      {/* Hero success banner - full-width di mobile + desktop */}
+      {/* ==== technician-completed-hero: success banner + resolution + BAST print ==== */}
       <div className="p-3.5 lg:px-6 lg:pt-6">
-        <div style={{
+        <div data-section="technician-completed-hero" style={{
           borderRadius: 12, padding: 18,
           background: "linear-gradient(135deg, #10b981, #059669)",
           color: "#fff",
@@ -801,8 +805,8 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
             </div>
           )}
 
-          {/* Time metrics: 2x2 mobile, 4-col desktop */}
-          <div className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+          {/* ==== technician-completed-stats: lead/work time + stages + evidence metrics ==== */}
+          <div data-section="technician-completed-stats" className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden" }}>
             <div style={{ padding: "8px 14px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
               <Label>Statistik Pengerjaan</Label>
             </div>
@@ -825,8 +829,8 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
             </div>
           </div>
 
-          {/* Stages timeline read-only */}
-          <div>
+          {/* ==== technician-completed-stages: read-only stage history timeline ==== */}
+          <div data-section="technician-completed-stages">
             <Label style={{ marginBottom: 8, padding: "0 4px" }}>Riwayat Stages</Label>
             <div className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden" }}>
               {stages.map((s, i) => {
@@ -835,6 +839,8 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
                 return (
                   <div
                     key={s.key}
+                    data-section="technician-completed-stage"
+                    data-stage={s.key}
                     style={{
                       display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px",
                       borderTop: i ? "1px solid #e2e8f0" : "none",
@@ -867,9 +873,9 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
             </div>
           </div>
 
-          {/* Evidence gallery */}
+          {/* ==== technician-evidence: completed-ticket photo evidence gallery ==== */}
           {evidence.length > 0 && (
-            <div>
+            <div data-section="technician-evidence">
               <Label style={{ marginBottom: 8, padding: "0 4px" }}>Foto Evidence ({evidence.length})</Label>
               <div className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", padding: 12 }}>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
@@ -878,6 +884,8 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
                     return (
                     <a
                       key={e.id}
+                      data-section="technician-evidence-item"
+                      data-evidence-id={e.id}
                       href={photoUrl ?? "#"}
                       target="_blank"
                       rel="noreferrer"
@@ -900,8 +908,8 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
           )}
         </div>
 
-        {/* RIGHT RAIL desktop only */}
-        <aside className="hidden lg:block lg:order-2 space-y-3">
+        {/* ==== technician-completed-right-rail: customer + resolution summary aside ==== */}
+        <aside data-section="technician-completed-right-rail" className="hidden lg:block lg:order-2 space-y-3">
           <div className="lg:sticky lg:top-20 space-y-3">
             {customer && (
               <div className="bg-white" style={{ borderRadius: 10, padding: 14, border: "1px solid #e2e8f0" }}>
@@ -966,7 +974,8 @@ function CancelledMode({ ticket, stages, transitions, evidence, category, custom
 
   return (
     <>
-      <header className="sticky top-0 z-30" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
+      {/* ==== technician-cancelled-header: ticket number + cancelled marker ==== */}
+      <header data-section="technician-cancelled-header" className="sticky top-0 z-30" style={{ background: "#fff", borderBottom: "1px solid #e2e8f0" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 10 }}>
           <Link href="/tickets" className="hover:bg-slate-100 rounded-md" style={{ padding: 4, marginLeft: -4 }}>
             <ArrowLeft style={{ width: 18, height: 18, color: "#475569" }} />
@@ -981,8 +990,8 @@ function CancelledMode({ ticket, stages, transitions, evidence, category, custom
       </header>
 
       <div style={{ padding: 14 }}>
-        {/* Hero red banner */}
-        <div style={{ borderRadius: 12, padding: 18, marginBottom: 12, background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#fff" }}>
+        {/* ==== technician-cancelled-hero: red cancelled banner + reason ==== */}
+        <div data-section="technician-cancelled-hero" style={{ borderRadius: 12, padding: 18, marginBottom: 12, background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#fff" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 48, height: 48, borderRadius: 24, background: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", flexShrink: 0 }}>
               <XCircle style={{ width: 24, height: 24 }} />
@@ -1015,14 +1024,15 @@ function CancelledMode({ ticket, stages, transitions, evidence, category, custom
 
         {transitions.length > 0 && (
           <>
+            {/* ==== technician-cancelled-stages: read-only history before cancellation ==== */}
             <Label style={{ marginBottom: 8, padding: "0 4px" }}>Riwayat Sebelum Dibatalkan</Label>
-            <div className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+            <div data-section="technician-cancelled-stages" className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden" }}>
               {stages.map((s, i) => {
                 const transition = transitions.find(t => t.stage === s.key);
                 const done = !!transition?.exitedAt;
                 if (!transition) return null;
                 return (
-                  <div key={s.key} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px", borderTop: i && transitions.find(t => t.stage === stages[i-1]?.key) ? "1px solid #e2e8f0" : "none" }}>
+                  <div key={s.key} data-section="technician-cancelled-stage" data-stage={s.key} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px", borderTop: i && transitions.find(t => t.stage === stages[i-1]?.key) ? "1px solid #e2e8f0" : "none" }}>
                     <StageDot index={i} done={done} current={false} catColor={catColor} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{s.label}</div>
@@ -1326,10 +1336,11 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
   const submitting = advanceMut.isPending || editMut.isPending;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f8fafc", fontFamily: "Inter, sans-serif" }}>
+    /* technician-stage-execution: full-screen stage field-entry (advance/edit) */
+    <div data-section="technician-stage-execution" className="min-h-screen flex flex-col" style={{ background: "#f8fafc", fontFamily: "Inter, sans-serif" }}>
       <div className="mx-auto w-full max-w-md md:max-w-3xl lg:max-w-5xl" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Colored header */}
-        <header style={{ background: catColor, color: "#fff", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+        {/* ==== technician-stage-exec-header: colored stage title bar ==== */}
+        <header data-section="technician-stage-exec-header" style={{ background: catColor, color: "#fff", padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={onBack} style={{ padding: 0, background: "none", border: "none", color: "#fff", cursor: "pointer" }}>
             <ArrowLeft style={{ width: 18, height: 18 }} />
           </button>
@@ -1356,8 +1367,8 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
             </div>
           )}
 
-          {/* FIELDS GRID - desktop pakai 2-col supaya ga waste space */}
-          <div className="lg:grid lg:grid-cols-2 lg:gap-3">
+          {/* ==== technician-stage-fields: field-entry cards (photo/numeric/checklist/etc) ==== */}
+          <div data-section="technician-stage-fields" className="lg:grid lg:grid-cols-2 lg:gap-3">
 
 
 
@@ -1526,9 +1537,9 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
           </div>
           {/* end fields grid */}
 
-          {/* v4.2.18 (D): Resolution form - hanya di stage final */}
+          {/* ==== technician-resolution: final-stage resolution code + material form ==== */}
           {stage.isFinal && !isEdit && (
-            <div className="mt-3">
+            <div data-section="technician-resolution" className="mt-3">
               <div className="rounded-md border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 mb-3">
                 <div className="flex items-start gap-2 mb-1">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5" />
@@ -1548,8 +1559,8 @@ function StageExecutionScreen({ ticket, ticketId, stage, stageIdx, totalStages, 
           )}
         </div>
 
-        {/* Bottom action bar */}
-        <div style={{ background: "#fff", borderTop: "1px solid #e2e8f0", padding: 12, display: "flex", gap: 8 }}>
+        {/* ==== technician-stage-actions: cancel + submit/update stage buttons ==== */}
+        <div data-section="technician-stage-actions" style={{ background: "#fff", borderTop: "1px solid #e2e8f0", padding: 12, display: "flex", gap: 8 }}>
           <button
             onClick={onBack}
             disabled={advanceMut.isPending}
