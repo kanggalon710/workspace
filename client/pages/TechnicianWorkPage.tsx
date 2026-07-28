@@ -128,7 +128,8 @@ interface Workflow {
 interface EvidenceItem {
   id: number;
   type: string;
-  photoData: string | null;
+  photoData?: string | null;
+  hasPhoto?: boolean;
   capturedAt: string | null;
   notes: string | null;
 }
@@ -872,24 +873,27 @@ function CompletedMode({ ticket, workflow, stages, transitions, evidence, catego
               <Label style={{ marginBottom: 8, padding: "0 4px" }}>Foto Evidence ({evidence.length})</Label>
               <div className="bg-white" style={{ borderRadius: 10, border: "1px solid #e2e8f0", padding: 12 }}>
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2">
-                  {evidence.map((e) => (
+                  {evidence.map((e) => {
+                    const photoUrl = (e.hasPhoto || e.photoData) ? `/api/tickets/${ticket.id}/evidence/${e.id}/photo` : null;
+                    return (
                     <a
                       key={e.id}
-                      href={e.photoData ?? "#"}
+                      href={photoUrl ?? "#"}
                       target="_blank"
                       rel="noreferrer"
                       style={{ aspectRatio: "1/1", borderRadius: 6, overflow: "hidden", background: "#f1f5f9", display: "block" }}
                       className="active:scale-95 transition-transform"
                     >
-                      {e.photoData ? (
-                        <img src={e.photoData} alt="evidence" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      {photoUrl ? (
+                        <img src={photoUrl} alt="evidence" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "#94a3b8" }}>
                           <ImageIcon style={{ width: 18, height: 18 }} />
                         </div>
                       )}
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -469,8 +469,8 @@ export function Sidebar() {
               >
                 <div className="relative shrink-0">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 via-primary to-blue-600 flex items-center justify-center text-white font-black text-sm ring-2 ring-white/10 shadow-elev-sm overflow-hidden">
-                    {(user as any)?.photoUrl ? (
-                      <img src={(user as any).photoUrl} alt={user.name} className="w-full h-full object-cover" />
+                    {(user as any)?.hasPhoto ? (
+                      <img src={`/api/users/${(user as any).id}/photo?v=${(user as any).avatarVersion ?? 0}`} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
                       user.name.charAt(0).toUpperCase()
                     )}

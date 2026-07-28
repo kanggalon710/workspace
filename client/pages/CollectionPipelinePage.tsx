@@ -1053,7 +1053,16 @@ function CollectionDetail({
   const [noteText, setNoteText] = useState("");
   const [noteType, setNoteType] = useState("note");
   const [showFullHistory, setShowFullHistory] = useState(false);
+  const [photoViewer, setPhotoViewer] = useState<string | null>(null); // URL foto full-screen
   const divQ = division ? `?division=${division}` : "";
+
+  // Tutup viewer foto full-screen dengan tombol ESC.
+  useEffect(() => {
+    if (!photoViewer) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPhotoViewer(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [photoViewer]);
 
   const { data: detail } = useQuery<any>({
     queryKey: ["/api/collections", id, division ?? "all-div"],
@@ -1091,6 +1100,7 @@ function CollectionDetail({
   };
 
   return (
+    <>
     <Dialog open={!!id} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -1208,6 +1218,15 @@ function CollectionDetail({
                         {isSystem && <Badge variant="secondary" className="text-[9px] h-4">SISTEM</Badge>}
                       </div>
                       <div className="text-muted-foreground text-[11px] break-all">{content}</div>
+                      {(a.photoPath || a.photoData) && (
+                        <img
+                          src={`/api/collections/activities/${a.id}/photo`}
+                          alt="foto aktivitas"
+                          className="mt-1.5 h-24 w-auto rounded border object-cover cursor-zoom-in"
+                          loading="lazy"
+                          onClick={() => setPhotoViewer(`/api/collections/activities/${a.id}/photo`)}
+                        />
+                      )}
                       <div className="text-[10px] text-muted-foreground/70 mt-0.5">{fmtDate(a.createdAt)}</div>
                     </div>
                   </div>
@@ -1341,6 +1360,28 @@ function CollectionDetail({
         </div>
       </DialogContent>
     </Dialog>
+    {photoViewer && (
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out"
+        onClick={() => setPhotoViewer(null)}
+      >
+        <button
+          type="button"
+          className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          onClick={(e) => { e.stopPropagation(); setPhotoViewer(null); }}
+          aria-label="Tutup"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <img
+          src={photoViewer}
+          alt="foto aktivitas"
+          className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    )}
+    </>
   );
 }
 

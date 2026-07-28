@@ -1866,6 +1866,10 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCollection(id: number): Promise<void> {
     const mitraId = getMitraId();
+    // Best-effort: hapus file foto aktivitas dari disk sebelum row-nya dibuang.
+    const photoRows = await this.db.select({ photoPath: collectionActivities.photoPath })
+      .from(collectionActivities).where(eq(collectionActivities.collectionId, id));
+    for (const r of photoRows) { if (r.photoPath) await deletePhoto(r.photoPath); }
     await this.db.delete(collectionActivities).where(eq(collectionActivities.collectionId, id));
     await this.db.delete(collectionAssignees).where(and(eq(collectionAssignees.collectionId, id), eq(collectionAssignees.mitraId, mitraId)));
     await this.db.delete(collections).where(and(eq(collections.id, id), eq(collections.mitraId, mitraId)));
@@ -1880,14 +1884,40 @@ export class DatabaseStorage implements IStorage {
 
   async createCollectionActivity(data: InsertCollectionActivity): Promise<CollectionActivity> {
     const mitraId = getMitraId();
+    // Foto disimpan ke filesystem (bukan base64 di DB). Legacy fallback: kalau photoPath sudah ada, pakai apa adanya.
+    let photoPath: string | null = (data as any).photoPath ?? null;
+    const photoDataRaw = (data as any).photoData;
+    if (photoDataRaw && typeof photoDataRaw === "string" && !photoPath) {
+      const slug = await this.getMitraSlug(mitraId);
+      const idHint = `col-${(data as any).collectionId ?? "x"}-${Date.now()}`;
+      photoPath = await saveBase64Photo(slug, "collections", idHint, photoDataRaw);
+    }
     const result = await this.db.insert(collectionActivities).values({
       ...data,
       mitraId,
+      photoPath,
+      photoData: null,
       createdAt: data.createdAt ?? new Date().toISOString(),
     } as any);
     const insertId = Number((result[0] as any).insertId);
     const [row] = await this.db.select().from(collectionActivities).where(eq(collectionActivities.id, insertId));
     return row!;
+  }
+
+  /** Get photoPath (+legacy photoData) untuk collection activity by id. Untuk endpoint stream foto. */
+  async getCollectionActivityPhotoMeta(id: number): Promise<{ photoPath: string | null; photoData: string | null; collectionId: number; userId: number | null } | null> {
+    const mitraId = getMitraId();
+    const rows: any = ((await this.db.execute(sql`
+      SELECT photo_path AS photoPath, photo_data AS photoData, collection_id AS collectionId, user_id AS userId
+      FROM collection_activities WHERE id = ${id} AND mitra_id = ${mitraId} LIMIT 1
+    `))[0] as any);
+    if (!rows || rows.length === 0) return null;
+    return {
+      photoPath: rows[0].photoPath ?? null,
+      photoData: rows[0].photoData ?? null,
+      collectionId: Number(rows[0].collectionId),
+      userId: rows[0].userId == null ? null : Number(rows[0].userId),
+    };
   }
 
   async getCollectionStats(): Promise<{ total: number; byStage: Record<string, number>; totalOverdue: number; avgAgeDays: number }> {
@@ -8936,6 +8966,14 @@ export class DatabaseStorage implements IStorage {
     const [row] = await this.db.select().from(users).where(eq(users.id, id));
     return row;
   }
+  /** photoPath (+legacy photoUrl base64) untuk avatar user, untuk endpoint stream foto. */
+  async getUserPhotoMeta(id: number): Promise<{ photoPath: string | null; photoUrl: string | null } | null> {
+    const rows: any = ((await this.db.execute(sql`
+      SELECT photo_path AS photoPath, photo_url AS photoUrl FROM users WHERE id = ${id} LIMIT 1
+    `))[0] as any);
+    if (!rows || rows.length === 0) return null;
+    return { photoPath: rows[0].photoPath ?? null, photoUrl: rows[0].photoUrl ?? null };
+  }
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [row] = await this.db.select().from(users).where(eq(users.username, username));
     return row;
@@ -10490,6 +10528,26 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (e: any) {
       console.warn(`[migration] pipeline_card_comments.photo_path add failed: ${e.message}`);
+    }
+    // Filesystem image migration - move base64 blobs (photo_data / photo_url) to disk (server/uploads.ts).
+    // Additive photo_path columns; runtime stream endpoints keep a base64 fallback for pre-migration rows.
+    for (const [table, column, ddl] of [
+      ["collection_activities", "photo_path", "VARCHAR(255)"],
+      ["ticket_evidence", "photo_path", "VARCHAR(255)"],
+      ["users", "photo_path", "VARCHAR(255)"],
+    ] as const) {
+      try {
+        const [rows]: any = await this.pool.execute(
+          `SELECT COUNT(*) AS c FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?`,
+          [table, column],
+        );
+        if (Number((rows as any[])[0]?.c ?? 0) === 0) {
+          await this.pool.execute(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${ddl}`);
+          console.log(`[migration] Added ${table}.${column} ✓`);
+        }
+      } catch (e: any) {
+        if (e?.errno !== 1060) console.warn(`[migration] ${table}.${column} add failed: ${e.message}`);
+      }
     }
     // Relax trigger_stage_id to nullable so time-based rules need no stage reference.
     try {
@@ -12241,16 +12299,50 @@ export class DatabaseStorage implements IStorage {
 
   // ---- TICKET EVIDENCE ----
   async getTicketEvidence(ticketId: number): Promise<TicketEvidenceItem[]> {
-    return this.db.select().from(ticketEvidence).where(eq(ticketEvidence.ticketId, ticketId));
+    // Jangan kirim base64 (photo_data) ke client - client render via stream endpoint pakai id.
+    // photoData tetap dikembalikan sebagai boolean-ish flag lewat kolom terpisah kalau perlu; di sini di-null-kan.
+    const rows = await this.db.select({
+      id: ticketEvidence.id, mitraId: ticketEvidence.mitraId, ticketId: ticketEvidence.ticketId,
+      type: ticketEvidence.type, photoPath: ticketEvidence.photoPath,
+      lat: ticketEvidence.lat, lng: ticketEvidence.lng,
+      capturedAt: ticketEvidence.capturedAt, capturedBy: ticketEvidence.capturedBy, notes: ticketEvidence.notes,
+      hasLegacyPhoto: sql<number>`CASE WHEN ${ticketEvidence.photoData} IS NULL THEN 0 ELSE 1 END`,
+    }).from(ticketEvidence).where(eq(ticketEvidence.ticketId, ticketId));
+    // hasPhoto = ada file ATAU ada legacy base64 (keduanya bisa di-stream via endpoint).
+    return rows.map((r: any) => ({
+      ...r, photoData: null,
+      hasPhoto: Boolean(r.photoPath) || Boolean(r.hasLegacyPhoto),
+    })) as any;
   }
   async addTicketEvidence(data: { ticketId: number; type: string; photoData?: string; lat?: number; lng?: number; capturedAt: string; capturedBy: number; notes?: string }): Promise<TicketEvidenceItem> {
     const mitraId = getMitraId();
-    const result = await this.db.insert(ticketEvidence).values({ ...data, mitraId } as any);
+    // Foto ke filesystem, bukan base64 di DB.
+    let photoPath: string | null = null;
+    if (data.photoData && typeof data.photoData === "string") {
+      const slug = await this.getMitraSlug(mitraId);
+      const idHint = `tkt-${data.ticketId}-${Date.now()}`;
+      photoPath = await saveBase64Photo(slug, "tickets", idHint, data.photoData);
+    }
+    const { photoData, ...rest } = data;
+    const result = await this.db.insert(ticketEvidence).values({ ...rest, mitraId, photoPath, photoData: null } as any);
     const insertId = Number((result[0] as any).insertId);
     const [row] = await this.db.select().from(ticketEvidence).where(eq(ticketEvidence.id, insertId));
     return row!;
   }
+  /** photoPath (+legacy photoData) untuk 1 evidence, untuk endpoint stream foto. */
+  async getTicketEvidencePhotoMeta(id: number): Promise<{ photoPath: string | null; photoData: string | null; ticketId: number } | null> {
+    const mitraId = getMitraId();
+    const rows: any = ((await this.db.execute(sql`
+      SELECT photo_path AS photoPath, photo_data AS photoData, ticket_id AS ticketId
+      FROM ticket_evidence WHERE id = ${id} AND mitra_id = ${mitraId} LIMIT 1
+    `))[0] as any);
+    if (!rows || rows.length === 0) return null;
+    return { photoPath: rows[0].photoPath ?? null, photoData: rows[0].photoData ?? null, ticketId: Number(rows[0].ticketId) };
+  }
   async deleteTicketEvidence(id: number): Promise<void> {
+    const [row] = await this.db.select({ photoPath: ticketEvidence.photoPath })
+      .from(ticketEvidence).where(eq(ticketEvidence.id, id));
+    if (row?.photoPath) await deletePhoto(row.photoPath);
     await this.db.delete(ticketEvidence).where(eq(ticketEvidence.id, id));
   }
 

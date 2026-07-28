@@ -39,6 +39,7 @@ interface MeResponse {
   birthDate: string | null;
   emergencyContact: string | null;
   notes: string | null;
+  hasPhoto?: boolean;
   photoUrl?: string | null;
   telegramChatId?: string | null;
   telegramUsername?: string | null;
@@ -281,11 +282,11 @@ export default function ProfilePage() {
   // -- Photo upload --
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoMut = useMutation({
-    mutationFn: (photoUrl: string | null) => api.put<{ photoUrl: string | null }>("/auth/me/photo", { photoUrl }),
+    mutationFn: (photoUrl: string | null) => api.put<{ hasPhoto: boolean }>("/auth/me/photo", { photoUrl }),
     onSuccess: (data) => {
-      toast.success(data.photoUrl ? "Foto profil berhasil disimpan" : "Foto profil dihapus");
+      toast.success(data.hasPhoto ? "Foto profil berhasil disimpan" : "Foto profil dihapus");
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      updateCachedUser({ photoUrl: data.photoUrl });
+      updateCachedUser({ hasPhoto: data.hasPhoto, avatarVersion: Date.now(), photoUrl: null });
     },
     onError: (e: any) => toast.error(e.message || "Gagal upload foto"),
   });
@@ -443,8 +444,8 @@ export default function ProfilePage() {
           <div className="absolute -bottom-10 md:-bottom-12 left-5 md:left-6">
             <div className="relative group">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-background to-muted border-4 border-background shadow-xl overflow-hidden ring-1 ring-border">
-                {me?.photoUrl ? (
-                  <img src={me.photoUrl} alt={displayName} className="w-full h-full object-cover" />
+                {me?.hasPhoto ? (
+                  <img src={`/api/users/${me.id}/photo?v=${user?.avatarVersion ?? 0}`} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl md:text-3xl font-bold text-primary">
                     {initials}
@@ -472,7 +473,7 @@ export default function ProfilePage() {
                   }}
                 />
               </label>
-              {me?.photoUrl && (
+              {me?.hasPhoto && (
                 <button
                   type="button"
                   onClick={() => { if (confirm("Hapus foto profil?")) photoMut.mutate(null); }}
