@@ -416,9 +416,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
-      {/* =============== PAGE HEADER =============== */}
-      <header className="flex items-start justify-between gap-4">
+    /* profile-page: root container */
+    <div data-section="profile-page" className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
+      {/* ==== profile-header: page title / description ==== */}
+      <header data-section="profile-header" className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <CircleUser className="h-5 w-5 text-primary" />
@@ -430,8 +431,8 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      {/* =============== HERO / IDENTITY CARD =============== */}
-      <Card className="overflow-hidden border-border/60 shadow-sm">
+      {/* ==== profile-hero: identity / cover card ==== */}
+      <Card data-section="profile-hero" className="overflow-hidden border-border/60 shadow-sm">
         {/* Cover band - avatar floats here, no text overlap */}
         <div className="relative h-28 md:h-32 bg-gradient-to-br from-primary via-primary/80 to-primary/40">
           {/* Decorative glows */}
@@ -440,8 +441,8 @@ export default function ProfilePage() {
           <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/5 blur-2xl" />
           <div className="absolute bottom-0 right-1/3 w-16 h-16 rounded-full bg-white/10 blur-xl" />
 
-          {/* Floating avatar + upload */}
-          <div className="absolute -bottom-10 md:-bottom-12 left-5 md:left-6">
+          {/* ==== profile-avatar: floating avatar + upload ==== */}
+          <div data-section="profile-avatar" className="absolute -bottom-10 md:-bottom-12 left-5 md:left-6">
             <div className="relative group">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-background to-muted border-4 border-background shadow-xl overflow-hidden ring-1 ring-border">
                 {me?.hasPhoto ? (
@@ -537,8 +538,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Stats + Completeness strip */}
-          <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-4 pt-5 border-t border-border/60">
+          {/* ==== profile-hero-stats: stats + completeness strip ==== */}
+          <div data-section="profile-hero-stats" className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-4 pt-5 border-t border-border/60">
             <StatItem icon={Calendar} label="Bergabung" value={formatDate(me?.createdAt ?? null)} />
             <StatItem icon={Clock} label="Login Terakhir" value={relativeTime(me?.lastLogin ?? null)} />
             <StatItem icon={Building2} label="Cabang" value={me?.branch || "-"} />
@@ -564,10 +565,10 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* =============== PERSONAL + TEAM DATA =============== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* -- Data Pribadi -- */}
-        <Card className="border-border/60 flex flex-col">
+      {/* ==== profile-data-grid: personal + team data ==== */}
+      <div data-section="profile-data-grid" className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ==== profile-personal: Data Pribadi ==== */}
+        <Card data-section="profile-personal" className="border-border/60 flex flex-col">
           <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 space-y-0">
             <div className="min-w-0">
               <CardTitle className="text-base flex items-center gap-2">
@@ -590,7 +591,8 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="flex-1">
             {editMode ? (
-              <form onSubmit={handleSave} className="space-y-3">
+              /* profile-personal-form: edit personal data */
+              <form data-section="profile-personal-form" onSubmit={handleSave} className="space-y-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium">Nama Lengkap <span className="text-red-500">*</span></Label>
                   <Input
@@ -662,7 +664,7 @@ export default function ProfilePage() {
                 </div>
               </form>
             ) : (
-              <div className="divide-y divide-border/60">
+              <div data-section="profile-personal-fields" className="divide-y divide-border/60">
                 <FieldRow icon={UserIcon} label="Nama Lengkap" value={me?.name ?? null} />
                 <FieldRow icon={Mail} label="Email" value={me?.email ?? null} />
                 <FieldRow icon={Phone} label="No. HP / WhatsApp" value={me?.phone ?? null} mono />
@@ -674,8 +676,8 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* -- Data Tim / Kepegawaian -- */}
-        <Card className="border-border/60 flex flex-col">
+        {/* ==== profile-employment: Data Tim / Kepegawaian ==== */}
+        <Card data-section="profile-employment" className="border-border/60 flex flex-col">
           <CardHeader className="pb-2 space-y-0">
             <CardTitle className="text-base flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-primary" /> Data Tim & Jabatan
@@ -698,9 +700,9 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      {/* =============== CATATAN ADMIN (jika ada) =============== */}
+      {/* ==== profile-admin-notes: Catatan dari Admin (jika ada) ==== */}
       {me?.notes && (
-        <Card className="border-border/60 bg-muted/30">
+        <Card data-section="profile-admin-notes" className="border-border/60 bg-muted/30">
           <CardHeader className="pb-2 space-y-0">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" /> Catatan dari Admin
@@ -712,8 +714,8 @@ export default function ProfilePage() {
         </Card>
       )}
 
-      {/* =============== CHANGE PASSWORD =============== */}
-      <Card className="border-border/60">
+      {/* ==== profile-security: Keamanan / Ubah Password ==== */}
+      <Card data-section="profile-security" className="border-border/60">
         <CardHeader className="pb-2 space-y-0">
           <CardTitle className="text-base flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-primary" /> Keamanan - Ubah Password
@@ -723,7 +725,7 @@ export default function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={submitPasswordChange} className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+          <form data-section="profile-password-form" onSubmit={submitPasswordChange} className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
             <div className="space-y-1.5 md:col-span-2">
               <Label className="text-xs font-medium">Password Saat Ini</Label>
               <div className="relative">
@@ -837,8 +839,8 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* =============== TELEGRAM INTEGRATION =============== */}
-      <Card className="border-border/60">
+      {/* ==== profile-telegram: Integrasi Telegram ==== */}
+      <Card data-section="profile-telegram" className="border-border/60">
         <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2 space-y-0">
           <div className="min-w-0">
             <CardTitle className="text-base flex items-center gap-2">
@@ -860,7 +862,8 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="pt-3 space-y-4">
           {!me?.telegramChatId && !tgPairing && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-lg border bg-muted/30">
+            /* profile-telegram-connect: prompt to connect */
+            <div data-section="profile-telegram-connect" className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-lg border bg-muted/30">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">Hubungkan akun Telegram</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -875,7 +878,8 @@ export default function ProfilePage() {
           )}
 
           {tgPairing && !me?.telegramChatId && (
-            <div className="p-4 rounded-lg border-2 border-primary/40 bg-primary/5 space-y-3">
+            /* profile-telegram-pairing: active pairing code panel */
+            <div data-section="profile-telegram-pairing" className="p-4 rounded-lg border-2 border-primary/40 bg-primary/5 space-y-3">
               <div className="flex items-start gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
                   <Zap className="h-3.5 w-3.5 text-primary" />
@@ -942,7 +946,8 @@ export default function ProfilePage() {
 
           {me?.telegramChatId && (
             <>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              {/* ==== profile-telegram-connected: linked account summary ==== */}
+              <div data-section="profile-telegram-connected" className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">
                     {me.telegramUsername || "Telegram terhubung"}
@@ -966,7 +971,8 @@ export default function ProfilePage() {
                 </Button>
               </div>
 
-              <div className="space-y-2">
+              {/* ==== profile-telegram-prefs: notification event toggles ==== */}
+              <div data-section="profile-telegram-prefs" className="space-y-2">
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Event yang dinotifikasi</p>
                 <div className="grid gap-2">
                   {TELEGRAM_EVENTS.map((ev) => (

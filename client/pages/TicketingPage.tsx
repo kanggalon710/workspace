@@ -190,11 +190,12 @@ export default function TicketingPage() {
   // -- Render -------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    /* ==== Ticket page root ==== */
+    <div data-section="ticket-page" className="min-h-screen bg-gray-50/50">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* -- Header --------------------------------------------------- */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* ==== Ticket header (title + actions) ==== */}
+        <div data-section="ticket-header" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-100">
               <ClipboardList className="w-6 h-6 text-blue-700" />
@@ -204,7 +205,8 @@ export default function TicketingPage() {
               <p className="text-sm text-gray-500">Sistem penugasan dan ticketing terintegrasi pelanggan</p>
             </div>
           </div>
-          <div className="flex items-center flex-wrap gap-2">
+          {/* ==== Ticket action toolbar ==== */}
+          <div data-section="ticket-toolbar" className="flex items-center flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild title="ODP Repeat Issues - heatmap & investigasi">
               <Link href="/tickets/heatmap">
                 <AlertCircle className="w-4 h-4 mr-1" /> Heatmap ODP
@@ -224,8 +226,8 @@ export default function TicketingPage() {
           </div>
         </div>
 
-        {/* -- Stats Row - clickable filters (v4.2.18 F.2) ------------ */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* ==== Ticket stats row - clickable filters (v4.2.18 F.2) ==== */}
+        <div data-section="ticket-stats-row" className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatsCard
             label="Baru / Open"
             value={stats?.open ?? 0}
@@ -266,8 +268,8 @@ export default function TicketingPage() {
         {/* v4.2.16: Workload per Teknisi - laporan distribusi tiket */}
         <TechnicianWorkloadPanel />
 
-        {/* -- Filter Bar ----------------------------------------------- */}
-        <Card>
+        {/* ==== Ticket filter bar ==== */}
+        <Card data-section="ticket-filters">
           <CardContent className="py-3 px-4">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="relative flex-1 min-w-[200px]">
@@ -314,8 +316,8 @@ export default function TicketingPage() {
           </CardContent>
         </Card>
 
-        {/* v4.2.18 (F.1): View mode tabs + bulk action bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* ==== Ticket view-mode tabs + bulk action bar (v4.2.18 F.1) ==== */}
+        <div data-section="ticket-view-toolbar" className="flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex items-center rounded-md border bg-card p-0.5">
             {(["list", "kanban"] as const).map(m => (
               <button
@@ -354,8 +356,8 @@ export default function TicketingPage() {
           )}
         </div>
 
-        {/* -- Ticket Table --------------------------------------------- */}
-        <Card>
+        {/* ==== Ticket list / kanban region ==== */}
+        <Card data-section="ticket-list">
           <CardContent className="p-0">
             {ticketsLoading ? (
               <div className="p-4"><SkeletonList count={8} showAvatar={false} /></div>
@@ -401,8 +403,11 @@ export default function TicketingPage() {
 
                     const isSelected = selectedIds.has(t.id);
                     return (
+                      // ==== Ticket card row ====
                       <div
                         key={t.id}
+                        data-section="ticket-card"
+                        data-ticket-id={t.id}
                         role="button"
                         tabIndex={0}
                         onClick={(e) => {
@@ -549,9 +554,9 @@ export default function TicketingPage() {
                   })}
                 </div>
 
-                {/* Pagination */}
+                {/* ==== Ticket pagination ==== */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <div data-section="ticket-pagination" className="flex items-center justify-between px-4 py-3 border-t">
                     <p className="text-sm text-gray-500">{total} tiket ditemukan</p>
                     <div className="flex items-center gap-1">
                       <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
@@ -607,9 +612,9 @@ export default function TicketingPage() {
         onClose={() => setCategoryOpen(false)}
       />
 
-      {/* Delete Ticket Confirmation */}
+      {/* ==== Ticket delete confirmation dialog ==== */}
       <AlertDialog open={deleteConfirmId !== null} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent data-section="ticket-delete-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Tiket?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -628,9 +633,9 @@ export default function TicketingPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk Close Confirmation */}
+      {/* ==== Ticket bulk-close confirmation dialog ==== */}
       <AlertDialog open={bulkCloseOpen} onOpenChange={setBulkCloseOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent data-section="ticket-bulk-close-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Tutup {selectedIds.size} tiket?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -763,7 +768,8 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
         else resetForm();
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* ==== Ticket create/edit dialog ==== */}
+      <DialogContent data-section="ticket-create-edit-dialog" className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Tiket" : "Buat Tiket Baru"}</DialogTitle>
           <DialogDescription>
@@ -773,8 +779,8 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
 
         <div className="space-y-6 mt-2">
 
-          {/* Info Tiket */}
-          <fieldset className="space-y-4">
+          {/* ==== Form group: Info Tiket ==== */}
+          <fieldset data-section="ticket-form-info" className="space-y-4">
             <legend className="text-sm font-semibold text-gray-700 mb-2">Info Tiket</legend>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -816,8 +822,8 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
             </div>
           </fieldset>
 
-          {/* Pelanggan */}
-          <fieldset className="space-y-3">
+          {/* ==== Form group: Pelanggan ==== */}
+          <fieldset data-section="ticket-form-customer" className="space-y-3">
             <legend className="text-sm font-semibold text-gray-700 mb-1">Pelanggan (opsional)</legend>
             {selectedCustomer ? (
               <div className="flex items-center gap-2 p-2.5 rounded-lg border bg-blue-50/50 border-blue-200">
@@ -862,8 +868,8 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
             )}
           </fieldset>
 
-          {/* Jadwal & Waktu */}
-          <fieldset className="space-y-4">
+          {/* ==== Form group: Jadwal & Waktu ==== */}
+          <fieldset data-section="ticket-form-schedule" className="space-y-4">
             <legend className="text-sm font-semibold text-gray-700 mb-2">Jadwal & Waktu</legend>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -901,8 +907,8 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
             </div>
           </fieldset>
 
-          {/* Penugasan */}
-          <fieldset className="space-y-4">
+          {/* ==== Form group: Penugasan ==== */}
+          <fieldset data-section="ticket-form-assignment" className="space-y-4">
             <legend className="text-sm font-semibold text-gray-700 mb-2">Penugasan</legend>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -927,8 +933,8 @@ function CreateEditDialog({ open, onClose, ticket, categories, customers, users 
             </div>
           </fieldset>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2 border-t">
+          {/* ==== Form actions ==== */}
+          <div data-section="ticket-form-actions" className="flex justify-end gap-2 pt-2 border-t">
             <Button variant="outline" onClick={onClose}>Batal</Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
@@ -1063,7 +1069,8 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
 
   return (
     <Dialog open={ticketId !== null} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      {/* ==== Ticket detail dialog ==== */}
+      <DialogContent data-section="ticket-detail-dialog" className="max-w-3xl max-h-[90vh] overflow-y-auto">
         {isLoading || !t ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -1115,8 +1122,8 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
               isUploading={evidenceMut.isPending}
             />
 
-            {/* Info grid */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-4 text-sm">
+            {/* ==== Ticket detail info grid ==== */}
+            <div data-section="ticket-detail-info" className="grid grid-cols-2 gap-x-6 gap-y-3 mt-4 text-sm">
               <InfoRow label="Pelanggan" value={cust ? `${cust.name} (${cust.customerId})` : "\u2014"} />
               <InfoRow
                 label="Tim Tugas"
@@ -1136,8 +1143,8 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
               {t.actualDuration && <InfoRow label="Durasi Aktual" value={formatDuration(t.actualDuration)} />}
             </div>
 
-            {/* Status action buttons */}
-            <div className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t">
+            {/* ==== Ticket detail status action buttons ==== */}
+            <div data-section="ticket-detail-actions" className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t">
               <span className="text-sm font-medium text-gray-500 mr-1">Aksi:</span>
 
               {/* v4.2.16: Tim Tugas - buka kapan aja, bukan cuma open/assigned */}
@@ -1229,8 +1236,8 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
               </div>
             )}
 
-            {/* Timeline */}
-            <div className="mt-5 pt-4 border-t">
+            {/* ==== Ticket activity timeline ==== */}
+            <div data-section="ticket-activity-timeline" className="mt-5 pt-4 border-t">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Riwayat Aktivitas</h3>
               {(t.activities?.length ?? 0) === 0 ? (
                 <p className="text-sm text-gray-400 py-4 text-center">Belum ada aktivitas</p>
@@ -1242,7 +1249,7 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
                     const actUser = userMap.get(act.userId);
                     const parsed = parseActivityContent(act);
                     return (
-                      <div key={act.id} className="flex gap-3 items-start">
+                      <div key={act.id} data-section="ticket-activity-item" data-activity-id={act.id} className="flex gap-3 items-start">
                         <div className={cn("p-1.5 rounded-full mt-0.5 shrink-0", cfg.color)}>
                           <ActIcon className="w-3.5 h-3.5" />
                         </div>
@@ -1260,8 +1267,8 @@ function DetailDialog({ ticketId, onClose, categories, customerMap, userMap, onE
               )}
             </div>
 
-            {/* Add note */}
-            <div className="mt-4 pt-3 border-t">
+            {/* ==== Ticket add-note composer ==== */}
+            <div data-section="ticket-add-note" className="mt-4 pt-3 border-t">
               <Label className="text-sm font-medium mb-1.5 block">Tambah Catatan</Label>
               <div className="flex gap-2">
                 <Textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Tulis catatan..." rows={2} className="flex-1" />
@@ -1315,7 +1322,8 @@ function WorkflowSection({ ticketId }: { ticketId: number }) {
   }
 
   return (
-    <div className="mt-4 rounded-lg border bg-gradient-to-br from-zinc-50/50 to-transparent dark:from-zinc-900/30 overflow-hidden">
+    /* ==== Ticket workflow-progress timeline ==== */
+    <div data-section="ticket-workflow-timeline" className="mt-4 rounded-lg border bg-gradient-to-br from-zinc-50/50 to-transparent dark:from-zinc-900/30 overflow-hidden">
       <div className="px-4 py-2 border-b bg-muted/40 flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workflow Progress</span>
         <span className="text-[10px] text-muted-foreground">
@@ -1502,7 +1510,8 @@ function CategoryManagementDialog({ open, onClose }: { open: boolean; onClose: (
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      {/* ==== Ticket category management dialog ==== */}
+      <DialogContent data-section="ticket-category-dialog" className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Kelola Kategori Tiket</DialogTitle>
           <DialogDescription>Tambah, ubah, atau hapus kategori work order</DialogDescription>
@@ -1712,7 +1721,8 @@ function TeamPanel({
   }
 
   return (
-    <div className="rounded-lg bg-purple-50 border border-purple-200 mt-2 overflow-hidden">
+    /* ==== Ticket team panel (lead + helpers) ==== */
+    <div data-section="ticket-team-panel" className="rounded-lg bg-purple-50 border border-purple-200 mt-2 overflow-hidden">
       <div className="px-3 py-2 bg-purple-100/60 border-b border-purple-200 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <UserPlus className="w-3.5 h-3.5 text-purple-700" />
@@ -1845,7 +1855,8 @@ function EvidencePanel({
   }
 
   return (
-    <div className="rounded-lg border bg-card overflow-hidden mt-4">
+    /* ==== Ticket evidence panel (foto bukti) ==== */
+    <div data-section="ticket-evidence-panel" className="rounded-lg border bg-card overflow-hidden mt-4">
       <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Foto Bukti</span>
@@ -1884,6 +1895,8 @@ function EvidencePanel({
             return (
             <a
               key={e.id}
+              data-section="ticket-evidence-item"
+              data-evidence-id={e.id}
               href={photoUrl}
               target="_blank"
               rel="noreferrer"
@@ -1964,7 +1977,8 @@ function TechnicianWorkloadPanel() {
   const hasMore = workload.length > 6;
 
   return (
-    <Card>
+    /* ==== Ticket workload-by-technician panel ==== */
+    <Card data-section="ticket-workload-panel">
       <CardContent className="p-0">
         <div className="px-4 py-2.5 border-b bg-gradient-to-r from-purple-50/60 to-transparent flex items-center justify-between">
           <div className="flex items-center gap-2">
