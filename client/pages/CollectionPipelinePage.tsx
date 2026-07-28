@@ -67,6 +67,8 @@ interface CollectionWithCustomer extends Collection {
   customerPhone?: string | null;
   customerIdDisplay?: string;
   pppoeUsername?: string | null;
+  overdue?: boolean;                          // dihitung server (lewat tenggat) - untuk badge
+  overdueReason?: "promise" | "sla" | null;
 }
 
 const fmtRp = (n: number | null | undefined) =>
@@ -77,6 +79,15 @@ const fmtDate = (s: string | null | undefined) => {
   try {
     return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   } catch { return s; }
+};
+
+/** ISO/tanggal → "YYYY-MM-DD" untuk <input type="date">. Kosong bila tak valid. */
+const toDateInput = (s: string | null | undefined): string => {
+  if (!s) return "";
+  const str = String(s);
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 };
 
 const daysSince = (iso: string | null | undefined): number => {
@@ -337,7 +348,8 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
       customerName: col.customerName,
     });
     setStageIssueType("no_contact");
-    setStagePromiseDate("");
+    // Pre-fill tenggat dari kartu supaya pindah stage tidak menghapus janji bayar yang sudah ada.
+    setStagePromiseDate(toDateInput(col.promiseDate));
     setStageCloseReason("");
     setStageNote("");
     setStagePhoto(null);
@@ -1024,6 +1036,13 @@ function CollectionCard({ c, onClick }: { c: CollectionWithCustomer; onClick: ()
           </Badge>
         )}
 
+        {/* Overdue: dihitung server (lewat janji bayar / SLA stage). */}
+        {c.overdue && (
+          <Badge variant="secondary" className="text-[10px] bg-red-600 text-white dark:bg-red-700 w-full justify-start">
+            <AlertTriangle className="h-3 w-3 mr-1" /> Overdue{c.overdueReason === "sla" ? " (SLA)" : c.promiseDate ? ` — ${fmtDate(c.promiseDate)}` : ""}
+          </Badge>
+        )}
+
         {assignees.length > 0 && (
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground" title={assignees.map(a => a.userName).join(", ")}>
             <div className="flex -space-x-1.5">
@@ -1091,6 +1110,19 @@ function CollectionDetail({
     enabled: !!detail?.customerId && showFullHistory,
   });
 
+  // Editor tenggat (janji bayar) standalone - set/ubah tanpa harus pindah stage.
+  const qc = useQueryClient();
+  const [deadlineDraft, setDeadlineDraft] = useState("");
+  useEffect(() => { setDeadlineDraft(toDateInput(detail?.promiseDate)); }, [detail?.promiseDate]);
+  const deadlineMut = useMutation({
+    mutationFn: (promiseDate: string | null) => api.patch(`/collections/${id}${divQ}`, { promiseDate }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/collections"] });
+      toast.success("Tenggat disimpan");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!id || !detail) {
     return (
       <Dialog open={!!id} onOpenChange={() => onClose()}>
@@ -1146,6 +1178,24 @@ function CollectionDetail({
             {detail.issueType && <InfoRow label="Kendala" value={COLLECTION_ISSUE_LABELS[detail.issueType as CollectionIssueType] ?? detail.issueType} />}
             {detail.closedAt && <InfoRow label="Lunas" value={fmtDate(detail.closedLastPaymentDate ?? detail.closedAt)} />}
           </div>
+
+          {/* Editor Tenggat / Janji Bayar - set/ubah tanpa pindah stage; dipakai deteksi overdue. */}
+          {canEdit && !detail.closedAt && (
+            <div data-section="collection-deadline" className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label className="text-xs mb-1 block">Tenggat / Janji Bayar</Label>
+                <Input type="date" value={deadlineDraft} onChange={(e) => setDeadlineDraft(e.target.value)} className="h-9" />
+              </div>
+              <Button size="sm" onClick={() => deadlineMut.mutate(deadlineDraft || null)} disabled={deadlineMut.isPending || deadlineDraft === toDateInput(detail.promiseDate)}>
+                Simpan
+              </Button>
+              {detail.promiseDate && (
+                <Button size="sm" variant="outline" onClick={() => { setDeadlineDraft(""); deadlineMut.mutate(null); }} disabled={deadlineMut.isPending} className="text-red-600 border-red-300">
+                  Hapus
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Kontak cepat (telepon / WhatsApp) */}
           {cust?.phone && (
@@ -1444,6 +1494,14 @@ const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "paid", label: "Lunas / Reaktivasi" },
   { value: "dismantel", label: "Dismantel (Bongkar)" },
   { value: "writeoff", label: "Write-off / Loss" },
+  { value: "overdue", label: "Overdue / Lewat Tenggat" },
+];
+
+// Aksi saat kartu di stage ini overdue (lewat tenggat).
+const OVERDUE_ACTION_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "badge", label: "Tandai (badge)" },
+  { value: "move", label: "Pindah ke Overdue" },
+  { value: "off", label: "Nonaktif" },
 ];
 
 // Urutan grup owner untuk view penuh (/collections). Shared selalu terakhir.
@@ -1635,6 +1693,17 @@ function PipelineManagerDialog({ open, onClose, stages, cardCounts, division, ca
               placeholder="-"
             />
             <span className="font-normal text-muted-foreground/70">hari</span>
+          </label>
+          <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground" title="Aksi saat kartu di stage ini lewat tenggat (janji bayar / SLA)">
+            Saat Overdue
+            <select
+              value={String((s as any).overdueAction ?? "badge")}
+              disabled={!canManage}
+              onChange={(e) => updateMut.mutate({ id: s.id, data: { overdueAction: e.target.value } })}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-normal text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60"
+            >
+              {OVERDUE_ACTION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
           </label>
           <label
             className={`ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium ${roleLocked ? "text-muted-foreground/50" : "text-muted-foreground"}`}

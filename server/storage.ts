@@ -178,7 +178,7 @@ import { computePeriodBuckets, assignCountToBuckets, lastValueInBuckets, buildEx
 import { computeInsertPosition } from "./pipeline-helpers.js";
 import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { buildCollectionSnapshot, resolveCollectionStatus, type CollectionSnapshot } from "../shared/collectionMetrics.js";
-import { decideSopAdvance, stageKeysForDivision, parseOwnerDivisions, type SopStageMeta } from "../shared/collectionSop.js";
+import { decideSopAdvance, stageKeysForDivision, parseOwnerDivisions, computeOverdue, type SopStageMeta, type OverdueReason } from "../shared/collectionSop.js";
 import { isCardCommentType } from "../shared/cardCommentTypes.js";
 import { tablesToMirror, tablesMissingInProd, copyColumns, buildCopySql } from "./dev-db-sync.js";
 
@@ -1715,6 +1715,87 @@ export class DatabaseStorage implements IStorage {
     return { advanced, details: details.slice(0, 100) };
   }
 
+  /** Batched: lama (hari, pecahan) tiap kartu diam di stage-nya. Anchor = stage_change terakhir,
+   *  fallback openedAt. 1 query untuk seluruh mitra. Dipakai deteksi overdue-SLA. */
+  private async getDaysInStageMap(cols: Array<{ id: number; openedAt: string }>): Promise<Map<number, number>> {
+    const mitraId = getMitraId();
+    const now = Date.now();
+    const rows: any = ((await this.db.execute(sql`
+      SELECT collection_id AS cid, MAX(created_at) AS last_change
+      FROM collection_activities
+      WHERE mitra_id = ${mitraId} AND type = 'stage_change'
+      GROUP BY collection_id
+    `))[0] as any);
+    const last = new Map<number, string>();
+    for (const r of (rows ?? [])) last.set(Number(r.cid), r.last_change);
+    const map = new Map<number, number>();
+    for (const c of cols) {
+      const iso = last.get(c.id) ?? c.openedAt;
+      const ms = new Date(iso).getTime();
+      if (!isNaN(ms)) map.set(c.id, (now - ms) / 86400_000);
+    }
+    return map;
+  }
+
+  /** Tandai tiap kartu overdue (lewat tenggat) via computeOverdue. Aturan:
+   *  kartu closed / stage terminal / stage role=overdue / stage overdueAction="off" → overdue=false.
+   *  daysInStage (untuk SLA) hanya dihitung bila ada stage ber-SLA (hemat query). */
+  async annotateCollectionsOverdue(cols: Collection[]): Promise<Array<Collection & { overdue: boolean; overdueReason: OverdueReason }>> {
+    if (cols.length === 0) return cols as any;
+    const now = Date.now();
+    const stageRows = await this.getCollectionStages();
+    const byKey = new Map<string, any>(stageRows.map((s: any) => [s.key, s]));
+    const terminalKeys = await this.getTerminalStageKeys();
+    const needSla = stageRows.some((s: any) => Number(s.slaDays ?? 0) > 0);
+    const daysByCid = needSla ? await this.getDaysInStageMap(cols as any) : new Map<number, number>();
+    return cols.map((c) => {
+      const stage = c.stage ? byKey.get(c.stage) : undefined;
+      const action = String(stage?.overdueAction ?? "badge");
+      const excluded = !c.stage || terminalKeys.has(c.stage) || stage?.role === "overdue" || action === "off";
+      if (c.closedAt || excluded) return { ...c, overdue: false, overdueReason: null };
+      const dec = computeOverdue({ promiseDate: c.promiseDate, slaDays: stage?.slaDays, daysInStage: daysByCid.get(c.id) ?? null, todayMs: now });
+      return { ...c, overdue: dec.overdue, overdueReason: dec.reason };
+    });
+  }
+
+  /** Sweep auto-pindah kartu overdue ke stage role=overdue - hanya untuk kartu di stage yang
+   *  overdueAction="move". No-op bila tak ada stage overdue atau tak ada stage "move". 1 langkah/run. */
+  async runCollectionOverdueSweep(): Promise<{ moved: number; details: Array<{ collectionId: number; from: string; reason: OverdueReason }> }> {
+    const mitraId = getMitraId();
+    const now = Date.now();
+    const details: Array<{ collectionId: number; from: string; reason: OverdueReason }> = [];
+    const overdueKey = await this.getCollectionStageKeyByRole("overdue", { fallback: false });
+    if (!overdueKey) return { moved: 0, details }; // tak ada stage overdue → skip
+    const stageRows = await this.getCollectionStages();
+    const byKey = new Map<string, any>(stageRows.map((s: any) => [s.key, s]));
+    const terminalKeys = await this.getTerminalStageKeys();
+    const moveKeys = new Set(stageRows.filter((s: any) => String(s.overdueAction) === "move").map((s: any) => s.key));
+    if (moveKeys.size === 0) return { moved: 0, details };
+    const openCols = await this.db.select().from(collections)
+      .where(and(eq(collections.mitraId, mitraId), sql`${collections.closedAt} IS NULL`));
+    if (openCols.length === 0) return { moved: 0, details };
+    const needSla = stageRows.some((s: any) => Number(s.slaDays ?? 0) > 0);
+    const daysByCid = needSla ? await this.getDaysInStageMap(openCols as any) : new Map<number, number>();
+    let moved = 0;
+    for (const col of openCols) {
+      if (!col.stage || col.stage === overdueKey || terminalKeys.has(col.stage) || !moveKeys.has(col.stage)) continue;
+      const stage = byKey.get(col.stage);
+      const dec = computeOverdue({ promiseDate: col.promiseDate, slaDays: stage?.slaDays, daysInStage: daysByCid.get(col.id) ?? null, todayMs: now });
+      if (!dec.overdue) continue;
+      try {
+        const why = dec.reason === "promise" ? "lewat janji bayar" : "lewat SLA stage";
+        await this.moveCollectionStage(col.id, overdueKey, null, {
+          note: `Auto-overdue: kartu ${why} → dipindah ke stage Overdue.`,
+        } as any);
+        moved++;
+        details.push({ collectionId: col.id, from: col.stage, reason: dec.reason });
+      } catch (e: any) {
+        console.error(`[overdue] auto-move error collection #${col.id}:`, e.message);
+      }
+    }
+    return { moved, details: details.slice(0, 100) };
+  }
+
   /** Sync health stats - untuk admin dashboard visibility */
   async getSyncHealthStats(): Promise<{
     customersTotal: number;
@@ -1962,7 +2043,7 @@ export class DatabaseStorage implements IStorage {
     // caller pakai fallback:false supaya auto write-off mati kalau mitra tak punya stage writeoff.
     if (opts?.fallback === false) return null;
     const fallback: Record<CollectionStageRole, string | null> =
-      { entry: "new", paid: "paid", writeoff: "written_off", dismantel: "dismantel", none: null };
+      { entry: "new", paid: "paid", writeoff: "written_off", dismantel: "dismantel", overdue: null, none: null };
     return fallback[role];
   }
 
@@ -2078,7 +2159,7 @@ export class DatabaseStorage implements IStorage {
     let n = 2;
     while (usedKeys.has(key)) key = `${base}_${n++}`;
     const role = data.role ?? "none";
-    if (role === "entry" || role === "paid" || role === "writeoff" || role === "dismantel") {
+    if (role === "entry" || role === "paid" || role === "writeoff" || role === "dismantel" || role === "overdue") {
       await this.clearCollectionStageRole(role);
     }
     const now = new Date().toISOString();
@@ -2100,7 +2181,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(collectionStages.mitraId, mitraId), eq(collectionStages.role, role)));
   }
 
-  async updateCollectionStage(id: number, data: { label?: string; color?: string; role?: CollectionStageRole; ownerDivision?: string | null; slaDays?: number | null; nextStageKey?: string | null; active?: boolean }): Promise<CollectionStageRow> {
+  async updateCollectionStage(id: number, data: { label?: string; color?: string; role?: CollectionStageRole; ownerDivision?: string | null; slaDays?: number | null; nextStageKey?: string | null; active?: boolean; overdueAction?: string }): Promise<CollectionStageRow> {
     const mitraId = getMitraId();
     const [target] = await this.db.select().from(collectionStages).where(and(eq(collectionStages.id, id), eq(collectionStages.mitraId, mitraId)));
     if (!target) throw new Error("Stage tidak ditemukan");
@@ -2109,8 +2190,8 @@ export class DatabaseStorage implements IStorage {
     if (data.active === false && (target.role === "entry" || target.role === "paid")) {
       throw new Error(`Stage "${target.label}" memegang peran sistem (${target.role}) dan tidak bisa dinonaktifkan. Pindahkan peran ke stage lain dulu.`);
     }
-    // Role wajib (entry/paid) unik: kalau set role baru, kosongkan dulu pemegang lama.
-    if (data.role && (data.role === "entry" || data.role === "paid" || data.role === "writeoff" || data.role === "dismantel")) {
+    // Role unik (entry/paid/writeoff/dismantel/overdue): kalau set role baru, kosongkan dulu pemegang lama.
+    if (data.role && (data.role === "entry" || data.role === "paid" || data.role === "writeoff" || data.role === "dismantel" || data.role === "overdue")) {
       await this.clearCollectionStageRole(data.role);
     }
     const patch: any = { updatedAt: new Date().toISOString() };
@@ -2118,6 +2199,7 @@ export class DatabaseStorage implements IStorage {
     if (data.color !== undefined) patch.color = data.color;
     if (data.role !== undefined) patch.role = data.role;
     if (data.active !== undefined) patch.active = data.active ? 1 : 0;
+    if (data.overdueAction !== undefined) patch.overdueAction = data.overdueAction;
     // SOP fields - null berarti "kosongkan" (dibedakan dari undefined = jangan sentuh).
     if (data.ownerDivision !== undefined) patch.ownerDivision = data.ownerDivision || null;
     if (data.slaDays !== undefined) patch.slaDays = (data.slaDays == null || Number(data.slaDays) <= 0) ? null : Number(data.slaDays);
@@ -10056,6 +10138,7 @@ export class DatabaseStorage implements IStorage {
         ["sla_days", "ADD COLUMN sla_days INT"],
         ["next_stage_key", "ADD COLUMN next_stage_key VARCHAR(64)"],
         ["active", "ADD COLUMN active INT NOT NULL DEFAULT 1"],
+        ["overdue_action", "ADD COLUMN overdue_action VARCHAR(16) NOT NULL DEFAULT 'badge'"],
       ] as const) {
         try { await this.pool.execute(`ALTER TABLE collection_stages ${ddl}`); }
         catch (e: any) { if (e?.errno !== 1060) console.warn(`[migration] collection_stages ${col}: ${e.message}`); }

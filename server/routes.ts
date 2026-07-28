@@ -10624,9 +10624,11 @@ router.get("/api/collections", async (req: Request, res: Response) => {
       activeStagesOnly: true, // board: sembunyikan kartu di stage nonaktif
       assignedTo: assignedToMe ? req.authUser!.id : undefined,
     });
+    // Tandai kartu overdue (lewat tenggat) - dipakai badge di board.
+    const annotated = await storage.annotateCollectionsOverdue(list);
     // Batch-load assignees (anti N+1)
-    const assigneesMap = await storage.getAssigneesByCollectionIds(list.map((c) => c.id));
-    const enriched = list.map((c) => ({ ...c, assignees: assigneesMap.get(c.id) ?? [] }));
+    const assigneesMap = await storage.getAssigneesByCollectionIds(annotated.map((c) => c.id));
+    const enriched = annotated.map((c) => ({ ...c, assignees: assigneesMap.get(c.id) ?? [] }));
     // Filter additionally by assignedToMe: include kalau user ada di assignees (legacy assigned_to OR multi-assignee)
     const filtered = assignedToMe
       ? enriched.filter((c) => c.assignedTo === req.authUser!.id || c.assignees.some((a) => a.userId === req.authUser!.id))
@@ -10684,11 +10686,13 @@ router.patch("/api/collections/stages/reorder", async (req: Request, res: Respon
 router.patch("/api/collections/stages/:id", async (req: Request, res: Response) => {
   if (!collectionStageMgmtOK(req)) return sendError(res, "Akses ditolak", 403);
   try {
-    const { label, color, role, slaDays, nextStageKey, active } = req.body ?? {};
+    const { label, color, role, slaDays, nextStageKey, active, overdueAction } = req.body ?? {};
     const ownerDivision = normalizeOwnerDivisions(req.body?.ownerDivision);
+    const validOverdueAction = ["off", "badge", "move"].includes(String(overdueAction)) ? overdueAction : undefined;
     const row = await storage.updateCollectionStage(Number(req.params.id), {
       label, color, role, ownerDivision, slaDays, nextStageKey,
       active: active === undefined ? undefined : Boolean(active),
+      overdueAction: validOverdueAction,
     });
     await logAudit(req, "UPDATE", "collection_stage", row.id, row.label, { color: row.color, role: row.role, ownerDivision: row.ownerDivision, slaDays: row.slaDays, nextStageKey: row.nextStageKey, active: row.active });
     sendSuccess(res, row);
@@ -10712,11 +10716,28 @@ router.get("/api/collections/:id", async (req: Request, res: Response) => {
   try {
     const col = await storage.getCollection(Number(req.params.id));
     if (!col) return sendError(res, "Collection tidak ditemukan", 404);
-    const [activities, assignees] = await Promise.all([
+    const [[withOverdue], activities, assignees] = await Promise.all([
+      storage.annotateCollectionsOverdue([col]),
       storage.getCollectionActivities(col.id),
       storage.getCollectionAssignees(col.id),
     ]);
-    sendSuccess(res, { ...col, activities, assignees });
+    sendSuccess(res, { ...(withOverdue ?? col), activities, assignees });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+/** Set/ubah field sederhana kartu (kini: tenggat/janji bayar) tanpa harus pindah stage. */
+router.patch("/api/collections/:id", async (req: Request, res: Response) => {
+  const division = collectionScopedDivision(req);
+  if (!collectionAccessOK(req, division, true)) return sendError(res, "Akses ditolak", 403);
+  if (!(await collectionScopedOwnershipOK(req, res, Number(req.params.id), division))) return;
+  try {
+    const patch: any = {};
+    // promiseDate: string "YYYY-MM-DD" untuk set, null/"" untuk hapus.
+    if (req.body?.promiseDate !== undefined) patch.promiseDate = req.body.promiseDate || null;
+    if (Object.keys(patch).length === 0) return sendError(res, "Tidak ada field untuk diubah");
+    const row = await storage.updateCollection(Number(req.params.id), patch);
+    await logAudit(req, "UPDATE", "collection", row.id, undefined, patch);
+    sendSuccess(res, row);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 

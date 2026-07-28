@@ -474,6 +474,9 @@ export const collectionStages = mysqlTable("collection_stages", {
   // Aktif/nonaktif: stage nonaktif disembunyikan dari board + target pindah, tapi tetap
   // tampil di Kelola Pipeline (bisa di-enable lagi). Default aktif.
   active: int("active").notNull().default(1),
+  // Aksi saat kartu di stage ini overdue (lewat tenggat): "badge" (default, tandai saja),
+  // "move" (auto-pindah ke stage role=overdue), "off" (abaikan overdue di stage ini).
+  overdueAction: varchar("overdue_action", { length: 16 }).notNull().default("badge"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });
@@ -1946,7 +1949,7 @@ export type InsertCollection = z.infer<typeof insertCollectionSchema>;
 export type CollectionActivity = typeof collectionActivities.$inferSelect;
 export type InsertCollectionActivity = z.infer<typeof insertCollectionActivitySchema>;
 export type CollectionStageRow = typeof collectionStages.$inferSelect;
-export type CollectionStageRole = "none" | "entry" | "paid" | "writeoff" | "dismantel";
+export type CollectionStageRole = "none" | "entry" | "paid" | "writeoff" | "dismantel" | "overdue";
 export type CanvassingSession = typeof canvassingSessions.$inferSelect;
 export type InsertCanvassingSession = z.infer<typeof insertCanvassingSessionSchema>;
 export type CanvassingLog = typeof canvassingLogs.$inferSelect;

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideSopAdvance, stageKeysForDivision, isSharedStage, parseOwnerDivisions, type SopStageMeta } from "./collectionSop.js";
+import { decideSopAdvance, stageKeysForDivision, isSharedStage, parseOwnerDivisions, computeOverdue, type SopStageMeta } from "./collectionSop.js";
 
 const LADDER: SopStageMeta[] = [
   { key: "new", ownerDivision: "sistem", slaDays: 3, nextStageKey: "contacted", role: "entry" },
@@ -111,4 +111,38 @@ test("multi-divisi - stage owner set 'cs,marketing' tampil di CS DAN Marketing, 
   assert.deepEqual(stageKeysForDivision(stages, "cs"), ["shared_stage", "cs_only", "paid"]);
   assert.deepEqual(stageKeysForDivision(stages, "marketing"), ["shared_stage", "paid"]);
   assert.deepEqual(stageKeysForDivision(stages, "finance"), ["paid"]); // finance tak termasuk set
+});
+
+const TODAY = Date.parse("2026-07-29T10:00:00"); // acuan waktu tetap (Date.now tak dipakai di test)
+
+test("computeOverdue - promise: tanggal janji sudah lewat → overdue (reason promise)", () => {
+  assert.deepEqual(computeOverdue({ promiseDate: "2026-07-25", todayMs: TODAY }), { overdue: true, reason: "promise" });
+  // Hari-H (akhir hari) belum overdue.
+  assert.deepEqual(computeOverdue({ promiseDate: "2026-07-29", todayMs: TODAY }), { overdue: false, reason: null });
+  // Masa depan → tidak overdue.
+  assert.deepEqual(computeOverdue({ promiseDate: "2026-08-01", todayMs: TODAY }), { overdue: false, reason: null });
+});
+
+test("computeOverdue - sla: hanya bila slaDays>0 dan daysInStage>=sla", () => {
+  assert.deepEqual(computeOverdue({ slaDays: 3, daysInStage: 3, todayMs: TODAY }), { overdue: true, reason: "sla" });
+  assert.deepEqual(computeOverdue({ slaDays: 3, daysInStage: 2.9, todayMs: TODAY }), { overdue: false, reason: null });
+  // SLA 0/null → fitur SLA-overdue mati.
+  assert.deepEqual(computeOverdue({ slaDays: 0, daysInStage: 99, todayMs: TODAY }), { overdue: false, reason: null });
+  assert.deepEqual(computeOverdue({ slaDays: null, daysInStage: 99, todayMs: TODAY }), { overdue: false, reason: null });
+});
+
+test("computeOverdue - keduanya terpenuhi → reason 'promise' menang", () => {
+  assert.deepEqual(computeOverdue({ promiseDate: "2026-07-01", slaDays: 3, daysInStage: 10, todayMs: TODAY }),
+    { overdue: true, reason: "promise" });
+});
+
+test("computeOverdue - stage tanpa SLA tapi ada janji lewat → tetap overdue via promise", () => {
+  assert.deepEqual(computeOverdue({ promiseDate: "2026-07-01", slaDays: 0, todayMs: TODAY }),
+    { overdue: true, reason: "promise" });
+});
+
+test("computeOverdue - tak ada janji & tak ada SLA → tidak overdue", () => {
+  assert.deepEqual(computeOverdue({ todayMs: TODAY }), { overdue: false, reason: null });
+  assert.deepEqual(computeOverdue({ promiseDate: null, slaDays: null, daysInStage: null, todayMs: TODAY }),
+    { overdue: false, reason: null });
 });
