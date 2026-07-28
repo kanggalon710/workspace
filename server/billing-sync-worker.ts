@@ -85,21 +85,23 @@ export class BillingSyncWorker {
    * (tidak fetch billing - ambil langsung dari DB customers).
    * Berguna untuk testing/operasional setelah admin ubah settings.
    */
-  async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number; overdueMoved: number }> {
+  async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number; overdueMoved: number; closed: number }> {
     const enabled = (await storage.getSetting("collection_enabled")) !== "false";
-    if (!enabled) return { opened: 0, writtenOff: 0, advanced: 0, overdueMoved: 0 };
+    if (!enabled) return { opened: 0, writtenOff: 0, advanced: 0, overdueMoved: 0, closed: 0 };
     const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
-    const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "0");
+    const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "90");
     const result = await this.runCollectionThresholds(triggerDays, writeoffDays);
-    // SOP churn→reaktivasi: auto-delegasi kartu yang lewat SLA stage-nya ke divisi berikutnya.
     const mid = getMitraIdOrNull() ?? 1;
+    // Reconcile: samakan board dengan status isolir (buka kartu isolir-tanpa-kartu, tutup non-isolir → Lunas).
+    const recon = await withMitra(mid, () => storage.reconcileCollectionState());
+    // SOP churn→reaktivasi: auto-delegasi kartu yang lewat SLA stage-nya ke divisi berikutnya.
     const sop = await withMitra(mid, () => storage.runCollectionSopAdvance());
     // Overdue: auto-pindah kartu lewat tenggat ke stage Overdue (untuk stage overdueAction="move").
     // Setelah SOP advance supaya kartu yang baru maju tak langsung di-overdue-kan.
     const overdue = await withMitra(mid, () => storage.runCollectionOverdueSweep());
     await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
-    await storage.setSetting("collection_trigger_last_opened", String(result.opened), "collection");
-    return { ...result, advanced: sop.advanced, overdueMoved: overdue.moved };
+    await storage.setSetting("collection_trigger_last_opened", String(result.opened + recon.opened), "collection");
+    return { opened: result.opened + recon.opened, writtenOff: result.writtenOff, advanced: sop.advanced, overdueMoved: overdue.moved, closed: recon.closed };
   }
 
   /**
@@ -307,7 +309,7 @@ export class BillingSyncWorker {
         const collectionEnabled = (await storage.getSetting("collection_enabled")) !== "false";
         if (collectionEnabled) {
           const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
-          const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "0");
+          const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "90");
           const collectionResults = await this.runCollectionThresholds(triggerDays, writeoffDays);
           (stats.transitions as any).auto_opened_overdue = collectionResults.opened;
           (stats.transitions as any).auto_writeoff = collectionResults.writtenOff;
@@ -484,37 +486,34 @@ export class BillingSyncWorker {
     const result = { opened: 0, writtenOff: 0 };
     const now = Date.now();
 
-    // 1. Auto-open untuk customer overdue > triggerDays yang belum ada collection
+    // 1. Auto-open HANYA untuk customer isolir (is_isolir=1) yang belum ada open collection.
+    //    Model: kartu collection ada ⟺ customer isolir. Customer overdue-tapi-belum-isolir TIDAK
+    //    dibuatkan kartu (dulu bug ini bikin ratusan kartu). triggerDays tak lagi dipakai untuk open.
     const allCustomers = await storage.getCustomers();
-    const overdueCutoff = now - triggerDays * 86400_000;
+    const isolirByCustomer = new Map<number, boolean>(allCustomers.map((c) => [c.id, c.isIsolir === 1]));
 
     for (const c of allCustomers) {
-      const dueDate = (c as any).dueDate;
-      const isIsolir = c.isIsolir === 1;
-      // Skip kalau tidak ada dueDate atau belum overdue melebihi threshold
-      if (!dueDate) continue;
-      const dueMs = new Date(dueDate).getTime();
-      if (isNaN(dueMs)) continue;
-      // Customer dianggap "overdue" kalau dueDate + threshold sudah lewat DAN belum bayar (isolir atau billingStatus != lunas)
-      if (dueMs + triggerDays * 86400_000 > now) continue;
-      // Skip kalau billing status sudah lunas (paid)
+      if (c.isIsolir !== 1) continue; // hanya isolir
+      // Skip kalau billing status sudah lunas (paid) - defensif; isolir seharusnya belum lunas.
       if (c.billingStatus === "lunas" || c.billingStatus === "paid") continue;
-      // Cek open collection - kalau sudah ada, skip
+      // Cek open collection - kalau sudah ada, skip (idempotent, sinkron dgn reconcile CASE 1).
       const existing = await storage.getOpenCollectionByCustomer(c.id);
       if (existing) continue;
 
       // Auto-open collection
       try {
         const nowIso = new Date().toISOString();
-        const overdueDays = Math.floor((now - dueMs) / 86400_000);
+        const dueDate = (c as any).dueDate;
+        const dueMs = dueDate ? new Date(dueDate).getTime() : NaN;
+        const overdueDays = isNaN(dueMs) ? 0 : Math.floor((now - dueMs) / 86400_000);
         const entryStage = (await storage.getCollectionStageKeyByRole("entry")) ?? "new";
         const col = await storage.createCollection({
           customerId: c.id,
           openedAt: nowIso,
           openedBillingStatus: c.billingStatus ?? null,
-          openedDueDate: dueDate,
+          openedDueDate: dueDate ?? null,
           openedAmount: c.billingPrice ?? null,
-          openedIsolirDate: isIsolir ? ((c as any).isolirDate ?? null) : null,
+          openedIsolirDate: (c as any).isolirDate ?? null,
           stage: entryStage,
           priority: overdueDays > 30 ? "high" : overdueDays > 7 ? "medium" : "low",
           createdBy: null,
@@ -525,16 +524,15 @@ export class BillingSyncWorker {
           userId: null,
           type: "auto_opened",
           content: JSON.stringify({
-            reason: isIsolir ? "isolir_overdue" : "overdue_threshold",
+            reason: "isolir",
             overdueDays,
-            triggerThreshold: triggerDays,
-            dueDate,
+            dueDate: dueDate ?? null,
             billingStatus: c.billingStatus,
           }),
           createdAt: nowIso,
         } as any);
         result.opened++;
-        console.log(`[BillingSyncWorker] → auto_opened collection #${col.id} for customer #${c.id} (overdue ${overdueDays} days, threshold ${triggerDays})`);
+        console.log(`[BillingSyncWorker] → auto_opened collection #${col.id} for isolir customer #${c.id}`);
       } catch (e: any) {
         if (!e.message?.includes("UNIQUE")) {
           console.error(`[BillingSyncWorker] auto-open error customer #${c.id}:`, e.message);
@@ -550,6 +548,8 @@ export class BillingSyncWorker {
       const paidKey = (await storage.getCollectionStageKeyByRole("paid")) ?? "paid";
       const openCollections = await storage.getCollections({ openOnly: true });
       for (const col of openCollections) {
+        // Hanya kartu yang MASIH open + customer MASIH isolir (yang sudah reaktivasi keburu di-Lunas-kan).
+        if (col.closedAt || !isolirByCustomer.get(col.customerId)) continue;
         const openedMs = new Date(col.openedAt).getTime();
         if (isNaN(openedMs) || openedMs > writeoffCutoff) continue;
         if (col.stage === paidKey || col.stage === writeoffKey) continue;

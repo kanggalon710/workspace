@@ -4739,7 +4739,7 @@ router.get("/api/collections/settings", async (req: Request, res: Response) => {
     sendSuccess(res, {
       enabled: (await storage.getSetting("collection_enabled")) !== "false",
       triggerDays: Number(await storage.getSetting("collection_trigger_days") ?? "3"),
-      writeoffDays: Number(await storage.getSetting("collection_writeoff_days") ?? "0"),
+      writeoffDays: Number(await storage.getSetting("collection_writeoff_days") ?? "90"),
       reminderH3Enabled: (await storage.getSetting("collection_reminder_h3_enabled")) === "true",
       reminderH3TemplateKey: (await storage.getSetting("collection_reminder_h3_template")) || "tagihan_reminder",
       lastRunAt: await storage.getSetting("collection_trigger_last_run_at"),
