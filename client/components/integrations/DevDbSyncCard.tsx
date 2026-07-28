@@ -37,7 +37,9 @@ export function DevDbSyncCard() {
         setConfirmOpen(false);
         setPhrase("");
         const msg = `${r.tablesCopied} tabel · ${r.totalRows.toLocaleString("id-ID")} baris · ${(r.durationMs / 1000).toFixed(1)}s`;
+        const skipped = r.skippedMissingInProd?.length ?? 0;
         if (r.failed.length) toast.warning(`${msg} · ${r.failed.length} tabel gagal`);
+        else if (skipped) toast.warning(`${msg} · ${skipped} tabel dilewati (tak ada di production)`);
         else toast.success(`Data production tersalin: ${msg}`);
       },
       onError: (e: any) => {
@@ -80,10 +82,19 @@ export function DevDbSyncCard() {
       </div>
 
       {result && (
-        <div className="mt-3 text-xs text-amber-900/80 dark:text-amber-200/70">
-          Terakhir: {result.tablesCopied} tabel · {result.totalRows.toLocaleString("id-ID")} baris
-          {result.failed.length > 0 && (
-            <span className="text-destructive"> · gagal: {result.failed.map((f) => f.table).join(", ")}</span>
+        <div className="mt-3 space-y-1 text-xs text-amber-900/80 dark:text-amber-200/70">
+          <div>
+            Terakhir: {result.tablesCopied} tabel · {result.totalRows.toLocaleString("id-ID")} baris
+            {result.failed.length > 0 && (
+              <span className="text-destructive"> · gagal: {result.failed.map((f) => f.table).join(", ")}</span>
+            )}
+          </div>
+          {result.skippedMissingInProd?.length > 0 && (
+            <div className="rounded-md border border-amber-400/50 bg-amber-100/60 dark:bg-amber-900/30 p-2">
+              <span className="font-semibold">{result.skippedMissingInProd.length} tabel dilewati</span> — ada di dev tapi tidak di database production ini,
+              jadi tak bisa disalin (cek <code className="font-mono">PROD_DB_NAME</code>):
+              <span className="mt-0.5 block break-words font-mono text-[11px]">{result.skippedMissingInProd.join(", ")}</span>
+            </div>
           )}
         </div>
       )}

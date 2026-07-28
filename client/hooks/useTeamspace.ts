@@ -73,12 +73,12 @@ export function useTeamMutations() {
   const invalidate = () => { qc.invalidateQueries({ queryKey: [KEY] }); };
   return {
     createTeam: useMutation({
-      mutationFn: (b: { name: string; description?: string; icon?: string; color?: string; type?: string; memberIds?: number[]; managerIds?: number[]; parentId?: number | null }) =>
+      mutationFn: (b: { name: string; description?: string; icon?: string; color?: string; cardBgColor?: string | null; type?: string; memberIds?: number[]; managerIds?: number[]; parentId?: number | null }) =>
         api.post<TeamSummary>("/teamspace/teams", b),
       onSuccess: invalidate,
     }),
     updateTeam: useMutation({
-      mutationFn: ({ id, ...b }: { id: number; name?: string; description?: string; icon?: string; color?: string; type?: string; enabledViews?: string[] }) =>
+      mutationFn: ({ id, ...b }: { id: number; name?: string; description?: string | null; icon?: string | null; color?: string; cardBgColor?: string | null; type?: string; enabledViews?: string[] }) =>
         api.patch<Team>(`/teamspace/teams/${id}`, b),
       onSuccess: invalidate,
     }),

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { devDbSyncAvailable, tablesToMirror, copyColumns, buildCopySql } from "./dev-db-sync.js";
+import { devDbSyncAvailable, tablesToMirror, tablesMissingInProd, copyColumns, buildCopySql } from "./dev-db-sync.js";
 
 test("devDbSyncAvailable: only when flag on + prod≠current + current ends _dev", () => {
   const base = { DEV_DB_SYNC_ENABLED: "true", PROD_DB_NAME: "jabnet_fiber", DB_NAME: "jabnet_fiber_dev" };
@@ -15,6 +15,13 @@ test("devDbSyncAvailable: only when flag on + prod≠current + current ends _dev
 test("tablesToMirror: intersection, prod order preserved", () => {
   assert.deepEqual(tablesToMirror(["a", "b", "c"], ["c", "a"]), ["a", "c"]);
   assert.deepEqual(tablesToMirror(["a"], []), []);
+});
+
+test("tablesMissingInProd: dev tables absent in prod, dev order preserved", () => {
+  // teamspace case: dev has `teams`/`team_members` but prod (older schema) doesn't → surfaced.
+  assert.deepEqual(tablesMissingInProd(["customers", "users"], ["customers", "teams", "team_members", "users"]), ["teams", "team_members"]);
+  assert.deepEqual(tablesMissingInProd(["a", "b"], ["a", "b"]), []);   // identical → nothing skipped
+  assert.deepEqual(tablesMissingInProd([], ["a"]), ["a"]);             // empty prod → all dev skipped
 });
 
 test("copyColumns: intersection, prod order preserved", () => {
