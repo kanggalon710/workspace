@@ -85,18 +85,21 @@ export class BillingSyncWorker {
    * (tidak fetch billing - ambil langsung dari DB customers).
    * Berguna untuk testing/operasional setelah admin ubah settings.
    */
-  async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number }> {
+  async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number; overdueMoved: number }> {
     const enabled = (await storage.getSetting("collection_enabled")) !== "false";
-    if (!enabled) return { opened: 0, writtenOff: 0, advanced: 0 };
+    if (!enabled) return { opened: 0, writtenOff: 0, advanced: 0, overdueMoved: 0 };
     const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
     const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "0");
     const result = await this.runCollectionThresholds(triggerDays, writeoffDays);
     // SOP churn→reaktivasi: auto-delegasi kartu yang lewat SLA stage-nya ke divisi berikutnya.
     const mid = getMitraIdOrNull() ?? 1;
     const sop = await withMitra(mid, () => storage.runCollectionSopAdvance());
+    // Overdue: auto-pindah kartu lewat tenggat ke stage Overdue (untuk stage overdueAction="move").
+    // Setelah SOP advance supaya kartu yang baru maju tak langsung di-overdue-kan.
+    const overdue = await withMitra(mid, () => storage.runCollectionOverdueSweep());
     await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
     await storage.setSetting("collection_trigger_last_opened", String(result.opened), "collection");
-    return { ...result, advanced: sop.advanced };
+    return { ...result, advanced: sop.advanced, overdueMoved: overdue.moved };
   }
 
   /**

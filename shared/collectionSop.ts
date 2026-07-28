@@ -79,3 +79,34 @@ export function stageKeysForDivision(stages: SopStageMeta[], division: string): 
     .filter((s) => parseOwnerDivisions(s.ownerDivision).includes(div) || isSharedStage(s))
     .map((s) => s.key);
 }
+
+export type OverdueReason = "promise" | "sla" | null;
+export type OverdueDecision = { overdue: boolean; reason: OverdueReason };
+
+/**
+ * Apakah 1 kartu collection sudah lewat tenggat (overdue). Logika murni (bisa di-unit-test).
+ * Dua pemicu:
+ *  - "promise": tanggal Janji Bayar (promiseDate) sudah lewat (dihitung sampai akhir hari).
+ *  - "sla": stage punya SLA (slaDays > 0) DAN kartu sudah diam >= slaDays hari di stage.
+ * Stage tanpa SLA (0/null) tidak memicu "sla" - hanya "promise" yang berlaku.
+ * `promise` menang kalau keduanya terpenuhi. Caller wajib skip kartu closed / stage terminal / overdue.
+ */
+export function computeOverdue(opts: {
+  promiseDate?: string | null;
+  slaDays?: number | null;
+  daysInStage?: number | null;
+  todayMs: number;
+}): OverdueDecision {
+  const { promiseDate, slaDays, daysInStage, todayMs } = opts;
+  // promise: bandingkan sampai AKHIR hari tanggal janji supaya "hari-H" belum overdue.
+  const pd = String(promiseDate ?? "").trim();
+  if (pd) {
+    const t = Date.parse(pd.length <= 10 ? `${pd}T23:59:59` : pd);
+    if (!Number.isNaN(t) && t < todayMs) return { overdue: true, reason: "promise" };
+  }
+  const sla = Number(slaDays ?? 0);
+  if (sla > 0 && daysInStage != null && Number(daysInStage) >= sla) {
+    return { overdue: true, reason: "sla" };
+  }
+  return { overdue: false, reason: null };
+}
