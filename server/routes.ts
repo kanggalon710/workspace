@@ -2633,6 +2633,7 @@ router.get("/api/map-data/infra", async (req: Request, res: Response) => {
 });
 
 router.get("/api/map-data/customers", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const bboxStr = String(req.query.bbox || "");
@@ -3144,7 +3145,8 @@ router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
 
 // ==================== CUSTOMERS ====================
 
-router.get("/api/customers", async (_req, res) => {
+router.get("/api/customers", async (req, res) => {
+  if (!requirePermission(req, res, "customers")) return;
   try {
     const data = await storage.getCustomers();
     sendSuccess(res, data);
@@ -3410,6 +3412,7 @@ router.get("/api/customers/generate-id", async (req, res) => {
 });
 
 router.get("/api/customers/:id", async (req, res) => {
+  if (!requirePermission(req, res, "customers")) return;
   try {
     const data = await storage.getCustomer(Number(req.params.id));
     if (!data) return sendError(res, "Customer not found", 404);
@@ -3422,6 +3425,7 @@ router.get("/api/customers/:id", async (req, res) => {
  * Used by ticket detail screen Customer Panel
  */
 router.get("/api/customers/:id/profile", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
