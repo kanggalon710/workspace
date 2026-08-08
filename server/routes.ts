@@ -498,6 +498,8 @@ const PATH_TO_FEATURE: Array<{ pattern: RegExp; feature: string }> = [
   { pattern: /^\/api\/core-connections\b/, feature: "core_connections" },
   // Tools
   { pattern: /^\/api\/export-import\b/, feature: "export_import" },
+  { pattern: /^\/api\/import\b/, feature: "export_import" },
+  { pattern: /^\/api\/prospects\b/, feature: "prospects" },
   { pattern: /^\/api\/settings\b/, feature: "integrations" },
   { pattern: /^\/api\/mpwa\b/, feature: "mpwa" },
   { pattern: /^\/api\/pipelines\b/, feature: "pipelines" },
@@ -4075,7 +4077,8 @@ function toCSV(data: any[], columns: { key: string; label: string }[]): string {
   return [header, ...rows].join("\n");
 }
 
-router.get("/api/export/pops", async (_req, res) => {
+router.get("/api/export/pops", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getPops();
     const csv = toCSV(data, [
@@ -4095,7 +4098,8 @@ router.get("/api/export/pops", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/odcs", async (_req, res) => {
+router.get("/api/export/odcs", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getOdcs();
     const csv = toCSV(data, [
@@ -4116,7 +4120,8 @@ router.get("/api/export/odcs", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/odps", async (_req, res) => {
+router.get("/api/export/odps", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getOdps();
     const csv = toCSV(data, [
@@ -4136,7 +4141,8 @@ router.get("/api/export/odps", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/customers", async (_req, res) => {
+router.get("/api/export/customers", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCustomers();
     const csv = toCSV(data, [
@@ -4157,7 +4163,8 @@ router.get("/api/export/customers", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/cables", async (_req, res) => {
+router.get("/api/export/cables", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCables();
     const csv = toCSV(data, [
@@ -4177,7 +4184,8 @@ router.get("/api/export/cables", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/cable-cores", async (_req, res) => {
+router.get("/api/export/cable-cores", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCableCores();
     const csv = toCSV(data, [
@@ -4196,7 +4204,8 @@ router.get("/api/export/cable-cores", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/otbs", async (_req, res) => {
+router.get("/api/export/otbs", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getOtbs();
     const csv = toCSV(data, [
@@ -4213,7 +4222,8 @@ router.get("/api/export/otbs", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/core-connections", async (_req, res) => {
+router.get("/api/export/core-connections", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCoreConnections();
     const csv = toCSV(data, [
@@ -4236,7 +4246,8 @@ router.get("/api/export/core-connections", async (_req, res) => {
 });
 
 // Full network export (all data in one report)
-router.get("/api/export/full-report", async (_req, res) => {
+router.get("/api/export/full-report", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const [pops, odcs, odps, customers, cables, otbs, coreConns] = await Promise.all([
       storage.getPops(),
