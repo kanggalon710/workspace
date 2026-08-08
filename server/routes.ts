@@ -12608,6 +12608,7 @@ router.post("/api/webhook/tiktok-leads", async (req: Request, res: Response) => 
 
 // -- Ticket Categories --
 router.get("/api/ticket-categories", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const cats = await storage.getTicketCategories();
@@ -12647,6 +12648,7 @@ router.delete("/api/ticket-categories/:id", async (req: Request, res: Response) 
 
 // -- Tickets --
 router.get("/api/tickets/stats", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const stats = await storage.getTicketStats();
@@ -12656,6 +12658,7 @@ router.get("/api/tickets/stats", async (req: Request, res: Response) => {
 
 // v4.2.18 (C.4): SLA dashboard stats - compliance %, MTTR, breach trend (last 14 hari)
 router.get("/api/tickets/sla-stats", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const stats = await storage.getSlaDashboardStats();
@@ -12665,6 +12668,7 @@ router.get("/api/tickets/sla-stats", async (req: Request, res: Response) => {
 
 // v4.2.16: laporan workload per-teknisi (Tiket per Teknisi)
 router.get("/api/tickets/workload-by-technician", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const data = await storage.getTechnicianWorkload();
@@ -12674,6 +12678,7 @@ router.get("/api/tickets/workload-by-technician", async (req: Request, res: Resp
 
 // v4.2.17: CSAT aggregate per teknisi (untuk dashboard)
 router.get("/api/tickets/csat-by-technician", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const fromIso = req.query.from ? String(req.query.from) : undefined;
@@ -12684,6 +12689,7 @@ router.get("/api/tickets/csat-by-technician", async (req: Request, res: Response
 
 // v4.2.17: ODP repeat-issue heatmap (≥3 tiket dalam 30 hari)
 router.get("/api/tickets/odp-repeat-issues", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const threshold = Number(req.query.threshold) || 3;
@@ -12768,6 +12774,7 @@ router.post("/api/tickets/auto-from-alarm", async (req: Request, res: Response) 
 });
 
 router.get("/api/tickets", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const page = Number(req.query.page) || 1;
@@ -12782,6 +12789,7 @@ router.get("/api/tickets", async (req: Request, res: Response) => {
 });
 
 router.get("/api/tickets/:id", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const ticket = await storage.getTicket(Number(req.params.id));
@@ -13007,6 +13015,7 @@ router.delete("/api/tickets/:id", async (req: Request, res: Response) => {
 // -- Ticket Team --
 // v4.2.18 (A.3): GET activities paginated + filterable by action type
 router.get("/api/tickets/:id/activities", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13019,6 +13028,7 @@ router.get("/api/tickets/:id/activities", async (req: Request, res: Response) =>
 });
 
 router.get("/api/tickets/:id/team", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const enriched = await storage.getTicketTeamWithUsers(Number(req.params.id));
@@ -13116,6 +13126,7 @@ router.post("/api/tickets/:id/check-out", async (req: Request, res: Response) =>
 
 // -- Evidence --
 router.get("/api/tickets/:id/evidence", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const evidence = await storage.getTicketEvidence(Number(req.params.id));
@@ -13141,6 +13152,7 @@ router.post("/api/tickets/:id/evidence", async (req: Request, res: Response) => 
  * Filesystem (photo_path) → fallback ke legacy base64 (photo_data) untuk data pra-migrasi.
  */
 router.get("/api/tickets/:id/evidence/:evidenceId/photo", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const meta = await storage.getTicketEvidencePhotoMeta(Number(req.params.evidenceId));
@@ -13176,6 +13188,7 @@ router.post("/api/tickets/:id/gps", async (req: Request, res: Response) => {
 });
 
 router.get("/api/tickets/:id/gps", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const logs = await storage.getTicketGpsLogs(Number(req.params.id));
@@ -13185,6 +13198,7 @@ router.get("/api/tickets/:id/gps", async (req: Request, res: Response) => {
 
 // -- MTTR --
 router.get("/api/tickets/:id/mttr", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const mttr = await storage.getTicketMTTR(Number(req.params.id));
@@ -13213,6 +13227,7 @@ router.put("/api/tickets/:id/checklist", async (req: Request, res: Response) => 
  *   - kalau on-hold, slaRemainingSec di-freeze (pakai freeze state saat pause mulai)
  */
 router.get("/api/tickets/:id/workflow", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13303,6 +13318,7 @@ router.get("/api/tickets/:id/workflow", async (req: Request, res: Response) => {
  * BAST = Berita Acara Serah Terima. Browser bisa "Print → Save as PDF" untuk simpan.
  */
 router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13556,6 +13572,7 @@ router.put("/api/tickets/:id/stages/:stageKey/transition", async (req: Request, 
 
 /** GET /api/tickets/:id/stage-transitions - full history per stage */
 router.get("/api/tickets/:id/stage-transitions", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13566,6 +13583,7 @@ router.get("/api/tickets/:id/stage-transitions", async (req: Request, res: Respo
 
 /** v4.2.18 (P1.4): GET /api/tickets/:id/stage-edit-history - edit log per field per stage */
 router.get("/api/tickets/:id/stage-edit-history", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13580,6 +13598,7 @@ router.get("/api/tickets/:id/stage-edit-history", async (req: Request, res: Resp
 // ===========================================================
 
 router.get("/api/tickets/:id/comments", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const comments = await storage.getTicketComments(Number(req.params.id));
@@ -13683,6 +13702,7 @@ router.post("/api/tickets/:id/resume", async (req: Request, res: Response) => {
 });
 
 router.get("/api/tickets/:id/pauses", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13811,6 +13831,7 @@ router.post("/api/tickets/:id/checkpoint", async (req: Request, res: Response) =
 
 /** GET /api/tickets/:id/timeline - chronological feed: checkpoints + activities + time metrics */
 router.get("/api/tickets/:id/timeline", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const ticketId = Number(req.params.id);
