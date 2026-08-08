@@ -236,7 +236,7 @@ function ProtectedRouter() {
               jaringan lama pindah ke /dashboard-jaringan (rumah divisi NOC). */}
           <Route path="/" component={BerandaPage} />
           <Route path="/divisi/:key" component={DivisionHubPage} />
-          <Route path="/dashboard-jaringan" component={Dashboard} />
+          <Route path="/dashboard-jaringan">{() => <WithPerm permission="dashboard"><Dashboard /></WithPerm>}</Route>
           {/* SDM: tanpa WithPerm - cuti self-service untuk semua staff; tab HR di-gate izin hr_sdm di halaman */}
           <Route path="/hrd/sdm" component={SdmPage} />
           {/* ESS absen: semua staff (GPS+selfie) - PRD-HR FR-HR-1102 */}
@@ -286,7 +286,7 @@ function ProtectedRouter() {
           <Route path="/announcements" component={AnnouncementsPage} />
           <Route path="/bugs" component={BugReportsPage} />
           <Route path="/bugs/:id" component={BugReportsPage} />
-          <Route path="/work/:id" component={TechnicianWorkPage} />
+          <Route path="/work/:id">{() => <WithPerm permission="tickets"><TechnicianWorkPage /></WithPerm>}</Route>
           <Route path="/devices">{() => <WithPerm permission="devices"><GenieAcsDevicesPage /></WithPerm>}</Route>
           <Route path="/billing/routers">{() => <WithPerm permission="routers"><MikrotikRoutersPage /></WithPerm>}</Route>
           <Route path="/billing/sessions">{() => <WithPerm permission="sessions"><ActiveSessionsPage /></WithPerm>}</Route>
