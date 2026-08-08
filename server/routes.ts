@@ -441,6 +441,9 @@ function requireAnyPermission(req: Request, res: Response, features: string[]): 
 
 const NETWORK_READ_KEYS = ["map","pops","odcs","odps","poles","cables","otbs","bestrays","splitters","cable_cores","core_connections","splitter_chain","power_budget","export_import","dashboard"];
 
+const MIKROTIK_READ_KEYS = ["dashboard","sessions","devices","monitoring","routers","packages","customers","integrations"];
+const GENIEACS_READ_KEYS = ["dashboard","devices","monitoring","customers","integrations"];
+
 /** Teamspace v5.0: endpoint pipeline melayani juga board tugas tim, jadi gerbang fitur
  *  menerima key `pipelines` ATAU `team_tasks`. Ini TIDAK membocorkan data: resolusi
  *  per-pipeline di getPipelineCapabilities tetap ketat - pemegang team_tasks tanpa
@@ -14336,6 +14339,7 @@ router.post("/api/genieacs/test", async (req: Request, res: Response) => {
 });
 
 router.get("/api/genieacs/stats", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, GENIEACS_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig();
@@ -14423,6 +14427,7 @@ async function buildDeviceSearchQuery(search: string): Promise<any> {
 }
 
 router.get("/api/genieacs/devices", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, GENIEACS_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig();
@@ -14436,6 +14441,7 @@ router.get("/api/genieacs/devices", async (req: Request, res: Response) => {
 });
 
 router.get("/api/genieacs/devices/:id", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, GENIEACS_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig();
@@ -16447,6 +16453,7 @@ function routerToCreds(r: { host: string; port: number | null; username: string;
 
 // -- CRUD Routers --
 router.get("/api/mikrotik/routers", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!requireAdmin(req, res)) return;
   try {
     const all = await storage.getMikrotikRouters();
@@ -16457,6 +16464,7 @@ router.get("/api/mikrotik/routers", async (req: Request, res: Response) => {
 });
 
 router.get("/api/mikrotik/routers/:id", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!requireAdmin(req, res)) return;
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16553,6 +16561,7 @@ router.post("/api/mikrotik/test-connection", async (req: Request, res: Response)
 
 // -- System Resource --
 router.get("/api/mikrotik/routers/:id/resource", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!requireAdmin(req, res)) return;
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16566,6 +16575,7 @@ router.get("/api/mikrotik/routers/:id/resource", async (req: Request, res: Respo
 
 // -- PPPoE Active Sessions --
 router.get("/api/mikrotik/routers/:id/ppp/active", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16577,6 +16587,7 @@ router.get("/api/mikrotik/routers/:id/ppp/active", async (req: Request, res: Res
 
 // -- PPPoE Secrets --
 router.get("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16588,6 +16599,7 @@ router.get("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Res
 
 // -- PPP Profiles --
 router.get("/api/mikrotik/routers/:id/ppp/profile", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16613,6 +16625,7 @@ router.post("/api/mikrotik/routers/:id/ppp/disconnect", async (req: Request, res
 
 // -- Interfaces --
 router.get("/api/mikrotik/routers/:id/interfaces", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16624,6 +16637,7 @@ router.get("/api/mikrotik/routers/:id/interfaces", async (req: Request, res: Res
 
 // -- IP Pools --
 router.get("/api/mikrotik/routers/:id/ip/pool", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16635,6 +16649,7 @@ router.get("/api/mikrotik/routers/:id/ip/pool", async (req: Request, res: Respon
 
 // -- Logs --
 router.get("/api/mikrotik/routers/:id/log", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16647,6 +16662,7 @@ router.get("/api/mikrotik/routers/:id/log", async (req: Request, res: Response) 
 
 // -- Aggregated Active Sessions (all routers) --
 router.get("/api/mikrotik/sessions/active", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const allRouters = await storage.getMikrotikRouters();
@@ -16782,6 +16798,7 @@ router.post("/api/mikrotik/routers/:id/ppp/secret/:secretId/toggle", async (req:
 // ===========================================================
 
 router.get("/api/mikrotik/routers/:id/queue/simple", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16831,6 +16848,7 @@ router.delete("/api/mikrotik/routers/:id/queue/simple/:queueId", async (req: Req
 // ===========================================================
 
 router.get("/api/mikrotik/routers/:id/dhcp/leases", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16841,6 +16859,7 @@ router.get("/api/mikrotik/routers/:id/dhcp/leases", async (req: Request, res: Re
 });
 
 router.get("/api/mikrotik/routers/:id/arp", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16851,6 +16870,7 @@ router.get("/api/mikrotik/routers/:id/arp", async (req: Request, res: Response) 
 });
 
 router.get("/api/mikrotik/routers/:id/neighbors", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16861,6 +16881,7 @@ router.get("/api/mikrotik/routers/:id/neighbors", async (req: Request, res: Resp
 });
 
 router.get("/api/mikrotik/routers/:id/firewall/address-list", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
