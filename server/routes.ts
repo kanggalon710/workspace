@@ -2609,6 +2609,7 @@ router.get("/api/map-data/customer-search", async (req: Request, res: Response) 
 });
 
 router.get("/api/map-data/infra", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "map")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const target = resolveMapMitraId({
@@ -2666,7 +2667,8 @@ router.get("/api/map-data/customers", async (req: Request, res: Response) => {
 
 // ==================== POP ====================
 
-router.get("/api/pops", async (_req, res) => {
+router.get("/api/pops", async (req, res) => {
+  if (!requirePermission(req, res, "pops")) return;
   try {
     const data = await storage.getPops();
     sendSuccess(res, data);
@@ -2674,6 +2676,7 @@ router.get("/api/pops", async (_req, res) => {
 });
 
 router.get("/api/pops/:id", async (req, res) => {
+  if (!requirePermission(req, res, "pops")) return;
   try {
     const data = await storage.getPop(Number(req.params.id));
     if (!data) return sendError(res, "POP not found", 404);
@@ -2713,7 +2716,8 @@ router.delete("/api/pops/:id", async (req, res) => {
 
 // ==================== ODC ====================
 
-router.get("/api/odcs", async (_req, res) => {
+router.get("/api/odcs", async (req, res) => {
+  if (!requirePermission(req, res, "odcs")) return;
   try {
     const data = await storage.getOdcs();
     sendSuccess(res, data);
@@ -2721,6 +2725,7 @@ router.get("/api/odcs", async (_req, res) => {
 });
 
 router.get("/api/odcs/:id", async (req, res) => {
+  if (!requirePermission(req, res, "odcs")) return;
   try {
     const data = await storage.getOdc(Number(req.params.id));
     if (!data) return sendError(res, "ODC not found", 404);
@@ -2760,7 +2765,8 @@ router.delete("/api/odcs/:id", async (req, res) => {
 
 // ==================== ODP ====================
 
-router.get("/api/odps", async (_req, res) => {
+router.get("/api/odps", async (req, res) => {
+  if (!requirePermission(req, res, "odps")) return;
   try {
     const data = await storage.getOdps();
     sendSuccess(res, data);
@@ -2768,7 +2774,8 @@ router.get("/api/odps", async (_req, res) => {
 });
 
 // ODP utilization - real-time dari customer data
-router.get("/api/odps/utilization", async (_req, res) => {
+router.get("/api/odps/utilization", async (req, res) => {
+  if (!requirePermission(req, res, "odps")) return;
   try {
     const [allOdps, allCustomers] = await Promise.all([
       storage.getOdps(),
@@ -2831,6 +2838,7 @@ router.get("/api/odps/utilization", async (_req, res) => {
 });
 
 router.get("/api/odps/:id", async (req, res) => {
+  if (!requirePermission(req, res, "odps")) return;
   try {
     const data = await storage.getOdp(Number(req.params.id));
     if (!data) return sendError(res, "ODP not found", 404);
@@ -3642,7 +3650,8 @@ router.delete("/api/customers/:id", async (req, res) => {
 
 // ==================== POLES ====================
 
-router.get("/api/poles", async (_req, res) => {
+router.get("/api/poles", async (req, res) => {
+  if (!requirePermission(req, res, "poles")) return;
   try {
     const data = await storage.getPoles();
     sendSuccess(res, data);
@@ -3650,6 +3659,7 @@ router.get("/api/poles", async (_req, res) => {
 });
 
 router.get("/api/poles/:id", async (req, res) => {
+  if (!requirePermission(req, res, "poles")) return;
   try {
     const data = await storage.getPole(Number(req.params.id));
     if (!data) return sendError(res, "Pole not found", 404);
@@ -3689,7 +3699,8 @@ router.delete("/api/poles/:id", async (req, res) => {
 
 // ==================== CABLES ====================
 
-router.get("/api/cables", async (_req, res) => {
+router.get("/api/cables", async (req, res) => {
+  if (!requirePermission(req, res, "cables")) return;
   try {
     const data = await storage.getCables();
     sendSuccess(res, data);
@@ -3697,6 +3708,7 @@ router.get("/api/cables", async (_req, res) => {
 });
 
 router.get("/api/cables/:id", async (req, res) => {
+  if (!requirePermission(req, res, "cables")) return;
   try {
     const data = await storage.getCable(Number(req.params.id));
     if (!data) return sendError(res, "Cable not found", 404);
@@ -3740,7 +3752,8 @@ router.delete("/api/cables/:id", async (req, res) => {
 
 // ==================== OTB ====================
 
-router.get("/api/otbs", async (_req, res) => {
+router.get("/api/otbs", async (req, res) => {
+  if (!requirePermission(req, res, "otbs")) return;
   try {
     const data = await storage.getOtbs();
     sendSuccess(res, data);
@@ -3748,6 +3761,7 @@ router.get("/api/otbs", async (_req, res) => {
 });
 
 router.get("/api/otbs/:id", async (req, res) => {
+  if (!requirePermission(req, res, "otbs")) return;
   try {
     const data = await storage.getOtb(Number(req.params.id));
     if (!data) return sendError(res, "OTB not found", 404);
@@ -3794,7 +3808,8 @@ router.delete("/api/otbs/:id", async (req, res) => {
 
 // ==================== BESTRAY ====================
 
-router.get("/api/bestrays", async (_req, res) => {
+router.get("/api/bestrays", async (req, res) => {
+  if (!requirePermission(req, res, "bestrays")) return;
   try {
     const data = await storage.getBestrays();
     sendSuccess(res, data);
@@ -3802,6 +3817,7 @@ router.get("/api/bestrays", async (_req, res) => {
 });
 
 router.get("/api/bestrays/:id", async (req, res) => {
+  if (!requirePermission(req, res, "bestrays")) return;
   try {
     const data = await storage.getBestray(Number(req.params.id));
     if (!data) return sendError(res, "Bestray not found", 404);
@@ -3848,7 +3864,8 @@ router.delete("/api/bestrays/:id", async (req, res) => {
 
 // ==================== SPLITTERS ====================
 
-router.get("/api/splitters", async (_req, res) => {
+router.get("/api/splitters", async (req, res) => {
+  if (!requirePermission(req, res, "splitters")) return;
   try {
     const data = await storage.getSplitters();
     sendSuccess(res, data);
@@ -3856,6 +3873,7 @@ router.get("/api/splitters", async (_req, res) => {
 });
 
 router.get("/api/splitters/:id", async (req, res) => {
+  if (!requirePermission(req, res, "splitters")) return;
   try {
     const data = await storage.getSplitter(Number(req.params.id));
     if (!data) return sendError(res, "Splitter not found", 404);
@@ -3895,7 +3913,8 @@ router.delete("/api/splitters/:id", async (req, res) => {
 
 // ==================== CABLE CORES ====================
 
-router.get("/api/cable-cores", async (_req, res) => {
+router.get("/api/cable-cores", async (req, res) => {
+  if (!requirePermission(req, res, "cable_cores")) return;
   try {
     const data = await storage.getCableCores();
     sendSuccess(res, data);
@@ -3903,6 +3922,7 @@ router.get("/api/cable-cores", async (_req, res) => {
 });
 
 router.get("/api/cable-cores/:id", async (req, res) => {
+  if (!requirePermission(req, res, "cable_cores")) return;
   try {
     const data = await storage.getCableCore(Number(req.params.id));
     if (!data) return sendError(res, "Cable core not found", 404);
@@ -3946,7 +3966,8 @@ router.delete("/api/cable-cores/:id", async (req, res) => {
 
 // ==================== CORE CONNECTIONS ====================
 
-router.get("/api/core-connections", async (_req, res) => {
+router.get("/api/core-connections", async (req, res) => {
+  if (!requirePermission(req, res, "core_connections")) return;
   try {
     const data = await storage.getCoreConnections();
     sendSuccess(res, data);
@@ -3963,6 +3984,7 @@ router.get("/api/core-connections/by-entity", async (req, res) => {
 });
 
 router.get("/api/core-connections/:id", async (req, res) => {
+  if (!requirePermission(req, res, "core_connections")) return;
   try {
     const data = await storage.getCoreConnection(Number(req.params.id));
     if (!data) return sendError(res, "Core connection not found", 404);
