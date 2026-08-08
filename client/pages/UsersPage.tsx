@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -602,7 +603,7 @@ function UserDetailDrawer({ user, role, roles, onClose, onEdit, onResetPassword,
           {tab === "overview" && <OverviewTab user={user} role={role} stats={stats} />}
           {tab === "productivity" && <ProductivityTab stats={stats} />}
           {tab === "activity" && <ActivityTab logs={activity} />}
-          {tab === "permissions" && <PermissionsTab role={role} />}
+          {tab === "permissions" && <PermissionsTab role={role} user={user} />}
         </div>
 
         {/* Footer actions */}
@@ -750,20 +751,111 @@ function ActivityTab({ logs }: any) {
   );
 }
 
-function PermissionsTab({ role }: any) {
-  if (!role) return (
-    <div className="py-12 text-center">
-      <Shield className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
-      <div className="font-semibold text-sm">Belum ada role yang di-assign</div>
-      <div className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">Edit user dan pilih role untuk melihat permissions</div>
-    </div>
-  );
+/** Per-user "izin khusus" editor - ADD-ONLY grants on top of the role.
+ *  Managed via GET/PUT /api/users/:id/permission-grants (admin only). */
+function SpecialAccessEditor({ user }: { user: any }) {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery<{ grants: Record<string, "read" | "write">; effective: Record<string, string>; roleName: string | null }>({
+    queryKey: ["/api/users", user.id, "permission-grants"],
+    queryFn: () => api.get(`/users/${user.id}/permission-grants`),
+    enabled: !!user,
+  });
+  const [draft, setDraft] = useState<Record<string, "read" | "write">>({});
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setDraft(data?.grants ?? {}); setDirty(false); }, [data?.grants, user.id]);
 
+  const saveMut = useMutation({
+    mutationFn: () => api.put(`/users/${user.id}/permission-grants`, { grants: draft }),
+    onSuccess: () => { toast.success("Izin khusus disimpan"); setDirty(false); qc.invalidateQueries({ queryKey: ["/api/users", user.id, "permission-grants"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const setLevel = (key: string, level: "read" | "write") => { setDraft((d) => ({ ...d, [key]: level })); setDirty(true); };
+  const remove = (key: string) => { setDraft((d) => { const n = { ...d }; delete n[key]; return n; }); setDirty(true); };
+  const add = (key: string | null) => { if (!key) return; setDraft((d) => (d[key] ? d : { ...d, [key]: "read" })); setDirty(true); };
+
+  const grantKeys = Object.keys(draft);
+  const labelOf = (k: string) => ALL_PERMISSIONS.find((p) => p.key === k)?.label ?? k;
+  const options = ALL_PERMISSIONS.filter((p) => !draft[p.key]).map((p) => ({ value: p.key, label: `${p.label} · ${p.group}` }));
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <KeyRound className="h-5 w-5 text-violet-500 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm">Akses Khusus</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              Beri fitur ekstra di luar role user ini. Bersifat <strong>menambah</strong> — tidak bisa mengurangi akses yang sudah diberi role.
+            </div>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="text-xs text-muted-foreground px-1">Memuat…</div>
+        ) : (
+          <>
+            {grantKeys.length === 0 ? (
+              <div className="text-xs text-muted-foreground rounded-md bg-muted/40 px-3 py-2">Belum ada izin khusus untuk user ini.</div>
+            ) : (
+              <div className="space-y-1">
+                {grantKeys.map((k) => (
+                  <div key={k} className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-md bg-muted/40">
+                    <div className="min-w-0">
+                      <div className="text-sm truncate">{labelOf(k)}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground">{k}</div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {(["read", "write"] as const).map((lvl) => (
+                        <button key={lvl} type="button" onClick={() => setLevel(k, lvl)}
+                          className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
+                            draft[k] === lvl
+                              ? (lvl === "write" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300")
+                              : "text-muted-foreground hover:bg-muted"}`}>
+                          {lvl === "write" ? "FULL" : "READ"}
+                        </button>
+                      ))}
+                      <button type="button" onClick={() => remove(k)} title="Hapus izin"
+                        className="p-1 rounded-md text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <Combobox options={options} value="" onChange={add} placeholder="+ Tambah fitur…" searchPlaceholder="Cari fitur…" />
+              </div>
+              <Button size="sm" disabled={!dirty || saveMut.isPending} loading={saveMut.isPending} onClick={() => saveMut.mutate()}>
+                Simpan
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PermissionsTab({ role, user }: any) {
   const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
-  const grantedCount = Object.values(role.permissions ?? {}).filter((v) => v !== "none").length;
+  const grantedCount = role ? Object.values(role.permissions ?? {}).filter((v) => v !== "none").length : 0;
 
   return (
     <div className="space-y-4">
+      {user && <SpecialAccessEditor user={user} />}
+
+      {!role ? (
+        <div className="py-8 text-center">
+          <Shield className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+          <div className="font-semibold text-sm">Belum ada role yang di-assign</div>
+          <div className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">Edit user dan pilih role untuk melihat permissions dari role.</div>
+        </div>
+      ) : (
+      <>
       <Card>
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
@@ -810,6 +902,8 @@ function PermissionsTab({ role }: any) {
           </div>
         );
       })}
+      </>
+      )}
     </div>
   );
 }

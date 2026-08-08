@@ -2118,6 +2118,32 @@ router.get("/api/users/:id/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+/** GET /api/users/:id/permission-grants - izin khusus (add-only) user + konteks role.
+ *  `grants` = izin khusus per-user; `effective` = perms efektif (role + grants merged). */
+router.get("/api/users/:id/permission-grants", async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const id = parseInt(req.params.id as string);
+    if (!(await requireUserInScope(req, res, id))) return;
+    const grants = await storage.getUserPermissionGrants(id);
+    const eff = await storage.getUserEffectivePermissionsAtMitra(id, req.authUser!.activeMitraId);
+    sendSuccess(res, { grants, effective: eff.perms, roleName: eff.roleName });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+/** PUT /api/users/:id/permission-grants - set izin khusus (add-only, hanya menaikkan akses).
+ *  Body: { grants: { <permission_key>: "read" | "write" } }. Level "none"/key tak dikenal dibuang. */
+router.put("/api/users/:id/permission-grants", async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const id = parseInt(req.params.id as string);
+    if (!(await requireUserInScope(req, res, id))) return;
+    const clean = await storage.setUserPermissionGrants(id, req.body?.grants);
+    await logAudit(req, "UPDATE", "user_permission_grants", id, undefined, { grants: clean });
+    sendSuccess(res, { grants: clean });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
 /** POST /api/users/bulk-action - bulk activate/deactivate/role-change/delete */
 router.post("/api/users/bulk-action", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;

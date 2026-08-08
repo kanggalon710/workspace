@@ -152,3 +152,14 @@ export const ROLE_HOME_DIVISION: Record<string, string> = {
 export function getDivision(key: string | undefined): Division | undefined {
   return DIVISIONS.find((d) => d.key === key);
 }
+
+/** Semua permission key yang "dimiliki" satu divisi (modul + submodul), unik & terurut.
+ *  Dipakai oleh role editor untuk toggle akses per-divisi (scope role ke divisinya). */
+export function divisionPermissionKeys(d: Division): string[] {
+  const keys: string[] = [];
+  for (const m of d.modules) {
+    if (m.permission) keys.push(m.permission);
+    for (const c of m.children ?? []) if (c.permission) keys.push(c.permission);
+  }
+  return Array.from(new Set(keys));
+}

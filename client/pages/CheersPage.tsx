@@ -33,7 +33,7 @@ export default function CheersPage() {
     if (!toUser || !message.trim()) return;
     try {
       await sendCheer.mutateAsync({ toUserId: Number(toUser), message: message.trim() });
-      toast.success("Cheers terkirim ");
+      toast.success("Cheers terkirim");
       setShowSend(false);
       setToUser(""); setMessage("");
     } catch (e: any) {
@@ -80,41 +80,48 @@ export default function CheersPage() {
               action={{ label: "Kirim Cheers", onClick: () => setShowSend(true) }}
             />
           ) : (
-            <div className="space-y-2">
-              {(rows ?? []).map((c) => (
-                <Card key={c.id} variant="elevated" padding="sm">
-                  <div className="flex items-start gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground">
-                        {box === "received"
-                          ? <>Dari <b className="text-foreground">{nameOf(c.fromUserId)}</b></>
-                          : <>Untuk <b className="text-foreground">{nameOf(c.toUserId)}</b></>}
-                        {" · "}{new Date(c.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
-                      <p className="mt-0.5 whitespace-pre-wrap text-sm">{c.message}</p>
+            <div className="space-y-2.5">
+              {(rows ?? []).map((c) => {
+                const person = nameOf(box === "received" ? c.fromUserId : c.toUserId);
+                const initial = String(person).trim().charAt(0).toUpperCase() || "?";
+                return (
+                  <Card key={c.id} variant="elevated" padding="md">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-sm font-semibold text-white">
+                        {initial}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          {box === "received"
+                            ? <>Dari <b className="text-foreground">{person}</b></>
+                            : <>Untuk <b className="text-foreground">{person}</b></>}
+                          {" · "}{new Date(c.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{c.message}</p>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
 
-        <Card variant="elevated">
-          <h3 className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold">
+        <Card variant="elevated" padding="md" className="h-fit">
+          <h3 className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold">
             <Trophy className="size-4 text-warning" /> Leaderboard 30 Hari
           </h3>
           {(leaderboard ?? []).length === 0 ? (
             <p className="py-4 text-xs text-muted-foreground">Belum ada cheers pada periode ini.</p>
           ) : (
-            <ol className="space-y-1.5">
+            <ol className="space-y-2">
               {(leaderboard ?? []).map((r, i) => (
                 <li key={r.userId} className="flex items-center gap-2.5">
-                  <span className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${i === 0 ? "bg-warning text-white" : i === 1 ? "bg-muted-foreground/30" : i === 2 ? "bg-orange-300/50" : "bg-muted"}`}>
+                  <span className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${i === 0 ? "bg-warning text-white" : i === 1 ? "bg-muted-foreground/25 text-foreground" : i === 2 ? "bg-orange-300/60 text-orange-900" : "bg-muted text-muted-foreground"}`}>
                     {i + 1}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm">{nameOf(r.userId)}</span>
-                  <span className="text-xs font-bold tabular-nums">{r.count} </span>
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-muted-foreground">{r.count}</span>
                 </li>
               ))}
             </ol>
@@ -125,8 +132,8 @@ export default function CheersPage() {
       {showSend && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowSend(false); }}>
           <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
-            <DialogTitle>Kirim Cheers </DialogTitle>
-            <div className="space-y-3.5">
+            <DialogTitle>Kirim Cheers</DialogTitle>
+            <div className="mt-3 space-y-3.5">
               <div>
                 <span className="mb-1 block text-xs font-medium">Untuk rekan</span>
                 <Combobox
