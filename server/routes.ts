@@ -10944,6 +10944,7 @@ router.delete("/api/collections/:id", async (req: Request, res: Response) => {
 });
 
 router.get("/api/billing/config", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "billing_sync")) return;
   try {
     const allCustomers = await storage.getCustomers();
     const withSync = allCustomers.filter((c: any) => c.lastSyncAt).sort((a: any, b: any) => b.lastSyncAt.localeCompare(a.lastSyncAt));
@@ -12392,7 +12393,7 @@ router.get("/api/marketing/audience/lookalike", async (req: Request, res: Respon
 
 // Audience: ODP Geo-Target Clusters
 router.get("/api/marketing/audience/geo-targets", async (req: Request, res: Response) => {
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!requirePermission(req, res, "marketing_ads")) return;
   try {
     const odps = await storage.getOdps();
     const customers = await storage.getCustomers();
@@ -12417,7 +12418,7 @@ router.get("/api/marketing/audience/geo-targets", async (req: Request, res: Resp
 
 // Ads Stats
 router.get("/api/marketing/ads/stats", async (req: Request, res: Response) => {
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!requirePermission(req, res, "marketing_ads")) return;
   try {
     const leads = await storage.getLeads({});
     const now = new Date();
