@@ -435,7 +435,7 @@ function requireWritePermission(req: Request, res: Response, feature: string): b
 function requireAnyPermission(req: Request, res: Response, features: string[]): boolean {
   if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
   if (features.some((f) => hasPermission(req, f))) return true;
-  sendError(res, `Akses ditolak: tidak memiliki izin '${features.join("/")}' (read)`, 403);
+  sendError(res, "Akses ditolak", 403);
   return false;
 }
 
@@ -2898,6 +2898,7 @@ router.delete("/api/odps/:id", async (req, res) => {
 
 /** GET /api/odps/:id/photos - list semua foto ODP (metadata only, tanpa binary) */
 router.get("/api/odps/:id/photos", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   if (!requireAuth(req, res)) return;
   try {
     const odpId = Number(req.params.id);
@@ -2945,6 +2946,7 @@ router.post("/api/odps/:id/photos", async (req, res) => {
 
 /** GET /api/odps/:id/photos/:photoId - stream binary foto */
 router.get("/api/odps/:id/photos/:photoId", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   if (!requireAuth(req, res)) return;
   try {
     const odpId = Number(req.params.id);
@@ -3231,6 +3233,7 @@ interface IntegrationCandidate {
 }
 
 router.get("/api/customers/integration-audit", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig().catch(() => null);
@@ -3377,6 +3380,7 @@ router.post("/api/customers/auto-pair-ont", async (req: Request, res: Response) 
 
 // Get ONT status for all customers (match by pppoeUsername or ontSerialNumber)
 router.get("/api/customers/ont-status", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig().catch(() => null);
@@ -3788,6 +3792,7 @@ router.get("/api/otbs/:id", async (req, res) => {
 });
 
 router.get("/api/pops/:popId/otbs", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOtbsByPop(Number(req.params.popId));
     sendSuccess(res, data);
@@ -3844,6 +3849,7 @@ router.get("/api/bestrays/:id", async (req, res) => {
 });
 
 router.get("/api/odcs/:odcId/bestrays", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getBestraysByOdc(Number(req.params.odcId));
     sendSuccess(res, data);
@@ -3949,6 +3955,7 @@ router.get("/api/cable-cores/:id", async (req, res) => {
 });
 
 router.get("/api/cables/:cableId/cores", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCableCoreByCable(Number(req.params.cableId));
     sendSuccess(res, data);
@@ -3993,6 +4000,7 @@ router.get("/api/core-connections", async (req, res) => {
 });
 
 router.get("/api/core-connections/by-entity", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const { type, id } = req.query;
     if (!type || !id) return sendError(res, "type and id query params required");
@@ -13770,6 +13778,7 @@ router.post("/api/tickets/:id/cancel", async (req: Request, res: Response) => {
 
 /** GET /api/odps/:id/active-tickets - duplicate detection saat create tiket di ODP */
 router.get("/api/odps/:id/active-tickets", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const odpId = Number(req.params.id);
