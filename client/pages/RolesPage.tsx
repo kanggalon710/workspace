@@ -2,7 +2,10 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { ALL_PERMISSIONS, ALL_PERMISSION_KEYS } from "@shared/schema";
+import { ALL_PERMISSIONS, ALL_PERMISSION_KEYS, EDITOR_HIDDEN_KEYS } from "@shared/schema";
+
+// Preview surfaces hide dead/no-effect keys (see EDITOR_HIDDEN_KEYS).
+const VISIBLE_PERMISSIONS = ALL_PERMISSIONS.filter((p) => !EDITOR_HIDDEN_KEYS.has(p.key));
 import { resolveDefaultPreset } from "@shared/rolePresets";
 import { useApplicablePresets } from "@/hooks/useRolePresets";
 import { PermissionMatrixEditor, LEVEL_CFG } from "@/components/roles/PermissionMatrixEditor";
@@ -480,7 +483,7 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
 // =====================================================================
 function RolePreviewDialog({ role, onClose, onEdit }: any) {
   if (!role) return null;
-  const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
+  const groups = Array.from(new Set(VISIBLE_PERMISSIONS.map((p) => p.group)));
   const stats = permStats(role.permissions);
   return (
     <Dialog open={!!role} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -514,7 +517,7 @@ function RolePreviewDialog({ role, onClose, onEdit }: any) {
           )}
 
           {groups.map((group) => {
-            const items = ALL_PERMISSIONS.filter((p) => p.group === group);
+            const items = VISIBLE_PERMISSIONS.filter((p) => p.group === group);
             const granted = items.filter((i) => (role.permissions[i.key] ?? "none") !== "none");
             return (
               <div key={group}>

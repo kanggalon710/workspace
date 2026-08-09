@@ -30,7 +30,7 @@ type SettingModule = {
 // Modul di grup Pengaturan (sinkron dengan Sidebar grup "manajemen").
 const SETTING_MODULES: SettingModule[] = [
   { label: "Manajemen User", description: "Tambah, nonaktifkan, atur role & data karyawan pengguna aplikasi.", path: "/users", icon: UserCog, permission: "user_management", accent: "bg-sky-500" },
-  { label: "Manajemen Role & Hak Akses", description: "Definisikan role + permission per fitur/menu (none/read/write). Kontrol siapa boleh akses apa.", path: "/roles", icon: ShieldCheck, permission: "user_management", accent: "bg-violet-500" },
+  { label: "Manajemen Role & Hak Akses", description: "Definisikan role + permission per fitur/menu (none/read/write). Kontrol siapa boleh akses apa.", path: "/roles", icon: ShieldCheck, permission: "role_management", accent: "bg-violet-500" },
   { label: "Integrasi API", description: "Maps, MikroTik, ACS, Billing, WhatsApp, dan pembaruan aplikasi.", path: "/integrations", icon: Link2, permission: "integrations", accent: "bg-emerald-500" },
   { label: "Public API (Open API)", description: "Kelola API key untuk integrasi AI / BI eksternal.", path: "/api-keys", icon: KeyRound, permission: "api_keys", accent: "bg-amber-500" },
   { label: "Pengumuman", description: "Broadcast update fitur & informasi ke seluruh staff.", path: "/announcements", icon: Megaphone, accent: "bg-rose-500" },

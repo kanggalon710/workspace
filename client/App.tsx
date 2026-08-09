@@ -261,10 +261,10 @@ function ProtectedRouter() {
           {/* Billing & MikroTik */}
           <Route path="/customers">{() => <WithPerm permission="customers"><CustomersPage /></WithPerm>}</Route>
           <Route path="/communications">{() => <WithPerm permission="chatwoot"><CommunicationsPage /></WithPerm>}</Route>
-          <Route path="/tickets/categories">{() => <WithPerm permission="tickets"><TicketCategoriesPage /></WithPerm>}</Route>
-          <Route path="/tickets/heatmap">{() => <WithPerm permission="tickets"><TicketHeatmapPage /></WithPerm>}</Route>
-          <Route path="/tickets/dashboard">{() => <WithPerm permission="tickets"><TicketsDashboardPage /></WithPerm>}</Route>
-          <Route path="/settings/sla-calendar">{() => <WithPerm permission="tickets"><SlaCalendarPage /></WithPerm>}</Route>
+          <Route path="/tickets/categories">{() => <WithPerm permission="tickets_categories"><TicketCategoriesPage /></WithPerm>}</Route>
+          <Route path="/tickets/heatmap">{() => <WithPerm permission="tickets_analytics"><TicketHeatmapPage /></WithPerm>}</Route>
+          <Route path="/tickets/dashboard">{() => <WithPerm permission="tickets_analytics"><TicketsDashboardPage /></WithPerm>}</Route>
+          <Route path="/settings/sla-calendar">{() => <WithPerm permission="tickets_sla"><SlaCalendarPage /></WithPerm>}</Route>
           <Route path="/tickets">{() => <WithPerm permission="tickets"><TicketingPage /></WithPerm>}</Route>
           <Route path="/collections">{() => <WithPerm permission="collections"><CollectionPipelinePage /></WithPerm>}</Route>
           {/* SOP churn→reaktivasi: view collection ter-scope divisi (delegasi lintas-divisi). */}
@@ -272,12 +272,12 @@ function ProtectedRouter() {
           <Route path="/collections/marketing">{() => <WithPerm permission="leads"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
           {/* Pipeline kerja per-divisi (HRD/NOC dst) - board kustom ter-scope divisi. */}
-          <Route path="/pipelines/divisi/:key">{(params) => <WithPerm permission="pipelines"><PipelinesPage division={params.key} /></WithPerm>}</Route>
+          <Route path="/pipelines/divisi/:key">{(params) => <WithPerm permission={`pipelines_${params.key}`}><PipelinesPage division={params.key} /></WithPerm>}</Route>
           <Route path="/pipelines/:id">{() => <WithPerm permission="pipelines"><PipelineBoardPage /></WithPerm>}</Route>
           {/* Teamspace v5.0 - kolaborasi tim internal */}
           <Route path="/teamspace/tasks">{() => <WithPerm permission="team_tasks"><AllTasksPage /></WithPerm>}</Route>
-          <Route path="/teamspace/teams">{() => <WithPerm permission="team_tasks"><TeamListPage /></WithPerm>}</Route>
-          <Route path="/teamspace/teams/:id">{() => <WithPerm permission="team_tasks"><TeamPage /></WithPerm>}</Route>
+          <Route path="/teamspace/teams">{() => <WithPerm permission="teams"><TeamListPage /></WithPerm>}</Route>
+          <Route path="/teamspace/teams/:id">{() => <WithPerm permission="teams"><TeamPage /></WithPerm>}</Route>
           <Route path="/teamspace/boards/:id">{() => <WithPerm permission="team_tasks"><PipelineBoardPage /></WithPerm>}</Route>
           <Route path="/teamspace/performance">{() => <WithPerm permission="performance_reports"><PerformancePage /></WithPerm>}</Route>
           <Route path="/teamspace/cheers">{() => <WithPerm permission="cheers"><CheersPage /></WithPerm>}</Route>
@@ -295,13 +295,13 @@ function ProtectedRouter() {
           {/* Marketing */}
           <Route path="/marketing">{() => <WithPerm permission="marketing_dashboard"><MarketingDashboardPage /></WithPerm>}</Route>
           <Route path="/canvassing">{() => <WithPerm permission="canvassing"><CanvassingPage /></WithPerm>}</Route>
-          <Route path="/canvassing/history">{() => <WithPerm permission="canvassing"><CanvassingHistoryPage /></WithPerm>}</Route>
-          <Route path="/canvassing/reports">{() => <WithPerm permission="canvassing"><CanvassingReportsPage /></WithPerm>}</Route>
+          <Route path="/canvassing/history">{() => <WithPerm permission="canvassing_history"><CanvassingHistoryPage /></WithPerm>}</Route>
+          <Route path="/canvassing/reports">{() => <WithPerm permission="canvassing_reports"><CanvassingReportsPage /></WithPerm>}</Route>
           <Route path="/leads">{() => <WithPerm permission="leads"><LeadPipelinePage /></WithPerm>}</Route>
           <Route path="/contacts">{() => <WithPerm permission="contacts"><ContactsPage /></WithPerm>}</Route>
           <Route path="/prospects">{() => <WithPerm permission="prospects"><ProspectPage /></WithPerm>}</Route>
           <Route path="/marketing/ads">{() => <WithPerm permission="marketing_ads"><MarketingAdsPage /></WithPerm>}</Route>
-          <Route path="/marketing/bisnis">{() => <WithPerm permission="marketing_dashboard"><BusinessDecisionPage /></WithPerm>}</Route>
+          <Route path="/marketing/bisnis">{() => <WithPerm permission="marketing_insights"><BusinessDecisionPage /></WithPerm>}</Route>
           {/* Integrasi & Tools */}
           <Route path="/integrations">{() => <WithPerm permission="integrations"><IntegrationPage /></WithPerm>}</Route>
           <Route path="/integrations/chatwoot/agents">{() => <WithPerm permission="chatwoot_settings"><ChatwootAgentMapPage /></WithPerm>}</Route>
@@ -310,15 +310,15 @@ function ProtectedRouter() {
           <Route path="/broadcast">{() => <WithPerm permission="broadcast"><BroadcastPage /></WithPerm>}</Route>
           {/* v4.2.20 (PRD WA Feature v2): 4 submenu */}
           <Route path="/whatsapp/devices">{() => <WithPerm permission="whatsapp"><NomorWhatsappPage /></WithPerm>}</Route>
-          <Route path="/whatsapp/templates">{() => <WithPerm permission="whatsapp"><TemplateWhatsappPage /></WithPerm>}</Route>
-          <Route path="/whatsapp/broadcast/pelanggan">{() => <WithPerm permission="whatsapp"><BroadcastPelangganPageV2 /></WithPerm>}</Route>
-          <Route path="/whatsapp/broadcast/reseller">{() => <WithPerm permission="whatsapp"><BroadcastResellerPage /></WithPerm>}</Route>
+          <Route path="/whatsapp/templates">{() => <WithPerm permission="whatsapp_templates"><TemplateWhatsappPage /></WithPerm>}</Route>
+          <Route path="/whatsapp/broadcast/pelanggan">{() => <WithPerm permission="whatsapp_broadcast_pelanggan"><BroadcastPelangganPageV2 /></WithPerm>}</Route>
+          <Route path="/whatsapp/broadcast/reseller">{() => <WithPerm permission="whatsapp_broadcast_reseller"><BroadcastResellerPage /></WithPerm>}</Route>
           <Route path="/whatsapp/phonebook">{() => <WithPerm permission="phonebooks"><PhonebookPage /></WithPerm>}</Route>
           <Route path="/audit-logs">{() => <WithPerm permission="audit_logs"><AuditLogPage /></WithPerm>}</Route>
           <Route path="/mitra">{() => <WithPerm requireSystemAdmin><MitraPage /></WithPerm>}</Route>
           <Route path="/pengaturan" component={SettingsHubPage} />
           <Route path="/users">{() => <WithPerm permission="user_management"><UsersPage /></WithPerm>}</Route>
-          <Route path="/roles">{() => <WithPerm permission="user_management"><RolesPage /></WithPerm>}</Route>
+          <Route path="/roles">{() => <WithPerm permission="role_management"><RolesPage /></WithPerm>}</Route>
           <Route>
             <div className="flex items-center justify-center min-h-[70vh] p-6">
               <div className="text-center max-w-md">

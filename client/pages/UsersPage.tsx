@@ -2,7 +2,10 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { ALL_PERMISSIONS } from "@shared/schema";
+import { ALL_PERMISSIONS, EDITOR_HIDDEN_KEYS } from "@shared/schema";
+
+// Editor surfaces hide dead/no-effect keys (see EDITOR_HIDDEN_KEYS).
+const VISIBLE_PERMISSIONS = ALL_PERMISSIONS.filter((p) => !EDITOR_HIDDEN_KEYS.has(p.key));
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -776,7 +779,7 @@ function SpecialAccessEditor({ user }: { user: any }) {
 
   const grantKeys = Object.keys(draft);
   const labelOf = (k: string) => ALL_PERMISSIONS.find((p) => p.key === k)?.label ?? k;
-  const options = ALL_PERMISSIONS.filter((p) => !draft[p.key]).map((p) => ({ value: p.key, label: `${p.label} · ${p.group}` }));
+  const options = VISIBLE_PERMISSIONS.filter((p) => !draft[p.key]).map((p) => ({ value: p.key, label: `${p.label} · ${p.group}` }));
 
   return (
     <Card>
@@ -841,7 +844,7 @@ function SpecialAccessEditor({ user }: { user: any }) {
 }
 
 function PermissionsTab({ role, user }: any) {
-  const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
+  const groups = Array.from(new Set(VISIBLE_PERMISSIONS.map((p) => p.group)));
   const grantedCount = role ? Object.values(role.permissions ?? {}).filter((v) => v !== "none").length : 0;
 
   return (
@@ -877,7 +880,7 @@ function PermissionsTab({ role, user }: any) {
       </Card>
 
       {groups.map((group) => {
-        const items = ALL_PERMISSIONS.filter((p) => p.group === group);
+        const items = VISIBLE_PERMISSIONS.filter((p) => p.group === group);
         const hasAny = items.some((i) => (role.permissions[i.key] ?? "none") !== "none");
         if (!hasAny) return null;
         return (

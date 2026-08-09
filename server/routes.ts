@@ -449,16 +449,29 @@ const GENIEACS_READ_KEYS = ["dashboard","devices","monitoring","customers","inte
  *  per-pipeline di getPipelineCapabilities tetap ketat - pemegang team_tasks tanpa
  *  key pipelines mendapat nol kapabilitas atas pipeline ops, dan sebaliknya pemegang
  *  pipelines yang bukan anggota tim mendapat nol kapabilitas atas board tim. */
+// v5.6: floor also accepts any per-division pipeline key (pipelines_hrd, pipelines_noc, …) so a
+// division-only user reaches the handler; getPipelineCapabilities (division-aware) is the strict
+// per-pipeline authority, so this does not leak cross-division data.
+function hasAnyPipelineKey(req: Request, needWrite: boolean): boolean {
+  const pl = req.authUser?.permLevels ?? {};
+  for (const k of Object.keys(pl)) {
+    if (k !== "pipelines" && !k.startsWith("pipelines_")) continue;
+    const lvl = pl[k];
+    if (needWrite ? lvl === "write" : (lvl === "read" || lvl === "write")) return true;
+  }
+  return false;
+}
+
 function requirePipelinesFeature(req: Request, res: Response): boolean {
   if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
-  if (hasPermission(req, "pipelines") || hasPermission(req, "team_tasks")) return true;
+  if (hasPermission(req, "team_tasks") || hasAnyPipelineKey(req, false)) return true;
   sendError(res, "Akses ditolak: tidak memiliki izin 'pipelines' (read)", 403);
   return false;
 }
 
 function requireWritePipelinesFeature(req: Request, res: Response): boolean {
   if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
-  if (hasWritePermission(req, "pipelines") || hasWritePermission(req, "team_tasks")) return true;
+  if (hasWritePermission(req, "team_tasks") || hasAnyPipelineKey(req, true)) return true;
   sendError(res, "Akses ditolak: fitur 'pipelines' bersifat read-only untuk role Anda", 403);
   return false;
 }
@@ -4943,9 +4956,14 @@ async function getPipelineCapabilities(req: Request, pipelineId: number): Promis
   if (restricted && req.authUser!.effectiveRoleId) {
     grantCapabilities = await storage.getGrantCapabilitiesForRole(pipelineId, req.authUser!.effectiveRoleId);
   }
+  // v5.6 per-division pipeline gating: a division pipeline (division != null) is authorized by
+  // its own key `pipelines_<division>` (e.g. pipelines_hrd), not the generic `pipelines`. So a
+  // grant of only pipelines_hrd does NOT open NOC pipeline data. Global ops pipelines stay on `pipelines`.
+  const pipelineDivision = (p as any).division ?? null;
+  const pipelineKey = pipelineDivision ? `pipelines_${pipelineDivision}` : "pipelines";
   return resolvePipelineCapabilities({
     isAdmin, isCreator, restricted,
-    keyLevel: (req.authUser!.permLevels["pipelines"] ?? "none") as "none" | "read" | "write",
+    keyLevel: (req.authUser!.permLevels[pipelineKey] ?? "none") as "none" | "read" | "write",
     grantCapabilities,
   });
 }
@@ -5355,11 +5373,16 @@ async function validateTriggerConfig(
 }
 
   router.get("/api/pipelines", async (req, res) => {
-    if (!requirePipelinesFeature(req, res)) return;
     const includeArchived = req.query.archived === "1";
     // Divisi: ?division=hrd => hanya pipeline divisi itu. Tanpa param => hanya pipeline ops global
     // (division NULL), agar pipeline kerja divisi tidak bocor ke daftar /pipelines umum.
     const division = typeof req.query.division === "string" && req.query.division.trim() ? req.query.division.trim() : null;
+    // v5.6: pipeline divisi diotorisasi key `pipelines_<divisi>` (mis. pipelines_hrd); pipeline global oleh `pipelines`.
+    // Floor: boleh key spesifik divisi, key generic pipelines, atau team_tasks (anggota tim).
+    const listKey = division ? `pipelines_${division}` : "pipelines";
+    if (!hasPermission(req, listKey) && !hasPermission(req, "pipelines") && !hasPermission(req, "team_tasks")) {
+      return sendError(res, "Akses ditolak", 403);
+    }
     // Teamspace: pipeline milik tim disembunyikan dari daftar ops (NFR-012) -
     // board tim diakses via /api/teamspace/* + GET /api/pipelines/:id.
     const all = (await storage.listPipelines(includeArchived))
@@ -5368,7 +5391,7 @@ async function validateTriggerConfig(
     const admin = isPipelineAdmin(req);
     const grantMap = (!admin && req.authUser!.effectiveRoleId)
       ? await storage.getGrantCapabilitiesMapForRole(req.authUser!.effectiveRoleId) : {};
-    const keyLevel = (req.authUser!.permLevels["pipelines"] ?? "none") as "none" | "read" | "write";
+    const keyLevel = (req.authUser!.permLevels[listKey] ?? "none") as "none" | "read" | "write";
     const out: any[] = [];
     for (const p of all) {
       const caps = resolvePipelineCapabilities({
@@ -12643,8 +12666,8 @@ router.post("/api/webhook/tiktok-leads", async (req: Request, res: Response) => 
 
 // -- Ticket Categories --
 router.get("/api/ticket-categories", async (req: Request, res: Response) => {
-  if (!requirePermission(req, res, "tickets")) return;
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  // Read shared by the ticket board (display) and the Kategori admin page - accept either key.
+  if (!requireAnyPermission(req, res, ["tickets", "tickets_categories"])) return;
   try {
     const cats = await storage.getTicketCategories();
     sendSuccess(res, cats);

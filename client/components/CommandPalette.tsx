@@ -151,12 +151,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { id: "chain", label: "Splitter Chain", icon: GitBranch, path: "/splitter-chain", permission: "splitter_chain" },
     { id: "power", label: "Power Budget", icon: Calculator, path: "/power-budget", permission: "power_budget" },
     { id: "export", label: "Export / Import", icon: FileSpreadsheet, path: "/export-import", permission: "export_import" },
-    { id: "bisnis", label: "Keputusan Bisnis", icon: TrendingUp, path: "/marketing/bisnis", permission: "marketing_dashboard" },
+    { id: "bisnis", label: "Keputusan Bisnis", icon: TrendingUp, path: "/marketing/bisnis", permission: "marketing_insights" },
     { id: "ads", label: "Marketing Ads", icon: Megaphone, path: "/marketing/ads", permission: "marketing_ads" },
   ];
 
   const teamspaceItems: CommandItemDef[] = [
-    { id: "ts-teams", label: "Tim Saya", icon: UsersRound, path: "/teamspace/teams", permission: "team_tasks", keywords: ["teamspace", "tim", "team", "ruangan"] },
+    { id: "ts-teams", label: "Tim Saya", icon: UsersRound, path: "/teamspace/teams", permission: "teams", keywords: ["teamspace", "tim", "team", "ruangan"] },
     { id: "ts-tasks", label: "Semua Tugas", icon: SquareCheckBig, path: "/teamspace/tasks", permission: "team_tasks", keywords: ["teamspace", "tugas", "task", "todo"] },
     { id: "ts-perf", label: "Laporan Kinerja", icon: BarChart3, path: "/teamspace/performance", permission: "performance_reports", keywords: ["teamspace", "kinerja", "performance", "report", "kpi"] },
     { id: "ts-cheers", label: "Cheers", icon: Trophy, path: "/teamspace/cheers", permission: "cheers", keywords: ["teamspace", "cheers", "apresiasi"] },
@@ -165,7 +165,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const adminItems: CommandItemDef[] = [
     { id: "mitra", label: "Kelola Mitra", icon: Building2, path: "/mitra", requireSystemAdmin: true, keywords: ["mitra", "tenant", "reseller", "owner"] },
     { id: "users", label: "Manajemen User", icon: UserCog, path: "/users", permission: "user_management" },
-    { id: "roles", label: "Manajemen Role", icon: UserCog, path: "/roles", permission: "user_management" },
+    { id: "roles", label: "Manajemen Role", icon: UserCog, path: "/roles", permission: "role_management" },
     { id: "audit", label: "Activity Log", icon: ClipboardList, path: "/audit-logs", permission: "audit_logs" },
     { id: "integrations", label: "Integrasi API", icon: Link2, path: "/integrations", permission: "integrations" },
     { id: "apikeys", label: "Public API Keys", icon: KeyRound, path: "/api-keys", permission: "api_keys" },

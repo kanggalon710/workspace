@@ -10939,7 +10939,8 @@ export class DatabaseStorage implements IStorage {
         canSeeAllData: 0,
         permissions: this.buildPermsForPreset([
           "dashboard","map","pops","odcs","odps","poles","cables","otbs","bestrays","splitters",
-          "cable_cores","core_connections","splitter_chain","power_budget","export_import","customers","tickets",
+          "cable_cores","core_connections","splitter_chain","power_budget","export_import","customers",
+          "tickets","tickets_categories","tickets_analytics","tickets_sla",
         ]),
         createdAt: now,
       },
@@ -10948,8 +10949,10 @@ export class DatabaseStorage implements IStorage {
         description: "Canvassing & lead pipeline (data sendiri)",
         isSystem: 1,
         canSeeAllData: 0,
+        // v5.6: division-clean - no cross-division dashboard(NOC)/map(Teknik); marketing sub-pages included.
         permissions: this.buildPermsForPreset([
-          "dashboard","map","marketing_dashboard","canvassing","leads","contacts","prospects","marketing_ads",
+          "marketing_dashboard","marketing_insights","canvassing","canvassing_history","canvassing_reports",
+          "leads","contacts","prospects","marketing_ads",
         ]),
         createdAt: now,
       },
@@ -10959,7 +10962,8 @@ export class DatabaseStorage implements IStorage {
         isSystem: 1,
         canSeeAllData: 1,
         permissions: this.buildPermsForPreset([
-          "dashboard","map","marketing_dashboard","canvassing","leads","contacts","prospects","marketing_ads",
+          "marketing_dashboard","marketing_insights","canvassing","canvassing_history","canvassing_reports",
+          "leads","contacts","prospects","marketing_ads",
         ]),
         createdAt: now,
       },

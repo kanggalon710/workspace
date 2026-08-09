@@ -1,7 +1,11 @@
-import { ALL_PERMISSIONS, ALL_PERMISSION_KEYS, type PermissionLevel } from "@shared/schema";
+import { ALL_PERMISSIONS, EDITOR_HIDDEN_KEYS, type PermissionLevel } from "@shared/schema";
 import { DIVISIONS, divisionPermissionKeys } from "@/lib/divisions";
 import { Button } from "@/components/ui/button";
 import { Ban, Eye, Pencil } from "lucide-react";
+
+// Keys shown in the editor: hide dead/no-effect keys (see EDITOR_HIDDEN_KEYS).
+const VISIBLE_PERMISSIONS = ALL_PERMISSIONS.filter((p) => !EDITOR_HIDDEN_KEYS.has(p.key));
+const VISIBLE_KEYS = VISIBLE_PERMISSIONS.map((p) => p.key);
 
 const DIV_ACCENT: Record<string, string> = {
   primary: "bg-primary", success: "bg-success", warning: "bg-warning",
@@ -52,16 +56,16 @@ interface Props {
 }
 
 export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = true }: Props) {
-  const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
+  const groups = Array.from(new Set(VISIBLE_PERMISSIONS.map((p) => p.group)));
   const setLevel = (key: string, level: PermissionLevel) => onChange({ ...value, [key]: level });
   const setAllInGroup = (group: string, level: PermissionLevel) => {
     const next = { ...value };
-    for (const k of ALL_PERMISSIONS.filter((p) => p.group === group).map((p) => p.key)) next[k] = level;
+    for (const k of VISIBLE_PERMISSIONS.filter((p) => p.group === group).map((p) => p.key)) next[k] = level;
     onChange(next);
   };
   const setAll = (level: PermissionLevel) => {
-    const next: Record<string, PermissionLevel> = {};
-    for (const k of ALL_PERMISSION_KEYS) next[k] = level;
+    const next = { ...value };
+    for (const k of VISIBLE_KEYS) next[k] = level;
     onChange(next);
   };
   const setKeys = (keys: string[], level: PermissionLevel) => {
@@ -129,7 +133,7 @@ export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = t
         </div>
       </fieldset>
       {groups.map((group) => {
-        const items = ALL_PERMISSIONS.filter((p) => p.group === group);
+        const items = VISIBLE_PERMISSIONS.filter((p) => p.group === group);
         return (
           <fieldset key={group} className="border-0 p-0 m-0">
             <div className="flex items-center justify-between mb-2 px-1">
