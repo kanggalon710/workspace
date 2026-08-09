@@ -1743,6 +1743,24 @@ export const ALL_PERMISSIONS = [
   { key: "cheers", label: "Cheers (Apresiasi)", group: "Teamspace" },
   // v5.1 SDM/HRD - kehadiran, absensi, cuti (adaptasi SDM_Jabnet.xlsx)
   { key: "hr_sdm", label: "SDM (Kehadiran, Absensi, Cuti)", group: "HRD" },
+  // v5.6 Finer-grained access: split shared destinations into their own keys so each
+  // page is individually settable in /roles and grantable (add-only) in /users.
+  { key: "pipelines_noc", label: "Pipeline NOC (Kustom)", group: "NOC" },
+  { key: "pipelines_hrd", label: "Pipeline HRD (Kustom)", group: "HRD" },
+  { key: "role_management", label: "Manajemen Role & Izin", group: "Pengaturan" },
+  { key: "tickets_categories", label: "Work Order - Kategori", group: "Teknik" },
+  { key: "tickets_analytics", label: "Work Order - Dashboard & Heatmap", group: "Teknik" },
+  { key: "tickets_sla", label: "Work Order - Kalender SLA", group: "Teknik" },
+  { key: "whatsapp_templates", label: "WhatsApp - Template", group: "Layanan Pelanggan" },
+  { key: "whatsapp_broadcast_pelanggan", label: "WhatsApp - Broadcast Pelanggan", group: "Layanan Pelanggan" },
+  { key: "whatsapp_broadcast_reseller", label: "WhatsApp - Broadcast Reseller", group: "Layanan Pelanggan" },
+  { key: "canvassing_history", label: "Canvassing - Riwayat Sesi", group: "Marketing" },
+  { key: "canvassing_reports", label: "Canvassing - Laporan Lapangan", group: "Marketing" },
+  { key: "marketing_insights", label: "Marketing - Area Insights", group: "Marketing" },
+  // Per-division reactivation pipelines - own keys so they're restrictable separately from
+  // the Customers (customers) / Lead (leads) pages they used to piggyback on.
+  { key: "collections_cs", label: "Pipeline Reaktivasi (Layanan)", group: "Layanan Pelanggan" },
+  { key: "collections_marketing", label: "Pipeline Reaktivasi (Marketing)", group: "Marketing" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -1788,12 +1806,21 @@ export const ALL_PERMISSION_KEYS = ALL_PERMISSIONS.map(p => p.key);
 
 export const PERMISSION_GROUPS = [...new Set(ALL_PERMISSIONS.map(p => p.group))];
 
+// Keys kept in the catalog (for stored role JSON + auto-backfill) but HIDDEN from the
+// role/user permission editors because they gate nothing navigable and have zero permission
+// checks anywhere - showing them would be misleading. NOT removed (removal would strand
+// stored JSON and break auto-migration). Backend-only keys with real checks (billing_sync,
+// resellers, customer_portal_admin gates, etc.) are intentionally NOT hidden.
+export const EDITOR_HIDDEN_KEYS = new Set<string>([
+  "team_chat", "team_schedule", "team_checkins", "team_docs", "team_announcements",
+]);
+
 // Preset templates. `level` = the grant level applied to every listed permission key
 // when the preset is applied (default "write"; "read" for read-only presets).
 export const PERMISSION_PRESETS: Record<string, { label: string; level?: PermissionLevel; permissions: string[] }> = {
   admin: { label: "Admin (Semua Akses)", permissions: [...ALL_PERMISSION_KEYS] },
-  operator: { label: "Operator Teknis", permissions: ["dashboard", "map", "pops", "odcs", "odps", "poles", "cables", "otbs", "bestrays", "splitters", "cable_cores", "core_connections", "splitter_chain", "power_budget", "export_import", "customers", "tickets"] },
-  marketing: { label: "Marketing", permissions: ["dashboard", "map", "marketing_dashboard", "canvassing", "leads", "contacts", "prospects", "marketing_ads"] },
+  operator: { label: "Operator Teknis", permissions: ["dashboard", "map", "pops", "odcs", "odps", "poles", "cables", "otbs", "bestrays", "splitters", "cable_cores", "core_connections", "splitter_chain", "power_budget", "export_import", "customers", "tickets", "tickets_categories", "tickets_analytics", "tickets_sla"] },
+  marketing: { label: "Marketing", permissions: ["marketing_dashboard", "marketing_insights", "canvassing", "canvassing_history", "canvassing_reports", "leads", "collections_marketing", "contacts", "prospects", "marketing_ads"] },
   billing: { label: "Billing & NOC", permissions: ["dashboard", "map", "customers", "packages", "sessions", "devices", "tickets", "collections", "billing_sync", "monitoring", "routers"] },
   viewer: { label: "Viewer (Hanya Lihat)", level: "read", permissions: ["dashboard", "map"] },
 };

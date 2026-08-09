@@ -170,6 +170,7 @@ import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateR
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
 import { getFieldTypeMeta } from "../shared/pipelineFieldTypes.js";
 import { capabilitiesFromLevel, deriveLevel, parseCapabilities, type PipelineCapability } from "../shared/pipelineCapabilities.js";
+import { parseGrants, sanitizeGrants, mergeAdditiveGrants, type GrantMap } from "../shared/permissionGrants.js";
 import { getCachedPerms, setCachedPerms, invalidatePermCache, getCachedPermsAtMitra, setCachedPermsAtMitra, invalidatePermCacheAtMitra } from "./perm-cache";
 import { gatePermissionsByFeatures } from "./feature-gate.js";
 import { getMitraId, getMitraIdOrNull, isSuperAdmin, withMitra } from "./tenant-context.js";
@@ -349,6 +350,8 @@ export interface IStorage {
   setDefaultRolePreset(id: number): Promise<void>;
   getUserEffectivePermissions(userId: number): Promise<{ perms: Record<string, PermissionLevel>; canSeeAllData: boolean; roleName: string | null; isSystem: boolean }>;
   getUserEffectivePermissionsAtMitra(userId: number, mitraId: number): Promise<{ perms: Record<string, PermissionLevel>; canSeeAllData: boolean; roleName: string | null; isSystem: boolean }>;
+  getUserPermissionGrants(userId: number): Promise<Record<string, "read" | "write">>;
+  setUserPermissionGrants(userId: number, grants: unknown): Promise<Record<string, "read" | "write">>;
 
   // Collections (v4.1.2)
   upsertCustomerFromBillingWhitelist(data: BillingCustomerRecord): Promise<{ action: 'created' | 'updated' | 'skipped'; customerId: number; transition: 'none' | 'became_suspended' | 'became_active_after_suspended' | 'payment_received'; before: Customer | null; after: Customer | null }>;
@@ -10936,7 +10939,8 @@ export class DatabaseStorage implements IStorage {
         canSeeAllData: 0,
         permissions: this.buildPermsForPreset([
           "dashboard","map","pops","odcs","odps","poles","cables","otbs","bestrays","splitters",
-          "cable_cores","core_connections","splitter_chain","power_budget","export_import","customers","tickets",
+          "cable_cores","core_connections","splitter_chain","power_budget","export_import","customers",
+          "tickets","tickets_categories","tickets_analytics","tickets_sla",
         ]),
         createdAt: now,
       },
@@ -10945,8 +10949,10 @@ export class DatabaseStorage implements IStorage {
         description: "Canvassing & lead pipeline (data sendiri)",
         isSystem: 1,
         canSeeAllData: 0,
+        // v5.6: division-clean - no cross-division dashboard(NOC)/map(Teknik); marketing sub-pages included.
         permissions: this.buildPermsForPreset([
-          "dashboard","map","marketing_dashboard","canvassing","leads","contacts","prospects","marketing_ads",
+          "marketing_dashboard","marketing_insights","canvassing","canvassing_history","canvassing_reports",
+          "leads","collections_marketing","contacts","prospects","marketing_ads",
         ]),
         createdAt: now,
       },
@@ -10956,7 +10962,8 @@ export class DatabaseStorage implements IStorage {
         isSystem: 1,
         canSeeAllData: 1,
         permissions: this.buildPermsForPreset([
-          "dashboard","map","marketing_dashboard","canvassing","leads","contacts","prospects","marketing_ads",
+          "marketing_dashboard","marketing_insights","canvassing","canvassing_history","canvassing_reports",
+          "leads","collections_marketing","contacts","prospects","marketing_ads",
         ]),
         createdAt: now,
       },
@@ -11068,14 +11075,15 @@ export class DatabaseStorage implements IStorage {
 
         // Auto-add semua ALL_PERMISSION_KEYS yang belum ada di role ini.
         // Default value tergantung tipe role:
-        //  - Administrator → "write" (akses penuh ke fitur baru)
+        //  - System-Admin / Admin → "write" (akses penuh ke fitur baru)
         //  - Read Only → "read"
-        //  - Role custom yang punya customers write → "read" untuk safety
-        //  - Lainnya → "none"
+        //  - Lainnya → "none" (RESTRICT-by-default: fitur baru tidak otomatis dibuka.
+        //    Sebelumnya role dengan customers=write dapat "read" ke SEMUA key baru -
+        //    ini membocorkan akses lintas-divisi, dihapus.)
         const defaultLevel: PermissionLevel =
           r.name === "System-Admin" || r.name === "Admin" ? "write" :
           r.name === "Read Only" ? "read" :
-          (perms.customers === "write" ? "read" : "none");
+          "none";
 
         for (const key of ALL_PERMISSION_KEYS) {
           if (perms[key] === undefined) {
@@ -11383,6 +11391,13 @@ export class DatabaseStorage implements IStorage {
 
     const result = await this._resolvePermsAtMitra(userId, mitraId);
 
+    // Per-user "izin khusus" (add-only grants): raise effective perms above the role,
+    // never lower. Skipped entirely for users with no grants (common case).
+    const grants = await this._loadUserGrants(userId);
+    const withGrants = Object.keys(grants).length
+      ? { ...result, perms: mergeAdditiveGrants(result.perms, grants) }
+      : result;
+
     // Enforce per-mitra feature toggles: strip disabled features' permissions.
     // JABNET (mitra 1) is the owner and is never gated.
     let featuresJson: string | null = null;
@@ -11394,9 +11409,32 @@ export class DatabaseStorage implements IStorage {
         featuresJson = rows?.[0]?.features ?? null;
       } catch { featuresJson = null; }
     }
-    const gated = { ...result, perms: gatePermissionsByFeatures(result.perms, featuresJson, mitraId) };
+    const gated = { ...withGrants, perms: gatePermissionsByFeatures(withGrants.perms, featuresJson, mitraId) };
     setCachedPermsAtMitra(cacheKey, gated);
     return gated;
+  }
+
+  /** Load a user's add-only permission grants (izin khusus) from users.permissions. */
+  private async _loadUserGrants(userId: number): Promise<GrantMap> {
+    try {
+      const [u] = await this.db.select({ permissions: users.permissions }).from(users).where(eq(users.id, userId)).limit(1);
+      return parseGrants(u?.permissions ?? null);
+    } catch { return {}; }
+  }
+
+  /** Read a user's current special-permission grants (for the admin UI). */
+  async getUserPermissionGrants(userId: number): Promise<GrantMap> {
+    return this._loadUserGrants(userId);
+  }
+
+  /** Set a user's add-only special-permission grants. Sanitizes to valid keys +
+   *  read/write only (add-only; "none"/unknown dropped). Invalidates the perm cache. */
+  async setUserPermissionGrants(userId: number, grants: unknown): Promise<GrantMap> {
+    const clean = sanitizeGrants(grants);
+    await this.db.update(users).set({ permissions: JSON.stringify(clean) }).where(eq(users.id, userId));
+    invalidatePermCache(userId);
+    invalidatePermCacheAtMitra(userId); // evict all mitra-scoped entries for this user
+    return clean;
   }
 
   private async _resolvePermsAtMitra(

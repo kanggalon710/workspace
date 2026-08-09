@@ -428,21 +428,50 @@ function requireWritePermission(req: Request, res: Response, feature: string): b
   return true;
 }
 
+/** Guard: require READ permission on ANY of the given features, or return 403.
+ *  Used for shared network-asset reads (division-level gating) - pages like
+ *  Dashboard NOC / Export-Import / Splitter Chain / Power Budget fetch many
+ *  asset lists at once, so narrow per-asset keying would break them. */
+function requireAnyPermission(req: Request, res: Response, features: string[]): boolean {
+  if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
+  if (features.some((f) => hasPermission(req, f))) return true;
+  sendError(res, "Akses ditolak", 403);
+  return false;
+}
+
+const NETWORK_READ_KEYS = ["map","pops","odcs","odps","poles","cables","otbs","bestrays","splitters","cable_cores","core_connections","splitter_chain","power_budget","export_import","dashboard"];
+
+const MIKROTIK_READ_KEYS = ["dashboard","sessions","devices","monitoring","routers","packages","customers","integrations"];
+const GENIEACS_READ_KEYS = ["dashboard","devices","monitoring","customers","integrations"];
+
 /** Teamspace v5.0: endpoint pipeline melayani juga board tugas tim, jadi gerbang fitur
  *  menerima key `pipelines` ATAU `team_tasks`. Ini TIDAK membocorkan data: resolusi
  *  per-pipeline di getPipelineCapabilities tetap ketat - pemegang team_tasks tanpa
  *  key pipelines mendapat nol kapabilitas atas pipeline ops, dan sebaliknya pemegang
  *  pipelines yang bukan anggota tim mendapat nol kapabilitas atas board tim. */
+// v5.6: floor also accepts any per-division pipeline key (pipelines_hrd, pipelines_noc, …) so a
+// division-only user reaches the handler; getPipelineCapabilities (division-aware) is the strict
+// per-pipeline authority, so this does not leak cross-division data.
+function hasAnyPipelineKey(req: Request, needWrite: boolean): boolean {
+  const pl = req.authUser?.permLevels ?? {};
+  for (const k of Object.keys(pl)) {
+    if (k !== "pipelines" && !k.startsWith("pipelines_")) continue;
+    const lvl = pl[k];
+    if (needWrite ? lvl === "write" : (lvl === "read" || lvl === "write")) return true;
+  }
+  return false;
+}
+
 function requirePipelinesFeature(req: Request, res: Response): boolean {
   if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
-  if (hasPermission(req, "pipelines") || hasPermission(req, "team_tasks")) return true;
+  if (hasPermission(req, "team_tasks") || hasAnyPipelineKey(req, false)) return true;
   sendError(res, "Akses ditolak: tidak memiliki izin 'pipelines' (read)", 403);
   return false;
 }
 
 function requireWritePipelinesFeature(req: Request, res: Response): boolean {
   if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
-  if (hasWritePermission(req, "pipelines") || hasWritePermission(req, "team_tasks")) return true;
+  if (hasWritePermission(req, "team_tasks") || hasAnyPipelineKey(req, true)) return true;
   sendError(res, "Akses ditolak: fitur 'pipelines' bersifat read-only untuk role Anda", 403);
   return false;
 }
@@ -485,6 +514,8 @@ const PATH_TO_FEATURE: Array<{ pattern: RegExp; feature: string }> = [
   { pattern: /^\/api\/core-connections\b/, feature: "core_connections" },
   // Tools
   { pattern: /^\/api\/export-import\b/, feature: "export_import" },
+  { pattern: /^\/api\/import\b/, feature: "export_import" },
+  { pattern: /^\/api\/prospects\b/, feature: "prospects" },
   { pattern: /^\/api\/settings\b/, feature: "integrations" },
   { pattern: /^\/api\/mpwa\b/, feature: "mpwa" },
   { pattern: /^\/api\/pipelines\b/, feature: "pipelines" },
@@ -2100,6 +2131,32 @@ router.get("/api/users/:id/stats", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+/** GET /api/users/:id/permission-grants - izin khusus (add-only) user + konteks role.
+ *  `grants` = izin khusus per-user; `effective` = perms efektif (role + grants merged). */
+router.get("/api/users/:id/permission-grants", async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const id = parseInt(req.params.id as string);
+    if (!(await requireUserInScope(req, res, id))) return;
+    const grants = await storage.getUserPermissionGrants(id);
+    const eff = await storage.getUserEffectivePermissionsAtMitra(id, req.authUser!.activeMitraId);
+    sendSuccess(res, { grants, effective: eff.perms, roleName: eff.roleName });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+/** PUT /api/users/:id/permission-grants - set izin khusus (add-only, hanya menaikkan akses).
+ *  Body: { grants: { <permission_key>: "read" | "write" } }. Level "none"/key tak dikenal dibuang. */
+router.put("/api/users/:id/permission-grants", async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const id = parseInt(req.params.id as string);
+    if (!(await requireUserInScope(req, res, id))) return;
+    const clean = await storage.setUserPermissionGrants(id, req.body?.grants);
+    await logAudit(req, "UPDATE", "user_permission_grants", id, undefined, { grants: clean });
+    sendSuccess(res, { grants: clean });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
 /** POST /api/users/bulk-action - bulk activate/deactivate/role-change/delete */
 router.post("/api/users/bulk-action", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
@@ -2609,6 +2666,7 @@ router.get("/api/map-data/customer-search", async (req: Request, res: Response) 
 });
 
 router.get("/api/map-data/infra", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "map")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const target = resolveMapMitraId({
@@ -2633,6 +2691,7 @@ router.get("/api/map-data/infra", async (req: Request, res: Response) => {
 });
 
 router.get("/api/map-data/customers", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const bboxStr = String(req.query.bbox || "");
@@ -2665,7 +2724,8 @@ router.get("/api/map-data/customers", async (req: Request, res: Response) => {
 
 // ==================== POP ====================
 
-router.get("/api/pops", async (_req, res) => {
+router.get("/api/pops", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getPops();
     sendSuccess(res, data);
@@ -2673,6 +2733,7 @@ router.get("/api/pops", async (_req, res) => {
 });
 
 router.get("/api/pops/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getPop(Number(req.params.id));
     if (!data) return sendError(res, "POP not found", 404);
@@ -2712,7 +2773,8 @@ router.delete("/api/pops/:id", async (req, res) => {
 
 // ==================== ODC ====================
 
-router.get("/api/odcs", async (_req, res) => {
+router.get("/api/odcs", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOdcs();
     sendSuccess(res, data);
@@ -2720,6 +2782,7 @@ router.get("/api/odcs", async (_req, res) => {
 });
 
 router.get("/api/odcs/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOdc(Number(req.params.id));
     if (!data) return sendError(res, "ODC not found", 404);
@@ -2759,7 +2822,8 @@ router.delete("/api/odcs/:id", async (req, res) => {
 
 // ==================== ODP ====================
 
-router.get("/api/odps", async (_req, res) => {
+router.get("/api/odps", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOdps();
     sendSuccess(res, data);
@@ -2767,7 +2831,8 @@ router.get("/api/odps", async (_req, res) => {
 });
 
 // ODP utilization - real-time dari customer data
-router.get("/api/odps/utilization", async (_req, res) => {
+router.get("/api/odps/utilization", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const [allOdps, allCustomers] = await Promise.all([
       storage.getOdps(),
@@ -2830,6 +2895,7 @@ router.get("/api/odps/utilization", async (_req, res) => {
 });
 
 router.get("/api/odps/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOdp(Number(req.params.id));
     if (!data) return sendError(res, "ODP not found", 404);
@@ -2871,6 +2937,7 @@ router.delete("/api/odps/:id", async (req, res) => {
 
 /** GET /api/odps/:id/photos - list semua foto ODP (metadata only, tanpa binary) */
 router.get("/api/odps/:id/photos", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   if (!requireAuth(req, res)) return;
   try {
     const odpId = Number(req.params.id);
@@ -2918,6 +2985,7 @@ router.post("/api/odps/:id/photos", async (req, res) => {
 
 /** GET /api/odps/:id/photos/:photoId - stream binary foto */
 router.get("/api/odps/:id/photos/:photoId", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   if (!requireAuth(req, res)) return;
   try {
     const odpId = Number(req.params.id);
@@ -3144,7 +3212,8 @@ router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
 
 // ==================== CUSTOMERS ====================
 
-router.get("/api/customers", async (_req, res) => {
+router.get("/api/customers", async (req, res) => {
+  if (!requirePermission(req, res, "customers")) return;
   try {
     const data = await storage.getCustomers();
     sendSuccess(res, data);
@@ -3203,6 +3272,7 @@ interface IntegrationCandidate {
 }
 
 router.get("/api/customers/integration-audit", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig().catch(() => null);
@@ -3349,6 +3419,7 @@ router.post("/api/customers/auto-pair-ont", async (req: Request, res: Response) 
 
 // Get ONT status for all customers (match by pppoeUsername or ontSerialNumber)
 router.get("/api/customers/ont-status", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig().catch(() => null);
@@ -3410,6 +3481,7 @@ router.get("/api/customers/generate-id", async (req, res) => {
 });
 
 router.get("/api/customers/:id", async (req, res) => {
+  if (!requirePermission(req, res, "customers")) return;
   try {
     const data = await storage.getCustomer(Number(req.params.id));
     if (!data) return sendError(res, "Customer not found", 404);
@@ -3422,6 +3494,7 @@ router.get("/api/customers/:id", async (req, res) => {
  * Used by ticket detail screen Customer Panel
  */
 router.get("/api/customers/:id/profile", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "customers")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -3638,7 +3711,8 @@ router.delete("/api/customers/:id", async (req, res) => {
 
 // ==================== POLES ====================
 
-router.get("/api/poles", async (_req, res) => {
+router.get("/api/poles", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getPoles();
     sendSuccess(res, data);
@@ -3646,6 +3720,7 @@ router.get("/api/poles", async (_req, res) => {
 });
 
 router.get("/api/poles/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getPole(Number(req.params.id));
     if (!data) return sendError(res, "Pole not found", 404);
@@ -3685,7 +3760,8 @@ router.delete("/api/poles/:id", async (req, res) => {
 
 // ==================== CABLES ====================
 
-router.get("/api/cables", async (_req, res) => {
+router.get("/api/cables", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCables();
     sendSuccess(res, data);
@@ -3693,6 +3769,7 @@ router.get("/api/cables", async (_req, res) => {
 });
 
 router.get("/api/cables/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCable(Number(req.params.id));
     if (!data) return sendError(res, "Cable not found", 404);
@@ -3736,7 +3813,8 @@ router.delete("/api/cables/:id", async (req, res) => {
 
 // ==================== OTB ====================
 
-router.get("/api/otbs", async (_req, res) => {
+router.get("/api/otbs", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOtbs();
     sendSuccess(res, data);
@@ -3744,6 +3822,7 @@ router.get("/api/otbs", async (_req, res) => {
 });
 
 router.get("/api/otbs/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOtb(Number(req.params.id));
     if (!data) return sendError(res, "OTB not found", 404);
@@ -3752,6 +3831,7 @@ router.get("/api/otbs/:id", async (req, res) => {
 });
 
 router.get("/api/pops/:popId/otbs", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getOtbsByPop(Number(req.params.popId));
     sendSuccess(res, data);
@@ -3790,7 +3870,8 @@ router.delete("/api/otbs/:id", async (req, res) => {
 
 // ==================== BESTRAY ====================
 
-router.get("/api/bestrays", async (_req, res) => {
+router.get("/api/bestrays", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getBestrays();
     sendSuccess(res, data);
@@ -3798,6 +3879,7 @@ router.get("/api/bestrays", async (_req, res) => {
 });
 
 router.get("/api/bestrays/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getBestray(Number(req.params.id));
     if (!data) return sendError(res, "Bestray not found", 404);
@@ -3806,6 +3888,7 @@ router.get("/api/bestrays/:id", async (req, res) => {
 });
 
 router.get("/api/odcs/:odcId/bestrays", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getBestraysByOdc(Number(req.params.odcId));
     sendSuccess(res, data);
@@ -3844,7 +3927,8 @@ router.delete("/api/bestrays/:id", async (req, res) => {
 
 // ==================== SPLITTERS ====================
 
-router.get("/api/splitters", async (_req, res) => {
+router.get("/api/splitters", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getSplitters();
     sendSuccess(res, data);
@@ -3852,6 +3936,7 @@ router.get("/api/splitters", async (_req, res) => {
 });
 
 router.get("/api/splitters/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getSplitter(Number(req.params.id));
     if (!data) return sendError(res, "Splitter not found", 404);
@@ -3891,7 +3976,8 @@ router.delete("/api/splitters/:id", async (req, res) => {
 
 // ==================== CABLE CORES ====================
 
-router.get("/api/cable-cores", async (_req, res) => {
+router.get("/api/cable-cores", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCableCores();
     sendSuccess(res, data);
@@ -3899,6 +3985,7 @@ router.get("/api/cable-cores", async (_req, res) => {
 });
 
 router.get("/api/cable-cores/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCableCore(Number(req.params.id));
     if (!data) return sendError(res, "Cable core not found", 404);
@@ -3907,6 +3994,7 @@ router.get("/api/cable-cores/:id", async (req, res) => {
 });
 
 router.get("/api/cables/:cableId/cores", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCableCoreByCable(Number(req.params.cableId));
     sendSuccess(res, data);
@@ -3942,7 +4030,8 @@ router.delete("/api/cable-cores/:id", async (req, res) => {
 
 // ==================== CORE CONNECTIONS ====================
 
-router.get("/api/core-connections", async (_req, res) => {
+router.get("/api/core-connections", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCoreConnections();
     sendSuccess(res, data);
@@ -3950,6 +4039,7 @@ router.get("/api/core-connections", async (_req, res) => {
 });
 
 router.get("/api/core-connections/by-entity", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const { type, id } = req.query;
     if (!type || !id) return sendError(res, "type and id query params required");
@@ -3959,6 +4049,7 @@ router.get("/api/core-connections/by-entity", async (req, res) => {
 });
 
 router.get("/api/core-connections/:id", async (req, res) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const data = await storage.getCoreConnection(Number(req.params.id));
     if (!data) return sendError(res, "Core connection not found", 404);
@@ -4036,7 +4127,8 @@ function toCSV(data: any[], columns: { key: string; label: string }[]): string {
   return [header, ...rows].join("\n");
 }
 
-router.get("/api/export/pops", async (_req, res) => {
+router.get("/api/export/pops", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getPops();
     const csv = toCSV(data, [
@@ -4056,7 +4148,8 @@ router.get("/api/export/pops", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/odcs", async (_req, res) => {
+router.get("/api/export/odcs", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getOdcs();
     const csv = toCSV(data, [
@@ -4077,7 +4170,8 @@ router.get("/api/export/odcs", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/odps", async (_req, res) => {
+router.get("/api/export/odps", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getOdps();
     const csv = toCSV(data, [
@@ -4097,7 +4191,8 @@ router.get("/api/export/odps", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/customers", async (_req, res) => {
+router.get("/api/export/customers", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCustomers();
     const csv = toCSV(data, [
@@ -4118,7 +4213,8 @@ router.get("/api/export/customers", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/cables", async (_req, res) => {
+router.get("/api/export/cables", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCables();
     const csv = toCSV(data, [
@@ -4138,7 +4234,8 @@ router.get("/api/export/cables", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/cable-cores", async (_req, res) => {
+router.get("/api/export/cable-cores", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCableCores();
     const csv = toCSV(data, [
@@ -4157,7 +4254,8 @@ router.get("/api/export/cable-cores", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/otbs", async (_req, res) => {
+router.get("/api/export/otbs", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getOtbs();
     const csv = toCSV(data, [
@@ -4174,7 +4272,8 @@ router.get("/api/export/otbs", async (_req, res) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
-router.get("/api/export/core-connections", async (_req, res) => {
+router.get("/api/export/core-connections", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const data = await storage.getCoreConnections();
     const csv = toCSV(data, [
@@ -4197,7 +4296,8 @@ router.get("/api/export/core-connections", async (_req, res) => {
 });
 
 // Full network export (all data in one report)
-router.get("/api/export/full-report", async (_req, res) => {
+router.get("/api/export/full-report", async (req, res) => {
+  if (!requirePermission(req, res, "export_import")) return;
   try {
     const [pops, odcs, odps, customers, cables, otbs, coreConns] = await Promise.all([
       storage.getPops(),
@@ -4856,9 +4956,14 @@ async function getPipelineCapabilities(req: Request, pipelineId: number): Promis
   if (restricted && req.authUser!.effectiveRoleId) {
     grantCapabilities = await storage.getGrantCapabilitiesForRole(pipelineId, req.authUser!.effectiveRoleId);
   }
+  // v5.6 per-division pipeline gating: a division pipeline (division != null) is authorized by
+  // its own key `pipelines_<division>` (e.g. pipelines_hrd), not the generic `pipelines`. So a
+  // grant of only pipelines_hrd does NOT open NOC pipeline data. Global ops pipelines stay on `pipelines`.
+  const pipelineDivision = (p as any).division ?? null;
+  const pipelineKey = pipelineDivision ? `pipelines_${pipelineDivision}` : "pipelines";
   return resolvePipelineCapabilities({
     isAdmin, isCreator, restricted,
-    keyLevel: (req.authUser!.permLevels["pipelines"] ?? "none") as "none" | "read" | "write",
+    keyLevel: (req.authUser!.permLevels[pipelineKey] ?? "none") as "none" | "read" | "write",
     grantCapabilities,
   });
 }
@@ -5268,11 +5373,16 @@ async function validateTriggerConfig(
 }
 
   router.get("/api/pipelines", async (req, res) => {
-    if (!requirePipelinesFeature(req, res)) return;
     const includeArchived = req.query.archived === "1";
     // Divisi: ?division=hrd => hanya pipeline divisi itu. Tanpa param => hanya pipeline ops global
     // (division NULL), agar pipeline kerja divisi tidak bocor ke daftar /pipelines umum.
     const division = typeof req.query.division === "string" && req.query.division.trim() ? req.query.division.trim() : null;
+    // v5.6: pipeline divisi diotorisasi key `pipelines_<divisi>` (mis. pipelines_hrd); pipeline global oleh `pipelines`.
+    // Floor: boleh key spesifik divisi, key generic pipelines, atau team_tasks (anggota tim).
+    const listKey = division ? `pipelines_${division}` : "pipelines";
+    if (!hasPermission(req, listKey) && !hasPermission(req, "pipelines") && !hasPermission(req, "team_tasks")) {
+      return sendError(res, "Akses ditolak", 403);
+    }
     // Teamspace: pipeline milik tim disembunyikan dari daftar ops (NFR-012) -
     // board tim diakses via /api/teamspace/* + GET /api/pipelines/:id.
     const all = (await storage.listPipelines(includeArchived))
@@ -5281,7 +5391,7 @@ async function validateTriggerConfig(
     const admin = isPipelineAdmin(req);
     const grantMap = (!admin && req.authUser!.effectiveRoleId)
       ? await storage.getGrantCapabilitiesMapForRole(req.authUser!.effectiveRoleId) : {};
-    const keyLevel = (req.authUser!.permLevels["pipelines"] ?? "none") as "none" | "read" | "write";
+    const keyLevel = (req.authUser!.permLevels[listKey] ?? "none") as "none" | "read" | "write";
     const out: any[] = [];
     for (const p of all) {
       const caps = resolvePipelineCapabilities({
@@ -10559,9 +10669,9 @@ router.get("/api/customers/:id/payment-history", async (req: Request, res: Respo
 
 // -- Akses collection ter-scope divisi (SOP delegasi churn→reaktivasi) ---------
 // User penuh (izin 'collections') melihat semua. User divisi CS/Marketing melihat
-// HANYA kartu di stage milik divisinya lewat ?division=. Izin fallback tanpa key baru:
-// cs → 'customers', marketing → 'leads' (divisi tsb sudah memiliki izin itu).
-const COLLECTION_DIVISION_PERM: Record<string, string> = { cs: "customers", marketing: "leads" };
+// HANYA kartu di stage milik divisinya lewat ?division=. v5.6: masing-masing pipeline
+// reaktivasi punya key sendiri agar bisa dibatasi terpisah dari halaman Pelanggan/Lead.
+const COLLECTION_DIVISION_PERM: Record<string, string> = { cs: "collections_cs", marketing: "collections_marketing" };
 function collectionScopedDivision(req: Request): string | undefined {
   const d = String(req.query.division ?? "").toLowerCase().trim();
   return COLLECTION_DIVISION_PERM[d] ? d : undefined;
@@ -10891,6 +11001,7 @@ router.delete("/api/collections/:id", async (req: Request, res: Response) => {
 });
 
 router.get("/api/billing/config", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "billing_sync")) return;
   try {
     const allCustomers = await storage.getCustomers();
     const withSync = allCustomers.filter((c: any) => c.lastSyncAt).sort((a: any, b: any) => b.lastSyncAt.localeCompare(a.lastSyncAt));
@@ -12339,7 +12450,7 @@ router.get("/api/marketing/audience/lookalike", async (req: Request, res: Respon
 
 // Audience: ODP Geo-Target Clusters
 router.get("/api/marketing/audience/geo-targets", async (req: Request, res: Response) => {
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!requirePermission(req, res, "marketing_ads")) return;
   try {
     const odps = await storage.getOdps();
     const customers = await storage.getCustomers();
@@ -12364,7 +12475,7 @@ router.get("/api/marketing/audience/geo-targets", async (req: Request, res: Resp
 
 // Ads Stats
 router.get("/api/marketing/ads/stats", async (req: Request, res: Response) => {
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!requirePermission(req, res, "marketing_ads")) return;
   try {
     const leads = await storage.getLeads({});
     const now = new Date();
@@ -12555,7 +12666,8 @@ router.post("/api/webhook/tiktok-leads", async (req: Request, res: Response) => 
 
 // -- Ticket Categories --
 router.get("/api/ticket-categories", async (req: Request, res: Response) => {
-  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  // Read shared by the ticket board (display) and the Kategori admin page - accept either key.
+  if (!requireAnyPermission(req, res, ["tickets", "tickets_categories"])) return;
   try {
     const cats = await storage.getTicketCategories();
     sendSuccess(res, cats);
@@ -12594,6 +12706,7 @@ router.delete("/api/ticket-categories/:id", async (req: Request, res: Response) 
 
 // -- Tickets --
 router.get("/api/tickets/stats", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const stats = await storage.getTicketStats();
@@ -12603,6 +12716,7 @@ router.get("/api/tickets/stats", async (req: Request, res: Response) => {
 
 // v4.2.18 (C.4): SLA dashboard stats - compliance %, MTTR, breach trend (last 14 hari)
 router.get("/api/tickets/sla-stats", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const stats = await storage.getSlaDashboardStats();
@@ -12612,6 +12726,7 @@ router.get("/api/tickets/sla-stats", async (req: Request, res: Response) => {
 
 // v4.2.16: laporan workload per-teknisi (Tiket per Teknisi)
 router.get("/api/tickets/workload-by-technician", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const data = await storage.getTechnicianWorkload();
@@ -12621,6 +12736,7 @@ router.get("/api/tickets/workload-by-technician", async (req: Request, res: Resp
 
 // v4.2.17: CSAT aggregate per teknisi (untuk dashboard)
 router.get("/api/tickets/csat-by-technician", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const fromIso = req.query.from ? String(req.query.from) : undefined;
@@ -12631,6 +12747,7 @@ router.get("/api/tickets/csat-by-technician", async (req: Request, res: Response
 
 // v4.2.17: ODP repeat-issue heatmap (≥3 tiket dalam 30 hari)
 router.get("/api/tickets/odp-repeat-issues", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const threshold = Number(req.query.threshold) || 3;
@@ -12715,6 +12832,7 @@ router.post("/api/tickets/auto-from-alarm", async (req: Request, res: Response) 
 });
 
 router.get("/api/tickets", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const page = Number(req.query.page) || 1;
@@ -12729,6 +12847,7 @@ router.get("/api/tickets", async (req: Request, res: Response) => {
 });
 
 router.get("/api/tickets/:id", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const ticket = await storage.getTicket(Number(req.params.id));
@@ -12954,6 +13073,7 @@ router.delete("/api/tickets/:id", async (req: Request, res: Response) => {
 // -- Ticket Team --
 // v4.2.18 (A.3): GET activities paginated + filterable by action type
 router.get("/api/tickets/:id/activities", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -12966,6 +13086,7 @@ router.get("/api/tickets/:id/activities", async (req: Request, res: Response) =>
 });
 
 router.get("/api/tickets/:id/team", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const enriched = await storage.getTicketTeamWithUsers(Number(req.params.id));
@@ -13063,6 +13184,7 @@ router.post("/api/tickets/:id/check-out", async (req: Request, res: Response) =>
 
 // -- Evidence --
 router.get("/api/tickets/:id/evidence", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const evidence = await storage.getTicketEvidence(Number(req.params.id));
@@ -13088,6 +13210,7 @@ router.post("/api/tickets/:id/evidence", async (req: Request, res: Response) => 
  * Filesystem (photo_path) → fallback ke legacy base64 (photo_data) untuk data pra-migrasi.
  */
 router.get("/api/tickets/:id/evidence/:evidenceId/photo", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const meta = await storage.getTicketEvidencePhotoMeta(Number(req.params.evidenceId));
@@ -13123,6 +13246,7 @@ router.post("/api/tickets/:id/gps", async (req: Request, res: Response) => {
 });
 
 router.get("/api/tickets/:id/gps", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const logs = await storage.getTicketGpsLogs(Number(req.params.id));
@@ -13132,6 +13256,7 @@ router.get("/api/tickets/:id/gps", async (req: Request, res: Response) => {
 
 // -- MTTR --
 router.get("/api/tickets/:id/mttr", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const mttr = await storage.getTicketMTTR(Number(req.params.id));
@@ -13160,6 +13285,7 @@ router.put("/api/tickets/:id/checklist", async (req: Request, res: Response) => 
  *   - kalau on-hold, slaRemainingSec di-freeze (pakai freeze state saat pause mulai)
  */
 router.get("/api/tickets/:id/workflow", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13250,6 +13376,7 @@ router.get("/api/tickets/:id/workflow", async (req: Request, res: Response) => {
  * BAST = Berita Acara Serah Terima. Browser bisa "Print → Save as PDF" untuk simpan.
  */
 router.get("/api/tickets/:id/bast", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13503,6 +13630,7 @@ router.put("/api/tickets/:id/stages/:stageKey/transition", async (req: Request, 
 
 /** GET /api/tickets/:id/stage-transitions - full history per stage */
 router.get("/api/tickets/:id/stage-transitions", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13513,6 +13641,7 @@ router.get("/api/tickets/:id/stage-transitions", async (req: Request, res: Respo
 
 /** v4.2.18 (P1.4): GET /api/tickets/:id/stage-edit-history - edit log per field per stage */
 router.get("/api/tickets/:id/stage-edit-history", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13527,6 +13656,7 @@ router.get("/api/tickets/:id/stage-edit-history", async (req: Request, res: Resp
 // ===========================================================
 
 router.get("/api/tickets/:id/comments", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const comments = await storage.getTicketComments(Number(req.params.id));
@@ -13630,6 +13760,7 @@ router.post("/api/tickets/:id/resume", async (req: Request, res: Response) => {
 });
 
 router.get("/api/tickets/:id/pauses", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const id = Number(req.params.id);
@@ -13696,6 +13827,7 @@ router.post("/api/tickets/:id/cancel", async (req: Request, res: Response) => {
 
 /** GET /api/odps/:id/active-tickets - duplicate detection saat create tiket di ODP */
 router.get("/api/odps/:id/active-tickets", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const odpId = Number(req.params.id);
@@ -13758,6 +13890,7 @@ router.post("/api/tickets/:id/checkpoint", async (req: Request, res: Response) =
 
 /** GET /api/tickets/:id/timeline - chronological feed: checkpoints + activities + time metrics */
 router.get("/api/tickets/:id/timeline", async (req: Request, res: Response) => {
+  if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const ticketId = Number(req.params.id);
@@ -14286,6 +14419,7 @@ router.post("/api/genieacs/test", async (req: Request, res: Response) => {
 });
 
 router.get("/api/genieacs/stats", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, GENIEACS_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig();
@@ -14373,6 +14507,7 @@ async function buildDeviceSearchQuery(search: string): Promise<any> {
 }
 
 router.get("/api/genieacs/devices", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, GENIEACS_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig();
@@ -14386,6 +14521,7 @@ router.get("/api/genieacs/devices", async (req: Request, res: Response) => {
 });
 
 router.get("/api/genieacs/devices/:id", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, GENIEACS_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const config = await getGenieConfig();
@@ -16397,6 +16533,7 @@ function routerToCreds(r: { host: string; port: number | null; username: string;
 
 // -- CRUD Routers --
 router.get("/api/mikrotik/routers", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!requireAdmin(req, res)) return;
   try {
     const all = await storage.getMikrotikRouters();
@@ -16407,6 +16544,7 @@ router.get("/api/mikrotik/routers", async (req: Request, res: Response) => {
 });
 
 router.get("/api/mikrotik/routers/:id", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!requireAdmin(req, res)) return;
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16503,6 +16641,7 @@ router.post("/api/mikrotik/test-connection", async (req: Request, res: Response)
 
 // -- System Resource --
 router.get("/api/mikrotik/routers/:id/resource", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!requireAdmin(req, res)) return;
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16516,6 +16655,7 @@ router.get("/api/mikrotik/routers/:id/resource", async (req: Request, res: Respo
 
 // -- PPPoE Active Sessions --
 router.get("/api/mikrotik/routers/:id/ppp/active", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16527,6 +16667,7 @@ router.get("/api/mikrotik/routers/:id/ppp/active", async (req: Request, res: Res
 
 // -- PPPoE Secrets --
 router.get("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16538,6 +16679,7 @@ router.get("/api/mikrotik/routers/:id/ppp/secret", async (req: Request, res: Res
 
 // -- PPP Profiles --
 router.get("/api/mikrotik/routers/:id/ppp/profile", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16563,6 +16705,7 @@ router.post("/api/mikrotik/routers/:id/ppp/disconnect", async (req: Request, res
 
 // -- Interfaces --
 router.get("/api/mikrotik/routers/:id/interfaces", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16574,6 +16717,7 @@ router.get("/api/mikrotik/routers/:id/interfaces", async (req: Request, res: Res
 
 // -- IP Pools --
 router.get("/api/mikrotik/routers/:id/ip/pool", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16585,6 +16729,7 @@ router.get("/api/mikrotik/routers/:id/ip/pool", async (req: Request, res: Respon
 
 // -- Logs --
 router.get("/api/mikrotik/routers/:id/log", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16597,6 +16742,7 @@ router.get("/api/mikrotik/routers/:id/log", async (req: Request, res: Response) 
 
 // -- Aggregated Active Sessions (all routers) --
 router.get("/api/mikrotik/sessions/active", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const allRouters = await storage.getMikrotikRouters();
@@ -16732,6 +16878,7 @@ router.post("/api/mikrotik/routers/:id/ppp/secret/:secretId/toggle", async (req:
 // ===========================================================
 
 router.get("/api/mikrotik/routers/:id/queue/simple", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16781,6 +16928,7 @@ router.delete("/api/mikrotik/routers/:id/queue/simple/:queueId", async (req: Req
 // ===========================================================
 
 router.get("/api/mikrotik/routers/:id/dhcp/leases", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16791,6 +16939,7 @@ router.get("/api/mikrotik/routers/:id/dhcp/leases", async (req: Request, res: Re
 });
 
 router.get("/api/mikrotik/routers/:id/arp", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16801,6 +16950,7 @@ router.get("/api/mikrotik/routers/:id/arp", async (req: Request, res: Response) 
 });
 
 router.get("/api/mikrotik/routers/:id/neighbors", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));
@@ -16811,6 +16961,7 @@ router.get("/api/mikrotik/routers/:id/neighbors", async (req: Request, res: Resp
 });
 
 router.get("/api/mikrotik/routers/:id/firewall/address-list", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, MIKROTIK_READ_KEYS)) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
     const r = await storage.getMikrotikRouter(Number(req.params.id));

@@ -1,6 +1,16 @@
-import { ALL_PERMISSIONS, ALL_PERMISSION_KEYS, type PermissionLevel } from "@shared/schema";
+import { ALL_PERMISSIONS, EDITOR_HIDDEN_KEYS, type PermissionLevel } from "@shared/schema";
+import { DIVISIONS, divisionPermissionKeys } from "@/lib/divisions";
 import { Button } from "@/components/ui/button";
 import { Ban, Eye, Pencil } from "lucide-react";
+
+// Keys shown in the editor: hide dead/no-effect keys (see EDITOR_HIDDEN_KEYS).
+const VISIBLE_PERMISSIONS = ALL_PERMISSIONS.filter((p) => !EDITOR_HIDDEN_KEYS.has(p.key));
+const VISIBLE_KEYS = VISIBLE_PERMISSIONS.map((p) => p.key);
+
+const DIV_ACCENT: Record<string, string> = {
+  primary: "bg-primary", success: "bg-success", warning: "bg-warning",
+  info: "bg-info", violet: "bg-violet-500", rose: "bg-rose-500",
+};
 
 export const LEVEL_CFG: Record<PermissionLevel, { label: string; color: string; bg: string; icon: any }> = {
   none:  { label: "-",    color: "text-muted-foreground",                       bg: "bg-muted/30",                                  icon: Ban },
@@ -46,17 +56,32 @@ interface Props {
 }
 
 export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = true }: Props) {
-  const groups = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.group)));
+  const groups = Array.from(new Set(VISIBLE_PERMISSIONS.map((p) => p.group)));
   const setLevel = (key: string, level: PermissionLevel) => onChange({ ...value, [key]: level });
   const setAllInGroup = (group: string, level: PermissionLevel) => {
     const next = { ...value };
-    for (const k of ALL_PERMISSIONS.filter((p) => p.group === group).map((p) => p.key)) next[k] = level;
+    for (const k of VISIBLE_PERMISSIONS.filter((p) => p.group === group).map((p) => p.key)) next[k] = level;
     onChange(next);
   };
   const setAll = (level: PermissionLevel) => {
-    const next: Record<string, PermissionLevel> = {};
-    for (const k of ALL_PERMISSION_KEYS) next[k] = level;
+    const next = { ...value };
+    for (const k of VISIBLE_KEYS) next[k] = level;
     onChange(next);
+  };
+  const setKeys = (keys: string[], level: PermissionLevel) => {
+    const next = { ...value };
+    for (const k of keys) next[k] = level;
+    onChange(next);
+  };
+  // Level agregat 1 divisi: full jika semua key write, read jika semua ≥read,
+  // none jika semua none, selain itu "mixed" (sebagian).
+  const divisionLevel = (keys: string[]): PermissionLevel | "mixed" => {
+    if (keys.length === 0) return "none";
+    const lv = keys.map((k) => (value[k] ?? "none") as PermissionLevel);
+    if (lv.every((l) => l === "write")) return "write";
+    if (lv.every((l) => l === "none")) return "none";
+    if (lv.every((l) => l !== "none")) return "read";
+    return "mixed";
   };
   return (
     <div className="space-y-4">
@@ -67,8 +92,48 @@ export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = t
           <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("write")} disabled={disabled}><Pencil className="h-3 w-3 mr-1" /> All Full</Button>
         </div>
       )}
+
+      {/* Akses per Divisi - scope role ke divisinya dengan 1 klik. Matrix detail di bawah
+          tetap bisa dipakai untuk pengecualian ("izin khusus" satu fitur lintas divisi). */}
+      <fieldset className="border-0 p-0 m-0 rounded-lg border bg-muted/20 p-3 space-y-2">
+        <legend className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">
+          Akses per Divisi
+        </legend>
+        <p className="text-[11px] text-muted-foreground px-1 -mt-1">
+          Batasi role ke divisinya. Pilih 1+ divisi; atur pengecualian per-fitur di matrix bawah.
+        </p>
+        <div className="space-y-1 rounded-lg border bg-card overflow-hidden">
+          {DIVISIONS.map((d) => {
+            const keys = divisionPermissionKeys(d);
+            const lvl = divisionLevel(keys);
+            return (
+              <div key={d.key} className="flex items-center justify-between gap-2 py-2 px-3 hover:bg-muted/30 transition-colors">
+                <div className="min-w-0 flex-1 flex items-center gap-2">
+                  <span className={`size-2 rounded-full shrink-0 ${DIV_ACCENT[d.accent] ?? "bg-muted-foreground"}`} />
+                  <span className="text-sm truncate">{d.short}</span>
+                  {lvl === "mixed" && <span className="text-[9px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 shrink-0">sebagian</span>}
+                </div>
+                <div className="flex gap-0.5 shrink-0">
+                  {(["none", "read", "write"] as PermissionLevel[]).map((opt) => {
+                    const cfg = LEVEL_CFG[opt];
+                    const active = lvl === opt;
+                    return (
+                      <button key={opt} type="button" onClick={() => setKeys(keys, opt)} disabled={disabled}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all ${
+                          active ? `${cfg.bg} ${cfg.color}` : "text-muted-foreground hover:bg-muted"
+                        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}>
+                        {cfg.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </fieldset>
       {groups.map((group) => {
-        const items = ALL_PERMISSIONS.filter((p) => p.group === group);
+        const items = VISIBLE_PERMISSIONS.filter((p) => p.group === group);
         return (
           <fieldset key={group} className="border-0 p-0 m-0">
             <div className="flex items-center justify-between mb-2 px-1">
