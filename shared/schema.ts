@@ -1757,6 +1757,10 @@ export const ALL_PERMISSIONS = [
   { key: "canvassing_history", label: "Canvassing - Riwayat Sesi", group: "Marketing" },
   { key: "canvassing_reports", label: "Canvassing - Laporan Lapangan", group: "Marketing" },
   { key: "marketing_insights", label: "Marketing - Area Insights", group: "Marketing" },
+  // Per-division reactivation pipelines - own keys so they're restrictable separately from
+  // the Customers (customers) / Lead (leads) pages they used to piggyback on.
+  { key: "collections_cs", label: "Pipeline Reaktivasi (Layanan)", group: "Layanan Pelanggan" },
+  { key: "collections_marketing", label: "Pipeline Reaktivasi (Marketing)", group: "Marketing" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -1816,7 +1820,7 @@ export const EDITOR_HIDDEN_KEYS = new Set<string>([
 export const PERMISSION_PRESETS: Record<string, { label: string; level?: PermissionLevel; permissions: string[] }> = {
   admin: { label: "Admin (Semua Akses)", permissions: [...ALL_PERMISSION_KEYS] },
   operator: { label: "Operator Teknis", permissions: ["dashboard", "map", "pops", "odcs", "odps", "poles", "cables", "otbs", "bestrays", "splitters", "cable_cores", "core_connections", "splitter_chain", "power_budget", "export_import", "customers", "tickets", "tickets_categories", "tickets_analytics", "tickets_sla"] },
-  marketing: { label: "Marketing", permissions: ["marketing_dashboard", "marketing_insights", "canvassing", "canvassing_history", "canvassing_reports", "leads", "contacts", "prospects", "marketing_ads"] },
+  marketing: { label: "Marketing", permissions: ["marketing_dashboard", "marketing_insights", "canvassing", "canvassing_history", "canvassing_reports", "leads", "collections_marketing", "contacts", "prospects", "marketing_ads"] },
   billing: { label: "Billing & NOC", permissions: ["dashboard", "map", "customers", "packages", "sessions", "devices", "tickets", "collections", "billing_sync", "monitoring", "routers"] },
   viewer: { label: "Viewer (Hanya Lihat)", level: "read", permissions: ["dashboard", "map"] },
 };

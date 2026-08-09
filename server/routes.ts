@@ -10669,9 +10669,9 @@ router.get("/api/customers/:id/payment-history", async (req: Request, res: Respo
 
 // -- Akses collection ter-scope divisi (SOP delegasi churn→reaktivasi) ---------
 // User penuh (izin 'collections') melihat semua. User divisi CS/Marketing melihat
-// HANYA kartu di stage milik divisinya lewat ?division=. Izin fallback tanpa key baru:
-// cs → 'customers', marketing → 'leads' (divisi tsb sudah memiliki izin itu).
-const COLLECTION_DIVISION_PERM: Record<string, string> = { cs: "customers", marketing: "leads" };
+// HANYA kartu di stage milik divisinya lewat ?division=. v5.6: masing-masing pipeline
+// reaktivasi punya key sendiri agar bisa dibatasi terpisah dari halaman Pelanggan/Lead.
+const COLLECTION_DIVISION_PERM: Record<string, string> = { cs: "collections_cs", marketing: "collections_marketing" };
 function collectionScopedDivision(req: Request): string | undefined {
   const d = String(req.query.division ?? "").toLowerCase().trim();
   return COLLECTION_DIVISION_PERM[d] ? d : undefined;

@@ -10952,7 +10952,7 @@ export class DatabaseStorage implements IStorage {
         // v5.6: division-clean - no cross-division dashboard(NOC)/map(Teknik); marketing sub-pages included.
         permissions: this.buildPermsForPreset([
           "marketing_dashboard","marketing_insights","canvassing","canvassing_history","canvassing_reports",
-          "leads","contacts","prospects","marketing_ads",
+          "leads","collections_marketing","contacts","prospects","marketing_ads",
         ]),
         createdAt: now,
       },
@@ -10963,7 +10963,7 @@ export class DatabaseStorage implements IStorage {
         canSeeAllData: 1,
         permissions: this.buildPermsForPreset([
           "marketing_dashboard","marketing_insights","canvassing","canvassing_history","canvassing_reports",
-          "leads","contacts","prospects","marketing_ads",
+          "leads","collections_marketing","contacts","prospects","marketing_ads",
         ]),
         createdAt: now,
       },

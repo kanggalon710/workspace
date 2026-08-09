@@ -268,8 +268,8 @@ function ProtectedRouter() {
           <Route path="/tickets">{() => <WithPerm permission="tickets"><TicketingPage /></WithPerm>}</Route>
           <Route path="/collections">{() => <WithPerm permission="collections"><CollectionPipelinePage /></WithPerm>}</Route>
           {/* SOP churn→reaktivasi: view collection ter-scope divisi (delegasi lintas-divisi). */}
-          <Route path="/collections/cs">{() => <WithPerm permission="customers"><CollectionPipelinePage division="cs" /></WithPerm>}</Route>
-          <Route path="/collections/marketing">{() => <WithPerm permission="leads"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
+          <Route path="/collections/cs">{() => <WithPerm permission="collections_cs"><CollectionPipelinePage division="cs" /></WithPerm>}</Route>
+          <Route path="/collections/marketing">{() => <WithPerm permission="collections_marketing"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
           {/* Pipeline kerja per-divisi (HRD/NOC dst) - board kustom ter-scope divisi. */}
           <Route path="/pipelines/divisi/:key">{(params) => <WithPerm permission={`pipelines_${params.key}`}><PipelinesPage division={params.key} /></WithPerm>}</Route>
