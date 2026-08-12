@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { formatRupiah } from "@shared/currency";
 import { Card } from "@/components/ui/card";
 import { ArrowRightLeft } from "lucide-react";
 import {
@@ -25,7 +26,7 @@ const PRIORITY_CLS: Record<string, string> = {
 
 function fieldText(f: PipelineField, raw: string): string {
   if (f.type === "checkbox") return raw === "1" ? "Ya" : "Tidak";
-  if (f.type === "currency") return "Rp " + Number(raw).toLocaleString("id-ID");
+  if (f.type === "currency") return formatRupiah(Number(raw));
   if (f.type === "multiselect") {
     try {
       return (JSON.parse(raw) as string[]).join(", ");

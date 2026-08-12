@@ -1,10 +1,11 @@
 import { Database, Users, CheckCircle2, XCircle, Wallet, TrendingUp } from "lucide-react";
+import { formatRupiah } from "@shared/currency";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCollectionMetrics } from "@/hooks/usePipelines";
 
-const rupiah = (n: number) => "Rp " + n.toLocaleString("id-ID");
+const rupiah = (n: number) => formatRupiah(n);
 
 export function CollectionMetricsDialog({ pipelineId, open, onClose }: { pipelineId: number; open: boolean; onClose: () => void }) {
   const { data: m, isLoading } = useCollectionMetrics(pipelineId, open);

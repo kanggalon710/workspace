@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useLocation, useRoute } from "wouter";
 import { DevDbSyncCard } from "@/components/integrations/DevDbSyncCard";
 import { AppUpdateCard } from "@/components/integrations/AppUpdateCard";
@@ -167,40 +168,21 @@ function PasswordInput({
 // Status badge helper
 // ---------------------------------------------------------------------------
 
-function StatusBadge({
+// Adapter domain: status integrasi -> design-system StatusBadge (satu sumber warna).
+function IntegrationStatusBadge({
   status,
 }: {
   status: "connected" | "inactive" | "config" | "available";
 }) {
   switch (status) {
     case "connected":
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">
-          <CheckCircle2 className="h-3 w-3 mr-1" />
-          Terhubung
-        </Badge>
-      );
+      return <StatusBadge variant="success" label="Terhubung" />;
     case "inactive":
-      return (
-        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800">
-          <XCircle className="h-3 w-3 mr-1" />
-          Tidak Aktif
-        </Badge>
-      );
+      return <StatusBadge variant="danger" label="Tidak Aktif" />;
     case "config":
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
-          <AlertTriangle className="h-3 w-3 mr-1" />
-          Perlu Konfigurasi
-        </Badge>
-      );
+      return <StatusBadge variant="warning" label="Perlu Konfigurasi" />;
     case "available":
-      return (
-        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-          <Zap className="h-3 w-3 mr-1" />
-          Tersedia
-        </Badge>
-      );
+      return <StatusBadge variant="info" label="Tersedia" icon={Zap} />;
   }
 }
 
@@ -1076,7 +1058,7 @@ export default function IntegrationPage() {
                 </p>
               </div>
             </div>
-            <StatusBadge status={gmapsConnected ? "connected" : "config"} />
+            <IntegrationStatusBadge status={gmapsConnected ? "connected" : "config"} />
           </div>
 
           {/* Form fields */}
@@ -1211,7 +1193,7 @@ export default function IntegrationPage() {
                 </p>
               </div>
             </div>
-            <StatusBadge status={mikrotikStatus} />
+            <IntegrationStatusBadge status={mikrotikStatus} />
           </div>
 
           {/* Connected routers list */}
@@ -2460,7 +2442,7 @@ export default function IntegrationPage() {
                 </p>
               </div>
             </div>
-            <StatusBadge status="connected" />
+            <IntegrationStatusBadge status="connected" />
           </div>
 
           {/* Config fields */}

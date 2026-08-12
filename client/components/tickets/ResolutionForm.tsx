@@ -172,6 +172,7 @@ export function ResolutionForm({
                 <Button
                   size="icon-xs"
                   variant="ghost"
+                  aria-label="Hapus material"
                   onClick={() => removeMaterial(i)}
                   className="col-span-1 text-rose-600"
                 >

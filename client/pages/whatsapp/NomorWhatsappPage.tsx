@@ -513,7 +513,7 @@ function MpwaConnectModal({ deviceId, onClose }: { deviceId: number; onClose: ()
                       className="text-xs font-mono"
                     />
                     <Button
-                      size="icon-xs" variant="ghost"
+                      size="icon-xs" variant="ghost" aria-label="Salin URL webhook"
                       onClick={() => {
                         const url = `${window.location.origin}/api/whatsapp/webhook/mpwa/${device.webhookToken}`;
                         navigator.clipboard.writeText(url).then(() => toast.success("URL di-copy"));

@@ -398,6 +398,7 @@ export function ManageFieldsDialog({
                       <Button
                         variant="ghost"
                         size="icon-sm"
+                        aria-label="Hapus field"
                         className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(f.id, f.label)}
                       >

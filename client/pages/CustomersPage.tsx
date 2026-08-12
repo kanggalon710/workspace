@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatRupiah } from "@shared/currency";
 import { useCustomers, useOdps, useOdpUtilization } from "@/hooks/useAssets";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -422,10 +424,11 @@ function CustomerForm({ item, onSubmit, isPending }: { item: Customer | null; on
 
 // ==================== STATUS BADGE ====================
 
-function StatusBadge({ status }: { status: string | null }) {
-  if (status === "active") return <Badge className="bg-green-500 text-white">Aktif</Badge>;
-  if (status === "suspended") return <Badge className="bg-yellow-500 text-white">Isolir</Badge>;
-  return <Badge variant="secondary">Non-Aktif</Badge>;
+// Adapter domain: status pelanggan -> design-system StatusBadge (satu sumber warna).
+function CustomerStatusBadge({ status }: { status: string | null }) {
+  if (status === "active") return <StatusBadge variant="success" label="Aktif" appearance="solid" showIcon={false} />;
+  if (status === "suspended") return <StatusBadge variant="warning" label="Isolir" appearance="solid" showIcon={false} />;
+  return <StatusBadge variant="neutral" label="Non-Aktif" showIcon={false} />;
 }
 
 // ==================== SYNC MODAL ====================
@@ -1274,8 +1277,8 @@ export default function CustomersPage() {
     else { setSortBy(col); setSortDir("asc"); }
   };
 
-  // Format currency
-  const formatRp = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+  // Format currency (via shared helper; NBSP dari Intl jadi spasi biasa - imperseptibel)
+  const formatRp = (n: number) => formatRupiah(n);
 
   const SortIcon = ({ col }: { col: typeof sortBy }) => {
     if (sortBy !== col) return null;
@@ -1774,7 +1777,7 @@ export default function CustomersPage() {
                           ) : <span className="text-xs text-muted-foreground">Belum dihubungkan</span>}
                         </td>
                         <td className="py-2.5 px-4">
-                          <StatusBadge status={c.status} />
+                          <CustomerStatusBadge status={c.status} />
                           {anyC.billingStatus === "belum_lunas" && (
                             <div className="text-xs text-orange-500 mt-1">Belum lunas</div>
                           )}
@@ -1828,10 +1831,10 @@ export default function CustomersPage() {
                               onClick={() => { setDetailCustomer(c); setDetailTab("info"); setDetailShowPassword(false); }}>
                               <Info className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditItem(c)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Edit pelanggan" onClick={() => setEditItem(c)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(c)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label="Hapus pelanggan" onClick={() => setDeleteTarget(c)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -1853,11 +1856,11 @@ export default function CustomersPage() {
             </p>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1}
-                onClick={() => setPage(1)}>
+                onClick={() => setPage(1)} aria-label="Halaman pertama">
                 <ChevronLeft className="h-3 w-3" /><ChevronLeft className="h-3 w-3 -ml-2" />
               </Button>
               <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}>
+                onClick={() => setPage(p => p - 1)} aria-label="Halaman sebelumnya">
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
               {/* Page numbers */}
@@ -1875,11 +1878,11 @@ export default function CustomersPage() {
                 );
               })}
               <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}>
+                onClick={() => setPage(p => p + 1)} aria-label="Halaman berikutnya">
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
               <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages}
-                onClick={() => setPage(totalPages)}>
+                onClick={() => setPage(totalPages)} aria-label="Halaman terakhir">
                 <ChevronRight className="h-3 w-3" /><ChevronRight className="h-3 w-3 -ml-2" />
               </Button>
             </div>
@@ -1984,7 +1987,7 @@ export default function CustomersPage() {
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground">Status</span>
-                    <div className="mt-0.5"><StatusBadge status={dc.status} /></div>
+                    <div className="mt-0.5"><CustomerStatusBadge status={dc.status} /></div>
                   </div>
                 </div>
 

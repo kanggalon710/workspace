@@ -531,6 +531,7 @@ export default function OtbManagerPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Edit OTB"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditItem(otb);
@@ -541,6 +542,7 @@ export default function OtbManagerPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Hapus OTB"
                             className="text-destructive hover:text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();

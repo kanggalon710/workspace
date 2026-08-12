@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatRupiah } from "@shared/currency";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
@@ -91,7 +92,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 // -- Helpers ----------------------------------------------------------------
 
 function formatRp(n: number): string {
-  return "Rp " + n.toLocaleString("id-ID");
+  return formatRupiah(n);
 }
 
 function copyToClipboard(text: string) {

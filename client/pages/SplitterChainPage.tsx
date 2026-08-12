@@ -545,7 +545,7 @@ function ChainTreeView({
         <div className="fixed inset-y-0 right-0 w-80 max-w-full bg-background border-l shadow-2xl z-50 animate-in slide-in-from-right duration-200 overflow-y-auto">
           <div className="p-4 border-b flex items-center justify-between">
             <h3 className="text-sm font-bold">Detail Node</h3>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedNode(null)}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Tutup detail" onClick={() => setSelectedNode(null)}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -1039,6 +1039,7 @@ export default function SplitterChainPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Edit splitter"
                               onClick={() => setEditItem(spl)}
                             >
                               <Pencil className="h-4 w-4" />
@@ -1046,6 +1047,7 @@ export default function SplitterChainPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Hapus splitter"
                               className="text-destructive hover:text-destructive"
                               onClick={() => setDeleteId(spl.id)}
                             >

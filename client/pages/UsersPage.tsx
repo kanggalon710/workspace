@@ -410,10 +410,13 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
   const isActive = user.isActive === 1;
   return (
     <li
+      role="button"
+      tabIndex={0}
       className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${
         isSelected ? "bg-sky-50/50 dark:bg-sky-950/20" : ""
       }`}
       onClick={onClick}
+      onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); onClick?.(); } }}
     >
       {/* Checkbox */}
       <div className="w-8 shrink-0" onClick={(e) => e.stopPropagation()}>

@@ -246,6 +246,7 @@ export default function PowerBudgetPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
+                    aria-label="Hapus splitter"
                     onClick={() => removeSplitter(index)}
                     className="shrink-0 text-destructive hover:text-destructive"
                   >

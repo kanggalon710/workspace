@@ -245,6 +245,7 @@ function CampaignsTab({ onOpenHistory }: { onOpenHistory: (id: number) => void }
                   <Button
                     size="icon-xs"
                     variant="ghost"
+                    aria-label="Hapus campaign"
                     onClick={() => { if (confirm(`Hapus campaign "${c.name}"?`)) deleteMut.mutate(c.id); }}
                     className="text-rose-600"
                   >
@@ -322,6 +323,7 @@ function TemplatesTab({ onEdit }: { onEdit: (t: TemplateData) => void }) {
                   <Button
                     size="icon-xs"
                     variant="ghost"
+                    aria-label="Hapus template"
                     onClick={() => { if (confirm(`Hapus template "${t.name}"?`)) deleteMut.mutate(t.id!); }}
                     className="text-rose-600 ml-auto"
                   >
@@ -439,6 +441,7 @@ function AudiencesTab() {
                 <Button
                   size="icon-xs"
                   variant="ghost"
+                  aria-label="Hapus segment"
                   onClick={() => { if (confirm(`Hapus segment "${s.name}"?`)) deleteMut.mutate(s.id); }}
                   className="text-rose-600"
                 >

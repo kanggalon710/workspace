@@ -490,6 +490,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Edit aset"
                           onClick={() => setEditItem(item)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -497,6 +498,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Hapus aset"
                           onClick={() => setDeleteId(item.id)}
                           className="text-destructive hover:text-destructive"
                         >

@@ -3,6 +3,28 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-12 - Optimasi Ronde 2: formatRupiah + a11y sweep + ScrollRow + normalisasi shadow
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Eksekusi roadmap optimasi (#2/#3/#6 + normalisasi design-system) yang aman untuk
+app LIVE. User memilih "safe wins + normalisasi" dan menunda migrasi warna token (#7).
+**Perubahan:**
+- **DRY currency:** `shared/currency.ts` (`formatRupiah`) + `shared/currency.test.ts` (3 test)
+  menggantikan 8 formatter `fmtRp`/`formatRp` inline (delegasi, call site tak berubah).
+- **A11y:** 26 tombol ikon dapat `aria-label`; 3 `<img>` dapat `alt` (hapus komentar
+  eslint-disable usang); Dashboard alert-row + Phonebook CSV-dropzone jadi keyboard-operable
+  (`<button>` / `role=button`); MitraPage card + UsersPage row `role=button`+`onKeyDown`
+  (dengan guard `e.target===e.currentTarget` agar kontrol nested tak dobel-trigger).
+- **Primitif baru:** `client/components/ui/scroll-row.tsx` (`<ScrollRow>`), diadopsi di
+  TeamReportPanel + AllTasksPage (zero visual change).
+- **Normalisasi shadow:** local `StatusBadge` (Customers, Integration) jadi adapter domain
+  yang delegasi ke `ui/StatusBadge`; local `EmptyState` portal dipindah ke `ui/EmptyState`.
+**Verifikasi:** `tsc --noEmit` -> 0 error. `tsx --test shared/*.test.ts` -> 297 pass (naik dari
+294), 0 fail. `npm run build` -> sukses (esbuild 4.0mb). Spot-grep: 8 file currency memakai
+`formatRupiah`; 3 shadow lokal hilang.
+**Catatan:** shadow `StatTile`/`KpiCard` (LoyaltyAdmin/TicketsDashboard/BugReports) DITAHAN
+karena akan menghilangkan fitur (lihat DECISIONS). Sisa optimasi di `.ai/TODO.md`. Belum
+di-deploy.
+
 ## 2026-08-12 - Standar AI Agent + roadmap optimasi + proof slice `<FullBleedPage>`
 **Agen:** claude | **Status:** selesai
 **Kenapa:** User minta codebase mengikuti prinsip dasar (semantic HTML, DRY, reusable

@@ -10,25 +10,34 @@
   (Users, Roles, Mitra, Announcements, BugReports, PublicApi). Zero visual change.
   (2026-08-12)
 - [x] `AGENTS.md` + folder `.ai/` (standar wajib-baca untuk semua AI agent).
+- [x] **#2 (inti) `formatRupiah`** - `shared/currency.ts` (+test, 3) menggantikan 8 formatter
+  `fmtRp`/`formatRp` inline via delegasi. (2026-08-12)
+- [x] **#3 (inti) `<ScrollRow>`** - primitif `ui/scroll-row.tsx` + adopsi di TeamReportPanel
+  & AllTasksPage. (2026-08-12)
+- [x] **#6 A11y sweep** - 26 tombol ikon diberi `aria-label`; 3 `<img>` diberi `alt`;
+  Dashboard alert-row + Phonebook dropzone keyboard-operable; MitraPage/UsersPage row
+  `role=button`+keyboard. (2026-08-12)
+- [x] **Normalisasi shadow (sebagian):** local `StatusBadge` (CustomersPage, IntegrationPage)
+  + `EmptyState` (PortalDashboard) dipindah ke komponen `ui/`. (2026-08-12)
 
 ## Prioritas berikutnya (aman, mekanis dulu)
-- [ ] **#2 Helper `formatRupiah`** di `client/lib/utils.ts`; ganti `fmtRp` inline
-  (LoyaltyAdminPage:99 + lainnya). Hapus deklarasi lokal `StatusBadge`/`StatTile` yang
-  membayangi versi `ui/` di CustomersPage, IntegrationPage, LoyaltyAdminPage (3 page).
-- [ ] **#3 `<FilterPillBar>` / scroll-row** - idiom `overflow-x-auto no-scrollbar
-  -mx-4 md:mx-0 px-4 md:px-0` di **15 page** (5 di antaranya string identik). Ekstrak
-  jadi satu komponen presentational.
-- [ ] **#4 Adopsi `dialogSize.ts`** - `w-[calc(100vw-2rem)]` masih hardcoded di
-  **39 file** padahal `client/lib/dialogSize.ts` (`dialogSizeClass`) sudah ada.
-  Cluster terparah: `components/pipelines/*` (8 dialog), `components/teamspace/*` (5).
-- [ ] **#5 Adopsi `<StatTile>` (20+ page) & `<EmptyState>` (43 page)** - penggantian
-  mekanis markup manual dengan komponen yang sudah terbukti. Rendah risiko.
+- [ ] **#2 sisa - shadow `StatTile`/`KpiCard` DITAHAN:** LoyaltyAdmin (`KpiCard`,
+  filter-tab `StatTile`), TicketsDashboard (`KpiCard`), BugReports (`StatTile`) TIDAK
+  dipindah karena punya fitur yang belum ada di `ui/StatTile` (nilai berwarna, pulse
+  `urgent`, tab-filter aktif+dot). Butuh ekstensi `ui/StatTile` dulu (lihat DECISIONS).
+- [ ] **#3 sisa - adopsi `<ScrollRow>` lebih luas:** ~13 site scroll-row lain (ContactsPage
+  x2, BusinessDecisionPage, LeadPipelinePage, dll) - mekanis, className diteruskan (zero
+  visual). Tab-bar/segmented/toolbar/thumbnail BUKAN target.
+- [ ] **#4 Adopsi `dialogSize.ts`** - `w-[calc(100vw-2rem)]` masih hardcoded di **39 file**.
+  CATATAN: bukan drop-in - `dialogSizeClass("normal")` mengubah lebar mobile (`100vw-1rem`)
+  + memaksa preset `max-w`; perlu penilaian per-dialog (normalisasi visual, bukan zero-change).
+- [ ] **#5 Adopsi `<StatTile>` (20+ page) & `<EmptyState>` (sisa ~42 page)** - penggantian
+  mekanis markup manual. Portal `EmptyState` sudah (ronde ini). Bukan drop-in murni - butuh
+  remap prop + terima pergeseran visual kecil.
 
 ## Aksesibilitas & semantik (kecil, tertarget)
-- [ ] **#6 A11y sweep:** `aria-label` untuk 21 tombol `size="icon"` tanpa label
-  (terparah CustomersPage: 8); `alt` untuk 12 `<img>` tanpa alt; ganti `<div onClick>`
-  page-level (ContactsPage, MitraPage, Dashboard, UsersPage, whatsapp/PhonebookPage)
-  jadi `<button>`. (Backdrop BottomSheet boleh tetap.)
+- [x] **#6 A11y sweep** - SELESAI (2026-08-12): 26 `aria-label`, 3 `alt`, 2 `div`->`button`,
+  2 row `role=button`+keyboard. (Audit awal "21/12" terkoreksi jadi 26/3 setelah cek ulang.)
 
 ## Warna token (besar, worst-first)
 - [ ] **#7 Migrasi warna hardcoded ke token.** 205 inline `style={{…#hex}}`, 93 arbitrary

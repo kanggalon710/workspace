@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatRupiah } from "@shared/currency";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -54,7 +55,7 @@ interface SahabatDetailDrawerProps {
 }
 
 function fmtRp(n: number | null | undefined) {
-  return n ? `Rp ${n.toLocaleString("id-ID")}` : "-";
+  return formatRupiah(n, "-");
 }
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "-";

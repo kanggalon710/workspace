@@ -431,7 +431,7 @@ export default function Dashboard() {
                 Alert Center
               </CardTitle>
               {alerts.length > 3 && (
-                <span className="text-[10px] font-semibold text-primary cursor-pointer hover:underline absolute right-5 top-5">
+                <span className="text-[10px] font-semibold text-primary absolute right-5 top-5">
                   Lihat Semua ({alerts.length})
                 </span>
               )}
@@ -440,11 +440,11 @@ export default function Dashboard() {
               {alerts.length > 0 ? (
                 <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
                   {alerts.slice(0, 3).map((a, i) => (
-                    <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer hover:shadow-sm transition-all ${a.bg} hover:border-border`} onClick={() => setLocation(a.route)}>
+                    <button type="button" key={i} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer hover:shadow-sm transition-all ${a.bg} hover:border-border`} onClick={() => setLocation(a.route)}>
                       <a.icon className={`h-4 w-4 shrink-0 ${a.color}`} />
                       <span className="text-[11px] sm:text-xs font-semibold flex-1 leading-snug text-slate-700 dark:text-slate-300">{a.msg}</span>
                       <span className="text-[10px] text-muted-foreground font-medium hidden sm:block shrink-0">Lihat detail →</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (

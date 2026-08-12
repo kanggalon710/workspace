@@ -3,6 +3,7 @@
  *  total tugas per list, dan rangkuman poin tugas grouped by status.
  *  Semua dihitung client-side dari useAllTasks() - tanpa endpoint baru. */
 import { useMemo, useState } from "react";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { useLocation } from "wouter";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { useAllTasks } from "@/hooks/useTeamspace";
@@ -200,7 +201,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
 
       {/* -- Rangkuman poin-poin Tugas -- */}
       <PageSection title="Rangkuman Poin Tugas" description="Klik tugas untuk membuka kartunya di board">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+        <ScrollRow bleed="mobile" className="gap-1.5">
           {(["semua", "terlambat", "dikerjakan", "belum", "selesai"] as const).map((k) => (
             <button
               key={k}
@@ -213,7 +214,7 @@ export function TeamReportPanel({ teamId, teamName }: Props) {
               {k === "semua" ? "Semua" : STATUS_LABELS[k]}
             </button>
           ))}
-        </div>
+        </ScrollRow>
         {active === 0 ? (
           <EmptyState icon={ClipboardList} size="sm" title="Belum ada tugas" description="Rekap muncul setelah board tim terisi." />
         ) : (

@@ -1,6 +1,7 @@
 /** Teamspace v5.0 - Semua Tugas (FR-412): agregasi tugas lintas tim, view List + Tabel.
  * View Kalender menyusul Fase 2. */
 import { useMemo, useState } from "react";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { useLocation } from "wouter";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useAllTasks, type AllTasksResponse } from "@/hooks/useTeamspace";
@@ -310,7 +311,7 @@ export default function AllTasksPage() {
               Tugas saya
             </button>
           </div>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          <ScrollRow bleed="mobile" className="gap-1.5">
             {DATE_FILTERS.map((f) => (
               <button
                 key={f.key}
@@ -340,7 +341,7 @@ export default function AllTasksPage() {
                 {t.name}
               </button>
             ))}
-          </div>
+          </ScrollRow>
         </div>
       </PageHeader>
 

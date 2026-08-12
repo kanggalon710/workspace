@@ -693,8 +693,8 @@ function TemplateForm({ template, type, onBack }: {
                 <div className="relative rounded-md border bg-muted/10 p-2">
                   <div className="flex items-center gap-3">
                     <div className="w-20 h-20 rounded bg-muted/50 overflow-hidden grid place-items-center shrink-0">
-                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <img
+                        alt="Gambar template"
                         src={imageUrl.startsWith("http") || imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}
                         className="w-full h-full object-cover"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -966,8 +966,7 @@ function TemplateForm({ template, type, onBack }: {
               <div className="bg-white rounded-lg p-3 shadow-sm max-w-sm">
                 <div className="mb-2 rounded bg-gradient-to-br from-violet-500 to-purple-600 grid place-items-center aspect-video overflow-hidden">
                   {imageUrl ? (
-                    /* eslint-disable-next-line jsx-a11y/alt-text */
-                    <img src={imageUrl} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    <img src={imageUrl} alt="Pratinjau gambar template" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   ) : (
                     <div className="text-white font-black text-2xl tracking-tight-display">JABNET</div>
                   )}

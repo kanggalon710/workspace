@@ -197,6 +197,7 @@ export default function SlaCalendarPage() {
                       <Button
                         size="icon-xs"
                         variant="ghost"
+                        aria-label="Hapus jam SLA"
                         onClick={() => removeWindow(dow, i)}
                         className="text-rose-600 hover:bg-rose-50"
                       >

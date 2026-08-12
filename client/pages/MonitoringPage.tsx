@@ -351,6 +351,7 @@ export default function MonitoringPage() {
           <Button
             variant="outline"
             size="icon"
+            aria-label="Segarkan semua"
             onClick={handleRefreshAll}
             disabled={!routerId}
           >

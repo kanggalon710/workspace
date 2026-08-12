@@ -342,10 +342,13 @@ function MitraCard({ mitra, canEdit, onClick, onToggleActive, onDelete }: {
 
   return (
     <Card
+      role="button"
+      tabIndex={0}
       className={`group cursor-pointer hover:shadow-md transition-all duration-200 ${
         !isActive ? "opacity-60" : ""
       }`}
       onClick={onClick}
+      onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); onClick?.(); } }}
     >
       <CardContent className="p-4 space-y-3">
         {/* Header row */}

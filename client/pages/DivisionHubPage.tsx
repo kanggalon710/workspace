@@ -12,6 +12,7 @@
  *  - hrd       : /hr/dashboard (headcount, kehadiran hari ini, antrean persetujuan)
  *  - teamspace : /teamspace/performance (distribusi tugas + on-time + blocker) */
 import { useMemo } from "react";
+import { formatRupiah } from "@shared/currency";
 import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -33,7 +34,7 @@ import {
 /** Divisi yang punya banner hero (AI-generated) di /public/brand/divisi. */
 const BANNER_DIVISIONS = new Set(["marketing", "teknik", "noc", "cs", "keuangan", "hrd", "teamspace"]);
 
-const fmtRp = (n: any) => (n == null ? "Rp 0" : `Rp ${Number(n).toLocaleString("id-ID")}`);
+const fmtRp = (n: any) => formatRupiah(n == null ? null : Number(n));
 const fmt = (v: any) => (v == null ? "-" : String(v));
 const pct = (used: number, total: number) => (total > 0 ? Math.round((used / total) * 100) : 0);
 

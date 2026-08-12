@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { formatRupiah } from "@shared/currency";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
@@ -71,8 +72,7 @@ interface CollectionWithCustomer extends Collection {
   overdueReason?: "promise" | "sla" | null;
 }
 
-const fmtRp = (n: number | null | undefined) =>
-  n ? `Rp ${n.toLocaleString("id-ID")}` : "-";
+const fmtRp = (n: number | null | undefined) => formatRupiah(n, "-");
 
 const fmtDate = (s: string | null | undefined) => {
   if (!s) return "-";

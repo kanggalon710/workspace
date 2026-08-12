@@ -531,7 +531,7 @@ function ReportDetailDialog({
               </DialogDescription>
             </div>
             {canDelete(report) && (
-              <Button size="icon" variant="ghost" onClick={() => onDelete(report.id)} className="text-red-500 hover:bg-red-500/10 shrink-0">
+              <Button size="icon" variant="ghost" aria-label="Hapus laporan" onClick={() => onDelete(report.id)} className="text-red-500 hover:bg-red-500/10 shrink-0">
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}

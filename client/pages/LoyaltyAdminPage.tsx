@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { formatRupiah } from "@shared/currency";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -97,7 +98,7 @@ const REFERRAL_STATUS_LABELS: Record<string, string> = {
 };
 
 function fmtRp(n: number | null | undefined) {
-  return n ? `Rp ${n.toLocaleString("id-ID")}` : "-";
+  return formatRupiah(n, "-");
 }
 function fmtDate(iso: string | null | undefined) {
   if (!iso) return "-";
@@ -1741,7 +1742,7 @@ function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedChange }
                           {canEdit && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button size="icon-xs" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button>
+                                <Button size="icon-xs" variant="ghost" aria-label="Menu aksi"><MoreHorizontal className="h-4 w-4" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem

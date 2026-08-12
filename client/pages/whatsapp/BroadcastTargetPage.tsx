@@ -1271,8 +1271,7 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
           {(template.mediaUrl || (buttons.length > 0 && !isTextLink)) && (
             <div className="bg-gradient-to-br from-violet-500 to-purple-600 grid place-items-center aspect-video overflow-hidden">
               {template.mediaUrl ? (
-                /* eslint-disable-next-line jsx-a11y/alt-text */
-                <img src={template.mediaUrl} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <img src={template.mediaUrl} alt="Media template" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               ) : (
                 <div className="text-white font-black text-xl tracking-tight-display">JABNET</div>
               )}

@@ -570,10 +570,10 @@ function PhonebookDetail({ phonebookId, onBack }: { phonebookId: number; onBack:
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground truncate max-w-xs">{c.address ?? "-"}</td>
                     <td className="px-3 py-2 text-right">
-                      <Button size="icon-xs" variant="ghost" onClick={() => { setEditContact(c); setAddContactOpen(true); }}>
+                      <Button size="icon-xs" variant="ghost" aria-label="Edit kontak" onClick={() => { setEditContact(c); setAddContactOpen(true); }}>
                         <Edit3 className="h-3 w-3 text-blue-600" />
                       </Button>
-                      <Button size="icon-xs" variant="ghost" onClick={() => { if (confirm(`Hapus kontak "${c.name}"?`)) deleteMut.mutate(c.id); }}>
+                      <Button size="icon-xs" variant="ghost" aria-label="Hapus kontak" onClick={() => { if (confirm(`Hapus kontak "${c.name}"?`)) deleteMut.mutate(c.id); }}>
                         <Trash2 className="h-3 w-3 text-rose-600" />
                       </Button>
                     </td>
@@ -1338,7 +1338,7 @@ function ImportDialog({ open, phonebookId, onClose }: { open: boolean; phonebook
 
           {mode === "csv" && (
             <>
-              <div className="rounded-md border-2 border-dashed p-6 text-center cursor-pointer hover:border-violet-400" onClick={() => fileRef.current?.click()}>
+              <div role="button" tabIndex={0} className="rounded-md border-2 border-dashed p-6 text-center cursor-pointer hover:border-violet-400" onClick={() => fileRef.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }}>
                 <FileSpreadsheet className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
                 <div className="text-sm font-bold">Klik untuk pilih file CSV</div>
                 <div className="text-[10px] text-muted-foreground mt-0.5">Format: name, phone, email, address, notes (semua kolom opsional kecuali name + phone)</div>

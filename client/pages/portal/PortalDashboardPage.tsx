@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePortalAuth } from "@/context/CustomerPortalAuthContext";
@@ -660,7 +661,7 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
               <BigStat icon={<TrendingUp className="h-4 w-4 rotate-180" />} label="Upload Sesi" value={fmtBytes(live.bytesOut ?? 0)} tone="amber" />
             </div>
           ) : (
-            <EmptyState icon={<WifiOff className="h-10 w-10" />} title="Tidak ada sesi aktif" desc="Koneksi PPPoE belum terdaftar. Cek modem atau hubungi support." />
+            <EmptyState icon={WifiOff} title="Tidak ada sesi aktif" description="Koneksi PPPoE belum terdaftar. Cek modem atau hubungi support." />
           )}
         </CardContent>
       </Card>
@@ -689,9 +690,9 @@ function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
 
           {chartData.length === 0 ? (
             <EmptyState
-              icon={<Activity className="h-10 w-10" />}
+              icon={Activity}
               title="Belum ada data traffic"
-              desc="Data akan tersedia setelah beberapa snapshot tercatat (setiap 15 menit)."
+              description="Data akan tersedia setelah beberapa snapshot tercatat (setiap 15 menit)."
             />
           ) : (
             <div className="h-64 -ml-2">
@@ -841,9 +842,9 @@ function WifiTab({ apiFetch, me, qc }: any) {
       <Card>
         <CardContent className="p-8">
           <EmptyState
-            icon={<WifiOff className="h-12 w-12" />}
+            icon={WifiOff}
             title="Perangkat ONT Belum Terdeteksi"
-            desc="Fitur kelola WiFi aktif ketika perangkat ONT terhubung ke sistem JABNET. Hubungi CS bila memerlukan bantuan."
+            description="Fitur kelola WiFi aktif ketika perangkat ONT terhubung ke sistem JABNET. Hubungi CS bila memerlukan bantuan."
           />
         </CardContent>
       </Card>
@@ -882,7 +883,7 @@ function WifiTab({ apiFetch, me, qc }: any) {
           {wifiLoading ? (
             <div className="py-8"><LoadingState /></div>
           ) : usable.length === 0 ? (
-            <EmptyState icon={<WifiOff className="h-10 w-10" />} title="Tidak ada interface WiFi aktif" desc="Hubungi support untuk pemeriksaan perangkat." />
+            <EmptyState icon={WifiOff} title="Tidak ada interface WiFi aktif" description="Hubungi support untuk pemeriksaan perangkat." />
           ) : (
             <div className="space-y-3">
               {usable.map((iface: any) => (
@@ -1127,9 +1128,9 @@ function TicketsTab({ tickets, apiFetch, qc }: any) {
         <Card>
           <CardContent className="p-10">
             <EmptyState
-              icon={<Inbox className="h-12 w-12" />}
+              icon={Inbox}
               title="Belum Ada Tiket"
-              desc="Semua laporan akan tampil di sini. Klik 'Lapor Baru' untuk membuat tiket pertama."
+              description="Semua laporan akan tampil di sini. Klik 'Lapor Baru' untuk membuat tiket pertama."
             />
           </CardContent>
         </Card>
@@ -2052,16 +2053,6 @@ function LoadingState() {
     <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
       <Loader2 className="h-6 w-6 animate-spin mb-2" />
       <div className="text-xs">Memuat data...</div>
-    </div>
-  );
-}
-
-function EmptyState({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div className="py-8 text-center">
-      <div className="text-muted-foreground/50 inline-flex mb-3">{icon}</div>
-      <div className="font-semibold text-sm">{title}</div>
-      <div className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">{desc}</div>
     </div>
   );
 }
