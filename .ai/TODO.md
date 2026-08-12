@@ -57,9 +57,11 @@
   `client/pages/loyalty/` (shared, tiles [KpiCard/TierCard/StatTile], SummaryTab, DiscountRow,
   LeaderboardTable, ReferralsTable, PointRedemptionsTab, PointConfigDialog [+Mikrotik]). Kode
   komponen byte-identik (hanya import + `export`), import di-prune ke yang terpakai saja.
-- [ ] **CustomersPage** (2620) - medium: SyncModal, IntegrationAuditDialog, CustomerForm,
-  CustomerLocalEditForm, DistrictCard, CustomerCommunication; ganti `<table>` mentah ->
-  `<DataTable>`; hapus StatusBadge lokal.
+- [x] **CustomersPage SELESAI** (2026-08-12): 2623 -> 1455 baris. 7 file di
+  `client/pages/customers/` (shared, CustomerForm, CustomerStatusBadge, DistrictCard,
+  CustomerLocalEditForm, IntegrationAuditDialog, CustomerCommunication). Dead code `SyncModal`
+  (~99 baris, 0 referensi) dihapus. Sisa: ganti `<table>` mentah -> `<DataTable>` +
+  ekstrak 3 dialog inline (butuh prop-threading) = follow-up terpisah.
 - [ ] **IntegrationPage** (3050) - tersulit (state `allSettings` dibaca semua card);
   ekstrak tiap card `<h3>` (GenieACS, BillingSync, MPWA, Telegram, MetaCAPI, dll) +
   7 helper badge/toggle/snippet.

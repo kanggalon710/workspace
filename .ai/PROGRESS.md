@@ -3,6 +3,22 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-12 - #9: Pecah CustomersPage (2623 -> 1455 baris) + hapus dead code
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjutan #9. CustomersPage 2623 baris; deklarasi module-scoped prop-driven
+diekstrak; ditemukan `SyncModal` (~99 baris) yang 0 referensi (dead code).
+**Perubahan:** 7 file di `client/pages/customers/`: `shared.ts` (LOCKABLE_FIELDS,
+parseOverrides, exportCustomersCSV, PAGE_SIZE_OPTIONS, DistrictSummary), `CustomerForm.tsx`,
+`CustomerStatusBadge.tsx`, `DistrictCard.tsx`, `CustomerLocalEditForm.tsx`,
+`IntegrationAuditDialog.tsx` (+pickBestSerial/interfaces/METHOD_LABELS internal),
+`CustomerCommunication.tsx`. `SyncModal` dead code DIHAPUS (bukan diekstrak). Main tinggal
+1455 baris (komponen utama + dialog inline + tabel). Import di-prune per file.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses. Perilaku identik (kecuali hapus
+dead code yang memang tak pernah dipakai).
+**Catatan:** Sisa CustomersPage (tabel mentah -> `<DataTable>`, 3 dialog inline) butuh
+prop-threading -> follow-up. IntegrationPage (3050) tersulit (state `allSettings` dibagi
+semua card) -> ronde split tersendiri.
+
 ## 2026-08-12 - #9: Pecah LoyaltyAdminPage (3610 -> 558 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** File raksasa (3610 baris) susah dirawat; semua sub-komponen sudah module-scoped
