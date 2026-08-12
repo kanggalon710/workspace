@@ -53,9 +53,10 @@
   ke pola min-width. Juga 2 media query `max-width` di `client/index.css:493,516`.
 
 ## Pecah file raksasa (ekstraksi seam bebas-logika, termudah dulu)
-- [ ] **#9 LoyaltyAdminPage** (3609) - termudah: ~10-11 dari ~15 deklarasi pindah ke
-  sibling (SummaryTab, PointRedemptionsTab, LeaderboardTable, ReferralsTable,
-  PointConfigDialog, MikrotikBoostConfigPanel, KpiCard/TierCard/DiscountRow).
+- [x] **#9 LoyaltyAdminPage SELESAI** (2026-08-12): 3610 -> 558 baris. 7 file sibling di
+  `client/pages/loyalty/` (shared, tiles [KpiCard/TierCard/StatTile], SummaryTab, DiscountRow,
+  LeaderboardTable, ReferralsTable, PointRedemptionsTab, PointConfigDialog [+Mikrotik]). Kode
+  komponen byte-identik (hanya import + `export`), import di-prune ke yang terpakai saja.
 - [ ] **CustomersPage** (2620) - medium: SyncModal, IntegrationAuditDialog, CustomerForm,
   CustomerLocalEditForm, DistrictCard, CustomerCommunication; ganti `<table>` mentah ->
   `<DataTable>`; hapus StatusBadge lokal.

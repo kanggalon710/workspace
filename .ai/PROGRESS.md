@@ -3,6 +3,22 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-12 - #9: Pecah LoyaltyAdminPage (3610 -> 558 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** File raksasa (3610 baris) susah dirawat; semua sub-komponen sudah module-scoped
+& prop-driven -> ekstraksi seam bersih tanpa ubah perilaku.
+**Perubahan:** 7 file baru di `client/pages/loyalty/`: `shared.ts` (helper/konstanta),
+`tiles.tsx` (KpiCard/TierCard/StatTile), `SummaryTab.tsx`, `DiscountRow.tsx`,
+`LeaderboardTable.tsx`, `ReferralsTable.tsx`, `PointRedemptionsTab.tsx`,
+`PointConfigDialog.tsx` (+MikrotikBoostConfigPanel internal). Main tinggal shell + main
+component (558 baris). Kode komponen byte-identik (hanya pindah + tambah `export`); import
+tiap file di-prune otomatis ke yang terpakai (script scratchpad/prune.mjs, over-keep-safe).
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses. Perilaku identik (hanya
+reorganisasi file). DAG import bersih (shared/tiles jadi daun, tanpa siklus).
+**Catatan:** `StatTile`/`KpiCard`/`TierCard` tetap "shadow" yang ditahan (fitur khusus) -
+kini terpusat di `loyalty/tiles.tsx`, memudahkan migrasi ke `ui/StatTile` nanti bila
+diperluas. CustomersPage (2620) & IntegrationPage (3050) menyusul di ronde split berikutnya.
+
 ## 2026-08-12 - Optimasi Ronde 2b: adopsi `<ScrollRow>` lebih luas
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjutan #3 - sebarkan primitif `ScrollRow` ke baris filter-pill yang bersih.
