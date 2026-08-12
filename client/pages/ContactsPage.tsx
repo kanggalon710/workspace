@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -434,7 +435,7 @@ export default function ContactsPage() {
           />
 
           {/* Source filter */}
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          <ScrollRow className="gap-1.5">
             <button
               onClick={() => setSourceFilter("all")}
               className={cn(
@@ -467,10 +468,10 @@ export default function ContactsPage() {
                 </button>
               );
             })}
-          </div>
+          </ScrollRow>
 
           {/* Category filter */}
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          <ScrollRow className="gap-1.5">
             <button
               onClick={() => setCatFilter("all")}
               className={cn(
@@ -503,7 +504,7 @@ export default function ContactsPage() {
                 </button>
               );
             })}
-          </div>
+          </ScrollRow>
         </div>
       </Card>
 

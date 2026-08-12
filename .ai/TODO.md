@@ -25,9 +25,10 @@
   filter-tab `StatTile`), TicketsDashboard (`KpiCard`), BugReports (`StatTile`) TIDAK
   dipindah karena punya fitur yang belum ada di `ui/StatTile` (nilai berwarna, pulse
   `urgent`, tab-filter aktif+dot). Butuh ekstensi `ui/StatTile` dulu (lihat DECISIONS).
-- [ ] **#3 sisa - adopsi `<ScrollRow>` lebih luas:** ~13 site scroll-row lain (ContactsPage
-  x2, BusinessDecisionPage, LeadPipelinePage, dll) - mekanis, className diteruskan (zero
-  visual). Tab-bar/segmented/toolbar/thumbnail BUKAN target.
+- [ ] **#3 sisa - adopsi `<ScrollRow>` lebih luas:** ~9 site scroll-row tersisa. SUDAH:
+  TeamReportPanel, AllTasksPage, ContactsPage x2, BusinessDecisionPage, LeadPipelinePage (6).
+  Sisa mekanis, className diteruskan (zero visual). Tab-bar/segmented/toolbar/thumbnail BUKAN
+  target.
 - [ ] **#4 Adopsi `dialogSize.ts`** - `w-[calc(100vw-2rem)]` masih hardcoded di **39 file**.
   CATATAN: bukan drop-in - `dialogSizeClass("normal")` mengubah lebar mobile (`100vw-1rem`)
   + memaksa preset `max-w`; perlu penilaian per-dialog (normalisasi visual, bukan zero-change).

@@ -3,6 +3,16 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-12 - Optimasi Ronde 2b: adopsi `<ScrollRow>` lebih luas
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjutan #3 - sebarkan primitif `ScrollRow` ke baris filter-pill yang bersih.
+**Perubahan:** Adopsi di ContactsPage (2 baris), BusinessDecisionPage, LeadPipelinePage
+(total 6 site dengan ronde 2). className diteruskan apa adanya (zero visual change).
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses. Balance `<ScrollRow>` OK per file.
+**Catatan:** #8 (mobile-first `max-*:` di komponen map) SENGAJA ditunda - itu bukan
+scaling-down sederhana melainkan reposisi overlay khusus mobile; invert ke min-width butuh
+uji visual di peta (tak bisa diverifikasi di sandbox), risiko regresi fitur inti.
+
 ## 2026-08-12 - Optimasi Ronde 2: formatRupiah + a11y sweep + ScrollRow + normalisasi shadow
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Eksekusi roadmap optimasi (#2/#3/#6 + normalisasi design-system) yang aman untuk

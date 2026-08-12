@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { waLink } from "@/lib/wa";
@@ -1057,7 +1058,7 @@ function ListLeadRow({
 
         {/* Quick stage action buttons - hanya kalau lead belum terminal */}
         {!isTerminal && nextStages.length > 0 && (
-          <div className="flex gap-1.5 px-3 md:px-4 pb-3 pt-2 border-t border-border/40 bg-muted/20 overflow-x-auto no-scrollbar">
+          <ScrollRow className="gap-1.5 px-3 md:px-4 pb-3 pt-2 border-t border-border/40 bg-muted/20">
             <span className="text-2xs text-muted-foreground font-semibold uppercase tracking-wider shrink-0 self-center">
               Pindah →
             </span>
@@ -1089,7 +1090,7 @@ function ListLeadRow({
                 </button>
               );
             })}
-          </div>
+          </ScrollRow>
         )}
       </CardContent>
     </Card>

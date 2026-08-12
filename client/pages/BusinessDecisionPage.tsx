@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -454,7 +455,7 @@ export default function BusinessDecisionPage() {
           >
             <Card padding="lg">
               {/* Type filter chips */}
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-3 mb-1 border-b border-border/40 -mx-5 px-5">
+              <ScrollRow className="gap-1.5 pb-3 mb-1 border-b border-border/40 -mx-5 px-5">
                 <button
                   onClick={() => setTypeFilter("all")}
                   className={cn(
@@ -486,7 +487,7 @@ export default function BusinessDecisionPage() {
                     </button>
                   );
                 })}
-              </div>
+              </ScrollRow>
 
               {filteredLogs.length === 0 ? (
                 <EmptyState
