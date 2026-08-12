@@ -7,6 +7,7 @@ import { ALL_PERMISSIONS, EDITOR_HIDDEN_KEYS } from "@shared/schema";
 // Editor surfaces hide dead/no-effect keys (see EDITOR_HIDDEN_KEYS).
 const VISIBLE_PERMISSIONS = ALL_PERMISSIONS.filter((p) => !EDITOR_HIDDEN_KEYS.has(p.key));
 import { Card, CardContent } from "@/components/ui/card";
+import { FullBleedPage } from "@/components/ui/full-bleed-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -192,7 +193,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden bg-slate-50/40 dark:bg-slate-950/40 -m-4 md:-m-6 -mt-4 md:-mt-6 pb-20 md:pb-0">
+    <FullBleedPage>
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 md:px-6 pt-4 md:pt-6 pb-4 space-y-4 shrink-0 bg-background border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -398,7 +399,7 @@ export default function UsersPage() {
         onApply={(roleId: number) => bulkMut.mutate({ action: "set_role", userIds: Array.from(selectedIds), payload: { roleId } })}
         count={selectedIds.size}
       />
-    </div>
+    </FullBleedPage>
   );
 }
 
