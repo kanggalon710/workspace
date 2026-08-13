@@ -3,6 +3,21 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah MitraPage (1266 -> 249 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** ROI tertinggi di antara file ~1300 baris: shell utama cuma ~230 baris, 11 komponen
+sibling (~930 baris) siap diekstrak.
+**Perubahan:** folder `client/pages/mitra/`: `shared.tsx` (tipe MitraItem/SafeUser/DetailTab +
+helper getInitials/slugify/fmtDate + leaf Switch/MiniStat/KpiTile/InfoRow/FF + const
+EMPTY_MITRA_FORM/EMPTY_ADMIN_FORM), `MitraCard`, `MitraDetailDrawer` (+OverviewTab/FeaturesTab/
+MembersTab, coupled), `MitraCreateDialog`. Main tinggal shell + KPI grid (249 baris).
+Byte-identik (pindah + `export`); import di-prune.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, 0 deklarasi dobel di main.
+**Catatan:** Celah tool ke-3 diperbaiki: `import * as SwitchPrimitive` (namespace import)
+sebelumnya di-drop prune -> prune.mjs kini pertahankan `import * as X` bila X dipakai.
+Dashboard (1428) = 1 komponen monolitik (tak ada seam), GenieAcs (1449) mayoritas 1 komponen
+besar - ROI split rendah, dilewati kecuali diminta.
+
 ## 2026-08-13 - #9: Pecah TechnicianWorkPage (1819 -> 162 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut pecah file besar. State-machine mode-based -> tiap mode/screen komponen

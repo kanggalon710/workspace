@@ -84,8 +84,12 @@
 - [x] **TechnicianWorkPage SELESAI** (2026-08-13): 1819 -> 162 baris. Folder
   `client/pages/technician/` (shared [tipe+helper+9 leaf], ActiveMode, CompletedMode,
   CancelledMode, StageExecutionScreen). Byte-identik, prune (prune.mjs kini simpan doc-comment).
-- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** GenieAcsDevicesPage (1449),
-  Dashboard (1428), MapPage (1379), CanvassingPage (1296), MitraPage (1266). Split seam tersedia.
+- [x] **MitraPage SELESAI** (2026-08-13): 1266 -> 249 baris. Folder `client/pages/mitra/`
+  (shared [tipe+helper+5 leaf+consts], MitraCard, MitraDetailDrawer[+3 tab], MitraCreateDialog).
+  Byte-identik, prune (prune.mjs kini dukung namespace import `import * as X`).
+- [ ] **Sisa file besar frontend:** CanvassingPage (1296, seam bagus: 4 komponen), MapPage
+  (1379, 3 form komponen). GenieAcs (1449) & Dashboard (1428) = mayoritas 1 komponen monolitik
+  (ROI split rendah - lewati kecuali diminta).
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi
