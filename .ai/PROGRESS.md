@@ -3,6 +3,17 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7f: Batch 5 page warna -> token (Mpwa/GenieAcs/Monitoring/Audit/Profile)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut batch manual per-pola (user: merge main + continue). 5 page status-bersih.
+**Perubahan:** MpwaPage (hapus 25 dark:, map 39), GenieAcsDevicesPage (18/51), MonitoringPage
+(17/20), AuditLogPage (16/21), ProfilePage (13/25). 9 hover-gelap kolaps -> `hover:brightness-95`
+(GenieAcs 8: badge status + tombol AlertDialog). Kategorikal (sky/blue/violet/indigo/orange/
+purple/pink) + varian dark:-nya SENGAJA utuh.
+**File:** client/pages/{MpwaPage,GenieAcsDevicesPage,MonitoringPage,AuditLogPage,ProfilePage}.tsx.
+**Verifikasi:** `tsc` 0 error, build OK. Per file: 0 badge tak-terlihat, 0 hover kolaps,
+0 sisa palet, 0 baris non-warna berubah.
+
 ## 2026-08-13 - #7e: Batch 4 page warna -> token (BugReports/Users/Leads/Roles)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut batch manual per-pola (user: "next batch"). 4 page status-bersih ber-`dark:`.

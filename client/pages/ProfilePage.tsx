@@ -93,14 +93,14 @@ async function resizeImageToDataUrl(file: File, maxSize = 256, quality = 0.85): 
 }
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: any; desc: string }> = {
-  "System-Admin": { label: "System Admin",         color: "text-red-600 dark:text-red-400",      icon: ShieldCheck, desc: "Akses cross-tenant (JABNET pusat)" },
+  "System-Admin": { label: "System Admin",         color: "text-destructive",      icon: ShieldCheck, desc: "Akses cross-tenant (JABNET pusat)" },
   "Admin":        { label: "Admin",                color: "text-blue-600 dark:text-blue-400",    icon: Shield,      desc: "Akses penuh di satu mitra" },
-  admin:          { label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400",     icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
-  "Administrator":{ label: "Administrator (legacy)", color: "text-red-600 dark:text-red-400",     icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
+  admin:          { label: "Administrator (legacy)", color: "text-destructive",     icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
+  "Administrator":{ label: "Administrator (legacy)", color: "text-destructive",     icon: ShieldCheck, desc: "Legacy admin - akan diganti System-Admin" },
   operator:      { label: "Operator",              color: "text-blue-600 dark:text-blue-400",    icon: Shield,      desc: "Kelola aset jaringan FTTH" },
   marketing:     { label: "Marketing",             color: "text-purple-600 dark:text-purple-400", icon: MapPinned,  desc: "Canvassing & lead sales" },
   marketing_spv: { label: "Marketing SPV",         color: "text-pink-600 dark:text-pink-400",    icon: Star,        desc: "Supervisor marketing team" },
-  viewer:        { label: "Viewer",                color: "text-gray-600 dark:text-gray-400",    icon: Eye,         desc: "Akses baca saja" },
+  viewer:        { label: "Viewer",                color: "text-muted-foreground",    icon: Eye,         desc: "Akses baca saja" },
 };
 
 function formatDate(iso: string | null, withTime = false): string {
@@ -511,11 +511,11 @@ export default function ProfilePage() {
                   {roleInfo.label}
                 </Badge>
                 {me?.isActive ? (
-                  <Badge variant="outline" className="text-[10px] h-5 px-2 border-green-500/40 text-green-700 dark:text-green-400 bg-green-500/5">
+                  <Badge variant="outline" className="text-[10px] h-5 px-2 border-success/30 text-success bg-success/5">
                     <CheckCircle2 className="h-2.5 w-2.5 mr-1" /> Akun Aktif
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-[10px] h-5 px-2 border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/5">
+                  <Badge variant="outline" className="text-[10px] h-5 px-2 border-warning/30 text-warning bg-warning/5">
                     <AlertTriangle className="h-2.5 w-2.5 mr-1" /> Nonaktif
                   </Badge>
                 )}
@@ -551,9 +551,9 @@ export default function ProfilePage() {
                 <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      completeness.percent >= 100 ? "bg-green-500" :
+                      completeness.percent >= 100 ? "bg-success" :
                       completeness.percent >= 66 ? "bg-primary" :
-                      completeness.percent >= 33 ? "bg-amber-500" : "bg-red-500"
+                      completeness.percent >= 33 ? "bg-warning" : "bg-destructive"
                     }`}
                     style={{ width: `${completeness.percent}%` }}
                   />
@@ -594,7 +594,7 @@ export default function ProfilePage() {
               /* profile-personal-form: edit personal data */
               <form data-section="profile-personal-form" onSubmit={handleSave} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Nama Lengkap <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs font-medium">Nama Lengkap <span className="text-destructive">*</span></Label>
                   <Input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -790,26 +790,26 @@ export default function ProfilePage() {
                       className={`h-1 flex-1 rounded-full transition-colors ${
                         i < pwStrength.score
                           ? pwStrength.score <= 2
-                            ? "bg-red-500"
+                            ? "bg-destructive"
                             : pwStrength.score === 3
-                            ? "bg-amber-500"
-                            : "bg-green-500"
+                            ? "bg-warning"
+                            : "bg-success"
                           : "bg-muted"
                       }`}
                     />
                   ))}
                 </div>
                 <ul className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-1 text-[11px]">
-                  <li className={pwStrength.checks.length ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                  <li className={pwStrength.checks.length ? "text-success" : "text-muted-foreground"}>
                     {pwStrength.checks.length ? "✓" : "○"} Min. 8 karakter
                   </li>
-                  <li className={pwStrength.checks.upper ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                  <li className={pwStrength.checks.upper ? "text-success" : "text-muted-foreground"}>
                     {pwStrength.checks.upper ? "✓" : "○"} Huruf besar
                   </li>
-                  <li className={pwStrength.checks.lower ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                  <li className={pwStrength.checks.lower ? "text-success" : "text-muted-foreground"}>
                     {pwStrength.checks.lower ? "✓" : "○"} Huruf kecil
                   </li>
-                  <li className={pwStrength.checks.digit ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}>
+                  <li className={pwStrength.checks.digit ? "text-success" : "text-muted-foreground"}>
                     {pwStrength.checks.digit ? "✓" : "○"} Angka
                   </li>
                 </ul>
@@ -817,7 +817,7 @@ export default function ProfilePage() {
             )}
 
             {confirmPw && confirmPw !== newPw && (
-              <p className="md:col-span-2 text-[11px] text-red-600 dark:text-red-400">
+              <p className="md:col-span-2 text-[11px] text-destructive">
                 Konfirmasi password tidak cocok
               </p>
             )}
@@ -851,7 +851,7 @@ export default function ProfilePage() {
             </CardDescription>
           </div>
           {me?.telegramChatId ? (
-            <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-950/40 dark:text-green-300">
+            <Badge className="bg-success/15 text-success border-success/30">
               <CheckCircle2 className="h-3 w-3 mr-1" />Tersambung
             </Badge>
           ) : (

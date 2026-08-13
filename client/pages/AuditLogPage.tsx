@@ -61,16 +61,16 @@ interface ActivityStats {
 }
 
 const ACTION_COLORS: Record<string, string> = {
-  CREATE: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300",
+  CREATE: "bg-success/15 text-success",
   UPDATE: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-  DELETE: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
-  LOGIN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-  LOGOUT: "bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400",
-  LOGIN_FAILED: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
-  LOGIN_BLOCKED: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+  DELETE: "bg-destructive/15 text-destructive",
+  LOGIN: "bg-success/15 text-success",
+  LOGOUT: "bg-muted text-muted-foreground",
+  LOGIN_FAILED: "bg-warning/15 text-warning",
+  LOGIN_BLOCKED: "bg-destructive/15 text-destructive",
   SYNC: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300",
   TRIGGER: "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300",
-  CLEANUP: "bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400",
+  CLEANUP: "bg-muted text-muted-foreground",
 };
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -225,7 +225,7 @@ export default function AuditLogPage() {
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">
                 <UserCheck className="h-3 w-3" /> Login
               </div>
-              <div className="text-2xl font-bold mt-1 text-emerald-500">
+              <div className="text-2xl font-bold mt-1 text-success">
                 {statsLoading ? "-" : (stats?.totalLogins ?? 0).toLocaleString("id-ID")}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">kali login</div>
@@ -236,7 +236,7 @@ export default function AuditLogPage() {
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">
                 <Users className="h-3 w-3" /> User Aktif
               </div>
-              <div className="text-2xl font-bold mt-1 text-amber-500">
+              <div className="text-2xl font-bold mt-1 text-warning">
                 {statsLoading ? "-" : stats?.activeUsers ?? 0}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">user unik</div>
@@ -378,14 +378,14 @@ export default function AuditLogPage() {
                           onClick={() => setUserFilter(userFilter === u.userId ? "ALL" : u.userId)}
                         >
                           <td className="py-2 pr-2">
-                            {isTop ? <Trophy className="h-4 w-4 text-amber-500" /> : <span className="text-muted-foreground">{i + 1}</span>}
+                            {isTop ? <Trophy className="h-4 w-4 text-warning" /> : <span className="text-muted-foreground">{i + 1}</span>}
                           </td>
                           <td className="py-2 pr-2">
                             <div className="font-medium">{u.userName}</div>
                             <div className="text-[10px] text-muted-foreground">@{u.username}</div>
                           </td>
                           <td className="py-2 pr-2 text-right font-mono font-bold tabular-nums">{u.actionCount.toLocaleString("id-ID")}</td>
-                          <td className="py-2 pr-2 text-right font-mono tabular-nums text-emerald-600">{u.loginCount}</td>
+                          <td className="py-2 pr-2 text-right font-mono tabular-nums text-success">{u.loginCount}</td>
                           <td className="py-2 pr-2 text-muted-foreground">
                             <div>{fmtRelative(u.lastSeen)}</div>
                             <div className="text-[10px]">{fmtDateTime(u.lastSeen)}</div>
@@ -421,7 +421,7 @@ export default function AuditLogPage() {
                 {userFilter !== "ALL" && (
                   <Badge variant="secondary" className="text-[10px] gap-1">
                     User: {stats?.topUsers.find(u => u.userId === userFilter)?.userName ?? `#${userFilter}`}
-                    <button onClick={() => setUserFilter("ALL")} className="hover:text-red-500">×</button>
+                    <button onClick={() => setUserFilter("ALL")} className="hover:text-destructive">×</button>
                   </Badge>
                 )}
                 <select
@@ -467,7 +467,7 @@ export default function AuditLogPage() {
                   </thead>
                   <tbody>
                     {logs.map((l) => {
-                      const colorClass = ACTION_COLORS[l.action] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400";
+                      const colorClass = ACTION_COLORS[l.action] ?? "bg-muted text-muted-foreground";
                       let detailsStr = "";
                       if (l.details) {
                         try {

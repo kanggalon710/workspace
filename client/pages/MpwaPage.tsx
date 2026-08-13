@@ -43,10 +43,10 @@ interface MpwaStatus {
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   auth:          { label: "Auth & OTP",        color: "bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300" },
-  loyalty:       { label: "Loyalty / Sahabat", color: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300" },
-  notification:  { label: "Notifikasi",        color: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" },
-  billing:       { label: "Billing",           color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" },
-  general:       { label: "General",           color: "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300" },
+  loyalty:       { label: "Loyalty / Sahabat", color: "bg-destructive/15 text-destructive" },
+  notification:  { label: "Notifikasi",        color: "bg-warning/15 text-warning" },
+  billing:       { label: "Billing",           color: "bg-success/15 text-success" },
+  general:       { label: "General",           color: "bg-muted text-foreground" },
 };
 
 function fmtRelative(iso: string | null | undefined): string {
@@ -124,7 +124,7 @@ export default function MpwaPage() {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-slate-50/40 dark:bg-slate-950/40">
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-muted/40">
       {/* Header */}
       <div className="px-4 md:px-6 pt-3 md:pt-4 space-y-3 md:space-y-4 shrink-0 bg-background border-b">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -171,11 +171,11 @@ export default function MpwaPage() {
         </div>
 
         {!status?.configured && (
-          <div className="flex items-start gap-2 p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 text-xs">
-            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 p-3 rounded-lg border border-warning/30 bg-warning/10 text-xs">
+            <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-amber-800 dark:text-amber-200">MPWA belum dikonfigurasi</p>
-              <p className="text-amber-700 dark:text-amber-300 mt-0.5">
+              <p className="font-semibold text-warning">MPWA belum dikonfigurasi</p>
+              <p className="text-warning mt-0.5">
                 Setup URL + API token + nomor sender di <a href="/integrations" className="underline font-medium">Integrasi API</a>.
                 Saat ini OTP berjalan di mode dev (ke-log ke console server).
               </p>
@@ -183,13 +183,13 @@ export default function MpwaPage() {
           </div>
         )}
         {status?.lastError && (
-          <div className="flex items-start gap-2 p-2.5 rounded-lg border border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900 text-xs">
-            <XCircle className="h-3.5 w-3.5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 p-2.5 rounded-lg border border-destructive/30 bg-destructive/10 text-xs">
+            <XCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-rose-800 dark:text-rose-200">Error terakhir{" "}
-                <span className="font-normal text-rose-600 dark:text-rose-400 ml-1">({fmtRelative(status.lastErrorAt)})</span>
+              <p className="font-semibold text-destructive">Error terakhir{" "}
+                <span className="font-normal text-destructive ml-1">({fmtRelative(status.lastErrorAt)})</span>
               </p>
-              <p className="text-rose-700 dark:text-rose-300 mt-0.5 line-clamp-2">{status.lastError}</p>
+              <p className="text-destructive mt-0.5 line-clamp-2">{status.lastError}</p>
             </div>
           </div>
         )}
@@ -293,20 +293,20 @@ function StatusPill({ status }: { status: MpwaStatus | undefined }) {
   if (!status) return null;
   if (!status.configured) {
     return (
-      <Badge variant="outline" className="text-amber-600 border-amber-200 text-[10px]">
+      <Badge variant="outline" className="text-warning border-warning/30 text-[10px]">
         <AlertTriangle className="h-3 w-3 mr-1" /> Dev mode
       </Badge>
     );
   }
   if (status.deviceStatus?.connected) {
     return (
-      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px]">
+      <Badge className="bg-success/15 text-success border-success/30 text-[10px]">
         <CheckCircle2 className="h-3 w-3 mr-1" /> Online
       </Badge>
     );
   }
   return (
-    <Badge variant="outline" className="text-rose-600 border-rose-200 text-[10px]">
+    <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px]">
       <XCircle className="h-3 w-3 mr-1" /> Offline
     </Badge>
   );
@@ -317,8 +317,8 @@ function StatBox({
 }: {
   label: string; value: number | string; icon: React.ReactNode; tone?: "default" | "slate" | "emerald"; isText?: boolean;
 }) {
-  const toneCls = tone === "emerald" ? "text-emerald-700 dark:text-emerald-300"
-    : tone === "slate" ? "text-slate-700 dark:text-slate-300"
+  const toneCls = tone === "emerald" ? "text-success"
+    : tone === "slate" ? "text-foreground"
     : "text-foreground";
   return (
     <Card>
@@ -363,7 +363,7 @@ function TemplateRow({
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${cat.color}`}>{cat.label}</span>
               {template.isSystem === 1 && (
-                <Badge variant="outline" className="text-[10px] text-slate-600 border-slate-300">
+                <Badge variant="outline" className="text-[10px] text-muted-foreground border-border">
                   <Lock className="h-2.5 w-2.5 mr-0.5" /> System
                 </Badge>
               )}
@@ -592,18 +592,18 @@ function TestTemplateDialog({
       <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Send className="h-4 w-4 text-emerald-600" /> Test Kirim - {template.name}
+            <Send className="h-4 w-4 text-success" /> Test Kirim - {template.name}
           </DialogTitle>
           <DialogDescription>
             Isi nomor tujuan + nilai placeholder. Pesan akan dikirim langsung via MPWA gateway.
           </DialogDescription>
         </DialogHeader>
         {!configured && (
-          <div className="flex items-start gap-2 p-2.5 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-xs">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 p-2.5 rounded-lg border border-warning/30 bg-warning/10 text-xs">
+            <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-800 dark:text-amber-200">MPWA belum dikonfigurasi</p>
-              <p className="text-amber-700 dark:text-amber-300">
+              <p className="font-semibold text-warning">MPWA belum dikonfigurasi</p>
+              <p className="text-warning">
                 Setup di <a href="/integrations" className="underline">Integrasi API</a> dulu.
               </p>
             </div>
@@ -662,7 +662,7 @@ function TestTemplateDialog({
             <Button
               onClick={() => sendMut.mutate()}
               disabled={sendMut.isPending || !phone.trim() || !configured}
-              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="gap-1.5 bg-success hover:brightness-95 text-white"
             >
               {sendMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Kirim Test

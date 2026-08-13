@@ -144,11 +144,11 @@ function formatUptime(uptime: string | undefined): string {
 function getTopicColor(topics: string | undefined): string {
   if (!topics) return "";
   const t = topics.toLowerCase();
-  if (t.includes("error") || t.includes("critical")) return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-  if (t.includes("warning")) return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+  if (t.includes("error") || t.includes("critical")) return "bg-destructive/15 text-destructive";
+  if (t.includes("warning")) return "bg-warning/15 text-warning";
   if (t.includes("system")) return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-  if (t.includes("info")) return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
-  return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+  if (t.includes("info")) return "bg-muted text-foreground";
+  return "bg-muted text-muted-foreground";
 }
 
 // ---------------------------------------------------------------------------
@@ -410,7 +410,7 @@ export default function MonitoringPage() {
                       label="Disk"
                       value={diskPercent}
                       unit={`${formatBytes(usedHdd)} / ${formatBytes(totalHdd)}`}
-                      color="bg-amber-500"
+                      color="bg-warning"
                     />
                   </div>
 
@@ -480,8 +480,8 @@ export default function MonitoringPage() {
                     <p className="text-sm text-muted-foreground">PPPoE Online</p>
                     <p className="text-3xl font-bold mt-1">{pppCount}</p>
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <Wifi className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="h-12 w-12 rounded-full bg-success/15 flex items-center justify-center">
+                    <Wifi className="h-6 w-6 text-success" />
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">Sesi PPPoE aktif saat ini</p>
@@ -544,12 +544,12 @@ export default function MonitoringPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Auto-Refresh</p>
-                    <p className="text-lg font-bold mt-1 text-green-600 dark:text-green-400">
+                    <p className="text-lg font-bold mt-1 text-success">
                       Aktif
                     </p>
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                    <RefreshCw className="h-6 w-6 text-emerald-600 dark:text-emerald-400 animate-spin" style={{ animationDuration: "3s" }} />
+                  <div className="h-12 w-12 rounded-full bg-success/15 flex items-center justify-center">
+                    <RefreshCw className="h-6 w-6 text-success animate-spin" style={{ animationDuration: "3s" }} />
                   </div>
                 </div>
                 <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
@@ -741,11 +741,11 @@ export default function MonitoringPage() {
                           </td>
                           <td className="px-3 py-2.5">
                             {iface.disabled ? (
-                              <Badge className="bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-xs">
+                              <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/15 text-xs">
                                 Disabled
                               </Badge>
                             ) : iface.running ? (
-                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-xs">
+                              <Badge className="bg-success/15 text-success hover:bg-success/15 text-xs">
                                 Running
                               </Badge>
                             ) : (

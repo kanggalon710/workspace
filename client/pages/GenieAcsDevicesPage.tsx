@@ -166,17 +166,17 @@ function formatUptimeShort(seconds: number): string {
 function rxPowerColor(dbm: string): string {
   const n = parseFloat(dbm);
   if (isNaN(n)) return "text-muted-foreground";
-  if (n > -25) return "text-green-600";
-  if (n > -28) return "text-amber-600";
-  return "text-red-600";
+  if (n > -25) return "text-success";
+  if (n > -28) return "text-warning";
+  return "text-destructive";
 }
 
 function rxPowerBgColor(dbm: string): string {
   const n = parseFloat(dbm);
   if (isNaN(n)) return "bg-muted";
-  if (n > -25) return "bg-green-500";
-  if (n > -28) return "bg-amber-500";
-  return "bg-red-500";
+  if (n > -25) return "bg-success";
+  if (n > -28) return "bg-warning";
+  return "bg-destructive";
 }
 
 function formatDatetime(iso: string | null): string {
@@ -474,7 +474,7 @@ export default function GenieAcsDevicesPage() {
         <Header onRefresh={handleRefreshAll} refreshing={false} />
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12">
-            <AlertTriangle className="h-12 w-12 text-amber-500" />
+            <AlertTriangle className="h-12 w-12 text-warning" />
             <div className="text-center space-y-1">
               <h3 className="font-semibold text-lg">GenieACS belum dikonfigurasi</h3>
               <p className="text-muted-foreground text-sm">
@@ -508,12 +508,12 @@ export default function GenieAcsDevicesPage() {
 
       {/* Banner error koneksi GenieACS - tampilkan sebab asli, bukan list kosong palsu */}
       {genieErrorMsg && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 p-4">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-red-600 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
           <div className="space-y-1 text-sm">
-            <p className="font-semibold text-red-800 dark:text-red-300">Gagal memuat perangkat dari GenieACS</p>
-            <p className="text-red-700 dark:text-red-400">{genieErrorMsg}</p>
-            <p className="text-xs text-red-600/80 dark:text-red-400/80">
+            <p className="font-semibold text-destructive">Gagal memuat perangkat dari GenieACS</p>
+            <p className="text-destructive">{genieErrorMsg}</p>
+            <p className="text-xs text-destructive/80">
               Cek konfigurasi di{" "}
               <a href="/integrations" className="underline font-medium">Integrasi API</a>
               {" "}- pastikan host/port mengarah ke NBI GenieACS (default port 7557, bukan port UI).
@@ -582,8 +582,8 @@ export default function GenieAcsDevicesPage() {
             </div>
           ) : devicesIsError ? (
             <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-              <AlertTriangle className="h-10 w-10 text-red-500" />
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">Gagal memuat perangkat</p>
+              <AlertTriangle className="h-10 w-10 text-destructive" />
+              <p className="text-sm text-destructive font-medium">Gagal memuat perangkat</p>
               <p className="text-xs max-w-md text-center">{genieErrorMsg}</p>
             </div>
           ) : filteredDevices.length === 0 ? (
@@ -626,7 +626,7 @@ export default function GenieAcsDevicesPage() {
                         {/* Serial + info (mobile: stacked) */}
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${d.status === "online" ? "bg-green-500" : "bg-red-500"}`} />
+                            <span className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${d.status === "online" ? "bg-success" : "bg-destructive"}`} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <p className="font-mono font-semibold text-xs truncate">{d.serialNumber || "-"}</p>
@@ -640,7 +640,7 @@ export default function GenieAcsDevicesPage() {
                               </p>
                               {d.pppoeUsername && (
                                 <p className="text-[10px] text-muted-foreground md:hidden truncate">
-                                  PPPoE: {matched ? <span className="text-green-600 font-medium">{matched.name}</span> : d.pppoeUsername}
+                                  PPPoE: {matched ? <span className="text-success font-medium">{matched.name}</span> : d.pppoeUsername}
                                 </p>
                               )}
                             </div>
@@ -657,7 +657,7 @@ export default function GenieAcsDevicesPage() {
 
                         {/* Status */}
                         <td className="px-3 py-2.5 hidden md:table-cell">
-                          <Badge variant="outline" className={`text-[10px] ${d.status === "online" ? "bg-green-500/10 text-green-700 border-green-200" : "bg-red-500/10 text-red-700 border-red-200"}`}>
+                          <Badge variant="outline" className={`text-[10px] ${d.status === "online" ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}>
                             {d.status === "online" ? "Online" : "Offline"}
                           </Badge>
                         </td>
@@ -670,7 +670,7 @@ export default function GenieAcsDevicesPage() {
                         {/* PPPoE */}
                         <td className="px-3 py-2.5 hidden lg:table-cell">
                           {matched ? (
-                            <span className="text-xs text-green-700 dark:text-green-400 font-medium truncate block max-w-[120px]">{matched.name}</span>
+                            <span className="text-xs text-success font-medium truncate block max-w-[120px]">{matched.name}</span>
                           ) : d.pppoeUsername ? (
                             <span className="text-xs text-muted-foreground font-mono truncate block max-w-[120px]">{d.pppoeUsername}</span>
                           ) : <span className="text-xs text-muted-foreground">-</span>}
@@ -697,7 +697,7 @@ export default function GenieAcsDevicesPage() {
                             </Button>
                             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Reboot"
                               onClick={(e) => { e.stopPropagation(); setConfirmReboot(d.deviceId); }}>
-                              <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
+                              <RotateCcw className="h-3.5 w-3.5 text-warning" />
                             </Button>
                             <Button size="sm" variant="outline" className="h-7 text-xs hidden sm:inline-flex"
                               onClick={(e) => { e.stopPropagation(); openDetail(); }}>
@@ -805,7 +805,7 @@ export default function GenieAcsDevicesPage() {
                           <div className="text-xs text-muted-foreground">Status</div>
                           <Badge
                             variant={detailDevice.status === "online" ? "default" : "destructive"}
-                            className={detailDevice.status === "online" ? "bg-green-600 hover:bg-green-700" : ""}
+                            className={detailDevice.status === "online" ? "bg-success hover:brightness-95" : ""}
                           >
                             {detailDevice.status === "online" ? "Online" : "Offline"}
                           </Badge>
@@ -886,10 +886,10 @@ export default function GenieAcsDevicesPage() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Pelanggan Terhubung</h4>
                     {detailCustomer ? (
-                      <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 p-3 space-y-1">
+                      <div className="rounded-lg border border-success/30 bg-success/10 p-3 space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{detailCustomer.name}</span>
-                          <Badge className="bg-green-600 hover:bg-green-700 text-[10px]">
+                          <Badge className="bg-success hover:brightness-95 text-[10px]">
                             Terhubung
                           </Badge>
                         </div>
@@ -991,7 +991,7 @@ export default function GenieAcsDevicesPage() {
                               <td className="px-3 py-2 text-xs font-medium">{wan.name || "-"}</td>
                               <td className="px-3 py-2">
                                 <Badge variant={wan.status?.toLowerCase() === "connected" ? "default" : "destructive"}
-                                  className={`text-[10px] ${wan.status?.toLowerCase() === "connected" ? "bg-green-600 hover:bg-green-700" : ""}`}>
+                                  className={`text-[10px] ${wan.status?.toLowerCase() === "connected" ? "bg-success hover:brightness-95" : ""}`}>
                                   {wan.status || "Unknown"}
                                 </Badge>
                               </td>
@@ -1036,7 +1036,7 @@ export default function GenieAcsDevicesPage() {
                             </div>
                             <Badge
                               variant={wf.enabled ? "default" : "secondary"}
-                              className={wf.enabled ? "bg-green-600 hover:bg-green-700 text-[10px]" : "text-[10px]"}
+                              className={wf.enabled ? "bg-success hover:brightness-95 text-[10px]" : "text-[10px]"}
                             >
                               {wf.enabled ? "Enabled" : "Disabled"}
                             </Badge>
@@ -1170,7 +1170,7 @@ export default function GenieAcsDevicesPage() {
                               <td className="px-3 py-2">
                                 <Badge
                                   variant={host.active ? "default" : "secondary"}
-                                  className={`text-[10px] ${host.active ? "bg-green-600 hover:bg-green-700" : ""}`}
+                                  className={`text-[10px] ${host.active ? "bg-success hover:brightness-95" : ""}`}
                                 >
                                   {host.active ? "Active" : "Inactive"}
                                 </Badge>
@@ -1219,7 +1219,7 @@ export default function GenieAcsDevicesPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                        className="border-warning/30 text-warning hover:bg-warning/10"
                         onClick={() => setConfirmReboot(detailDevice.deviceId)}
                         disabled={rebootMut.isPending}
                       >
@@ -1318,7 +1318,7 @@ export default function GenieAcsDevicesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-warning hover:brightness-95"
               onClick={() => confirmReboot && rebootMut.mutate(confirmReboot)}
             >
               {rebootMut.isPending ? (
@@ -1348,7 +1348,7 @@ export default function GenieAcsDevicesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:brightness-95"
               onClick={() => confirmDelete && deleteMut.mutate(confirmDelete)}
             >
               {deleteMut.isPending ? (
@@ -1406,13 +1406,13 @@ function StatCard({
 }) {
   const colors = {
     blue: "border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30",
-    green: "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30",
-    red: "border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30",
+    green: "border-success/30 bg-success/10",
+    red: "border-destructive/30 bg-destructive/10",
   };
   const textColors = {
     blue: "text-blue-700 dark:text-blue-400",
-    green: "text-green-700 dark:text-green-400",
-    red: "text-red-700 dark:text-red-400",
+    green: "text-success",
+    red: "text-destructive",
   };
 
   return (
