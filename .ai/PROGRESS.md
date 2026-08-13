@@ -3,6 +3,16 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7d: PointsTab (portal) warna -> token (manual per-pola)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut manual per-pola. PointsTab (portal pelanggan, tab poin) semantik status
+bersih; tak ada `bg-white dark:` (aman).
+**Perubahan:** `client/pages/portal/dashboard/PointsTab.tsx`. Hapus 28 varian `dark:` status/
+neutral + map 43 dasar -> token (tint-aware). Kategorikal sky/violet utuh. 0 hover kolaps.
+**File:** client/pages/portal/dashboard/PointsTab.tsx.
+**Verifikasi:** `tsc` 0 error, build OK. Diff color-only, 0 badge tak-terlihat, 0 hover kolaps,
+0 sisa palet, 0 double-space. Customer-facing: shift kecil (emerald->green) + kini dark-aware.
+
 ## 2026-08-13 - #7c: PointRedemptionsTab - migrasi manual per-pola (page ber-dark:)
 **Agen:** claude | **Status:** selesai (page pertama ber-`dark:` via pendekatan manual)
 **Kenapa:** User pilih "manual, few per round". Page ini semantik status murni (pending=

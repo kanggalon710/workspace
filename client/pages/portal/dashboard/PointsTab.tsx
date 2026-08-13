@@ -155,8 +155,8 @@ export function PointsTab({ apiFetch, qc }: any) {
             {/* Top label row */}
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg ring-1 ring-amber-300/30">
-                  <Zap className="h-3.5 w-3.5 text-slate-900" strokeWidth={2.5} />
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg ring-1 ring-warning">
+                  <Zap className="h-3.5 w-3.5 text-foreground" strokeWidth={2.5} />
                 </div>
                 <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/70">JABNET Loyalty</div>
               </div>
@@ -178,16 +178,16 @@ export function PointsTab({ apiFetch, qc }: any) {
             {/* Lifetime stats */}
             <div className="mt-5 grid grid-cols-2 gap-2.5">
               <div className="rounded-xl bg-white/[0.07] backdrop-blur-sm border border-white/10 p-3">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-emerald-300/80 font-semibold">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-success/80 font-semibold">
                   <TrendingUp className="h-3 w-3" /> Total Earned
                 </div>
-                <div className="font-bold tabular-nums text-lg mt-1 text-emerald-100">+{lifetimeEarned.toLocaleString("id-ID")}</div>
+                <div className="font-bold tabular-nums text-lg mt-1 text-success">+{lifetimeEarned.toLocaleString("id-ID")}</div>
               </div>
               <div className="rounded-xl bg-white/[0.07] backdrop-blur-sm border border-white/10 p-3">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-rose-300/80 font-semibold">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-destructive/80 font-semibold">
                   <Sparkles className="h-3 w-3" /> Sudah Ditukar
                 </div>
-                <div className="font-bold tabular-nums text-lg mt-1 text-rose-100">−{lifetimeRedeemed.toLocaleString("id-ID")}</div>
+                <div className="font-bold tabular-nums text-lg mt-1 text-destructive">−{lifetimeRedeemed.toLocaleString("id-ID")}</div>
               </div>
             </div>
           </div>
@@ -196,7 +196,7 @@ export function PointsTab({ apiFetch, qc }: any) {
 
       {/* === Active boost - live countdown === */}
       {active && (
-        <Card className="overflow-hidden border-emerald-300/60 dark:border-emerald-900 shadow-elev-md">
+        <Card className="overflow-hidden border-success/30 shadow-elev-md">
           <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white p-5 relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10" />
             <div className="relative">
@@ -236,31 +236,31 @@ export function PointsTab({ apiFetch, qc }: any) {
               <h3 className="font-bold text-sm tracking-tight">Cara Dapat Point</h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">Bayar disiplin, dapat hadiah</p>
             </div>
-            <TrendingUp className="h-5 w-5 text-emerald-500" />
+            <TrendingUp className="h-5 w-5 text-success" />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
-            <div className="relative overflow-hidden rounded-xl border border-emerald-200 dark:border-emerald-900 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/30 dark:to-emerald-950/10 p-4">
-              <div className="absolute -top-4 -right-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl" />
+            <div className="relative overflow-hidden rounded-xl border border-success/30 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 p-4">
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-success rounded-full blur-xl" />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-300">Tepat Waktu</span>
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-success">Tepat Waktu</span>
                 </div>
-                <div className="font-black text-2xl text-emerald-800 dark:text-emerald-200 tabular-nums">+100<span className="text-sm font-bold ml-1">pts</span></div>
-                <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-1.5 leading-snug">
+                <div className="font-black text-2xl text-success tabular-nums">+100<span className="text-sm font-bold ml-1">pts</span></div>
+                <p className="text-[11px] text-success/80 mt-1.5 leading-snug">
                   Bayar sebelum / pas tanggal jatuh tempo setiap bulan
                 </p>
               </div>
             </div>
-            <div className="relative overflow-hidden rounded-xl border border-amber-200 dark:border-amber-900 bg-gradient-to-br from-amber-50/80 to-amber-50/30 dark:from-amber-950/30 dark:to-amber-950/10 p-4">
-              <div className="absolute -top-4 -right-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl" />
+            <div className="relative overflow-hidden rounded-xl border border-warning/30 bg-gradient-to-br from-amber-50/80 to-amber-50/30 p-4">
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-warning rounded-full blur-xl" />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-1">
-                  <Zap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-amber-700 dark:text-amber-300">Bonus Early</span>
+                  <Zap className="h-4 w-4 text-warning" />
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-warning">Bonus Early</span>
                 </div>
-                <div className="font-black text-2xl text-amber-800 dark:text-amber-200 tabular-nums">+50<span className="text-sm font-bold ml-1">pts</span></div>
-                <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 leading-snug">
+                <div className="font-black text-2xl text-warning tabular-nums">+50<span className="text-sm font-bold ml-1">pts</span></div>
+                <p className="text-[11px] text-warning/80 mt-1.5 leading-snug">
                   Bonus tambahan kalau bayar ≥3 hari sebelum jatuh tempo
                 </p>
               </div>
@@ -321,8 +321,8 @@ export function PointsTab({ apiFetch, qc }: any) {
                       <div>
                         <div className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Biaya</div>
                         <div className="flex items-baseline gap-1 mt-0.5">
-                          <span className="font-black text-2xl tabular-nums text-amber-600 dark:text-amber-400">{c.pointsCost.toLocaleString("id-ID")}</span>
-                          <span className="text-[10px] uppercase tracking-wider font-bold text-amber-600/70">pts</span>
+                          <span className="font-black text-2xl tabular-nums text-warning">{c.pointsCost.toLocaleString("id-ID")}</span>
+                          <span className="text-[10px] uppercase tracking-wider font-bold text-warning/70">pts</span>
                         </div>
                       </div>
                       {canAfford && !blocked && (
@@ -331,7 +331,7 @@ export function PointsTab({ apiFetch, qc }: any) {
                         </div>
                       )}
                       {!canAfford && !blocked && (
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-destructive">
                           Kurang {(c.pointsCost - balance).toLocaleString("id-ID")}
                         </div>
                       )}
@@ -347,7 +347,7 @@ export function PointsTab({ apiFetch, qc }: any) {
             })}
           </div>
           {active && (
-            <div className="mt-3 p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-200">
+            <div className="mt-3 p-2.5 rounded-md bg-warning/10 border border-warning/30 text-[11px] text-warning">
               Tunggu boost <strong>{active.rewardLabel}</strong> selesai sebelum redeem yang baru.
             </div>
           )}
@@ -367,11 +367,11 @@ export function PointsTab({ apiFetch, qc }: any) {
             </div>
             <div className="space-y-2">
               {redemptions.map((r: any) => {
-                const status = r.status === "active" ? { label: "Aktif", dot: "bg-emerald-500", color: "text-emerald-700 dark:text-emerald-300" }
-                  : r.status === "pending" ? { label: "Menunggu", dot: "bg-amber-500", color: "text-amber-700 dark:text-amber-300" }
-                  : r.status === "expired" ? { label: "Selesai", dot: "bg-slate-400", color: "text-slate-600 dark:text-slate-400" }
-                  : r.status === "rejected" ? { label: "Ditolak", dot: "bg-rose-500", color: "text-rose-700 dark:text-rose-300" }
-                  : { label: "Dibatalkan", dot: "bg-slate-400", color: "text-slate-600 dark:text-slate-400" };
+                const status = r.status === "active" ? { label: "Aktif", dot: "bg-success", color: "text-success" }
+                  : r.status === "pending" ? { label: "Menunggu", dot: "bg-warning", color: "text-warning" }
+                  : r.status === "expired" ? { label: "Selesai", dot: "bg-muted", color: "text-muted-foreground" }
+                  : r.status === "rejected" ? { label: "Ditolak", dot: "bg-destructive", color: "text-destructive" }
+                  : { label: "Dibatalkan", dot: "bg-muted", color: "text-muted-foreground" };
                 return (
                   <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
                     <div className={`w-2 h-2 rounded-full ${status.dot} shrink-0`} />
@@ -382,7 +382,7 @@ export function PointsTab({ apiFetch, qc }: any) {
                       </div>
                     </div>
                     <div className={`text-[10px] uppercase tracking-wider font-bold ${status.color}`}>{status.label}</div>
-                    <div className="font-mono font-bold tabular-nums text-amber-600 text-sm">−{r.pointsCost}</div>
+                    <div className="font-mono font-bold tabular-nums text-warning text-sm">−{r.pointsCost}</div>
                   </div>
                 );
               })}
@@ -406,8 +406,8 @@ export function PointsTab({ apiFetch, qc }: any) {
               {history.slice(0, 12).map((h: any) => (
                 <div key={h.id} className="flex items-center gap-3 py-2.5">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    h.amount > 0 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    : "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300"
+                    h.amount > 0 ? "bg-success/15 text-success"
+                    : "bg-destructive/15 text-destructive"
                   }`}>
                     {h.amount > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
                   </div>
@@ -416,7 +416,7 @@ export function PointsTab({ apiFetch, qc }: any) {
                     <div className="text-[10px] text-muted-foreground font-mono-tight">{new Date(h.createdAt).toLocaleString("id-ID")}</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className={`font-mono font-black tabular-nums text-sm ${h.amount > 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    <div className={`font-mono font-black tabular-nums text-sm ${h.amount > 0 ? "text-success" : "text-destructive"}`}>
                       {h.amount > 0 ? "+" : ""}{h.amount.toLocaleString("id-ID")}
                     </div>
                     <div className="text-[10px] text-muted-foreground tabular-nums">saldo {h.balanceAfter.toLocaleString("id-ID")}</div>
