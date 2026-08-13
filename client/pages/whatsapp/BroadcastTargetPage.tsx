@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Plus, Send, Megaphone, Loader2, Search, ChevronRight, ArrowLeft,
@@ -1556,7 +1557,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
           </div>
 
           {/* Status tabs */}
-          <div className="flex items-center gap-1 mt-2 overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0">
+          <ScrollRow bleed="mobile" className="items-center gap-1 mt-2">
             {([
               { val: "all" as const,     label: "Semua",   count: counts.total },
               { val: "sent" as const,    label: "✓ Terkirim", count: counts.sent },
@@ -1575,7 +1576,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                 {t.label} <span className="opacity-70">({t.count})</span>
               </button>
             ))}
-          </div>
+          </ScrollRow>
         </div>
 
         {/* Table */}

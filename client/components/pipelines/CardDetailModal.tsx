@@ -17,6 +17,7 @@ import { CardAttachments } from "@/components/pipelines/CardAttachments";
 import { CardComments } from "@/components/pipelines/CardComments";
 import { AssigneePicker } from "./AssigneePicker";
 import { MarkdownField } from "@/components/ui/markdown-field";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { CardTeamExtras } from "./CardTeamExtras";
 import { CreateLeadFromCardDialog } from "./CreateLeadFromCardDialog";
 import { toast } from "sonner";
@@ -180,7 +181,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                   endpoint runs automation + timeline + audit server-side, same as drag. */}
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pindah Stage</span>
-                <div className="mt-1 flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <ScrollRow className="mt-1 gap-1.5 pb-1">
                   {stages.map((s) => {
                     const active = s.id === card.stageId;
                     return (
@@ -197,7 +198,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
                       </button>
                     );
                   })}
-                </div>
+                </ScrollRow>
               </div>
 
               {/* Quick-edit metadata */}

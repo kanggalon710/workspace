@@ -3,6 +3,18 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #3 tuntas: adopsi `<ScrollRow>` di 2 baris chip/pill terakhir
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Menutup #3. Audit ulang 16 file pemakai idiom `overflow-x-auto no-scrollbar`:
+hanya 2 yang benar-benar baris pill/chip filter (sisanya tab-bar underline, segmented
+`bg-muted/50`, toolbar, grid responsif, gallery snap-x, atau wrapper tabel - bukan target).
+**Perubahan:** `components/pipelines/CardDetailModal.tsx` (chip "Pindah Stage") +
+`pages/whatsapp/BroadcastTargetPage.tsx` (status tabs pill) pakai `<ScrollRow>` (satu
+`bleed="mobile"`). className diteruskan apa adanya -> zero visual change.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses. Balance tag `<ScrollRow>` 1:1/file.
+**Catatan:** Total adopsi ScrollRow kini 8 site. #3 DITUTUP - sisa 14 pemakaian idiom sengaja
+tidak dikonversi (didokumentasikan di TODO). #5 (StatTile/EmptyState luas) masih terbuka.
+
 ## 2026-08-13 - #9: Pecah IntegrationPage (3032 -> 2290 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** File raksasa terakhir di roadmap split. Meski card berbagi state `allSettings`

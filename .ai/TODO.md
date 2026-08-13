@@ -25,10 +25,14 @@
   filter-tab `StatTile`), TicketsDashboard (`KpiCard`), BugReports (`StatTile`) TIDAK
   dipindah karena punya fitur yang belum ada di `ui/StatTile` (nilai berwarna, pulse
   `urgent`, tab-filter aktif+dot). Butuh ekstensi `ui/StatTile` dulu (lihat DECISIONS).
-- [ ] **#3 sisa - adopsi `<ScrollRow>` lebih luas:** ~9 site scroll-row tersisa. SUDAH:
-  TeamReportPanel, AllTasksPage, ContactsPage x2, BusinessDecisionPage, LeadPipelinePage (6).
-  Sisa mekanis, className diteruskan (zero visual). Tab-bar/segmented/toolbar/thumbnail BUKAN
-  target.
+- [x] **#3 SELESAI - adopsi `<ScrollRow>`:** 8 site pill/chip. SUDAH: TeamReportPanel,
+  AllTasksPage, ContactsPage x2, BusinessDecisionPage, LeadPipelinePage, CardDetailModal
+  (chip Pindah Stage), BroadcastTargetPage (status tabs). className diteruskan (zero visual).
+  Sisa 14 pemakaian idiom `overflow-x-auto no-scrollbar` di codebase SENGAJA tidak dikonversi:
+  tab-bar underline (Mitra/Users drawer, TeamModuleNav, SdmPage, SplitterChain, PointConfig),
+  segmented `bg-muted/50` (MpwaPage, ReferralsTable), toolbar (PipelineBoard), grid responsif
+  (MetricsStrip), gallery snap-x (AssetPhotosGallery), wrapper tabel (BugReports, Announcements,
+  TicketCategories) - bukan target ScrollRow.
 - [ ] **#4 Adopsi `dialogSize.ts`** - `w-[calc(100vw-2rem)]` masih hardcoded di **39 file**.
   CATATAN: bukan drop-in - `dialogSizeClass("normal")` mengubah lebar mobile (`100vw-1rem`)
   + memaksa preset `max-w`; perlu penilaian per-dialog (normalisasi visual, bukan zero-change).
