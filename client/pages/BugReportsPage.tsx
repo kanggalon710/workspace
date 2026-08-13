@@ -23,20 +23,20 @@ type Severity = "low" | "medium" | "high" | "critical";
 type Status = "open" | "triaged" | "in_progress" | "resolved" | "closed" | "duplicate" | "wontfix";
 
 const SEVERITY_CFG: Record<string, { label: string; color: string; ring: string }> = {
-  low:      { label: "Low",      color: "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",        ring: "ring-slate-400" },
+  low:      { label: "Low",      color: "bg-muted text-foreground",        ring: "ring-border" },
   medium:   { label: "Medium",   color: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",             ring: "ring-sky-400" },
-  high:     { label: "High",     color: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",    ring: "ring-amber-400" },
-  critical: { label: "Critical", color: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",        ring: "ring-rose-500" },
+  high:     { label: "High",     color: "bg-warning/15 text-warning",    ring: "ring-warning" },
+  critical: { label: "Critical", color: "bg-destructive/15 text-destructive",        ring: "ring-destructive" },
 };
 
 const STATUS_CFG: Record<string, { label: string; color: string; icon: any }> = {
   open:        { label: "Baru",        color: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",         icon: AlertCircle },
   triaged:     { label: "Di-triage",   color: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300", icon: Eye },
-  in_progress: { label: "Dikerjakan",  color: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300", icon: Play },
-  resolved:    { label: "Selesai",     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300", icon: CheckCircle2 },
-  closed:      { label: "Ditutup",     color: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400",    icon: Archive },
-  duplicate:   { label: "Duplikat",    color: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400",    icon: Archive },
-  wontfix:     { label: "Won't fix",   color: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400",    icon: Archive },
+  in_progress: { label: "Dikerjakan",  color: "bg-warning/15 text-warning", icon: Play },
+  resolved:    { label: "Selesai",     color: "bg-success/15 text-success", icon: CheckCircle2 },
+  closed:      { label: "Ditutup",     color: "bg-muted text-muted-foreground",    icon: Archive },
+  duplicate:   { label: "Duplikat",    color: "bg-muted text-muted-foreground",    icon: Archive },
+  wontfix:     { label: "Won't fix",   color: "bg-muted text-muted-foreground",    icon: Archive },
 };
 
 export default function BugReportsPage() {
@@ -84,7 +84,7 @@ export default function BugReportsPage() {
               </p>
             </div>
           </div>
-          <Button size="sm" onClick={() => setCreateOpen(true)} className="bg-rose-600 hover:bg-rose-700 shrink-0">
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="bg-destructive hover:brightness-95 shrink-0">
             <Plus className="h-4 w-4 md:mr-1.5" />
             <span className="hidden md:inline">Lapor Bug</span>
             <span className="md:hidden">Lapor</span>
@@ -177,11 +177,11 @@ export default function BugReportsPage() {
 function StatTile({ label, value, tone, urgent }: any) {
   const colors: Record<string, string> = {
     sky: "text-sky-600 dark:text-sky-400",
-    amber: "text-amber-600 dark:text-amber-400",
-    rose: "text-rose-600 dark:text-rose-400",
+    amber: "text-warning",
+    rose: "text-destructive",
   };
   return (
-    <Card className={urgent ? "ring-2 ring-rose-500 animate-pulse" : ""}>
+    <Card className={urgent ? "ring-2 ring-destructive animate-pulse" : ""}>
       <CardContent className="p-3">
         <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
         <div className={`text-2xl font-bold tabular-nums mt-1 ${tone ? colors[tone] : ""}`}>{value ?? 0}</div>
@@ -199,9 +199,9 @@ function BugRow({ b, onClick }: any) {
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className={`w-1 h-full self-stretch rounded-full ${
-            b.severity === "critical" ? "bg-rose-500"
-            : b.severity === "high" ? "bg-amber-500"
-            : b.severity === "medium" ? "bg-sky-500" : "bg-slate-400"
+            b.severity === "critical" ? "bg-destructive"
+            : b.severity === "high" ? "bg-warning"
+            : b.severity === "medium" ? "bg-sky-500" : "bg-muted"
           }`} style={{ minHeight: 40 }} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -297,7 +297,7 @@ function CreateBugDialog({ open, onClose, onSaved }: any) {
       <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <Bug className="h-5 w-5 text-rose-500" /> Lapor Bug Baru
+            <Bug className="h-5 w-5 text-destructive" /> Lapor Bug Baru
           </DialogTitle>
           <DialogDescription>
             Jelaskan sespesifik mungkin biar bisa diperbaiki cepat. Screenshot sangat membantu.
@@ -344,7 +344,7 @@ function CreateBugDialog({ open, onClose, onSaved }: any) {
             {photoData ? (
               <div className="relative mt-1">
                 <img src={photoData} alt="Screenshot" className="w-full max-h-48 object-contain rounded-lg border" />
-                <button onClick={() => setPhotoData(null)} className="absolute top-2 right-2 p-1 rounded-full bg-rose-500 text-white shadow-lg">
+                <button onClick={() => setPhotoData(null)} className="absolute top-2 right-2 p-1 rounded-full bg-destructive text-white shadow-lg">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -362,7 +362,7 @@ function CreateBugDialog({ open, onClose, onSaved }: any) {
 
         <div className="flex gap-2 justify-end px-5 md:px-6 py-3 border-t bg-muted/20 shrink-0">
           <Button variant="outline" onClick={onClose}>Batal</Button>
-          <Button onClick={handleSubmit} disabled={mut.isPending || !title.trim()} className="bg-rose-600 hover:bg-rose-700">
+          <Button onClick={handleSubmit} disabled={mut.isPending || !title.trim()} className="bg-destructive hover:brightness-95">
             {mut.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Lapor Bug
           </Button>
@@ -441,7 +441,7 @@ function BugDetailDialog({ open, onClose, bugId, canTriage, currentUserId, onUpd
       <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <Bug className="h-5 w-5 text-rose-500" /> Detail Bug #{bug?.id ?? "..."}
+            <Bug className="h-5 w-5 text-destructive" /> Detail Bug #{bug?.id ?? "..."}
           </DialogTitle>
         </DialogHeader>
 
@@ -547,7 +547,7 @@ function BugDetailDialog({ open, onClose, bugId, canTriage, currentUserId, onUpd
                     {updateMut.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
                     Simpan Triage
                   </Button>
-                  <Button size="sm" variant="outline" className="text-rose-500" onClick={() => { if (confirm("Hapus bug permanen?")) deleteMut.mutate(); }}>
+                  <Button size="sm" variant="outline" className="text-destructive" onClick={() => { if (confirm("Hapus bug permanen?")) deleteMut.mutate(); }}>
                     <Trash2 className="h-3 w-3 mr-1" /> Hapus
                   </Button>
                 </div>

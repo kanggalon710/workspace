@@ -54,11 +54,11 @@ const CAT_COLORS: Record<string, string> = {
 };
 const sourceLabel = (s: string | null | undefined) => LEAD_SOURCE_LABELS[canonicalLeadSource(s)];
 const ACTIVITY_CFG: Record<string, { label: string; icon: any; color: string }> = {
-  note: { label: "Catatan", icon: StickyNote, color: "text-gray-500" },
+  note: { label: "Catatan", icon: StickyNote, color: "text-muted-foreground" },
   call: { label: "Telepon", icon: PhoneCall, color: "text-blue-500" },
-  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "text-green-500" },
+  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "text-success" },
   visit: { label: "Kunjungan", icon: Navigation, color: "text-purple-500" },
-  stage_change: { label: "Pindah Stage", icon: ArrowRight, color: "text-amber-500" },
+  stage_change: { label: "Pindah Stage", icon: ArrowRight, color: "text-warning" },
   assigned: { label: "Ditugaskan", icon: User, color: "text-indigo-500" },
 };
 
@@ -158,7 +158,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-green-600" />
+            <UserPlus className="h-5 w-5 text-success" />
             Konversi Lead ke Pelanggan
           </DialogTitle>
           <DialogDescription>Jadikan lead ini sebagai pelanggan aktif</DialogDescription>
@@ -185,7 +185,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
           {/* Required inputs */}
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">ID Pelanggan <span className="text-red-500">*</span></label>
+              <label className="text-xs font-semibold text-foreground">ID Pelanggan <span className="text-destructive">*</span></label>
               <div className="flex gap-2">
                 <Input placeholder="26041030001" value={customerId} onChange={e => setCustomerId(e.target.value)} className="font-mono" />
                 <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={generateId} disabled={generatingId}>
@@ -195,7 +195,7 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
               <p className="text-[10px] text-muted-foreground">Format: YYMMCKKNNNNN - TH+BL+Cycle+Kec+Urut (auto)</p>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Paket Layanan <span className="text-red-500">*</span></label>
+              <label className="text-xs font-semibold text-foreground">Paket Layanan <span className="text-destructive">*</span></label>
               <Input placeholder="Contoh: 20 Mbps" value={pkg} onChange={e => setPkg(e.target.value)} />
             </div>
           </div>
@@ -240,13 +240,13 @@ function ConvertLeadDialog({ lead, odps, open, onOpenChange }: {
           {/* Work Order checkbox */}
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={createWO} onChange={e => setCreateWO(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+              className="w-4 h-4 rounded border-border text-success focus:ring-success" />
             <span className="text-sm text-foreground">Buat Work Order Pemasangan</span>
           </label>
 
           {/* Submit */}
           <Button onClick={handleSubmit} disabled={!canSubmit || convertMut.isPending}
-            className="w-full bg-green-600 hover:bg-green-700 text-white">
+            className="w-full bg-success hover:brightness-95 text-white">
             {convertMut.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -460,15 +460,15 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                 const hasOdp = !!linkedOdp;
 
                 return (
-                  <div className={`rounded-md p-3 border ${hasWilayah ? "bg-primary/5 border-primary/20" : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40"}`}>
+                  <div className={`rounded-md p-3 border ${hasWilayah ? "bg-primary/5 border-primary/20" : "bg-warning/10 border-warning/30"}`}>
                     <div className="flex items-start gap-2">
-                      <MapPin className={`h-4 w-4 shrink-0 mt-0.5 ${hasWilayah ? "text-primary" : "text-amber-600"}`} />
+                      <MapPin className={`h-4 w-4 shrink-0 mt-0.5 ${hasWilayah ? "text-primary" : "text-warning"}`} />
                       <div className="flex-1 min-w-0">
                         <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Lokasi Lead</div>
                         {hasWilayah ? (
                           <div className="font-semibold text-sm">{wilayahLines.join(", ")}</div>
                         ) : (
-                          <div className="font-medium text-sm text-amber-700 dark:text-amber-300">Wilayah belum diisi</div>
+                          <div className="font-medium text-sm text-warning">Wilayah belum diisi</div>
                         )}
                         {address && (
                           <div className="text-xs text-muted-foreground mt-0.5 break-words">{address}</div>
@@ -483,14 +483,14 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                           </a>
                         )}
                         {!hasWilayah && !address && !hasCoords && (
-                          <div className="text-[11px] text-amber-700 dark:text-amber-300 mt-1">
+                          <div className="text-[11px] text-warning mt-1">
                             Tidak ada data lokasi. Edit lead untuk isi alamat/wilayah.
                           </div>
                         )}
 
                         {/* ODP reference - critical untuk instalasi */}
                         <div className="mt-2 pt-2 border-t flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${hasOdp ? "bg-green-500" : "bg-red-500"}`} />
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${hasOdp ? "bg-success" : "bg-destructive"}`} />
                           <div className="flex-1 min-w-0 text-xs">
                             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">ODP Terdekat: </span>
                             {hasOdp ? (
@@ -503,7 +503,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                                 )}
                               </span>
                             ) : (
-                              <span className="text-red-600 dark:text-red-400 font-medium">Belum terhubung ke ODP</span>
+                              <span className="text-destructive font-medium">Belum terhubung ke ODP</span>
                             )}
                           </div>
                         </div>
@@ -536,7 +536,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                   </a>
                   <a href={waLink(lead.phone, `Halo ${lead.name}, kami dari JABNET FTTH mau follow up ketertarikan Anda.`)}
                      target="_blank" rel="noreferrer" className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full text-green-600">
+                    <Button variant="outline" size="sm" className="w-full text-success">
                       <MessageSquare className="h-4 w-4 mr-1.5" /> WhatsApp
                     </Button>
                   </a>
@@ -580,20 +580,20 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                     <button
                       onClick={() => changeStage.mutate({ stage: "won" })}
                       disabled={changeStage.isPending}
-                      className="text-[10px] px-2.5 py-1 rounded-full border bg-green-50 hover:bg-green-100 text-green-700 border-green-300 transition-colors disabled:opacity-50"
+                      className="text-[10px] px-2.5 py-1 rounded-full border bg-success/10 hover:bg-success/15 text-success border-success/30 transition-colors disabled:opacity-50"
                     >
                       <CheckCircle2 className="h-3 w-3 mr-1 inline" /> Closing
                     </button>
                     <button
                       onClick={() => setShowLossReason(true)}
                       disabled={changeStage.isPending}
-                      className="text-[10px] px-2.5 py-1 rounded-full border bg-red-50 hover:bg-red-100 text-red-700 border-red-300 transition-colors disabled:opacity-50"
+                      className="text-[10px] px-2.5 py-1 rounded-full border bg-destructive/10 hover:bg-destructive/15 text-destructive border-destructive/30 transition-colors disabled:opacity-50"
                     >
                       <XCircle className="h-3 w-3 mr-1 inline" /> Tidak Jadi
                     </button>
                   </div>
                   {showLossReason && (
-                    <div className="mt-2 p-3 border rounded-md space-y-2 bg-red-50 dark:bg-red-950/30">
+                    <div className="mt-2 p-3 border rounded-md space-y-2 bg-destructive/10">
                       <Input placeholder="Alasan tidak jadi..." value={lossReason} onChange={e => setLossReason(e.target.value)} className="text-xs" />
                       <div className="flex gap-2">
                         <Button size="sm" variant="destructive" onClick={() => changeStage.mutate({ stage: "lost", reason: lossReason })} className="flex-1">Konfirmasi</Button>
@@ -607,13 +607,13 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
               {/* Convert to customer */}
               {lead.stage === "won" && (
                 isConverted ? (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span className="text-xs font-semibold text-green-700 dark:text-green-300">Sudah jadi pelanggan</span>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-success/10 border border-success/30">
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    <span className="text-xs font-semibold text-success">Sudah jadi pelanggan</span>
                   </div>
                 ) : (
                   <Button onClick={() => { if (onConvert && lead) { onClose(); setTimeout(() => onConvert(lead), 300); } }}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    className="w-full bg-success hover:brightness-95 text-white">
                     <UserPlus className="h-4 w-4 mr-2" /> Jadikan Pelanggan
                   </Button>
                 )
@@ -648,7 +648,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                   {activityPhoto && (
                     <div className="relative">
                       <img src={activityPhoto} alt="preview" className="h-10 w-10 object-cover rounded border" />
-                      <button onClick={() => setActivityPhoto(null)} className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center">
+                      <button onClick={() => setActivityPhoto(null)} className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center">
                         <X className="h-2.5 w-2.5" />
                       </button>
                     </div>
@@ -704,21 +704,21 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
 
               {/* Catatan Awal */}
               {lead.notes && (
-                <div className="rounded-md p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <Label className="text-xs text-amber-700 dark:text-amber-300 mb-1 block">Catatan Awal</Label>
-                  <p className="text-xs text-amber-800 dark:text-amber-200">{lead.notes}</p>
+                <div className="rounded-md p-3 bg-warning/10 border border-warning/30">
+                  <Label className="text-xs text-warning mb-1 block">Catatan Awal</Label>
+                  <p className="text-xs text-warning">{lead.notes}</p>
                 </div>
               )}
 
               {/* Danger zone - hapus lead, terisolasi di bawah */}
               {me?.role === "admin" && onDelete && (
-                <div className="mt-6 pt-4 border-t border-dashed border-red-200 dark:border-red-900">
-                  <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60">
+                <div className="mt-6 pt-4 border-t border-dashed border-destructive/30">
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-destructive/50 border border-destructive/30">
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                      <div className="text-xs font-semibold text-destructive flex items-center gap-1.5">
                         <Trash2 className="h-3.5 w-3.5" /> Zona Berbahaya
                       </div>
-                      <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5">
+                      <p className="text-[11px] text-destructive/80 mt-0.5">
                         Hapus lead beserta riwayat aktivitas. Aksi ini tidak bisa dibatalkan.
                       </p>
                     </div>
@@ -726,7 +726,7 @@ function LeadDrawer({ leadId, users, odps, convertedLeadIds, onClose, onConvert,
                       size="sm"
                       variant="outline"
                       onClick={() => { onClose(); setTimeout(() => onDelete(leadId), 300); }}
-                      className="text-red-600 border-red-300 hover:bg-red-100 dark:hover:bg-red-950/40 dark:border-red-900 dark:text-red-400 shrink-0"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/15 shrink-0"
                     >
                       <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Hapus Lead
                     </Button>
@@ -786,7 +786,7 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
     : isHot
       ? "border-warning/40 shadow-[inset_3px_0_0_hsl(var(--warning))]"
       : priority === "high"
-        ? "border-rose-400/40 shadow-[inset_3px_0_0_#f43f5e]"
+        ? "border-destructive/30 shadow-[inset_3px_0_0_#f43f5e]"
         : "border-border";
 
   return (
@@ -871,13 +871,13 @@ function KanbanCard({ lead, users, isConverted, onClick }: { lead: Lead; users: 
         {/* -- Status badges -- */}
         <div className="flex flex-wrap gap-1">
           {priority === "high" && !isStalled && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/30">
               <Star className="h-2.5 w-2.5" strokeWidth={2.5} /> Prioritas
             </span>
           )}
           {isNew && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> Lead Baru
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-warning/10 text-warning border border-warning/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" /> Lead Baru
             </span>
           )}
           {isFresh && !isNew && !isHot && (
@@ -1033,7 +1033,7 @@ function ListLeadRow({
                   </span>
                 )}
                 {priority === "high" && !isStalled && !isHot && (
-                  <span className="inline-flex items-center gap-0.5 text-2xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-0.5 text-2xs font-bold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded">
                     <Star className="h-2.5 w-2.5" /> Prioritas
                   </span>
                 )}
@@ -1547,7 +1547,7 @@ export default function LeadPipelinePage() {
             {/* Stage-specific field */}
             {stageChangeFor?.targetStage === "lost" && (
               <div>
-                <Label className="text-xs">Alasan Tidak Jadi <span className="text-red-500">*</span></Label>
+                <Label className="text-xs">Alasan Tidak Jadi <span className="text-destructive">*</span></Label>
                 <Input
                   value={stageLossReason}
                   onChange={(e) => setStageLossReason(e.target.value)}
@@ -1557,9 +1557,9 @@ export default function LeadPipelinePage() {
               </div>
             )}
             {stageChangeFor?.targetStage === "won" && (
-              <div className="flex items-start gap-2 p-3 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-green-800 dark:text-green-200">
+              <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success/30">
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                <div className="text-xs text-success">
                   <div className="font-semibold">Lead sudah Closing</div>
                   <div className="mt-0.5 text-[11px]">Setelah ini kamu bisa convert lead jadi pelanggan dari drawer detail.</div>
                 </div>
@@ -1586,7 +1586,7 @@ export default function LeadPipelinePage() {
               {stagePhoto ? (
                 <div className="relative inline-block">
                   <img src={stagePhoto} alt="bukti" className="h-32 w-32 object-cover rounded-md border" />
-                  <button onClick={() => setStagePhoto(null)} className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600">
+                  <button onClick={() => setStagePhoto(null)} className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive">
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -1618,7 +1618,7 @@ export default function LeadPipelinePage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-red-500" /> Hapus Lead?
+              <Trash2 className="h-5 w-5 text-destructive" /> Hapus Lead?
             </AlertDialogTitle>
             <AlertDialogDescription>
               Lead akan dihapus permanen beserta semua riwayat aktivitasnya. Tindakan ini tidak bisa dibatalkan.
@@ -1626,7 +1626,7 @@ export default function LeadPipelinePage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={async () => {
+            <AlertDialogAction className="bg-destructive hover:brightness-95 text-white" onClick={async () => {
               if (!deleteLeadId) return;
               try {
                 await api.delete(`/marketing/leads/${deleteLeadId}`);

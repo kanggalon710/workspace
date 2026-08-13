@@ -57,9 +57,14 @@
   per-pola (hapus 45 dark: status/neutral + map 79 dasar tint-aware + 3 hover fix). Alat
   `collapse-darkmode.mjs`. Kategorikal sky/violet utuh.
 - [x] **#7d PointsTab SELESAI** (2026-08-13): portal, manual per-pola (hapus 28 dark: + map 43).
-- [ ] **#7 sisa page ber-`dark:` (MANUAL, 1-2/ronde - user pilih pendekatan ini).** Pakai
-  `collapse-darkmode.mjs` lalu audit (badge tak-terlihat, hover kolaps, kategorikal). Kandidat
-  status-bersih berikut: BugReportsPage, UsersPage, LeadPipelinePage, RolesPage.
+- [x] **#7e Batch SELESAI** (2026-08-13): BugReportsPage, UsersPage, LeadPipelinePage, RolesPage
+  (manual per-pola, 8 hover fix, kategorikal utuh). Alat `collapse-darkmode.mjs` diperbaiki
+  (preserve opacity: `bg-rose-500/10`->`bg-destructive/10`, bukan solid).
+- [ ] **#7 sisa page ber-`dark:` (MANUAL, 1-2/ronde).** Pakai `collapse-darkmode.mjs` lalu audit.
+  Kandidat status-bersih: MpwaPage, GenieAcsDevicesPage, MonitoringPage, AuditLogPage,
+  ProfilePage, SplitterChainPage, CoverageCheckPage, loyalty/SummaryTab, components/tickets/panels.
+  HATI-HATI kategorikal-berat (Dashboard 14 famili, IntegrationPage kartu brand) - penilaian
+  per-pakai, JANGAN alat buta. Cek `bg-white dark:` -> `bg-card` manual per page dulu.
   HATI-HATI page kategorikal-berat (Dashboard 14 famili, IntegrationPage kartu brand) - butuh
   penilaian per-pakai lebih dalam, JANGAN pakai alat buta. bg-white+dark: -> `bg-card` (cek
   manual per page; PointRedemptions tak ada, page lain mungkin ada).

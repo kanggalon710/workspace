@@ -179,9 +179,9 @@ export default function RolesPage() {
         {/* KPI tiles */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
           <KpiTile icon={<Shield className="h-4 w-4" />} label="Total Role" value={roles.length} iconBg="bg-violet-500" />
-          <KpiTile icon={<Crown className="h-4 w-4" />} label="System Role" value={systemRoles} iconBg="bg-amber-500" />
+          <KpiTile icon={<Crown className="h-4 w-4" />} label="System Role" value={systemRoles} iconBg="bg-warning" />
           <KpiTile icon={<Sparkles className="h-4 w-4" />} label="Custom Role" value={customRoles} iconBg="bg-sky-500" />
-          <KpiTile icon={<UsersIcon className="h-4 w-4" />} label="Total User" value={totalUsers} iconBg="bg-emerald-500" />
+          <KpiTile icon={<UsersIcon className="h-4 w-4" />} label="Total User" value={totalUsers} iconBg="bg-success" />
         </div>
       </div>
 
@@ -262,7 +262,7 @@ export default function RolesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteFor && deleteMut.mutate(deleteFor.id)} className="bg-rose-600 hover:bg-rose-700">
+            <AlertDialogAction onClick={() => deleteFor && deleteMut.mutate(deleteFor.id)} className="bg-destructive hover:brightness-95">
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -298,7 +298,7 @@ export default function RolesPage() {
                 }
                 setDeletePreset(null);
               }}
-              className="bg-rose-600 hover:bg-rose-700"
+              className="bg-destructive hover:brightness-95"
             >
               Hapus
             </AlertDialogAction>
@@ -336,7 +336,7 @@ function PresetCard({ preset, busy, onToggleActive, onSetDefault, onEdit, onDele
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-bold text-sm truncate">{preset.name}</h3>
-                {isDefault && <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />}
+                {isDefault && <Star className="h-3.5 w-3.5 text-warning fill-amber-500" />}
               </div>
               {preset.description && <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{preset.description}</p>}
             </div>
@@ -367,7 +367,7 @@ function PresetCard({ preset, busy, onToggleActive, onSetDefault, onEdit, onDele
             <Edit3 className="h-3.5 w-3.5" />
           </Button>
           {!isSystem && (
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600" onClick={onDelete}>
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={onDelete}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
@@ -388,14 +388,14 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
   const isLockedAdmin = role.isSystem && (role.name === "Admin" || role.name === "System-Admin" || role.name === "Administrator");
   const canEdit = !isLockedAdmin || !!user?.isSystemAdmin;
   return (
-    <Card className={`hover:shadow-md transition-shadow ${role.name === "System-Admin" ? "border-red-500/40 bg-red-50/30 dark:bg-red-950/10" : ""}`}>
+    <Card className={`hover:shadow-md transition-shadow ${role.name === "System-Admin" ? "border-destructive/30 bg-destructive/30" : ""}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-              role.name === "System-Admin" ? "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400" :
-              role.isSystem ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400" : "bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400"
+              role.name === "System-Admin" ? "bg-destructive/15 text-destructive" :
+              role.isSystem ? "bg-warning/15 text-warning" : "bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400"
             }`}>
               {role.name === "System-Admin" ? <ShieldCheck className="h-4 w-4" /> : role.isSystem ? <Crown className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
             </div>
@@ -403,17 +403,17 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-bold text-sm truncate">{role.name}</h3>
                 {role.name === "System-Admin" && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
                     SYSTEM
                   </span>
                 )}
                 {role.isSystem && role.name !== "System-Admin" && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded">
                     SYSTEM
                   </span>
                 )}
                 {role.canSeeAllData && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400" title="Supervisor - bisa lihat data semua user">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-destructive" title="Supervisor - bisa lihat data semua user">
                     SUPERVISOR
                   </span>
                 )}
@@ -444,12 +444,12 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
             <span className="text-muted-foreground tabular-nums">{stats.granted} / {ALL_PERMISSION_KEYS.length}</span>
           </div>
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden flex">
-            <div className="h-full bg-emerald-500" style={{ width: `${(stats.write / ALL_PERMISSION_KEYS.length) * 100}%` }} />
+            <div className="h-full bg-success" style={{ width: `${(stats.write / ALL_PERMISSION_KEYS.length) * 100}%` }} />
             <div className="h-full bg-sky-500" style={{ width: `${(stats.read / ALL_PERMISSION_KEYS.length) * 100}%` }} />
           </div>
           <div className="flex items-center gap-3 text-[10px]">
-            <span className="inline-flex items-center gap-1 text-emerald-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {stats.write} full
+            <span className="inline-flex items-center gap-1 text-success">
+              <span className="w-1.5 h-1.5 rounded-full bg-success" /> {stats.write} full
             </span>
             <span className="inline-flex items-center gap-1 text-sky-600">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500" /> {stats.read} read
@@ -469,7 +469,7 @@ function RoleCard({ role, onPreview, onEdit, onDelete, onViewUsers }: any) {
             </Button>
           )}
           {!role.isSystem && (
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600" onClick={onDelete}>
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={onDelete}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
@@ -509,9 +509,9 @@ function RolePreviewDialog({ role, onClose, onEdit }: any) {
 
         <div className="flex-1 overflow-y-auto px-5 md:px-6 py-4 space-y-4">
           {role.canSeeAllData && (
-            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-800 dark:text-amber-200">
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+              <div className="text-xs text-warning">
                 <strong>Mode Supervisor aktif</strong> - role ini bisa melihat data semua user (bukan hanya datanya sendiri).
               </div>
             </div>
@@ -644,7 +644,7 @@ function RoleFormDialog({ open, onClose, initial, onSaved }: any) {
               <input type="checkbox" checked={canSeeAllData} onChange={(e) => setCanSeeAllData(e.target.checked)} className="mt-0.5" disabled={isSystem && (initial?.name === "System-Admin" || initial?.name === "Admin")} />
               <div>
                 <div className="font-semibold text-sm flex items-center gap-1.5">
-                  <Star className="h-3.5 w-3.5 text-amber-500" /> Mode Supervisor
+                  <Star className="h-3.5 w-3.5 text-warning" /> Mode Supervisor
                 </div>
                 <div className="text-[11px] text-muted-foreground">
                   Role ini bisa <strong>melihat data semua user</strong> (bukan cuma datanya sendiri). Cocok untuk SPV/manajer.
@@ -746,7 +746,7 @@ function RoleUsersDialog({ role, onClose }: any) {
                       <div className="font-semibold text-sm truncate">{u.name}</div>
                       <div className="text-[11px] text-muted-foreground truncate">@{u.username} · {u.position ?? "-"}</div>
                     </div>
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive === 1 ? "bg-emerald-500" : "bg-slate-400"}`} />
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive === 1 ? "bg-success" : "bg-muted"}`} />
                   </div>
                 </li>
               ))}

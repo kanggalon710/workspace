@@ -3,6 +3,20 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7e: Batch 4 page warna -> token (BugReports/Users/Leads/Roles)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut batch manual per-pola (user: "next batch"). 4 page status-bersih ber-`dark:`.
+**Perubahan:** BugReportsPage (hapus 18 dark:, map 33), UsersPage (13/33), LeadPipelinePage
+(27/68), RolesPage (13/32). Total 8 hover-gelap kolaps -> `hover:brightness-95`. Kategorikal
+sky/violet/indigo/blue/purple + varian dark:-nya SENGAJA utuh (avatar role/user, warna stage).
+**File:** client/pages/{BugReportsPage,UsersPage,LeadPipelinePage,RolesPage}.tsx.
+**Verifikasi:** `tsc` 0 error, build OK. Per file: 0 badge tak-terlihat, 0 hover kolaps,
+0 sisa palet status/neutral, 0 baris non-warna berubah, kategorikal utuh.
+**Catatan (perbaikan alat):** `collapse-darkmode.mjs` diperbaiki - dulu `bg-rose-500/10` (tint
+via opacity) salah jadi solid (drop opacity) -> teks tak terlihat di LeadPipeline. Kini opacity
+di-preserve (`bg-{token}/{op}`). optim-18/19 DICEK ulang: originalnya tak punya pola pemicu
+`bg-status-{400-900}/{op}`, jadi benar (tak terdampak).
+
 ## 2026-08-13 - #7d: PointsTab (portal) warna -> token (manual per-pola)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut manual per-pola. PointsTab (portal pelanggan, tab poin) semantik status

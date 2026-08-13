@@ -224,10 +224,10 @@ export default function UsersPage() {
 
         {/* KPI tiles */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-          <KpiTile icon={<UsersIcon className="h-4 w-4" />} label="Total User" value={stats.total} iconBg="bg-slate-500" />
-          <KpiTile icon={<CheckCircle2 className="h-4 w-4" />} label="Aktif" value={stats.active} iconBg="bg-emerald-500" />
-          <KpiTile icon={<PowerOff className="h-4 w-4" />} label="Nonaktif" value={stats.inactive} iconBg="bg-slate-400" />
-          <KpiTile icon={<Shield className="h-4 w-4" />} label="Admin" value={stats.admins} iconBg="bg-rose-500" />
+          <KpiTile icon={<UsersIcon className="h-4 w-4" />} label="Total User" value={stats.total} iconBg="bg-muted" />
+          <KpiTile icon={<CheckCircle2 className="h-4 w-4" />} label="Aktif" value={stats.active} iconBg="bg-success" />
+          <KpiTile icon={<PowerOff className="h-4 w-4" />} label="Nonaktif" value={stats.inactive} iconBg="bg-muted" />
+          <KpiTile icon={<Shield className="h-4 w-4" />} label="Admin" value={stats.admins} iconBg="bg-destructive" />
         </div>
 
         {/* Search + filters */}
@@ -433,7 +433,7 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
           {getInitials(user.name)}
           {/* Status dot */}
           <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${
-            isActive ? "bg-emerald-500" : "bg-slate-400"
+            isActive ? "bg-success" : "bg-muted"
           }`} />
         </div>
         <div className="min-w-0 flex-1">
@@ -463,7 +463,7 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
                 {role.name}
               </span>
             )}
-            <span className={`text-[10px] font-semibold ${isActive ? "text-emerald-600" : "text-muted-foreground"}`}>
+            <span className={`text-[10px] font-semibold ${isActive ? "text-success" : "text-muted-foreground"}`}>
               {isActive ? "Aktif" : "Nonaktif"}
             </span>
             <span className="text-[10px] text-muted-foreground">{fmtRelative(user.lastLogin)}</span>
@@ -478,7 +478,7 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
             {role.name}
           </span>
         ) : user.role ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-warning/15 text-warning">
             {user.role} (legacy)
           </span>
         ) : (
@@ -495,13 +495,13 @@ function UserRow({ user, isSelf, isSelected, onToggleSelect, onClick, role }: an
       {/* Status (desktop) */}
       <div className="hidden md:block w-28 shrink-0">
         {isActive ? (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
+            <span className="w-1.5 h-1.5 rounded-full bg-success" />
             Aktif
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+            <span className="w-1.5 h-1.5 rounded-full bg-muted" />
             Nonaktif
           </span>
         )}
@@ -573,9 +573,9 @@ function UserDetailDrawer({ user, role, roles, onClose, onEdit, onResetPassword,
                   {role?.name ?? user.role ?? "no role"}
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                  isActive ? "bg-emerald-400/30" : "bg-slate-400/30"
+                  isActive ? "bg-success/30" : "bg-muted/30"
                 }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-300" : "bg-slate-300"}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-success/40" : "bg-muted"}`} />
                   {isActive ? "AKTIF" : "NONAKTIF"}
                 </span>
               </div>
@@ -617,7 +617,7 @@ function UserDetailDrawer({ user, role, roles, onClose, onEdit, onResetPassword,
         <div className="flex gap-2 justify-between items-center px-5 md:px-6 py-3 border-t bg-muted/20 shrink-0 flex-wrap">
           <div className="flex gap-2">
             {!isSelf && (
-              <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => { if (confirm(`Hapus user "${user.name}"? Tindakan tidak bisa di-undo.`)) deleteMut.mutate(); }} disabled={deleteMut.isPending}>
+              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm(`Hapus user "${user.name}"? Tindakan tidak bisa di-undo.`)) deleteMut.mutate(); }} disabled={deleteMut.isPending}>
                 <Trash2 className="h-3.5 w-3.5 mr-1" /> Hapus
               </Button>
             )}
@@ -739,7 +739,7 @@ function ActivityTab({ logs }: any) {
         const isLogin = log.action === "LOGIN";
         const isCreate = log.action === "CREATE";
         const isDelete = log.action === "DELETE";
-        const dotColor = isLogin ? "bg-sky-500" : isCreate ? "bg-emerald-500" : isDelete ? "bg-rose-500" : "bg-slate-400";
+        const dotColor = isLogin ? "bg-sky-500" : isCreate ? "bg-success" : isDelete ? "bg-destructive" : "bg-muted";
         return (
           <div key={log.id} className="flex items-start gap-3 py-2 px-2 hover:bg-muted/30 rounded-md transition-colors">
             <div className={`w-2 h-2 rounded-full ${dotColor} mt-2 shrink-0`} />
@@ -817,13 +817,13 @@ function SpecialAccessEditor({ user }: { user: any }) {
                         <button key={lvl} type="button" onClick={() => setLevel(k, lvl)}
                           className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
                             draft[k] === lvl
-                              ? (lvl === "write" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300")
+                              ? (lvl === "write" ? "bg-success/15 text-success" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300")
                               : "text-muted-foreground hover:bg-muted"}`}>
                           {lvl === "write" ? "FULL" : "READ"}
                         </button>
                       ))}
                       <button type="button" onClick={() => remove(k)} title="Hapus izin"
-                        className="p-1 rounded-md text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30">
+                        className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -873,7 +873,7 @@ function PermissionsTab({ role, user }: any) {
               <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
                 <span><strong className="text-foreground">{grantedCount}</strong> dari {ALL_PERMISSIONS.length} fitur</span>
                 {role.canSeeAllData && (
-                  <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded font-semibold">
+                  <span className="px-1.5 py-0.5 bg-warning/15 text-warning rounded font-semibold">
                     Supervisor (lihat semua data)
                   </span>
                 )}
@@ -898,7 +898,7 @@ function PermissionsTab({ role, user }: any) {
                   <div key={p.key} className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-md bg-muted/40">
                     <span className="text-sm">{p.label}</span>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                      lvl === "write" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                      lvl === "write" ? "bg-success/15 text-success" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
                     }`}>
                       {lvl === "write" ? "READ + WRITE" : "READ ONLY"}
                     </span>
@@ -1073,7 +1073,7 @@ function ResetPasswordDialog({ user, onClose, onSaved }: any) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Batal</AlertDialogCancel>
-          <AlertDialogAction onClick={() => mut.mutate()} disabled={pw.length < 6 || mut.isPending} className="bg-amber-600 hover:bg-amber-700">
+          <AlertDialogAction onClick={() => mut.mutate()} disabled={pw.length < 6 || mut.isPending} className="bg-warning hover:brightness-95">
             Reset Password
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -1150,10 +1150,10 @@ function BigMetric({ label, value, sublabel, tone }: any) {
   const colors: Record<string, string> = {
     sky: "text-sky-600 dark:text-sky-400",
     indigo: "text-indigo-600 dark:text-indigo-400",
-    amber: "text-amber-600 dark:text-amber-400",
+    amber: "text-warning",
     violet: "text-violet-600 dark:text-violet-400",
-    rose: "text-rose-600 dark:text-rose-400",
-    emerald: "text-emerald-600 dark:text-emerald-400",
+    rose: "text-destructive",
+    emerald: "text-success",
   };
   return (
     <div className="p-3 rounded-lg border bg-card">
