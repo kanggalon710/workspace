@@ -262,9 +262,9 @@ export default function MikrotikRoutersPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                        isOnline ? "bg-green-500/10" : "bg-muted"
+                        isOnline ? "bg-success/10" : "bg-muted"
                       }`}>
-                        <Server className={`h-6 w-6 ${isOnline ? "text-green-600" : "text-muted-foreground"}`} />
+                        <Server className={`h-6 w-6 ${isOnline ? "text-success" : "text-muted-foreground"}`} />
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-foreground truncate">{r.name}</h3>
@@ -273,7 +273,7 @@ export default function MikrotikRoutersPage() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       {isOnline ? (
-                        <Badge variant="outline" className="text-[10px] border-green-500/40 text-green-600 gap-1">
+                        <Badge variant="outline" className="text-[10px] border-success/30 text-success gap-1">
                           <CheckCircle2 className="h-2.5 w-2.5" /> Online
                         </Badge>
                       ) : (
@@ -317,7 +317,7 @@ export default function MikrotikRoutersPage() {
                     </Button>
                     <Button
                       variant="outline" size="sm"
-                      className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/10"
+                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                       onClick={() => setDeleteId(r.id)} title="Hapus"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -344,12 +344,12 @@ export default function MikrotikRoutersPage() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nama Router <span className="text-red-500">*</span></Label>
+              <Label className="text-xs">Nama Router <span className="text-destructive">*</span></Label>
               <Input value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Router POP-A Garut" required />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs">IP / Hostname <span className="text-red-500">*</span></Label>
+                <Label className="text-xs">IP / Hostname <span className="text-destructive">*</span></Label>
                 <Input value={form.host} onChange={(e) => setField("host", e.target.value)} placeholder="192.168.88.1" required />
               </div>
               <div className="space-y-1.5">
@@ -359,11 +359,11 @@ export default function MikrotikRoutersPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Username API <span className="text-red-500">*</span></Label>
+                <Label className="text-xs">Username API <span className="text-destructive">*</span></Label>
                 <Input value={form.username} onChange={(e) => setField("username", e.target.value)} placeholder="admin" required />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Password {!editRouter && <span className="text-red-500">*</span>}</Label>
+                <Label className="text-xs">Password {!editRouter && <span className="text-destructive">*</span>}</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
@@ -393,8 +393,8 @@ export default function MikrotikRoutersPage() {
 
             {/* Test Result */}
             {testResult && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 space-y-1">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-400 flex items-center gap-1">
+              <div className="bg-success/10 border border-success/30 rounded-lg p-3 space-y-1">
+                <p className="text-xs font-semibold text-success flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Koneksi berhasil
                 </p>
                 <div className="grid grid-cols-2 gap-1 text-[11px] text-foreground/80">
@@ -463,7 +463,7 @@ export default function MikrotikRoutersPage() {
                   label="Disk"
                   value={totalHdd > 0 ? Math.round((usedHdd / totalHdd) * 100) : 0}
                   unit={`${formatBytes(usedHdd)} / ${formatBytes(totalHdd)}`}
-                  color="bg-amber-500"
+                  color="bg-warning"
                 />
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t text-xs">
                   <div><span className="text-muted-foreground">Uptime:</span> <b>{formatUptime(d.uptime || "")}</b></div>
@@ -477,7 +477,7 @@ export default function MikrotikRoutersPage() {
             );
           })() : (
             <div className="py-8 text-center text-sm text-muted-foreground">
-              <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-amber-500" />
+              <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-warning" />
               Tidak dapat mengambil data resource
             </div>
           )}
@@ -489,7 +489,7 @@ export default function MikrotikRoutersPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-red-500" /> Hapus Router?
+              <Trash2 className="h-5 w-5 text-destructive" /> Hapus Router?
             </DialogTitle>
             <DialogDescription>Router akan dihapus dari daftar. Ini tidak mengubah konfigurasi di router fisik.</DialogDescription>
           </DialogHeader>

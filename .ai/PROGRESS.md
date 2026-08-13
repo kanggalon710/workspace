@@ -3,6 +3,21 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7h: Batch 8 file warna -> token (tail lanjut)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut (user: continue). 8 file status-bersih ber-`dark:`.
+**Perubahan:** integrations/AppUpdateCard (8 dark:/16 map), tickets/Customer360Panel (3/18),
+portal/dashboard/TrafficTab (11/13), shared/CapacityCalculatorModal (10/10),
+integrations/DevDbSyncCard (6/14), collection/CollectionDetail (8/11),
+portal/dashboard/WifiTab (5/12), MikrotikRoutersPage (1/16). 3 hover kolaps ->
+`hover:brightness-95`. Kategorikal utuh.
+**File:** 8 file di atas.
+**Verifikasi:** `tsc` 0 error, build OK. Per file: 0 badge tak-terlihat, 0 hover kolaps,
+0 sisa palet, 0 baris non-warna. Spot-check CapacityCalculator: success/destructive by kapasitas.
+**DIKECUALIKAN sadar dari batch (butuh penilaian terpisah):** components/ui/status-badge.tsx
+(primitif inti), TicketHeatmapPage (skala warna), integration/shared (domain brand),
+NotificationBell (warna per tipe notif = kategorikal), OverviewTab (ada bg-white dark: pair).
+
 ## 2026-08-13 - #7g: Batch 9 file warna -> token (tail bersih)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut (user: continue). 9 file status-bersih ber-`dark:` (page + komponen + portal).

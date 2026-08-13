@@ -57,9 +57,9 @@ const STATUS_TONE: Record<string, string> = {
   open: "bg-blue-100 text-blue-700",
   assigned: "bg-cyan-100 text-cyan-700",
   in_progress: "bg-orange-100 text-orange-700",
-  pending: "bg-amber-100 text-amber-700",
-  resolved: "bg-emerald-100 text-emerald-700",
-  closed: "bg-zinc-100 text-zinc-600",
+  pending: "bg-warning/15 text-warning",
+  resolved: "bg-success/15 text-success",
+  closed: "bg-muted text-muted-foreground",
 };
 
 export function Customer360Panel({ customerId, currentTicketId }: { customerId: number; currentTicketId?: number }) {
@@ -124,11 +124,11 @@ export function Customer360Panel({ customerId, currentTicketId }: { customerId: 
             <div className="flex items-center justify-center gap-1 h-8 rounded-md bg-muted/40 text-muted-foreground text-[11px] font-semibold border border-dashed">-</div>
           )}
           {c.phone && (
-            <a href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 h-8 rounded-md bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold border border-emerald-200/50 transition-colors">
+            <a href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 h-8 rounded-md bg-success/10 hover:bg-success/15 text-success text-[11px] font-semibold border border-success/30 transition-colors">
               <MessageSquare className="w-3 h-3" /> WA
             </a>
           )}
-          <Link href={`/customers?id=${c.id}`} className="flex items-center justify-center gap-1 h-8 rounded-md bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 text-foreground text-[11px] font-semibold border transition-colors">
+          <Link href={`/customers?id=${c.id}`} className="flex items-center justify-center gap-1 h-8 rounded-md bg-muted/50 hover:bg-muted text-foreground text-[11px] font-semibold border transition-colors">
             <ExternalLink className="w-3 h-3" /> Detail
           </Link>
         </div>
@@ -139,7 +139,7 @@ export function Customer360Panel({ customerId, currentTicketId }: { customerId: 
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Paket Internet</span>
           {c.isIsolir === 1 && (
-            <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0 rounded bg-rose-100 text-rose-800">ISOLIR</span>
+            <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0 rounded bg-destructive/15 text-destructive">ISOLIR</span>
           )}
         </div>
         <div className="text-sm font-bold">{c.package || "-"}</div>
@@ -150,7 +150,7 @@ export function Customer360Panel({ customerId, currentTicketId }: { customerId: 
           {c.billingStatus && (
             <span className={cn(
               "uppercase tracking-wider font-bold text-[9px] px-1.5 py-0 rounded",
-              isOverdue ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700",
+              isOverdue ? "bg-destructive/15 text-destructive" : "bg-success/15 text-success",
             )}>{isOverdue ? "Belum Lunas" : "Lunas"}</span>
           )}
         </div>

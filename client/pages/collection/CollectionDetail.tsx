@@ -138,7 +138,7 @@ export function CollectionDetail({
                 Simpan
               </Button>
               {detail.promiseDate && (
-                <Button size="sm" variant="outline" onClick={() => { setDeadlineDraft(""); deadlineMut.mutate(null); }} disabled={deadlineMut.isPending} className="text-red-600 border-red-300">
+                <Button size="sm" variant="outline" onClick={() => { setDeadlineDraft(""); deadlineMut.mutate(null); }} disabled={deadlineMut.isPending} className="text-destructive border-destructive/30">
                   Hapus
                 </Button>
               )}
@@ -155,7 +155,7 @@ export function CollectionDetail({
               </a>
               <a href={waLink(cust.phone, `Halo ${cust.name}, mengingatkan bahwa tagihan internet Anda sebesar ${fmtRp(detail.openedAmount)} belum dibayar. Mohon segera dilunasi. Terima kasih.`)}
                  target="_blank" rel="noreferrer" className="flex-1">
-                <Button variant="outline" size="sm" className="w-full text-green-600">
+                <Button variant="outline" size="sm" className="w-full text-success">
                   <MessageSquare className="h-4 w-4 mr-1.5" /> WhatsApp
                 </Button>
               </a>
@@ -353,13 +353,13 @@ export function CollectionDetail({
 
           {/* ==== Danger zone - hapus collection, terisolasi di bawah (jauh dari close X) ==== */}
           {canEdit && isSystemAdmin && (
-            <div data-section="collection-danger-zone" className="mt-6 pt-4 border-t border-dashed border-red-200 dark:border-red-900">
-              <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/60">
+            <div data-section="collection-danger-zone" className="mt-6 pt-4 border-t border-dashed border-destructive/30">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-destructive/50 border border-destructive/30">
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                  <div className="text-xs font-semibold text-destructive flex items-center gap-1.5">
                     <Trash2 className="h-3.5 w-3.5" /> Zona Berbahaya
                   </div>
-                  <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5">
+                  <p className="text-[11px] text-destructive/80 mt-0.5">
                     Hapus collection beserta riwayat aktivitas. Aksi ini tidak bisa dibatalkan.
                   </p>
                 </div>
@@ -367,7 +367,7 @@ export function CollectionDetail({
                   size="sm"
                   variant="outline"
                   onClick={() => { onClose(); setTimeout(() => onDelete(detail.id), 300); }}
-                  className="text-red-600 border-red-300 hover:bg-red-100 dark:hover:bg-red-950/40 dark:border-red-900 dark:text-red-400 shrink-0"
+                  className="text-destructive border-destructive/30 hover:bg-destructive/15 shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Hapus Collection
                 </Button>

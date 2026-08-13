@@ -124,9 +124,9 @@ export function AppUpdateCard() {
             <DownloadCloud className="h-4 w-4 text-primary" /> Pembaruan Aplikasi
           </h3>
           {updateAvailable ? (
-            <Badge className="bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300">Versi baru</Badge>
+            <Badge className="bg-warning/15 text-warning border-warning/30">Versi baru</Badge>
           ) : check ? (
-            <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-950/40 dark:text-green-300">Terbaru</Badge>
+            <Badge className="bg-success/15 text-success border-success/30">Terbaru</Badge>
           ) : null}
         </div>
 
@@ -138,7 +138,7 @@ export function AppUpdateCard() {
             <p className="flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" /> {fmtTime(cur?.buildTime)}</p>
             {cur?.buildEnv && <p className="flex items-center gap-1 text-muted-foreground"><GitBranch className="h-3 w-3" /> {cur.buildEnv} · {cur.buildSourceBranch ?? "-"}</p>}
           </div>
-          <div className={`rounded-lg border p-3 space-y-1 ${updateAvailable ? "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900" : "bg-muted/30"}`}>
+          <div className={`rounded-lg border p-3 space-y-1 ${updateAvailable ? "bg-warning/10 border-warning/30" : "bg-muted/30"}`}>
             <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[10px]">Versi Terbaru (GitHub)</p>
             <p className="font-mono-tight text-sm">{check?.remote.sourceShaShort ?? "-"}</p>
             <p className="flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" /> {fmtTime(check?.remote.buildTime ?? check?.remote.commitDate)}</p>
@@ -149,8 +149,8 @@ export function AppUpdateCard() {
         {/* Status + aksi */}
         <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
           {updateAvailable
-            ? <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-            : <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />}
+            ? <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+            : <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />}
           <span className="text-muted-foreground">{REASON_LABEL[check?.reason ?? ""] ?? "Belum dicek."}</span>
         </div>
 
@@ -173,11 +173,11 @@ export function AppUpdateCard() {
         </div>
 
         {!check?.enabled && (
-          <p className="text-[11px] text-amber-600 dark:text-amber-400">
+          <p className="text-[11px] text-warning">
             Tombol "Update Sekarang" nonaktif.{" "}
             <button
               type="button"
-              className="underline underline-offset-2 font-medium hover:text-amber-700"
+              className="underline underline-offset-2 font-medium hover:text-warning"
               onClick={() => { setShowConfig(true); setEnabled(true); }}
             >
               Aktifkan update sekali klik
@@ -208,7 +208,7 @@ export function AppUpdateCard() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">GitHub Token {tokenSet && <span className="text-green-600">(tersimpan)</span>}</Label>
+              <Label className="text-xs">GitHub Token {tokenSet && <span className="text-success">(tersimpan)</span>}</Label>
               <Input inputSize="sm" type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder={tokenSet ? "•••••••• (kosongkan = tak berubah)" : "Wajib untuk repo privat"} />
               <p className="text-[11px] text-muted-foreground">Personal Access Token (baca repo) untuk cek versi repo privat.</p>
             </div>
@@ -226,7 +226,7 @@ export function AppUpdateCard() {
               {applyResult.steps.map((s, i) => (
                 <div key={i} className="text-[11px]">
                   <div className="flex items-center gap-1.5 font-medium">
-                    {s.ok ? <CheckCircle2 className="h-3 w-3 text-green-600" /> : <AlertTriangle className="h-3 w-3 text-red-600" />}
+                    {s.ok ? <CheckCircle2 className="h-3 w-3 text-success" /> : <AlertTriangle className="h-3 w-3 text-destructive" />}
                     {s.step}
                   </div>
                   {s.output && <pre className="mt-0.5 whitespace-pre-wrap break-words rounded bg-muted/50 p-1.5 text-[10px] text-muted-foreground max-h-24 overflow-auto">{s.output}</pre>}
@@ -234,7 +234,7 @@ export function AppUpdateCard() {
               ))}
             </div>
             {applyResult.restartTriggered && (
-              <p className="text-[11px] text-amber-600 dark:text-amber-400">Aplikasi akan reload pada akses berikutnya. Muat ulang halaman setelah beberapa detik.</p>
+              <p className="text-[11px] text-warning">Aplikasi akan reload pada akses berikutnya. Muat ulang halaman setelah beberapa detik.</p>
             )}
           </div>
         )}

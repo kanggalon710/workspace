@@ -115,32 +115,32 @@ export function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
           <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Live Speed
                 </span>
                 <span className="text-[10px] text-muted-foreground">· update tiap 3 detik</span>
               </div>
               {liveSpeed && liveSpeed.age < 10_000 ? (
-                <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">● Live</span>
+                <span className="text-[10px] text-success font-semibold uppercase tracking-wider">● Live</span>
               ) : (
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">menunggu data...</span>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3 md:gap-4">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/40 dark:to-emerald-900/20 border border-emerald-200/50 dark:border-emerald-900/50">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-success/30">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-success font-semibold">
                   <TrendingUp className="h-3 w-3" /> Download
                 </div>
-                <div className="text-2xl md:text-3xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums mt-1">
+                <div className="text-2xl md:text-3xl font-bold text-success tabular-nums mt-1">
                   {liveSpeed ? fmtSpeed(liveSpeed.dl) : "-"}
                 </div>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/40 dark:to-amber-900/20 border border-amber-200/50 dark:border-amber-900/50">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-warning/30">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-warning font-semibold">
                   <TrendingUp className="h-3 w-3 rotate-180" /> Upload
                 </div>
-                <div className="text-2xl md:text-3xl font-bold text-amber-700 dark:text-amber-300 tabular-nums mt-1">
+                <div className="text-2xl md:text-3xl font-bold text-warning tabular-nums mt-1">
                   {liveSpeed ? fmtSpeed(liveSpeed.ul) : "-"}
                 </div>
               </div>
@@ -155,12 +155,12 @@ export function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
           <div className="flex items-center justify-between mb-5">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className={`w-2 h-2 rounded-full ${pppoeOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                <div className={`w-2 h-2 rounded-full ${pppoeOnline ? "bg-success animate-pulse" : "bg-muted"}`} />
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Sesi Saat Ini
                 </span>
               </div>
-              <div className={`text-xl font-bold ${pppoeOnline ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+              <div className={`text-xl font-bold ${pppoeOnline ? "text-success" : "text-muted-foreground"}`}>
                 {pppoeOnline ? "Tersambung" : "Tidak Online"}
               </div>
             </div>
@@ -197,11 +197,11 @@ export function TrafficTab({ traffic, pppoeOnline, apiFetch }: any) {
             </div>
             <div className="flex gap-4 text-right">
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-emerald-600">Download</div>
+                <div className="text-[10px] uppercase tracking-wider text-success">Download</div>
                 <div className="text-sm font-bold font-mono">{fmtMB(totalDownMB)}</div>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-amber-600">Upload</div>
+                <div className="text-[10px] uppercase tracking-wider text-warning">Upload</div>
                 <div className="text-sm font-bold font-mono">{fmtMB(totalUpMB)}</div>
               </div>
             </div>

@@ -65,12 +65,19 @@
 - [x] **#7g Batch 9 SELESAI** (2026-08-13): CoverageCheckPage, loyalty/SummaryTab,
   tickets/panels, loyalty/ReferralsTable, PublicApiPage, customers/IntegrationAuditDialog,
   portal/dashboard/{BillingTab,shared}, customers/CustomerForm. 3 hover fix.
-- [ ] **#7 sisa (MANUAL, batch/ronde).** Sisa tail file status-bersih ber-`dark:` (cek
-  `bg-white dark:` -> `bg-card` dulu): portal/dashboard/{TrafficTab,WifiTab}, MikrotikRoutersPage,
-  loyalty/*, TicketHeatmapPage, integrations/AppUpdateCard, CapacityCalculatorModal,
-  collection/CollectionDetail, customers/*, + komponen lain. Scan ulang tiap ronde.
-  HATI-HATI (JANGAN alat buta, penilaian per-pakai): CustomersPage (71), IntegrationPage (142,
-  kartu brand), Dashboard (168, 14 famili), SplitterChainPage (viz splitter kategorikal).
+- [x] **#7h Batch 8 SELESAI** (2026-08-13): AppUpdateCard, Customer360Panel, portal/TrafficTab,
+  CapacityCalculatorModal, DevDbSyncCard, collection/CollectionDetail, portal/WifiTab,
+  MikrotikRoutersPage. 3 hover fix.
+- [ ] **#7 sisa (MANUAL, batch/ronde).** Scan ulang tiap ronde (`grep -rlE "dark:(text|bg|border)-
+  (rose|red|amber|green|emerald)"` lalu cek `bg-white dark:` + kategorikal). Sisa a.l.: AnnouncementsPage,
+  SahabatDetailDrawer, map/CableDetailPanel, LoyaltyAdminPage, ActiveSessionsPage, UpdateBanner,
+  collection/{PipelineManagerDialog,CollectionCard}, mitra/MitraCard, CanvassingReportsPage,
+  loyalty/{tiles,DiscountRow}, portal/dashboard/{TicketsTab,LoyaltyTab,OverviewTab[bg-white!]},
+  MarketingDashboardPage, PermissionMatrixEditor, dst.
+  BUTUH PENILAIAN TERPISAH (JANGAN alat buta): components/ui/status-badge.tsx (primitif inti),
+  TicketHeatmapPage (skala warna), integration/shared + IntegrationPage (domain brand),
+  NotificationBell (per tipe notif), CustomersPage (71), Dashboard (168, 14 famili),
+  SplitterChainPage (viz splitter).
   HATI-HATI page kategorikal-berat (Dashboard 14 famili, IntegrationPage kartu brand) - butuh
   penilaian per-pakai lebih dalam, JANGAN pakai alat buta. bg-white+dark: -> `bg-card` (cek
   manual per page; PointRedemptions tak ada, page lain mungkin ada).

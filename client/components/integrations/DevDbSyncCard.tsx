@@ -52,20 +52,20 @@ export function DevDbSyncCard() {
   };
 
   return (
-    <div className="rounded-xl border-2 border-amber-400/70 bg-amber-50 dark:bg-amber-950/20 p-4 sm:p-5 shadow-elev-sm">
+    <div className="rounded-xl border-2 border-warning/30 bg-warning/10 p-4 sm:p-5 shadow-elev-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="shrink-0 w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center">
-            <Database className="h-5 w-5 text-amber-700 dark:text-amber-400" />
+          <div className="shrink-0 w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center">
+            <Database className="h-5 w-5 text-warning" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wide px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-warning text-white text-[10px] font-bold uppercase tracking-wide px-2 py-0.5">
                 <AlertTriangle className="h-3 w-3" /> Lingkungan: Development
               </span>
             </div>
-            <h3 className="mt-1 text-base font-bold text-amber-900 dark:text-amber-200">Tarik Data dari Production</h3>
-            <p className="mt-0.5 text-sm text-amber-800/90 dark:text-amber-200/80">
+            <h3 className="mt-1 text-base font-bold text-warning">Tarik Data dari Production</h3>
+            <p className="mt-0.5 text-sm text-warning/90">
               Menyalin SEMUA data production ke database dev ini. Data testing di dev akan ditimpa.
               Production tidak diubah.
             </p>
@@ -73,7 +73,7 @@ export function DevDbSyncCard() {
         </div>
         <Button
           size="lg"
-          className="w-full sm:w-auto shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
+          className="w-full sm:w-auto shrink-0 bg-warning hover:brightness-95 text-white"
           onClick={() => setConfirmOpen(true)}
           loading={sync.isPending}
         >
@@ -82,7 +82,7 @@ export function DevDbSyncCard() {
       </div>
 
       {result && (
-        <div className="mt-3 space-y-1 text-xs text-amber-900/80 dark:text-amber-200/70">
+        <div className="mt-3 space-y-1 text-xs text-warning/80">
           <div>
             Terakhir: {result.tablesCopied} tabel · {result.totalRows.toLocaleString("id-ID")} baris
             {result.failed.length > 0 && (
@@ -90,7 +90,7 @@ export function DevDbSyncCard() {
             )}
           </div>
           {result.skippedMissingInProd?.length > 0 && (
-            <div className="rounded-md border border-amber-400/50 bg-amber-100/60 dark:bg-amber-900/30 p-2">
+            <div className="rounded-md border border-warning/30 bg-warning/60 p-2">
               <span className="font-semibold">{result.skippedMissingInProd.length} tabel dilewati</span> — ada di dev tapi tidak di database production ini,
               jadi tak bisa disalin (cek <code className="font-mono">PROD_DB_NAME</code>):
               <span className="mt-0.5 block break-words font-mono text-[11px]">{result.skippedMissingInProd.join(", ")}</span>
@@ -115,7 +115,7 @@ export function DevDbSyncCard() {
               Batal
             </Button>
             <Button
-              className="bg-amber-600 hover:bg-amber-700 text-white"
+              className="bg-warning hover:brightness-95 text-white"
               disabled={phrase.trim().toUpperCase() !== "SALIN" || sync.isPending}
               loading={sync.isPending}
               onClick={run}

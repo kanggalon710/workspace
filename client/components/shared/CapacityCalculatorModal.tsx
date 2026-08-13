@@ -40,7 +40,7 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
 
         <div className="space-y-4 py-4 mt-2">
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Target Area Eksspansi (Kecamatan)</label>
+            <label className="text-xs font-semibold text-foreground">Target Area Eksspansi (Kecamatan)</label>
             <Select value={district} onValueChange={setDistrict}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih wilayah kecamatan..." />
@@ -54,7 +54,7 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Target Penambahan Pelanggan Baru</label>
+            <label className="text-xs font-semibold text-foreground">Target Penambahan Pelanggan Baru</label>
             <Input
               type="number"
               value={targetCustomers}
@@ -64,7 +64,7 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
           </div>
 
           {district && (
-            <div className="mt-6 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-in fade-in duration-300">
+            <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border animate-in fade-in duration-300">
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 border-b pb-2">Hasil Prediksi</h4>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -80,8 +80,8 @@ export function CapacityCalculatorModal({ odps }: { odps: Odp[] }) {
 
               <div className={`mt-2 p-3 rounded-md flex items-start gap-3 border transition-colors duration-300 ${
                 isDanger
-                  ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900 dark:text-red-400'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-400'
+                  ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                  : 'bg-success/10 border-success/30 text-success'
               }`}>
                 {isDanger ? <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" /> : <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />}
                 <div>

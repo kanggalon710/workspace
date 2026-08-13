@@ -56,7 +56,7 @@ export function WifiTab({ apiFetch, me, qc }: any) {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                status === "active" ? "bg-emerald-500" : status === "partial" ? "bg-amber-500" : "bg-slate-400"
+                status === "active" ? "bg-success" : status === "partial" ? "bg-warning" : "bg-muted"
               } text-white shadow-sm`}>
                 <Wifi className="h-5 w-5" />
               </div>
@@ -105,8 +105,8 @@ export function WifiTab({ apiFetch, me, qc }: any) {
       <Card>
         <CardContent className="p-5 md:p-6">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center shrink-0">
-              <Power className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+            <div className="w-10 h-10 rounded-xl bg-destructive/15 flex items-center justify-center shrink-0">
+              <Power className="h-5 w-5 text-destructive" />
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold">Restart Perangkat ONT</h3>
@@ -118,7 +118,7 @@ export function WifiTab({ apiFetch, me, qc }: any) {
 
           <Button
             variant="outline"
-            className="w-full mt-4 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+            className="w-full mt-4 border-destructive/30 text-destructive hover:bg-destructive/10"
             onClick={() => setRestartConfirm(true)}
             disabled={restartMut.isPending}
           >
@@ -139,7 +139,7 @@ export function WifiTab({ apiFetch, me, qc }: any) {
           </DialogHeader>
           <div className="flex gap-2 justify-end mt-4">
             <Button variant="outline" onClick={() => setRestartConfirm(false)} className="flex-1">Batal</Button>
-            <Button onClick={() => restartMut.mutate()} disabled={restartMut.isPending} className="flex-1 bg-rose-600 hover:bg-rose-700">
+            <Button onClick={() => restartMut.mutate()} disabled={restartMut.isPending} className="flex-1 bg-destructive hover:brightness-95">
               {restartMut.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Ya, Restart
             </Button>
@@ -193,7 +193,7 @@ export function WifiInterfaceCard({ iface, onUpdated, apiFetch }: any) {
             <span className="text-[10px] text-muted-foreground font-mono">{iface.securityMode}</span>
           )}
         </div>
-        <Badge className={`text-[10px] ${iface.enabled ? "bg-emerald-500" : "bg-slate-400"}`}>
+        <Badge className={`text-[10px] ${iface.enabled ? "bg-success" : "bg-muted"}`}>
           {iface.enabled ? "ON" : "OFF"}
         </Badge>
       </div>
