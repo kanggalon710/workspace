@@ -488,7 +488,7 @@ function RolePreviewDialog({ role, onClose, onEdit }: any) {
   const stats = permStats(role.permissions);
   return (
     <Dialog open={!!role} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <div className="px-5 md:px-6 pt-5 md:pt-6 pb-4 border-b shrink-0 bg-gradient-to-br from-violet-500 to-purple-700 text-white">
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/15">
             <X className="h-4 w-4" />
@@ -616,7 +616,7 @@ function RoleFormDialog({ open, onClose, initial, onSaved }: any) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] max-h-[92vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-3xl dialog-w max-h-[92vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             {isEdit ? <Edit3 className="h-5 w-5 text-violet-500" /> : <Plus className="h-5 w-5 text-violet-500" />}
@@ -714,7 +714,7 @@ function RoleUsersDialog({ role, onClose }: any) {
   if (!role) return null;
   return (
     <Dialog open={!!role} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[80vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-md dialog-w max-h-[80vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <UsersIcon className="h-5 w-5 text-violet-500" />

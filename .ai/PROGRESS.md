@@ -3,6 +3,21 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #4: Utilitas `.dialog-w` (lebar dialog terpusat + refinement mobile)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Ekspresi lebar mobile `w-[calc(100vw-2rem)]` diulang 51x di 42 file. Sekaligus
+inset ponsel dilonggarkan 2rem->1rem (mobile-first, di-opt-in user).
+**Perubahan:** `client/index.css` `@layer utilities` tambah `.dialog-w =
+w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)]`. 51 site swap token `w-[calc(100vw-2rem)]`
+-> `dialog-w` (tiap dialog tetap pegang `max-w`/`max-h`/overflow sendiri). BUKAN pakai
+`dialogSizeClass()` (lihat DECISIONS - itu akan meregresi lebar desktop).
+**File:** client/index.css + 42 file dialog (RolesPage, UsersPage, MpwaPage, SdmPage,
+CardDetailModal, portal/dashboard/*, teamspace/*, pipelines/*, dst).
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses. CSS terkompilasi dicek:
+`.dialog-w` base `calc(100vw-1rem)` + `@media(min-width:640px)` `calc(100vw-2rem)` -> >=640px
+**pixel-identik** dgn sebelumnya, <640px gutter 1rem. 2 cap `min(...)` sengaja tak disentuh.
+**Catatan:** `dialogSizeClass()`/`DialogSizeToggle` (fitur toggle 3 dialog pipeline) tetap utuh.
+
 ## 2026-08-13 - #9: Pecah MapPage (1379 -> 946 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** 3 komponen form/panel sibling (AssetQuickForm, CableQuickForm, CableDetailPanel)

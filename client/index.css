@@ -5,6 +5,10 @@
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Lebar dialog/panel yang fit-viewport: gutter 1rem di ponsel, 2rem dari sm: ke atas.
+     Sumber tunggal untuk inset dialog mobile. Pasangkan dengan max-w-* per dialog. */
+  .dialog-w { @apply w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)]; }
 }
 
 /* ================================================================== */

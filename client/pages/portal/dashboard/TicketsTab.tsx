@@ -90,7 +90,7 @@ export function TicketsTab({ tickets, apiFetch, qc }: any) {
 
       {/* Create dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md dialog-w max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Lapor Kendala Baru</DialogTitle>
             <DialogDescription>

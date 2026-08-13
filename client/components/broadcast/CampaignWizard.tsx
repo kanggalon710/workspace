@@ -138,7 +138,7 @@ export function CampaignWizard({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-3xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 py-3.5 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-4 w-4 text-primary" />

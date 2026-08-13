@@ -280,7 +280,7 @@ Nanti kalau udah aktif, kamu dapat welcome bonus 7 hari gratis, dan saya dapat v
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-4xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>Kit Marketing Sahabat</DialogTitle>
           <DialogDescription>

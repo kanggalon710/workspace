@@ -55,7 +55,7 @@ export function EmployeeWizard({ userId, userName, users, onClose }: Props) {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[88vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl dialog-w max-h-[88vh] overflow-y-auto">
         <DialogTitle>Profil Karyawan - {userName}</DialogTitle>
         {/* Step indicator */}
         <div className="flex items-center gap-1.5">

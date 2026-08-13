@@ -382,7 +382,7 @@ export function BulkActionBar({
           {/* Desktop: Dialog */}
           <div className="hidden md:block">
             <Dialog open={!!sheet} onOpenChange={(open) => { if (!open) setSheet(null); }}>
-              <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-md dialog-w max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{OP_TITLE[sheet]}</DialogTitle>
                 </DialogHeader>

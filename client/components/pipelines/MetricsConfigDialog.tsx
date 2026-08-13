@@ -102,7 +102,7 @@ export function MetricsConfigDialog({ pipelineId, open, onClose }: { pipelineId:
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="px-5 py-4 border-b shrink-0"><DialogTitle>{draft ? (draft.id ? "Edit Metric" : "Metric Baru") : "Kelola Metrik"}</DialogTitle></DialogHeader>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {!draft ? (

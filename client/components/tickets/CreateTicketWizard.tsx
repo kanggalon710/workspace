@@ -172,7 +172,7 @@ export function CreateTicketWizard({ open, onClose, customers, categories, users
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 py-3.5 border-b">
           <DialogTitle className="flex items-center gap-2">
             <div className="p-1.5 rounded-md bg-gradient-to-br from-sky-500 to-blue-700">

@@ -131,7 +131,7 @@ export default function CheersPage() {
 
       {showSend && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowSend(false); }}>
-          <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
+          <DialogContent className="max-w-md dialog-w">
             <DialogTitle>Kirim Cheers</DialogTitle>
             <div className="mt-3 space-y-3.5">
               <div>

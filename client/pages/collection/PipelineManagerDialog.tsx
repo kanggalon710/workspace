@@ -280,7 +280,7 @@ export function PipelineManagerDialog({ open, onClose, stages, cardCounts, divis
     <>
       {/* ============ PIPELINE MANAGER DIALOG (CRUD stage) ============ */}
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent data-section="pipeline-manager-dialog" className="max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogContent data-section="pipeline-manager-dialog" className="max-w-xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
           <DialogHeader className="px-5 pt-5 pb-3 border-b space-y-1.5">
             <DialogTitle className="flex items-center gap-2.5 text-base">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

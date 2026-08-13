@@ -303,7 +303,7 @@ export default function TeamListPage() {
 
       {showCreate && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowCreate(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-y-auto">
             <DialogTitle>Buat Tim Baru</DialogTitle>
             <div className="space-y-4">
               <div>
@@ -405,7 +405,7 @@ function EditTeamDialog({ team, onClose }: { team: TeamSummary; onClose: () => v
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-y-auto">
         <DialogTitle>Edit Tim</DialogTitle>
         <div className="space-y-4">
           {/* Pratinjau kartu langsung */}

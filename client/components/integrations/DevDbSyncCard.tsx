@@ -100,7 +100,7 @@ export function DevDbSyncCard() {
       )}
 
       <Dialog open={confirmOpen} onOpenChange={(o) => { if (!o) { setConfirmOpen(false); setPhrase(""); } }}>
-        <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
+        <DialogContent className="max-w-md dialog-w">
           <DialogHeader>
             <DialogTitle>Salin data production ke dev?</DialogTitle>
           </DialogHeader>

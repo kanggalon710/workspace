@@ -118,7 +118,7 @@ export function AnnouncementsPanel({ teamId, canManage, active }: Props) {
 
       {showForm && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowForm(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-y-auto">
             <DialogTitle>Buat Pengumuman Tim</DialogTitle>
             <div className="space-y-3.5">
               <div>

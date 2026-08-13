@@ -211,7 +211,7 @@ export function CardImportDialog({ pipelineId, fields, open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="size-5 text-primary" aria-hidden="true" />

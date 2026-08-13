@@ -47,7 +47,7 @@ export function CableDetailPanel({ cableId, cableName, onClose }: { cableId: num
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-md dialog-w max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Cable className="h-4 w-4 text-orange-500" />{cableName}

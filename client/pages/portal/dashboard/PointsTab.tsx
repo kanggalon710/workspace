@@ -430,7 +430,7 @@ export function PointsTab({ apiFetch, qc }: any) {
 
       {/* === Confirm dialog === */}
       <Dialog open={!!confirmReward} onOpenChange={(o) => !o && setConfirmReward(null)}>
-        <DialogContent className="max-w-sm w-[calc(100vw-2rem)] p-0 overflow-hidden">
+        <DialogContent className="max-w-sm dialog-w p-0 overflow-hidden">
           <div className={`p-5 text-white ${confirmReward?.speedMultiplier === 3 ? "bg-gradient-to-br from-violet-600 to-fuchsia-600" : "bg-gradient-to-br from-sky-500 to-blue-600"}`}>
             <div className="flex items-center gap-2 mb-2">
               <Zap className="h-4 w-4" strokeWidth={2.5} />

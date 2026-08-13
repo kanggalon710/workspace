@@ -126,7 +126,7 @@ export function CardDetailModal({ cardId, pipelineId, onClose, writable, caps = 
     <>
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       {/* BUG-008: default lebih lebar agar layout 2 kolom lega; toggle wide = ekstra lebar */}
-      <DialogContent className={`${wide ? "max-w-5xl" : "max-w-3xl"} w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0`}>
+      <DialogContent className={`${wide ? "max-w-5xl" : "max-w-3xl"} dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0`}>
         <DialogTitle className="sr-only">{card?.title ?? "Detail Kartu"}</DialogTitle>
         {isLoading ? (
           <div className="p-6"><div className="h-40 animate-pulse rounded bg-muted" /></div>

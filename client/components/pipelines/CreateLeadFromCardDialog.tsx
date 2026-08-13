@@ -64,7 +64,7 @@ export function CreateLeadFromCardDialog({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md dialog-w max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Buat Lead dari kartu</DialogTitle>
         </DialogHeader>

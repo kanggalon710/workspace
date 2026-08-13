@@ -227,7 +227,7 @@ export function DocsPanel({ teamId, canManage, active }: Props) {
       {/* Editor / viewer dokumen (FR-901b/902) */}
       {docOpen !== null && (
         <Dialog open onOpenChange={(o) => { if (!o) setDocOpen(null); }}>
-          <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col">
             <DialogTitle className="sr-only">{docOpen === "new" ? "Dokumen Baru" : docTitle}</DialogTitle>
             <div className="flex items-center gap-2 pr-8">
               <Input

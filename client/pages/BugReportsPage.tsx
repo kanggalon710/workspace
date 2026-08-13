@@ -294,7 +294,7 @@ function CreateBugDialog({ open, onClose, onSaved }: any) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5 text-rose-500" /> Lapor Bug Baru
@@ -438,7 +438,7 @@ function BugDetailDialog({ open, onClose, bugId, canTriage, currentUserId, onUpd
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Bug className="h-5 w-5 text-rose-500" /> Detail Bug #{bug?.id ?? "..."}

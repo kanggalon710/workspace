@@ -552,7 +552,7 @@ function UserDetailDrawer({ user, role, roles, onClose, onEdit, onResetPassword,
 
   return (
     <Dialog open={!!user} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         {/* a11y: DialogTitle/DialogDescription required by Radix; visually replaced by hero below */}
         <DialogTitle className="sr-only">Detail User: {user.name}</DialogTitle>
         <DialogDescription className="sr-only">Drawer detail untuk user {user.username}</DialogDescription>
@@ -967,7 +967,7 @@ function UserFormDialog({ open, onClose, initial, roles, onSaved }: any) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 md:px-6 pt-5 md:pt-6 pb-3 border-b shrink-0">
           <DialogTitle>{isEdit ? "Edit User" : "Tambah User Baru"}</DialogTitle>
           <DialogDescription>

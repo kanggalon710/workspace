@@ -26,7 +26,7 @@ export function MitraDetailDrawer({ mitra, canEdit, onClose, onSaved }: {
 
   return (
     <Dialog open={!!mitra} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-hidden flex flex-col p-0">
         {/* Hero */}
         <div className="relative p-5 md:p-6 bg-gradient-to-br from-violet-600 to-indigo-800 text-white shrink-0">
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/15">

@@ -33,9 +33,12 @@
   segmented `bg-muted/50` (MpwaPage, ReferralsTable), toolbar (PipelineBoard), grid responsif
   (MetricsStrip), gallery snap-x (AssetPhotosGallery), wrapper tabel (BugReports, Announcements,
   TicketCategories) - bukan target ScrollRow.
-- [ ] **#4 Adopsi `dialogSize.ts`** - `w-[calc(100vw-2rem)]` masih hardcoded di **39 file**.
-  CATATAN: bukan drop-in - `dialogSizeClass("normal")` mengubah lebar mobile (`100vw-1rem`)
-  + memaksa preset `max-w`; perlu penilaian per-dialog (normalisasi visual, bukan zero-change).
+- [x] **#4 SELESAI (via `.dialog-w`, bukan `dialogSize.ts`)** (2026-08-13): 51 token
+  `w-[calc(100vw-2rem)]` di 42 file -> utilitas CSS `.dialog-w` (`w-[calc(100vw-1rem)]
+  sm:w-[calc(100vw-2rem)]`) di `index.css`. Tiap dialog tetap pegang `max-w`/`max-h` sendiri
+  (TIDAK pakai `dialogSizeClass()` yg mem-bake max-w -> akan regresi desktop; lihat DECISIONS).
+  Efek: >=640px pixel-identik, <640px gutter mobile 2rem->1rem (opt-in). 2 cap `min(...)`
+  (combobox, PipelinesPage) sengaja tak disentuh. `dialogSizeClass()`/toggle tetap utuh.
 - [ ] **#5 Adopsi `<StatTile>` (20+ page) & `<EmptyState>` (sisa ~42 page)** - penggantian
   mekanis markup manual. Portal `EmptyState` sudah (ronde ini). Bukan drop-in murni - butuh
   remap prop + terima pergeseran visual kecil.

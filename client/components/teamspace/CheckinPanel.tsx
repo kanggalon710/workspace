@@ -210,7 +210,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
       {/* Rekap jawaban per tanggal (FR-804) */}
       {recapFor && (
         <Dialog open onOpenChange={(o) => { if (!o) setRecapFor(null); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-lg dialog-w max-h-[85vh] overflow-hidden flex flex-col">
             <DialogTitle className="pr-8 text-sm">{recapFor.questionText}</DialogTitle>
             <div className="flex-1 space-y-4 overflow-y-auto">
               {responsesByDate.length === 0 ? (
@@ -242,7 +242,7 @@ export function CheckinPanel({ teamId, canManage, active }: Props) {
       {/* Form buat pertanyaan (FR-801..803) */}
       {showForm && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowForm(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg dialog-w max-h-[90vh] overflow-y-auto">
             <DialogTitle>Buat Pertanyaan Rutin</DialogTitle>
             <div className="space-y-3.5">
               <div>

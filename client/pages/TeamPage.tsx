@@ -277,7 +277,7 @@ export default function TeamPage() {
 
       {showAddMember && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowAddMember(false); }}>
-          <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
+          <DialogContent className="max-w-md dialog-w">
             <DialogTitle>Tambah Anggota - {team.name}</DialogTitle>
             <div className="space-y-4">
               <AssigneePicker

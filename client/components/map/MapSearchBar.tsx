@@ -144,7 +144,7 @@ export function MapSearchBar({ visible, onClose, onResultClick, onOpenOdp, data 
   if (!visible) return null;
 
   return (
-    <div className="fixed top-14 left-4 z-[55] w-[calc(100vw-2rem)] md:absolute md:top-4 md:left-4 md:w-80 md:max-w-md md:z-[40]">
+    <div className="fixed top-14 left-4 z-[55] dialog-w md:absolute md:top-4 md:left-4 md:w-80 md:max-w-md md:z-[40]">
       <div className="relative">
         <div className="glass rounded-xl shadow-lg flex items-center px-3 gap-2">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />

@@ -759,7 +759,7 @@ export default function MarketingAdsPage() {
 
       {/* -- Campaign Dialog (create/edit) ----------------------------- */}
       <Dialog open={!!campaignDialog} onOpenChange={(o) => { if (!o) setCampaignDialog(null); }}>
-        <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {campaignDialog?.mode === "edit" ? "Edit Campaign" : "Tambah Campaign"}

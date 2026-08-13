@@ -2,6 +2,24 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-13 - #4 Lebar dialog: utilitas CSS `.dialog-w`, BUKAN `dialogSizeClass()`
+**Konteks:** TODO #4 mengusulkan adopsi `dialogSizeClass()` di 39+ file `w-[calc(100vw-2rem)]`.
+Audit ulang: `dialogSizeClass()` mem-bake `max-w` (2xl/5xl/95vw) + `max-h` tetap - itu benar
+untuk fiturnya (toggle `DialogSizeToggle`/`useDialogSize` Normal/Lebar/Layar-penuh di 3 dialog
+pipeline). Tapi 51 dialog lain punya `max-w` beragam (sm/md/lg/xl/2xl/3xl/5xl) + `max-h`
+beragam (80/85/90/92vh). Memaksa lewat preset = **regresi lebar desktop** + clobber max-h.
+**Opsi:** (a) paksa `dialogSizeClass("normal")` (regresi desktop di ~40 dialog); (b) perluas
+helper terima `max-w` sbagai arg (churn: 51 string statis -> template literal + import per file);
+(c) ekstrak token yang benar-benar duplikat (ekspresi lebar mobile-first) jadi 1 utilitas CSS
+`.dialog-w`, tiap dialog tetap pegang `max-w`/`max-h` sendiri.
+**Pilihan:** (c). `.dialog-w = w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)]` di `index.css`
+`@layer utilities` (sekelas `.no-scrollbar`). 51 site swap token `w-[calc(100vw-2rem)]`->`dialog-w`.
+**Alasan:** DRY sejati (inset mobile di 1 tempat), konsisten pola `index.css` yang ada, **tanpa
+import/template-literal per file**. Efek: >=640px **pixel-identik**; <640px gutter 1rem (dari 2rem)
+= refinement mobile-first yang di-opt-in user. 2 cap `min(...,calc(100vw-2rem))` (combobox,
+PipelinesPage) sengaja TIDAK disentuh (itu max-width cap, bukan token lebar). `dialogSizeClass()`
+dibiarkan utuh (fitur toggle-nya masih dipakai). Menyimpang dari teks TODO -> dicatat di sini.
+
 ## 2026-08-12 - Ronde 2: shadow `StatTile`/`KpiCard` ditahan (jaga fitur)
 **Konteks:** Rencana normalisasi memindah local shadow ke komponen `ui/`. Audit menemukan
 `KpiCard`/`StatTile` lokal (LoyaltyAdmin, TicketsDashboard, BugReports) meng-encode fitur

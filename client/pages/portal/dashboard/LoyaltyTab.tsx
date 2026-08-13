@@ -347,7 +347,7 @@ https://fiber-tools.arkanova.id/coverage-check`;
 
       {/* Invite dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="max-w-md w-[calc(100vw-2rem)]">
+        <DialogContent className="max-w-md dialog-w">
           <DialogHeader>
             <DialogTitle>Invite Tetangga Manual</DialogTitle>
             <DialogDescription>

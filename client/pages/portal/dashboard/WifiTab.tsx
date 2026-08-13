@@ -130,7 +130,7 @@ export function WifiTab({ apiFetch, me, qc }: any) {
 
       {/* Restart confirm dialog */}
       <Dialog open={restartConfirm} onOpenChange={setRestartConfirm}>
-        <DialogContent className="max-w-sm w-[calc(100vw-2rem)]">
+        <DialogContent className="max-w-sm dialog-w">
           <DialogHeader>
             <DialogTitle>Konfirmasi Restart ONT</DialogTitle>
             <DialogDescription>

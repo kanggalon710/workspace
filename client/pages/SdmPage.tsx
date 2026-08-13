@@ -1106,7 +1106,7 @@ export default function SdmPage() {
       {/* Import karyawan massal (FR-HR-103): buat akun + tandai karyawan */}
       {showEmpImport && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowEmpImport(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-lg dialog-w max-h-[85vh] overflow-y-auto">
             <DialogTitle>Import Karyawan Massal</DialogTitle>
             <p className="text-xs text-muted-foreground">
               Satu baris satu karyawan: <code className="rounded bg-muted px-1 font-mono-tight">username, nama, NIK, jabatan, departemen</code>.
@@ -1131,7 +1131,7 @@ export default function SdmPage() {
       {/* Import absensi mesin fingerprint (Fingerspot dkk) */}
       {showImport && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowImport(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-lg dialog-w max-h-[85vh] overflow-y-auto">
             <DialogTitle>Import Absensi Mesin (Fingerspot)</DialogTitle>
             <p className="text-xs text-muted-foreground">
               Export CSV dari mesin lalu tempel di sini (atau pilih file). Format per baris:

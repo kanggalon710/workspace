@@ -132,7 +132,7 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-2xl dialog-w max-h-[90vh] overflow-y-auto p-0">
         {isLoading ? (
           <>
             <DialogHeader className="px-5 pt-5 pb-3 sr-only">
@@ -719,7 +719,7 @@ function TierUpgradeDialog({ open, onOpenChange, customerId, customerName, curre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md dialog-w max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ubah Tier Sahabat</DialogTitle>
           <DialogDescription>

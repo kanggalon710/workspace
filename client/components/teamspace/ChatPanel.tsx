@@ -311,7 +311,7 @@ export function ChatPanel({ teamId, canManage, active }: Props) {
       {/* Panel Media (FR-504) */}
       {showMedia && (
         <Dialog open onOpenChange={(o) => { if (!o) setShowMedia(false); }}>
-          <DialogContent className="max-w-lg w-[calc(100vw-2rem)] max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-lg dialog-w max-h-[85vh] overflow-hidden flex flex-col">
             <DialogTitle>Media & Dokumen Chat</DialogTitle>
             <div className="flex gap-1.5">
               {(["media", "docs"] as const).map((t) => (
