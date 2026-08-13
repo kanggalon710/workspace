@@ -74,8 +74,11 @@
   `client/pages/portal/dashboard/` (shared [FEATURE flag + 9 leaf helper] + 7 file tab:
   Overview/Traffic[+fmt]/Billing/Wifi[+WifiInterfaceCard]/Tickets/Points/Loyalty). Byte-identik,
   import di-prune. Customer-facing tapi zero-behavior (reorganisasi murni).
-- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** TicketingPage (2064),
-  CollectionPipelinePage (2020), TechnicianWorkPage (1819). Split seam bersih tersedia.
+- [x] **TicketingPage SELESAI** (2026-08-13): 2064 -> 646 baris. 4 file di
+  `client/components/tickets/` (konvensi repo yg sudah ada): panels (5 panel + 2 helper +
+  2 interface), CreateEditDialog, DetailDialog, CategoryManagementDialog. Byte-identik, prune.
+- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** CollectionPipelinePage (2020),
+  TechnicianWorkPage (1819), GenieAcsDevicesPage (1449), Dashboard (1428). Split seam tersedia.
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi

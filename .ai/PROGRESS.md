@@ -3,6 +3,22 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah TicketingPage (2064 -> 646 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut pecah file besar. Ikuti konvensi yang SUDAH ada di repo: komponen tiket
+diekstrak ke `client/components/tickets/` (sudah ada shared.ts, KanbanView, dll) - bukan
+bikin folder baru.
+**Perubahan:** 4 file di `client/components/tickets/`: `panels.tsx` (InfoRow, WorkflowSection,
+TeamPanel, EvidencePanel, TechnicianWorkloadPanel + helper parseActivityContent +
+FRONTEND_WORKFLOW_PRESETS + interface TechnicianWorkload/CsatStat - dikelompokkan karena saling
+refer: DetailDialog->{semua}, TeamPanel->EvidencePanel->TechnicianWorkloadPanel), lalu
+`CreateEditDialog.tsx`, `DetailDialog.tsx`, `CategoryManagementDialog.tsx`. Main tinggal shell
++ PAGE_SIZE (646 baris). Kode byte-identik (pindah + `export`); import di-prune.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, 0 deklarasi dobel di main.
+**Catatan:** 2 helper (parseActivityContent, FRONTEND_WORKFLOW_PRESETS) awalnya terlewat oleh
+regex audit (underscore/lowercase) - ketahuan oleh tsc, ditambahkan ke import panel. Gate
+menangkapnya sebelum commit. Sisa file besar: CollectionPipelinePage (2020), TechnicianWorkPage (1819).
+
 ## 2026-08-13 - #9: Pecah PortalDashboardPage (2227 -> 242 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** File portal pelanggan raksasa; tiap tab = komponen module-scoped prop-driven
