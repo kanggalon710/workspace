@@ -3,6 +3,20 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah CanvassingPage (1296 -> 810 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Seam bagus: 4 komponen sibling independen (ConfirmDialog, OdpInfoCard, AddLeadForm,
+FieldReportForm) + blok token/tipe/helper sebelum main.
+**Perubahan:** folder `client/pages/canvassing/`: `shared.tsx` (Terra token `T` + tipe Odp/
+Session/Lead/FieldLog + const LOG_TYPES/SEVERITY/CAT_*/TEAM_COLORS + helper haversine/
+findNearestOdp/formatDuration/fmtTime), lalu 4 file komponen form/dialog. Main tinggal shell
+peta+sesi (810 baris). Byte-identik (pindah + `export`); import di-prune.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, 0 deklarasi dobel di main.
+**Catatan:** Import relatif `../../shared/schema` pecah saat file turun 1 folder -> di file
+hasil ekstraksi diubah ke alias `@shared/schema` (location-independent, main tak disentuh).
+Token Terra `T` (hex hardcoded) kini terpusat di canvassing/shared -> memudahkan migrasi #7
+(warna token) nanti. Halaman ini kandidat utama #7.
+
 ## 2026-08-13 - #9: Pecah MitraPage (1266 -> 249 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** ROI tertinggi di antara file ~1300 baris: shell utama cuma ~230 baris, 11 komponen
