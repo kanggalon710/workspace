@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah CollectionPipelinePage (2020 -> 719 baris) + hapus dead code
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut pecah file besar. File ini punya React context bersama (StageCtx/useStages)
++ banyak helper - butuh shared module supaya semua komponen anak bisa pakai.
+**Perubahan:** folder `client/pages/collection/`: `shared.tsx` (helper isStageActive/fmtRp/
+fmtDate/toDateInput/daysSince/ACTIVITY_CFG/SELECTABLE_OWNER_DIVISIONS + tipe CollectionStage/
+StageHelpers/Assignee/CollectionWithCustomer + context StageCtx/useStages), lalu `CollectionCard`,
+`CollectionDetail` (impor AssigneePicker), `AssigneePicker` (+_AssigneePickerBody),
+`CollectionSettingsDialog`, `PipelineManagerDialog` (+StageDeleteDialog + consts ROLE_OPTIONS/
+OVERDUE_ACTION_OPTIONS/group* helper). Main tinggal shell (719 baris). Dead code `StatCard` +
+`MiniStat` (0 referensi) DIHAPUS. Byte-identik (pindah + `export`); import di-prune.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, 0 deklarasi dobel di main.
+**Catatan:** File ini menyisipkan blok import di 2 tempat (1-18 dan 27-48) dengan helper const
+di antaranya (20-26) - percobaan pertama header-nya kepotong (Button/toast/icon hilang), tsc
+menangkap, header dirakit ulang jadi kontigu (1-18 + 27-48). Gate menangkap sebelum commit.
+Sisa file besar: TechnicianWorkPage (1819), GenieAcsDevicesPage (1449), Dashboard (1428).
+
 ## 2026-08-13 - #9: Pecah TicketingPage (2064 -> 646 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut pecah file besar. Ikuti konvensi yang SUDAH ada di repo: komponen tiket

@@ -77,8 +77,12 @@
 - [x] **TicketingPage SELESAI** (2026-08-13): 2064 -> 646 baris. 4 file di
   `client/components/tickets/` (konvensi repo yg sudah ada): panels (5 panel + 2 helper +
   2 interface), CreateEditDialog, DetailDialog, CategoryManagementDialog. Byte-identik, prune.
-- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** CollectionPipelinePage (2020),
-  TechnicianWorkPage (1819), GenieAcsDevicesPage (1449), Dashboard (1428). Split seam tersedia.
+- [x] **CollectionPipelinePage SELESAI** (2026-08-13): 2020 -> 719 baris. Folder
+  `client/pages/collection/` (shared [helper+tipe+context StageCtx/useStages], CollectionCard,
+  CollectionDetail, AssigneePicker[+body], CollectionSettingsDialog, PipelineManagerDialog
+  [+StageDeleteDialog]). Dead code StatCard+MiniStat dihapus. Byte-identik, prune.
+- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** TechnicianWorkPage (1819),
+  GenieAcsDevicesPage (1449), Dashboard (1428), MapPage (1379). Split seam tersedia.
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi
