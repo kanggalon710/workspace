@@ -2,6 +2,31 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-13 - #7 Warna token: strategi + batas (mulai TicketCategoriesPage)
+**Konteks:** #7 migrasi warna hardcoded ke token. Audit ungkap 3 jenis kerja BEDA, tak bisa
+disapu seragam: (a) file className (TicketCategories, CanvassingHistory) - swap className;
+(b) file inline-`style={{}}` (TechnicianWorkPage 102 hex, MapInfoWindow 24) - itu REWRITE
+arsitektur styling, bukan swap warna; (c) sebagian warna TAK punya padanan semantik.
+**Keputusan (dikonfirmasi user):**
+1. **Strategi map = token semantik** (bukan exact-palette): `bg-slate-100->bg-muted`,
+   `text-[#10b981]->text-success`, dst. Terima pergeseran warna kecil (emerald->green) +
+   jadi theme-aware. Bagian light-mode mayoritas near-exact (slate-200=--border,
+   amber-500=--warning, red-500=--destructive, sky-500=--primary/info).
+2. **Warna tanpa padanan semantik -> kelas palet EKSAK (zero shift), bukan dipaksa semantik.**
+   Navy brand `#1e40af`/`#1e3a8a` (primary=sky, jadi navy->sky = shift BESAR, ditolak) ->
+   `blue-800`/`blue-900`. Hasil: 0 arbitrary `[#hex]` di file, warna navy persis sama.
+3. **File inline-style (Technician, MapInfoWindow) DITUNDA** - butuh ronde rewrite +approval
+   sendiri (alat lapangan kritikal, risiko regresi tinggi). Dicatat di TODO.
+4. **CanvassingHistoryPage DITUNDA** - pakai sub-tema HANGAT (coklat/taupe: #827472/#350800/
+   #504442/#755750/#f4f3f2) = identitas warna beda; migrasi = re-tema penuh hangat->dingin
+   (koheren hanya all-or-nothing), keputusan aestetik sendiri. Bukan "shift kecil".
+5. **Pasangan hover-gelap yang kolaps** (`bg-rose-500 hover:bg-rose-600`,
+   `bg-[#10b981] hover:bg-[#059669]`) -> base token + `hover:brightness-95` supaya umpan-balik
+   hover tak hilang (jaga fitur).
+**Alasan:** Menghormati pilihan user (semantik + dark-aware) tanpa mengubah warna yang
+tak-berpadanan atau me-rewrite alat lapangan diam-diam. Data warna (array picker kategori,
+inline `background: c.color` dinamis) sengaja TETAP hex (itu data, bukan style).
+
 ## 2026-08-13 - #4 Lebar dialog: utilitas CSS `.dialog-w`, BUKAN `dialogSizeClass()`
 **Konteks:** TODO #4 mengusulkan adopsi `dialogSizeClass()` di 39+ file `w-[calc(100vw-2rem)]`.
 Audit ulang: `dialogSizeClass()` mem-bake `max-w` (2xl/5xl/95vw) + `max-h` tetap - itu benar

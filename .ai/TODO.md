@@ -47,12 +47,20 @@
 - [x] **#6 A11y sweep** - SELESAI (2026-08-12): 26 `aria-label`, 3 `alt`, 2 `div`->`button`,
   2 row `role=button`+keyboard. (Audit awal "21/12" terkoreksi jadi 26/3 setelah cek ulang.)
 
-## Warna token (besar, worst-first)
-- [ ] **#7 Migrasi warna hardcoded ke token.** 205 inline `style={{…#hex}}`, 93 arbitrary
-  hex, ~602 kelas palet mentah. Urutan: `TechnicianWorkPage.tsx` (108 inline hex) ->
-  `components/map/MapInfoWindow.tsx` (23) -> `TicketCategoriesPage.tsx` (50 arbitrary) ->
-  `CanvassingHistoryPage.tsx` (32). Sekaligus ganti `bg-slate-50/40` di `FullBleedPage`
-  jadi token (`bg-muted`) di satu tempat.
+## Warna token (besar, worst-first) - #7 SEBAGIAN (strategi lihat DECISIONS 2026-08-13)
+- [x] **#7a TicketCategoriesPage SELESAI** (2026-08-13): 158 warna (64 arbitrary + 94 palet)
+  -> token semantik. Navy brand `#1e40af/#1e3a8a` -> `blue-800/900` (tak ada padanan semantik,
+  zero shift). 2 hover-gelap kolaps -> `hover:brightness-95`. 0 arbitrary `[#hex]` tersisa.
+- [ ] **#7b CanvassingHistoryPage DITUNDA** - pakai sub-tema HANGAT (coklat/taupe #827472/
+  #350800/#504442/#755750/#f4f3f2 = warna teks+bg utama). Migrasi = re-tema penuh hangat->dingin,
+  koheren hanya all-or-nothing. Keputusan aestetik sendiri (bukan shift kecil) - butuh OK user.
+- [ ] **#7c File inline-`style={{}}` DITUNDA (rewrite, bukan swap):** TechnicianWorkPage
+  (102 inline hex - SELURUH styling inline), `components/map/MapInfoWindow.tsx` (24). Butuh
+  ronde rewrite arsitektur styling + approval sendiri (alat lapangan kritikal). Catatan: hex-nya
+  = nilai token `--jbn-*`, alternatif aman low-value = `#hex -> var(--jbn-*)` tanpa rewrite.
+- [ ] **#7d sisa:** ~602 kelas palet mentah di page lain + `bg-slate-50/40` di `FullBleedPage`
+  -> `bg-muted`. Terapkan strategi map yang sama (DECISIONS): semantik utk yg berpadanan,
+  palet-eksak utk navy/warna tanpa padanan, `hover:brightness-95` utk hover-gelap.
 
 ## Mobile-first
 - [ ] **#8** 12 pemakaian `max-*:` di 4 komponen map-overlay

@@ -132,14 +132,14 @@ export default function TicketCategoriesPage() {
   return (
     <div className="min-h-screen" style={{ background: "#f8fafc", fontFamily: "Inter, sans-serif" }}>
       {/* Header */}
-      <header className="bg-white border-b border-[#e2e8f0] sticky top-0 z-20">
+      <header className="bg-white border-b border-border sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 py-3 flex items-center gap-3">
-          <Link href="/tickets" className="p-2 -ml-2 rounded-md hover:bg-slate-100">
-            <ArrowLeft style={{ width: 18, height: 18 }} className="text-slate-700" />
+          <Link href="/tickets" className="p-2 -ml-2 rounded-md hover:bg-muted">
+            <ArrowLeft style={{ width: 18, height: 18 }} className="text-foreground" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base lg:text-lg font-bold text-slate-900">Kelola Kategori Work Order</h1>
-            <p className="text-[11px] lg:text-xs text-slate-500">Atur kategori, workflow stages, dan field requirement per kategori</p>
+            <h1 className="text-base lg:text-lg font-bold text-foreground">Kelola Kategori Work Order</h1>
+            <p className="text-[11px] lg:text-xs text-muted-foreground">Atur kategori, workflow stages, dan field requirement per kategori</p>
           </div>
           {isAdmin && (
             <button
@@ -155,7 +155,7 @@ export default function TicketCategoriesPage() {
                 ]),
               } as any)}
               disabled={createMut.isPending}
-              className="px-3 py-2 bg-[#1e40af] text-white text-xs font-semibold rounded-md flex items-center gap-1.5 hover:bg-[#1e3a8a] active:scale-95 transition-all"
+              className="px-3 py-2 bg-blue-800 text-white text-xs font-semibold rounded-md flex items-center gap-1.5 hover:bg-blue-900 active:scale-95 transition-all"
             >
               {createMut.isPending ? <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" /> : <Plus style={{ width: 14, height: 14 }} />}
               <span className="hidden sm:inline">Kategori Baru</span>
@@ -183,7 +183,7 @@ export default function TicketCategoriesPage() {
                   URL.revokeObjectURL(url);
                   toast.success(`Export ${categories.length} kategori`);
                 }}
-                className="px-3 py-2 bg-white border border-[#e2e8f0] text-xs font-semibold rounded-md hover:bg-slate-50"
+                className="px-3 py-2 bg-white border border-border text-xs font-semibold rounded-md hover:bg-muted/50"
                 title="Export semua kategori + workflow ke JSON"
               >
                 Export
@@ -223,7 +223,7 @@ export default function TicketCategoriesPage() {
                   };
                   input.click();
                 }}
-                className="px-3 py-2 bg-white border border-[#e2e8f0] text-xs font-semibold rounded-md hover:bg-slate-50"
+                className="px-3 py-2 bg-white border border-border text-xs font-semibold rounded-md hover:bg-muted/50"
                 title="Import kategori + workflow dari JSON"
               >
                 Import
@@ -234,7 +234,7 @@ export default function TicketCategoriesPage() {
       </header>
 
       {isLoading ? (
-        <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+        <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <div className="max-w-7xl mx-auto p-3.5 lg:p-6 lg:grid lg:grid-cols-[280px_1fr] lg:gap-6">
           {/* Categories list - mobile: horizontal scroll tabs, desktop: vertical sidebar */}
@@ -254,10 +254,10 @@ export default function TicketCategoriesPage() {
                 onDelete={() => { setSelectedId(null); }}
               />
             ) : (
-              <div className="bg-white rounded-[10px] p-10 border border-[#e2e8f0] text-center">
-                <Settings className="h-8 w-8 text-slate-300 mx-auto mb-3" />
-                <div className="text-sm font-semibold text-slate-700">Pilih kategori untuk diedit</div>
-                <div className="text-xs text-slate-500 mt-1">Atau buat kategori baru lewat tombol di atas</div>
+              <div className="bg-white rounded-[10px] p-10 border border-border text-center">
+                <Settings className="h-8 w-8 text-muted-foreground/60 mx-auto mb-3" />
+                <div className="text-sm font-semibold text-foreground">Pilih kategori untuk diedit</div>
+                <div className="text-xs text-muted-foreground mt-1">Atau buat kategori baru lewat tombol di atas</div>
               </div>
             )}
           </div>
@@ -290,12 +290,12 @@ function CategoriesList({ categories, selectedId, onSelect }: {
                 onClick={() => onSelect(c.id)}
                 className={cn(
                   "shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-all whitespace-nowrap",
-                  isActive ? "border-[#1e40af] bg-[#1e40af]/10" : "border-[#e2e8f0] bg-white"
+                  isActive ? "border-blue-800 bg-blue-800/10" : "border-border bg-white"
                 )}
               >
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color ?? "#64748b" }} />
                 <span className="text-xs font-semibold">{c.name}</span>
-                <span className="text-[10px] text-slate-500">{stages.length}</span>
+                <span className="text-[10px] text-muted-foreground">{stages.length}</span>
               </button>
             );
           })}
@@ -303,7 +303,7 @@ function CategoriesList({ categories, selectedId, onSelect }: {
       </div>
 
       {/* Desktop: vertical list */}
-      <div className="hidden lg:block bg-white rounded-[10px] border border-[#e2e8f0] overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-[10px] border border-border overflow-hidden">
         {categories.map((c, i) => {
           const isActive = c.id === selectedId;
           const stages = parseStages(c.workflowStages);
@@ -313,18 +313,18 @@ function CategoriesList({ categories, selectedId, onSelect }: {
               onClick={() => onSelect(c.id)}
               className={cn(
                 "w-full flex items-center gap-3 p-3 text-left transition-colors",
-                i > 0 && "border-t border-[#e2e8f0]",
-                isActive ? "bg-[#1e40af]/8" : "hover:bg-slate-50"
+                i > 0 && "border-t border-border",
+                isActive ? "bg-blue-800/8" : "hover:bg-muted/50"
               )}
               style={isActive ? { background: `${c.color ?? "#1e40af"}10` } : undefined}
             >
               <span className="w-3 h-3 rounded-full shrink-0" style={{ background: c.color ?? "#64748b" }} />
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-slate-900 truncate">{c.name}</div>
-                <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-2">
+                <div className="text-[13px] font-semibold text-foreground truncate">{c.name}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-2">
                   <span>{stages.length} stage</span>
                   {c.slaHours != null && <span>· SLA {c.slaHours}j</span>}
-                  {c.isActive === 0 && <span className="text-amber-600 font-semibold">· Off</span>}
+                  {c.isActive === 0 && <span className="text-warning font-semibold">· Off</span>}
                 </div>
               </div>
             </button>
@@ -432,11 +432,11 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
     <div className="space-y-3">
       {/* Action bar */}
       {isAdmin && (
-        <div className="bg-white rounded-[10px] border border-[#e2e8f0] p-3 flex items-center gap-2">
+        <div className="bg-white rounded-[10px] border border-border p-3 flex items-center gap-2">
           <button
             onClick={() => updateMut.mutate()}
             disabled={updateMut.isPending || !name.trim()}
-            className="flex-1 sm:flex-initial px-4 py-2 bg-[#10b981] hover:bg-[#059669] active:scale-95 text-white text-sm font-bold rounded-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+            className="flex-1 sm:flex-initial px-4 py-2 bg-success hover:brightness-95 active:scale-95 text-white text-sm font-bold rounded-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
           >
             {updateMut.isPending ? <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" /> : <Save style={{ width: 14, height: 14 }} />}
             Simpan Perubahan
@@ -445,7 +445,7 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
           {!confirmDelete ? (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="px-3 py-2 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-semibold rounded-md flex items-center gap-1.5"
+              className="px-3 py-2 bg-white border border-destructive/30 hover:bg-destructive/10 text-destructive text-xs font-semibold rounded-md flex items-center gap-1.5"
             >
               <Trash2 style={{ width: 13, height: 13 }} /> Hapus
             </button>
@@ -454,41 +454,41 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
               <button
                 onClick={() => deleteMut.mutate()}
                 disabled={deleteMut.isPending}
-                className="px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-md"
+                className="px-3 py-2 bg-destructive hover:brightness-95 text-white text-xs font-bold rounded-md"
               >
                 {deleteMut.isPending ? <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" /> : "Ya, hapus"}
               </button>
-              <button onClick={() => setConfirmDelete(false)} className="px-2 py-2 text-xs text-slate-500 hover:bg-slate-100 rounded-md">Batal</button>
+              <button onClick={() => setConfirmDelete(false)} className="px-2 py-2 text-xs text-muted-foreground hover:bg-muted rounded-md">Batal</button>
             </div>
           )}
         </div>
       )}
 
       {/* Info dasar card */}
-      <div className="bg-white rounded-[10px] border border-[#e2e8f0]">
-        <div className="px-4 py-2.5 border-b border-[#e2e8f0] bg-slate-50 rounded-t-[10px]">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Info Kategori</div>
+      <div className="bg-white rounded-[10px] border border-border">
+        <div className="px-4 py-2.5 border-b border-border bg-muted/50 rounded-t-[10px]">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Info Kategori</div>
         </div>
         <div className="p-4 grid sm:grid-cols-2 gap-3">
           {/* Name + color */}
           <div className="sm:col-span-2 grid grid-cols-[auto_1fr] gap-2 items-end">
             <div>
-              <label className="text-[11px] font-semibold text-slate-600 mb-1 block">Warna</label>
+              <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Warna</label>
               <input
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 disabled={!isAdmin}
-                className="w-10 h-9 rounded-md border border-[#e2e8f0] cursor-pointer disabled:opacity-50"
+                className="w-10 h-9 rounded-md border border-border cursor-pointer disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold text-slate-600 mb-1 block">Nama Kategori</label>
+              <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Nama Kategori</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={!isAdmin}
-                className="w-full px-3 py-2 border border-[#e2e8f0] rounded-md text-sm font-semibold disabled:bg-slate-50"
+                className="w-full px-3 py-2 border border-border rounded-md text-sm font-semibold disabled:bg-muted/50"
               />
             </div>
           </div>
@@ -499,41 +499,41 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
                 key={c}
                 onClick={() => setColor(c)}
                 disabled={!isAdmin}
-                className={cn("w-6 h-6 rounded-full border-2 transition-transform active:scale-90", color === c ? "border-slate-900" : "border-white shadow-sm")}
+                className={cn("w-6 h-6 rounded-full border-2 transition-transform active:scale-90", color === c ? "border-foreground" : "border-white shadow-sm")}
                 style={{ background: c }}
               />
             ))}
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-slate-600 mb-1 block">SLA (jam)</label>
+            <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">SLA (jam)</label>
             <input
               type="number" min="0"
               value={slaHours}
               onChange={(e) => setSlaHours(e.target.value)}
               disabled={!isAdmin}
               placeholder="24"
-              className="w-full px-3 py-2 border border-[#e2e8f0] rounded-md text-sm jbn-mono disabled:bg-slate-50"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm jbn-mono disabled:bg-muted/50"
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-slate-600 mb-1 block">Urutan</label>
+            <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Urutan</label>
             <input
               type="number" min="0"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               disabled={!isAdmin}
-              className="w-full px-3 py-2 border border-[#e2e8f0] rounded-md text-sm jbn-mono disabled:bg-slate-50"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm jbn-mono disabled:bg-muted/50"
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-slate-600 mb-1 block">Icon</label>
+            <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">Icon</label>
             <input
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
               disabled={!isAdmin}
               placeholder="plug"
-              className="w-full px-3 py-2 border border-[#e2e8f0] rounded-md text-sm disabled:bg-slate-50"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm disabled:bg-muted/50"
             />
           </div>
           <div className="flex items-end">
@@ -546,16 +546,16 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
       </div>
 
       {/* Stages editor */}
-      <div className="bg-white rounded-[10px] border border-[#e2e8f0]">
-        <div className="px-4 py-2.5 border-b border-[#e2e8f0] bg-slate-50 rounded-t-[10px] flex items-center justify-between">
+      <div className="bg-white rounded-[10px] border border-border">
+        <div className="px-4 py-2.5 border-b border-border bg-muted/50 rounded-t-[10px] flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Workflow Stages</div>
-            <div className="text-[10px] text-slate-400 mt-0.5">{stages.length} stage · urut atas ke bawah</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Workflow Stages</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{stages.length} stage · urut atas ke bawah</div>
           </div>
           {isAdmin && (
             <button
               onClick={addStage}
-              className="px-3 py-1.5 bg-white border border-[#1e40af]/30 text-[#1e40af] text-xs font-semibold rounded-md flex items-center gap-1.5 hover:bg-[#1e40af]/5 active:scale-95 transition-all"
+              className="px-3 py-1.5 bg-white border border-blue-800/30 text-blue-800 text-xs font-semibold rounded-md flex items-center gap-1.5 hover:bg-blue-800/5 active:scale-95 transition-all"
             >
               <Plus style={{ width: 13, height: 13 }} /> Tambah Stage
             </button>
@@ -563,7 +563,7 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
         </div>
         <div className="p-3 space-y-2">
           {stages.length === 0 && (
-            <div className="text-center py-8 text-sm text-slate-400">
+            <div className="text-center py-8 text-sm text-muted-foreground">
               Belum ada stage. Klik "Tambah Stage" untuk mulai.
             </div>
           )}
@@ -584,7 +584,7 @@ function CategoryEditor({ category, isAdmin, onDelete }: {
         </div>
       </div>
 
-      <div className="text-[11px] text-slate-400 px-1 leading-relaxed">
+      <div className="text-[11px] text-muted-foreground px-1 leading-relaxed">
         <strong>Catatan:</strong> Klik <strong>Simpan Perubahan</strong> di atas setelah selesai mengedit. Perubahan workflow ini akan otomatis berlaku ke tiket baru. Tiket yang sudah berjalan tetap pakai workflow lama.
       </div>
     </div>
@@ -615,7 +615,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
   }
 
   return (
-    <div className="border border-[#e2e8f0] rounded-md overflow-hidden bg-white">
+    <div className="border border-border rounded-md overflow-hidden bg-white">
       {/* Header - collapsed */}
       <div className="flex items-center gap-2 p-2.5">
         {/* Index badge */}
@@ -630,47 +630,47 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
           value={stage.label}
           onChange={(e) => onUpdate({ label: e.target.value })}
           disabled={!isAdmin}
-          className="flex-1 px-2 py-1.5 text-sm font-semibold border border-transparent hover:border-[#e2e8f0] focus:border-[#1e40af]/40 rounded outline-none disabled:bg-transparent"
+          className="flex-1 px-2 py-1.5 text-sm font-semibold border border-transparent hover:border-border focus:border-blue-800/40 rounded outline-none disabled:bg-transparent"
         />
         {/* Field count badge */}
-        <span className="text-[10px] text-slate-500 shrink-0 hidden sm:inline">
+        <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
           {fields.length} field {stage.isFinal && "· final"}
         </span>
         {/* Reorder buttons */}
         {isAdmin && (
           <>
-            <button onClick={onMoveUp} disabled={index === 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+            <button onClick={onMoveUp} disabled={index === 0} className="p-1 hover:bg-muted rounded disabled:opacity-30">
               <ChevronUp style={{ width: 14, height: 14 }} />
             </button>
-            <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+            <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 hover:bg-muted rounded disabled:opacity-30">
               <ChevronDown style={{ width: 14, height: 14 }} />
             </button>
           </>
         )}
         {/* Expand toggle */}
-        <button onClick={() => setExpanded((s) => !s)} className="px-2 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-100 rounded">
+        <button onClick={() => setExpanded((s) => !s)} className="px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-muted rounded">
           {expanded ? "Tutup" : "Edit"}
         </button>
       </div>
 
       {/* Expanded body */}
       {expanded && (
-        <div className="border-t border-[#e2e8f0] p-3 bg-slate-50 space-y-3">
+        <div className="border-t border-border p-3 bg-muted/50 space-y-3">
           {/* Description */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">Deskripsi (hint untuk teknisi)</label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Deskripsi (hint untuk teknisi)</label>
             <input
               value={stage.description ?? ""}
               onChange={(e) => onUpdate({ description: e.target.value })}
               disabled={!isAdmin}
               placeholder="Cek tools & material"
-              className="w-full px-3 py-2 border border-[#e2e8f0] rounded-md text-sm bg-white disabled:bg-slate-50"
+              className="w-full px-3 py-2 border border-border rounded-md text-sm bg-white disabled:bg-muted/50"
             />
           </div>
 
           {/* Fields multi-toggle */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2 block">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
               Field yang harus diisi teknisi
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -684,16 +684,16 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
                     disabled={!isAdmin}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-md border-2 transition-all text-left",
-                      active ? "border-[#1e40af] bg-[#1e40af]/5" : "border-[#e2e8f0] bg-white hover:border-[#cbd5e1]",
+                      active ? "border-blue-800 bg-blue-800/5" : "border-border bg-white hover:border-border",
                       !isAdmin && "opacity-60 cursor-not-allowed"
                     )}
                   >
-                    <Icon style={{ width: 14, height: 14 }} className={active ? "text-[#1e40af]" : "text-slate-400"} />
+                    <Icon style={{ width: 14, height: 14 }} className={active ? "text-blue-800" : "text-muted-foreground"} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12px] font-semibold text-slate-900">{f.label}</div>
-                      <div className="text-[9px] text-slate-500 truncate">{f.description}</div>
+                      <div className="text-[12px] font-semibold text-foreground">{f.label}</div>
+                      <div className="text-[9px] text-muted-foreground truncate">{f.description}</div>
                     </div>
-                    {active && <Check style={{ width: 14, height: 14 }} className="text-[#1e40af] shrink-0" />}
+                    {active && <Check style={{ width: 14, height: 14 }} className="text-blue-800 shrink-0" />}
                   </button>
                 );
               })}
@@ -710,18 +710,18 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
           {/* SLA + isFinal */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">SLA (menit)</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">SLA (menit)</label>
               <input
                 type="number" min="0"
                 value={stage.slaMinutes ?? ""}
                 onChange={(e) => onUpdate({ slaMinutes: e.target.value ? Number(e.target.value) : undefined })}
                 disabled={!isAdmin}
                 placeholder="30"
-                className="w-full px-3 py-2 border border-[#e2e8f0] rounded-md text-sm jbn-mono bg-white disabled:bg-slate-50"
+                className="w-full px-3 py-2 border border-border rounded-md text-sm jbn-mono bg-white disabled:bg-muted/50"
               />
             </div>
             <div className="flex items-end">
-              <label className="flex items-center gap-2 cursor-pointer p-2 rounded-md hover:bg-slate-100">
+              <label className="flex items-center gap-2 cursor-pointer p-2 rounded-md hover:bg-muted">
                 <input
                   type="checkbox"
                   checked={!!stage.isFinal}
@@ -731,7 +731,7 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
                 />
                 <div>
                   <div className="text-sm font-semibold">Stage Final</div>
-                  <div className="text-[10px] text-slate-500">Tandai ini = tiket auto-resolved</div>
+                  <div className="text-[10px] text-muted-foreground">Tandai ini = tiket auto-resolved</div>
                 </div>
               </label>
             </div>
@@ -739,15 +739,15 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
 
           {/* v4.2.18 (H): Advanced - Role + Auto-exit + Skip-if */}
           <div className="rounded-md border bg-white p-2.5 space-y-3">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-600"> Advanced (v4.2.18)</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground"> Advanced (v4.2.18)</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">Wajib di-execute oleh</label>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Wajib di-execute oleh</label>
                 <select
                   value={stage.requiredRole ?? "any"}
                   onChange={(e) => onUpdate({ requiredRole: e.target.value === "any" ? undefined : e.target.value as any })}
                   disabled={!isAdmin}
-                  className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded-md text-sm bg-white disabled:bg-slate-50"
+                  className="w-full px-2 py-1.5 border border-border rounded-md text-sm bg-white disabled:bg-muted/50"
                 >
                   <option value="any">Siapa saja (lead/helper)</option>
                   <option value="lead">Lead Teknisi saja</option>
@@ -755,34 +755,34 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">Auto-exit setelah (menit)</label>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Auto-exit setelah (menit)</label>
                 <input
                   type="number" min="0"
                   value={stage.autoExitAfterMinutes ?? ""}
                   onChange={(e) => onUpdate({ autoExitAfterMinutes: e.target.value ? Number(e.target.value) : undefined })}
                   disabled={!isAdmin}
                   placeholder="Tidak auto-exit"
-                  className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded-md text-sm jbn-mono bg-white disabled:bg-slate-50"
+                  className="w-full px-2 py-1.5 border border-border rounded-md text-sm jbn-mono bg-white disabled:bg-muted/50"
                 />
-                <p className="text-[10px] text-slate-400 mt-0.5">Kosongin = stage tunggu manual advance.</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Kosongin = stage tunggu manual advance.</p>
               </div>
             </div>
 
             <div className="border-t pt-2">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">Skip stage ini kalau (conditional)</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 block">Skip stage ini kalau (conditional)</label>
               <div className="grid grid-cols-12 gap-1.5">
                 <input
                   placeholder="Custom field key"
                   value={stage.skipIf?.customField ?? ""}
                   onChange={(e) => onUpdate({ skipIf: { ...stage.skipIf, customField: e.target.value, operator: stage.skipIf?.operator ?? "eq" } as any })}
                   disabled={!isAdmin}
-                  className="col-span-5 px-2 py-1.5 border border-[#e2e8f0] rounded-md text-xs bg-white disabled:bg-slate-50"
+                  className="col-span-5 px-2 py-1.5 border border-border rounded-md text-xs bg-white disabled:bg-muted/50"
                 />
                 <select
                   value={stage.skipIf?.operator ?? "eq"}
                   onChange={(e) => onUpdate({ skipIf: { ...stage.skipIf, operator: e.target.value as any } as any })}
                   disabled={!isAdmin}
-                  className="col-span-3 px-1.5 py-1.5 border border-[#e2e8f0] rounded-md text-xs bg-white disabled:bg-slate-50"
+                  className="col-span-3 px-1.5 py-1.5 border border-border rounded-md text-xs bg-white disabled:bg-muted/50"
                 >
                   <option value="eq">=</option>
                   <option value="ne">≠</option>
@@ -794,35 +794,35 @@ function StageEditor({ stage, index, total, isAdmin, catColor, onUpdate, onMoveU
                   value={stage.skipIf?.value ?? ""}
                   onChange={(e) => onUpdate({ skipIf: { ...stage.skipIf, value: e.target.value, customField: stage.skipIf?.customField ?? "", operator: stage.skipIf?.operator ?? "eq" } as any })}
                   disabled={!isAdmin || stage.skipIf?.operator === "exists" || stage.skipIf?.operator === "not_exists"}
-                  className="col-span-3 px-2 py-1.5 border border-[#e2e8f0] rounded-md text-xs bg-white disabled:bg-slate-50"
+                  className="col-span-3 px-2 py-1.5 border border-border rounded-md text-xs bg-white disabled:bg-muted/50"
                 />
                 {isAdmin && stage.skipIf && (
                   <button
                     onClick={() => onUpdate({ skipIf: undefined })}
-                    className="col-span-1 hover:bg-rose-50 text-rose-600 rounded grid place-items-center"
+                    className="col-span-1 hover:bg-destructive/10 text-destructive rounded grid place-items-center"
                     title="Clear conditional"
                   >
                     <X style={{ width: 12, height: 12 }} />
                   </button>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">
+              <p className="text-[10px] text-muted-foreground mt-0.5">
                 Misal stage "Splice Fiber" skip kalau custom field "fiber_ok" = "yes" → langsung lanjut ke stage berikutnya.
               </p>
             </div>
           </div>
 
           {/* Stage key (read-only display, technical info) */}
-          <div className="text-[10px] text-slate-400">
-            Key: <code className="jbn-mono bg-slate-100 px-1.5 py-0.5 rounded">{stage.key}</code>
+          <div className="text-[10px] text-muted-foreground">
+            Key: <code className="jbn-mono bg-muted px-1.5 py-0.5 rounded">{stage.key}</code>
           </div>
 
           {/* Delete stage */}
           {isAdmin && (
-            <div className="pt-2 border-t border-[#e2e8f0]">
+            <div className="pt-2 border-t border-border">
               <button
                 onClick={onDelete}
-                className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-md flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded-md flex items-center gap-1.5"
               >
                 <Trash2 style={{ width: 13, height: 13 }} /> Hapus stage ini
               </button>
@@ -909,16 +909,16 @@ function CustomFieldsEditor({ fields, isAdmin, onChange }: {
   }
 
   return (
-    <div className="border-t border-[#e2e8f0] pt-3">
+    <div className="border-t border-border pt-3">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Field Tambahan (Custom)</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Field di luar 10 built-in - bebas atur sesuai kebutuhan</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Field Tambahan (Custom)</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">Field di luar 10 built-in - bebas atur sesuai kebutuhan</div>
         </div>
         {isAdmin && !adding && (
           <button
             onClick={() => setAdding(true)}
-            className="px-2.5 py-1 bg-white border border-[#1e40af]/30 text-[#1e40af] text-[11px] font-semibold rounded-md flex items-center gap-1 hover:bg-[#1e40af]/5"
+            className="px-2.5 py-1 bg-white border border-blue-800/30 text-blue-800 text-[11px] font-semibold rounded-md flex items-center gap-1 hover:bg-blue-800/5"
           >
             <Plus style={{ width: 12, height: 12 }} /> Tambah Field
           </button>
@@ -926,7 +926,7 @@ function CustomFieldsEditor({ fields, isAdmin, onChange }: {
       </div>
 
       {fields.length === 0 && !adding && (
-        <div className="text-center py-4 text-[11px] text-slate-400 bg-white border border-dashed border-[#e2e8f0] rounded-md">
+        <div className="text-center py-4 text-[11px] text-muted-foreground bg-white border border-dashed border-border rounded-md">
           Belum ada custom field. Klik <strong>Tambah Field</strong> untuk bikin sendiri.
         </div>
       )}
@@ -974,43 +974,43 @@ function CustomFieldRow({ field, index, total, isAdmin, onUpdate, onMoveUp, onMo
   const typeMeta = CUSTOM_TYPE_LABELS[field.type];
 
   return (
-    <div className="bg-white border border-[#e2e8f0] rounded-md overflow-hidden">
+    <div className="bg-white border border-border rounded-md overflow-hidden">
       <div className="flex items-center gap-2 px-2.5 py-2">
-        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 shrink-0">
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground shrink-0">
           {typeMeta.label}
         </span>
         <input
           value={field.label}
           onChange={(e) => onUpdate({ label: e.target.value, key: field.key || slugify(e.target.value) })}
           disabled={!isAdmin}
-          className="flex-1 px-2 py-1 text-sm font-semibold border border-transparent hover:border-[#e2e8f0] focus:border-[#1e40af]/40 rounded outline-none min-w-0"
+          className="flex-1 px-2 py-1 text-sm font-semibold border border-transparent hover:border-border focus:border-blue-800/40 rounded outline-none min-w-0"
         />
-        {field.required && <span className="text-rose-500 text-xs shrink-0" title="Required">*</span>}
+        {field.required && <span className="text-destructive text-xs shrink-0" title="Required">*</span>}
         {isAdmin && (
           <>
-            <button onClick={onMoveUp} disabled={index === 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+            <button onClick={onMoveUp} disabled={index === 0} className="p-1 hover:bg-muted rounded disabled:opacity-30">
               <ChevronUp style={{ width: 12, height: 12 }} />
             </button>
-            <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+            <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 hover:bg-muted rounded disabled:opacity-30">
               <ChevronDown style={{ width: 12, height: 12 }} />
             </button>
           </>
         )}
-        <button onClick={() => setOpen((s) => !s)} className="px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-100 rounded">
+        <button onClick={() => setOpen((s) => !s)} className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-muted rounded">
           {open ? "Tutup" : "Edit"}
         </button>
       </div>
 
       {open && (
-        <div className="border-t border-[#e2e8f0] p-2.5 bg-slate-50 space-y-2.5">
+        <div className="border-t border-border p-2.5 bg-muted/50 space-y-2.5">
           {/* Type select */}
           <div>
-            <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Tipe</label>
+            <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">Tipe</label>
             <select
               value={field.type}
               onChange={(e) => onUpdate({ type: e.target.value as CustomFieldType })}
               disabled={!isAdmin}
-              className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
+              className="w-full px-2 py-1.5 border border-border rounded text-xs bg-white"
             >
               {Object.entries(CUSTOM_TYPE_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v.label} - {v.hint}</option>
@@ -1021,23 +1021,23 @@ function CustomFieldRow({ field, index, total, isAdmin, onUpdate, onMoveUp, onMo
           {/* Hint + placeholder */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Hint</label>
+              <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">Hint</label>
               <input
                 value={field.hint ?? ""}
                 onChange={(e) => onUpdate({ hint: e.target.value || undefined })}
                 disabled={!isAdmin}
                 placeholder="Helper text"
-                className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
+                className="w-full px-2 py-1.5 border border-border rounded text-xs bg-white"
               />
             </div>
             <div>
-              <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Placeholder</label>
+              <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">Placeholder</label>
               <input
                 value={field.placeholder ?? ""}
                 onChange={(e) => onUpdate({ placeholder: e.target.value || undefined })}
                 disabled={!isAdmin}
                 placeholder="Contoh value"
-                className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
+                className="w-full px-2 py-1.5 border border-border rounded text-xs bg-white"
               />
             </div>
           </div>
@@ -1045,25 +1045,25 @@ function CustomFieldRow({ field, index, total, isAdmin, onUpdate, onMoveUp, onMo
           {/* Number unit + select options */}
           {field.type === "number" && (
             <div>
-              <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Unit (opsional)</label>
+              <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">Unit (opsional)</label>
               <input
                 value={field.unit ?? ""}
                 onChange={(e) => onUpdate({ unit: e.target.value || undefined })}
                 disabled={!isAdmin}
                 placeholder="dBm, Mbps, ms, dst."
-                className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
+                className="w-full px-2 py-1.5 border border-border rounded text-xs bg-white"
               />
             </div>
           )}
           {field.type === "select" && (
             <div>
-              <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Pilihan (pisah dengan koma)</label>
+              <label className="text-[10px] font-semibold text-muted-foreground mb-1 block">Pilihan (pisah dengan koma)</label>
               <input
                 value={(field.options ?? []).join(", ")}
                 onChange={(e) => onUpdate({ options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
                 disabled={!isAdmin}
                 placeholder="Opsi A, Opsi B, Opsi C"
-                className="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
+                className="w-full px-2 py-1.5 border border-border rounded text-xs bg-white"
               />
             </div>
           )}
@@ -1080,15 +1080,15 @@ function CustomFieldRow({ field, index, total, isAdmin, onUpdate, onMoveUp, onMo
               />
               <span className="text-xs font-semibold">Required (wajib diisi)</span>
             </label>
-            <span className="text-[10px] text-slate-400">
-              Key: <code className="jbn-mono bg-slate-200 px-1 rounded">{field.key}</code>
+            <span className="text-[10px] text-muted-foreground">
+              Key: <code className="jbn-mono bg-muted px-1 rounded">{field.key}</code>
             </span>
           </div>
 
           {isAdmin && (
             <button
               onClick={onDelete}
-              className="text-[10px] font-semibold text-rose-600 hover:bg-rose-50 px-2 py-1 rounded flex items-center gap-1"
+              className="text-[10px] font-semibold text-destructive hover:bg-destructive/10 px-2 py-1 rounded flex items-center gap-1"
             >
               <Trash2 style={{ width: 11, height: 11 }} /> Hapus field
             </button>
@@ -1118,7 +1118,7 @@ function CustomFieldForm({ onSubmit, onCancel, existingKeys }: {
   }
 
   return (
-    <div className="bg-white border-2 border-dashed border-[#1e40af]/30 rounded-md p-2.5">
+    <div className="bg-white border-2 border-dashed border-blue-800/30 rounded-md p-2.5">
       <div className="grid grid-cols-[1fr_auto] gap-2 mb-2">
         <input
           autoFocus
@@ -1126,12 +1126,12 @@ function CustomFieldForm({ onSubmit, onCancel, existingKeys }: {
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
           placeholder="Label field (mis: Suhu Ruangan ONT)"
-          className="px-2.5 py-1.5 border border-[#e2e8f0] rounded text-sm"
+          className="px-2.5 py-1.5 border border-border rounded text-sm"
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value as CustomFieldType)}
-          className="px-2 py-1.5 border border-[#e2e8f0] rounded text-xs bg-white"
+          className="px-2 py-1.5 border border-border rounded text-xs bg-white"
         >
           {Object.entries(CUSTOM_TYPE_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
@@ -1149,11 +1149,11 @@ function CustomFieldForm({ onSubmit, onCancel, existingKeys }: {
           <span className="text-xs">Required</span>
         </label>
         <div className="flex gap-1">
-          <button onClick={onCancel} className="px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-100 rounded">Batal</button>
+          <button onClick={onCancel} className="px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted rounded">Batal</button>
           <button
             onClick={handleAdd}
             disabled={!label.trim()}
-            className="px-3 py-1 bg-[#1e40af] hover:bg-[#1e3a8a] text-white text-xs font-semibold rounded disabled:opacity-50"
+            className="px-3 py-1 bg-blue-800 hover:bg-blue-900 text-white text-xs font-semibold rounded disabled:opacity-50"
           >
             Tambah
           </button>

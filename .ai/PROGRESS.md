@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7 (mulai): TicketCategoriesPage warna -> token semantik
+**Agen:** claude | **Status:** selesai (1 file; sisa #7 ditunda per DECISIONS)
+**Kenapa:** 158 warna hardcoded (64 arbitrary `[#hex]` + 94 kelas palet mentah) -> token
+design system, jadi theme-aware + hapus arbitrary hex.
+**Perubahan:** `client/pages/TicketCategoriesPage.tsx`. Map: slate->muted/muted-foreground/
+foreground/border (per peran), rose->destructive, amber->warning, emerald->success. Navy
+brand `#1e40af/#1e3a8a` (tanpa padanan semantik) -> kelas palet eksak `blue-800/blue-900`
+(zero shift, 0 arbitrary hex tersisa). 2 tombol hover-gelap yang kolaps diberi
+`hover:brightness-95` (jaga umpan-balik hover). 4 inline-style dinamis (`c.color`,
+page-bg #f8fafc, dot final) + array picker kategori = DATA, sengaja tetap hex.
+**File:** client/pages/TicketCategoriesPage.tsx (113 insert / 113 delete = swap 1:1 murni).
+**Verifikasi:** `tsc` 0 error, build sukses. Diff: SEMUA baris berubah = swap warna (0
+perubahan struktur JSX). 135 adopsi token semantik. `grep`: 0 arbitrary `[#hex]` di className.
+**Catatan:** Ditunda (DECISIONS): TechnicianWorkPage+MapInfoWindow (inline-style = rewrite),
+CanvassingHistoryPage (sub-tema hangat = re-tema penuh, keputusan aestetik). >=640px prod
+default light = terjaga; near-exact utk mayoritas, emerald->green shift kecil disengaja.
+
 ## 2026-08-13 - #4: Utilitas `.dialog-w` (lebar dialog terpusat + refinement mobile)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Ekspresi lebar mobile `w-[calc(100vw-2rem)]` diulang 51x di 42 file. Sekaligus
