@@ -90,9 +90,13 @@
 - [x] **CanvassingPage SELESAI** (2026-08-13): 1296 -> 810 baris. Folder
   `client/pages/canvassing/` (shared [Terra token+tipe+helper], ConfirmDialog, OdpInfoCard,
   AddLeadForm, FieldReportForm). Byte-identik, prune. Terra token terpusat -> kandidat #7.
-- [ ] **Sisa file besar frontend:** MapPage (1379, 3 form komponen di depan main). GenieAcs
-  (1449) & Dashboard (1428) = mayoritas 1 komponen monolitik (ROI split rendah - lewati
-  kecuali diminta).
+- [x] **MapPage SELESAI** (2026-08-13): 1379 -> 946 baris. Folder `client/pages/map/`
+  (shared [const+geo helper+tipe], AssetQuickForm, CableQuickForm, CableDetailPanel).
+  Byte-identik, prune. Main masih besar (peta 1 komponen kompleks - sisa butuh threading state).
+- [ ] **STOP split file besar:** GenieAcs (1449) & Dashboard (1428) = 1 komponen monolitik,
+  ROI rendah (ekstraksi hanya tipe/leaf, main tetap ~1250). Kerjakan hanya bila diminta khusus.
+  Semua file frontend >=1266 baris (13 file) sudah dipecah. Fokus berikutnya: #7 warna token
+  (Canvassing/Terra sudah terpusat), #4 dialogSize, #5 StatTile/EmptyState, #10 backend.
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi

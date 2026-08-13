@@ -3,6 +3,19 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah MapPage (1379 -> 946 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** 3 komponen form/panel sibling (AssetQuickForm, CableQuickForm, CableDetailPanel)
+di depan main + blok konstanta/geo-helper/tipe.
+**Perubahan:** folder `client/pages/map/`: `shared.tsx` (GARUT_CENTER/DEFAULT_ZOOM/
+SNAP_THRESHOLD_METERS + geo helper haversineMeters/nearestOnSegment/findSnapPoint + tipe
+SnapResult/QuickFormProps - murni, 0 import eksternal), lalu 3 file komponen. Main tinggal
+shell peta (946 baris). Byte-identik (pindah + `export`); import di-prune.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, 0 deklarasi dobel di main.
+**Catatan:** Main masih besar (peta = 1 komponen kompleks dgn state viewport/marker; sisa split
+butuh threading state, risiko). GenieAcs (1449) & Dashboard (1428) monolitik -> STOP di sini
+utk split (ROI rendah). Semua file >=1266 baris sudah dipecah tahap ini.
+
 ## 2026-08-13 - #9: Pecah CanvassingPage (1296 -> 810 baris)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Seam bagus: 4 komponen sibling independen (ConfirmDialog, OdpInfoCard, AddLeadForm,
