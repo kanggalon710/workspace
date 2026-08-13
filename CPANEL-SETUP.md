@@ -293,10 +293,17 @@ git push origin main  --►    GHA build
 
 Total manual step: 3 klik (Update + Restart + verify).
 
-**Optional auto-pull cron** (di cPanel → Cron Jobs):
+**Zero-touch auto-deploy cron** (di cPanel → Cron Jobs) - pakai
+`tools/cpanel-autodeploy.sh` (ikut terkirim di payload `deploy`):
 ```
-*/5 * * * * cd ~/repositories/fiber-jabnet && /usr/local/cpanel/3rdparty/bin/git fetch origin deploy && /usr/local/cpanel/3rdparty/bin/git reset --hard origin/deploy && touch tmp/restart.txt > ~/private/fiber-jabnet/logs/cron-deploy.log 2>&1
+*/5 * * * * /bin/bash ~/repositories/workspace-main/tools/cpanel-autodeploy.sh deploy >> ~/private/workspace/logs/autodeploy.log 2>&1
 ```
+Script ini: fetch + `reset --hard origin/deploy`, `npm ci --omit=dev` HANYA bila
+`package-lock.json` berubah, lalu `touch tmp/restart.txt` - dan **hanya restart
+kalau ada perubahan** (tidak restart tiap 5 menit). Setelah push ke `main` →
+GHA build → dalam ≤5 menit produksi ke-update otomatis tanpa klik apa pun.
+JANGAN pakai `git pull` manual (branch `deploy` orphan/force-push → "divergent
+branches"). Buat dulu folder log: `mkdir -p ~/private/workspace/logs`.
 
 ---
 

@@ -186,20 +186,23 @@ git push origin main  --------►   trigger GHA
 
 **Cuma 2 langkah manual**: `git push` lokal, 1 klik di cPanel.
 
-### Opsional: zero-touch via cron
+### Zero-touch via cron (auto-deploy penuh)
 
-Untuk auto-pull setiap 5 menit (no clicking):
+Pakai `tools/cpanel-autodeploy.sh` (ikut terkirim di payload `deploy`/`deploy-dev`
+karena `build.yml` menyalin `tools/*.sh`). Cukup 1 cron; push → build → auto pull
+→ auto restart, tanpa klik:
 
 ```bash
-# crontab -e di cPanel
-*/5 * * * * cd ~/repositories/<repo-slug> \
-  && /usr/local/cpanel/3rdparty/bin/git fetch origin deploy \
-  && /usr/local/cpanel/3rdparty/bin/git reset --hard origin/deploy \
-  > ~/private/<project-slug>/logs/git-deploy.log 2>&1
+# crontab -e di cPanel (PROD; untuk DEV ganti arg jadi `deploy-dev` + path repo dev)
+*/5 * * * * /bin/bash ~/repositories/<repo-slug>/tools/cpanel-autodeploy.sh deploy \
+  >> ~/private/<project-slug>/logs/autodeploy.log 2>&1
 ```
 
-`reset --hard` perlu karena branch `deploy` adalah orphan (history selalu
-ditulis ulang oleh GHA).
+Script hanya bertindak saat `origin/<branch>` berubah: `fetch` + `reset --hard`
+(branch orphan/force-push, JANGAN `pull`), `npm ci --omit=dev` hanya bila
+`package-lock.json` berubah, lalu `touch tmp/restart.txt`. Karena guard perubahan,
+app **tidak** restart tiap tick - hanya saat ada build baru. `node_modules`
+(untracked) aman dari `reset --hard`.
 
 ---
 
