@@ -70,7 +70,12 @@
   `client/pages/integration/` (shared [tipe + 7 komponen daun + data + getSettingValue],
   OmnichannelIntegrationCard [card Chatwoot mandiri]). Card berstate (`allSettings` dibaca
   banyak card) DITAHAN di main - ekstraksi butuh prop/context threading (risiko regresi).
-  Semua target split file besar frontend (#9) SELESAI.
+- [x] **PortalDashboardPage SELESAI** (2026-08-13): 2227 -> 242 baris. Folder
+  `client/pages/portal/dashboard/` (shared [FEATURE flag + 9 leaf helper] + 7 file tab:
+  Overview/Traffic[+fmt]/Billing/Wifi[+WifiInterfaceCard]/Tickets/Points/Loyalty). Byte-identik,
+  import di-prune. Customer-facing tapi zero-behavior (reorganisasi murni).
+- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** TicketingPage (2064),
+  CollectionPipelinePage (2020), TechnicianWorkPage (1819). Split seam bersih tersedia.
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi

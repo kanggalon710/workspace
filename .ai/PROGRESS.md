@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah PortalDashboardPage (2227 -> 242 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** File portal pelanggan raksasa; tiap tab = komponen module-scoped prop-driven
+(referensi antar-tab NOL, tiap tab dipakai 1x di shell) -> seam ekstraksi bersih.
+**Perubahan:** folder baru `client/pages/portal/dashboard/`: `shared.tsx`
+(FEATURE_BILLING_ENABLED + 9 leaf helper: LoadingState/AlertCard/MiniStat/BigStat/
+IdentityField/DataField/QuickAction/BillingStatusBadge/ReferralStat), lalu 7 file tab:
+`OverviewTab`, `TrafficTab` (+fmtBytes/fmtMB/fmtSpeed), `BillingTab`, `WifiTab`
+(+WifiInterfaceCard), `TicketsTab`, `PointsTab`, `LoyaltyTab`. Main tinggal shell (type Tab
++ TAB_DEFS + komponen utama, 242 baris). Kode byte-identik (hanya pindah + `export`); import
+di-prune per file (over-keep-safe).
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, cek 0 deklarasi dobel di main.
+Perilaku identik (reorganisasi file). CATATAN: halaman customer-facing kritis - ekstraksi
+byte-identik jadi tanpa perubahan perilaku, hanya reorganisasi.
+**Catatan:** File portal >2000 baris kini terpecah. Sisa file besar frontend: TicketingPage
+(2064), CollectionPipelinePage (2020) bisa menyusul pola sama bila diminta.
+
 ## 2026-08-13 - #3 tuntas: adopsi `<ScrollRow>` di 2 baris chip/pill terakhir
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Menutup #3. Audit ulang 16 file pemakai idiom `overflow-x-auto no-scrollbar`:
