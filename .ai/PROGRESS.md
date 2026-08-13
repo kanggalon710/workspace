@@ -3,6 +3,21 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah IntegrationPage (3032 -> 2290 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** File raksasa terakhir di roadmap split. Meski card berbagi state `allSettings`
+(tak diekstrak), bagian daun murni + 1 card mandiri bisa dipisah tanpa ubah perilaku.
+**Perubahan:** 2 file baru di `client/pages/integration/`: `shared.tsx` (tipe MikrotikRouter/
+SettingItem + komponen daun ToggleSwitch/PasswordInput/IntegrationStatusBadge/MethodBadge/
+GuideStep/CodeSnippet/FeatureBadges + data API_ENDPOINTS/INTEGRATION_SECTIONS + getSettingValue),
+`OmnichannelIntegrationCard.tsx` (card Chatwoot mandiri, no props - hooks/state sendiri, hanya
+impor ToggleSwitch+GuideStep dari shared). Main tinggal shell + komponen utama (2290 baris).
+Kode byte-identik (hanya pindah + `export`); import di-prune per file (script scratchpad).
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses. Perilaku identik (reorganisasi file).
+**Catatan:** Card berstate (`allSettings` dibaca banyak card) SENGAJA ditahan di main - ekstraksi
+butuh threading prop/context (risiko regresi). Tersisa follow-up bila `ui/StatTile` diperluas.
+Semua target split file besar frontend (#9) kini SELESAI; sisa hanya backend #10 (risiko tinggi).
+
 ## 2026-08-12 - #9: Pecah CustomersPage (2623 -> 1455 baris) + hapus dead code
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjutan #9. CustomersPage 2623 baris; deklarasi module-scoped prop-driven

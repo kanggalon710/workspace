@@ -62,9 +62,11 @@
   CustomerLocalEditForm, IntegrationAuditDialog, CustomerCommunication). Dead code `SyncModal`
   (~99 baris, 0 referensi) dihapus. Sisa: ganti `<table>` mentah -> `<DataTable>` +
   ekstrak 3 dialog inline (butuh prop-threading) = follow-up terpisah.
-- [ ] **IntegrationPage** (3050) - tersulit (state `allSettings` dibaca semua card);
-  ekstrak tiap card `<h3>` (GenieACS, BillingSync, MPWA, Telegram, MetaCAPI, dll) +
-  7 helper badge/toggle/snippet.
+- [x] **IntegrationPage SELESAI** (2026-08-13): 3032 -> 2290 baris. 2 file di
+  `client/pages/integration/` (shared [tipe + 7 komponen daun + data + getSettingValue],
+  OmnichannelIntegrationCard [card Chatwoot mandiri]). Card berstate (`allSettings` dibaca
+  banyak card) DITAHAN di main - ekstraksi butuh prop/context threading (risiko regresi).
+  Semua target split file besar frontend (#9) SELESAI.
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi
