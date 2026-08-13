@@ -3,6 +3,21 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7c: PointRedemptionsTab - migrasi manual per-pola (page ber-dark:)
+**Agen:** claude | **Status:** selesai (page pertama ber-`dark:` via pendekatan manual)
+**Kenapa:** User pilih "manual, few per round". Page ini semantik status murni (pending=
+warning, active=success, rejected=destructive, expired/cancelled=muted) - kandidat bersih.
+**Perubahan:** `client/pages/loyalty/PointRedemptionsTab.tsx`. Pola: (1) HAPUS 45 varian
+`dark:` status/neutral (token theme-aware sudah tangani terang+gelap), (2) map 79 kelas dasar
+-> token (tint-aware bg: `bg-warning/15 text-warning` = badge terbaca; opacity dipertahankan
+utk text). 3 hover-gelap kolaps -> `hover:brightness-95`. Kategorikal `sky`/`violet` + varian
+`dark:`-nya SENGAJA dibiarkan (pembeda, bukan status; `dark:bg-sky-950` tetap ada).
+**File:** client/pages/loyalty/PointRedemptionsTab.tsx (49 insert / 49 delete).
+**Verifikasi:** `tsc` 0 error, build OK. 0 badge tak-terlihat, 0 hover kolaps, 0 double-space,
+0 sisa palet status/neutral. Kategorikal utuh.
+**Catatan:** Alat: `collapse-darkmode.mjs` (hapus dark: status/neutral + map dasar opacity-aware).
+Pola terbukti; lanjut page status-bersih lain (BugReports/PointsTab/Users) 1-2 per ronde.
+
 ## 2026-08-13 - #7b: BroadcastTargetPage warna -> token + TEMUAN sweep tak aman
 **Agen:** claude | **Status:** selesai (1 page aman) + temuan penting
 **Kenapa:** Lanjut #7. BroadcastTargetPage TANPA varian `dark:` (0) -> aman dimigrasi.

@@ -53,11 +53,15 @@
   zero shift). 2 hover-gelap kolaps -> `hover:brightness-95`. 0 arbitrary `[#hex]` tersisa.
 - [x] **#7b BroadcastTargetPage SELESAI** (2026-08-13): 76 swap status+neutral->token (page
   TANPA `dark:` = aman). Kategorikal violet/sky/blue ditinggal.
-- [ ] **#7-BLOCKED: sweep buta TIDAK aman (lihat DECISIONS 2026-08-13).** Mayoritas page punya
-  varian `dark:` LIVE (Dashboard 49, IntegrationPage 68, dll) + badge tint -> map buta =
-  regresi (teks tak-terlihat, kontras kolaps). Aman HANYA utk page tanpa `dark:`. Sisa page
-  ber-`dark:` = migrasi per-pola MANUAL (rewrite cluster terang+gelap -> 1 token theme-aware +
-  hapus `dark:` redundan). Butuh keputusan user: (a) manual per-page bertahap, atau (b) de-scope.
+- [x] **#7c PointRedemptionsTab SELESAI** (2026-08-13): page ber-`dark:` pertama via manual
+  per-pola (hapus 45 dark: status/neutral + map 79 dasar tint-aware + 3 hover fix). Alat
+  `collapse-darkmode.mjs`. Kategorikal sky/violet utuh.
+- [ ] **#7 sisa page ber-`dark:` (MANUAL, 1-2/ronde - user pilih pendekatan ini).** Pakai
+  `collapse-darkmode.mjs` lalu audit (badge tak-terlihat, hover kolaps, kategorikal). Kandidat
+  status-bersih berikut: PointsTab, BugReportsPage, UsersPage, LeadPipelinePage, RolesPage.
+  HATI-HATI page kategorikal-berat (Dashboard 14 famili, IntegrationPage kartu brand) - butuh
+  penilaian per-pakai lebih dalam, JANGAN pakai alat buta. bg-white+dark: -> `bg-card` (cek
+  manual per page; PointRedemptions tak ada, page lain mungkin ada).
 - [ ] **#7 CanvassingHistoryPage DITUNDA** - sub-tema HANGAT (coklat/taupe #827472/#350800/
   #504442/#755750/#f4f3f2 = warna teks+bg utama). Migrasi = re-tema penuh hangat->dingin,
   koheren hanya all-or-nothing. Keputusan aestetik sendiri (bukan shift kecil) - butuh OK user.

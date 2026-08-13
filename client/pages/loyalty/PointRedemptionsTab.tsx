@@ -164,18 +164,18 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
       {health && health.overdueCount > 0 && (
         <div className={`rounded-lg border p-4 ${
           health.criticalCount > 0
-            ? "bg-rose-50/80 dark:bg-rose-950/30 border-rose-300 dark:border-rose-900"
-            : "bg-amber-50/70 dark:bg-amber-950/25 border-amber-300 dark:border-amber-900"
+            ? "bg-destructive/10 border-destructive/30"
+            : "bg-warning/10 border-warning/30"
         }`}>
           <div className="flex items-start gap-3">
             <div className={`mt-0.5 h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
-              health.criticalCount > 0 ? "bg-rose-500" : "bg-amber-500"
+              health.criticalCount > 0 ? "bg-destructive" : "bg-warning"
             }`}>
               <AlertTriangle className="h-4 w-4 text-white" strokeWidth={2.5} />
             </div>
             <div className="flex-1 min-w-0">
               <div className={`font-bold text-sm ${
-                health.criticalCount > 0 ? "text-rose-900 dark:text-rose-200" : "text-amber-900 dark:text-amber-200"
+                health.criticalCount > 0 ? "text-destructive" : "text-warning"
               }`}>
                 {health.criticalCount > 0
                   ? ` ${health.criticalCount} redemption CRITICAL - gagal revert MikroTik 5×+`
@@ -193,7 +193,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                     <span className="text-muted-foreground">·</span>
                     <span>{it.rewardLabel}</span>
                     <span className={`px-1.5 py-0 rounded text-[10px] font-mono font-bold ${
-                      it.revertAttempts >= 5 ? "bg-rose-200 text-rose-900" : "bg-amber-200 text-amber-900"
+                      it.revertAttempts >= 5 ? "bg-destructive/25 text-destructive" : "bg-warning/25 text-warning"
                     }`}>
                       {it.revertAttempts}× gagal
                     </span>
@@ -255,9 +255,9 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-1 p-1 bg-muted/60 rounded-lg w-fit overflow-x-auto">
           {(["pending", "active", "expired", "rejected", "cancelled", "all"] as const).map((s) => {
-            const dot = s === "pending" && (stats?.pending ?? 0) > 0 ? "bg-amber-500"
-              : s === "active" && (stats?.active ?? 0) > 0 ? "bg-emerald-500"
-              : s === "rejected" && (stats?.rejected ?? 0) > 0 ? "bg-rose-500"
+            const dot = s === "pending" && (stats?.pending ?? 0) > 0 ? "bg-warning"
+              : s === "active" && (stats?.active ?? 0) > 0 ? "bg-success"
+              : s === "rejected" && (stats?.rejected ?? 0) > 0 ? "bg-destructive"
               : null;
             return (
               <button
@@ -328,11 +328,11 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
           <div className="divide-y">
             {redemptions.map((r: any) => {
               const statusMap: Record<string, { label: string; dotColor: string; textColor: string }> = {
-                pending:   { label: "Menunggu",   dotColor: "bg-amber-500",   textColor: "text-amber-700 dark:text-amber-300" },
-                active:    { label: "Aktif",      dotColor: "bg-emerald-500", textColor: "text-emerald-700 dark:text-emerald-300" },
-                expired:   { label: "Selesai",    dotColor: "bg-zinc-400",    textColor: "text-zinc-600 dark:text-zinc-400" },
-                rejected:  { label: "Ditolak",    dotColor: "bg-rose-500",    textColor: "text-rose-700 dark:text-rose-300" },
-                cancelled: { label: "Dibatalkan", dotColor: "bg-zinc-400",    textColor: "text-zinc-600 dark:text-zinc-400" },
+                pending:   { label: "Menunggu",   dotColor: "bg-warning",   textColor: "text-warning" },
+                active:    { label: "Aktif",      dotColor: "bg-success", textColor: "text-success" },
+                expired:   { label: "Selesai",    dotColor: "bg-muted",    textColor: "text-muted-foreground" },
+                rejected:  { label: "Ditolak",    dotColor: "bg-destructive",    textColor: "text-destructive" },
+                cancelled: { label: "Dibatalkan", dotColor: "bg-muted",    textColor: "text-muted-foreground" },
               };
               const status = statusMap[r.status] ?? statusMap.expired;
               // Live countdown
@@ -360,15 +360,15 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                     isDeleted
                       ? "opacity-50 line-through"
                       : almostExpired
-                      ? "bg-gradient-to-r from-amber-50/70 to-transparent dark:from-amber-950/20"
+                      ? "bg-gradient-to-r from-amber-50/70 to-transparent"
                       : isActive
-                      ? "bg-gradient-to-r from-emerald-50/40 to-transparent dark:from-emerald-950/10 hover:from-emerald-50/60"
+                      ? "bg-gradient-to-r from-emerald-50/40 to-transparent hover:from-emerald-50/60"
                       : "hover:bg-muted/30"
                   }`}
                 >
                   {/* Left accent strip */}
                   {(almostExpired || isActive) && (
-                    <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r ${almostExpired ? "bg-amber-500" : "bg-emerald-500"}`} />
+                    <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r ${almostExpired ? "bg-warning" : "bg-success"}`} />
                   )}
 
                   {/* Status indicator column */}
@@ -385,7 +385,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                     {activeRemaining && (
                       <div className={`mt-1.5 inline-flex items-center gap-1 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded ${
                         almostExpired
-                          ? "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold"
+                          ? "bg-warning/15 text-warning font-bold"
                           : "bg-muted text-foreground"
                       }`}>
                         <Clock className="h-2.5 w-2.5" /> {activeRemaining}
@@ -407,7 +407,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                     <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                       <Zap className={`h-3.5 w-3.5 ${r.speedMultiplier >= 3 ? "text-violet-600" : "text-sky-600"}`} strokeWidth={2} />
                       <span className="font-medium text-sm text-foreground">{r.rewardLabel}</span>
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/30 text-[10px] font-mono font-semibold text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/60">
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-warning/10 text-[10px] font-mono font-semibold text-warning border border-warning/30">
                         −{r.pointsCost.toLocaleString("id-ID")} pts
                       </span>
                     </div>
@@ -427,7 +427,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                       )}
                       {r.verifiedBy && (
                         <span className="inline-flex items-center gap-1" title="Diverifikasi oleh admin">
-                          <CheckCircle2 className="h-3 w-3 text-emerald-600" /> admin #{r.verifiedBy}
+                          <CheckCircle2 className="h-3 w-3 text-success" /> admin #{r.verifiedBy}
                         </span>
                       )}
                       {r.customerPhone && (
@@ -440,8 +440,8 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                       <div className="mt-2 inline-flex items-start gap-2 text-[11px] px-2.5 py-1.5 rounded-md bg-muted/40 border max-w-full">
                         {r.rejectionReason ? (
                           <>
-                            <XCircle className="h-3 w-3 text-rose-500 mt-0.5 shrink-0" />
-                            <span className="text-rose-700 dark:text-rose-400"><strong>Ditolak:</strong> {r.rejectionReason}</span>
+                            <XCircle className="h-3 w-3 text-destructive mt-0.5 shrink-0" />
+                            <span className="text-destructive"><strong>Ditolak:</strong> {r.rejectionReason}</span>
                           </>
                         ) : (
                           <>
@@ -478,14 +478,14 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                             size="sm"
                             variant="outline"
                             onClick={() => { setRejectFor(r); setRejectReason(""); }}
-                            className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200/60 dark:border-rose-900/60"
+                            className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                           >
                             Tolak
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => { setVerifyFor(r); setVerifyNotes(""); }}
-                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            className="h-8 text-xs bg-success hover:brightness-95 text-white"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Verify
                           </Button>
@@ -508,7 +508,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                               size="sm"
                               variant="outline"
                               onClick={() => { setForceExpireFor(r); setForceExpireReason(""); }}
-                              className="h-8 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-300 dark:border-amber-900"
+                              className="h-8 text-xs text-warning hover:text-warning hover:bg-warning/10 border-warning/30"
                               title={`Auto-revert gagal ${r.revertAttempts}× - force expire setelah benerin profile manual`}
                             >
                               <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Force Expire
@@ -518,7 +518,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                             size="sm"
                             variant="outline"
                             onClick={() => { if (confirm(`Hentikan boost ${r.rewardLabel} untuk ${r.customerName}? Point akan dikembalikan + profile MikroTik di-revert ke ${r.originalPppProfile ?? "asli"}.`)) cancelMut.mutate(r.id); }}
-                            className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200/60 dark:border-rose-900/60"
+                            className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                           >
                             Hentikan
                           </Button>
@@ -547,9 +547,9 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="p-2.5 rounded-md bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 text-xs">
-              <p className="font-semibold text-emerald-800 dark:text-emerald-300">✓ Auto-MikroTik aktif</p>
-              <p className="text-emerald-700/80 dark:text-emerald-400/80 mt-0.5">
+            <div className="p-2.5 rounded-md bg-success/10 border border-success/30 text-xs">
+              <p className="font-semibold text-success">✓ Auto-MikroTik aktif</p>
+              <p className="text-success/80 mt-0.5">
                 Saat verify, sistem otomatis: (1) ganti PPP profile customer ke <strong>boost {verifyFor?.speedMultiplier}×</strong>,
                 (2) disconnect session paksa supaya profile baru efektif segera, (3) auto-revert ke profile asli
                 {verifyFor?.durationHours} jam kemudian. Kalau MikroTik offline saat verify, kamu akan lihat warning + bisa retry manual.
@@ -569,7 +569,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
               <Button
                 onClick={() => verifyMut.mutate({ id: verifyFor.id, notes: verifyNotes.trim() || undefined })}
                 disabled={verifyMut.isPending}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-success hover:brightness-95"
               >
                 {verifyMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                 Aktivasi Boost
@@ -584,14 +584,14 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" /> Force Expire Redemption
+              <AlertTriangle className="h-5 w-5 text-warning" /> Force Expire Redemption
             </DialogTitle>
             <DialogDescription asChild>
               <div className="text-xs pt-1 space-y-1">
                 <div>{forceExpireFor?.customerName} - <span className="font-mono">#{forceExpireFor?.customerBillingId}</span></div>
                 <div className="font-semibold text-foreground">{forceExpireFor?.rewardLabel}</div>
                 {(forceExpireFor?.revertAttempts ?? 0) > 0 && (
-                  <div className="text-rose-600 dark:text-rose-400">
+                  <div className="text-destructive">
                     Auto-revert sudah gagal {forceExpireFor?.revertAttempts}× - error terakhir: <em>{forceExpireFor?.revertError}</em>
                   </div>
                 )}
@@ -599,10 +599,10 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900 text-xs">
-              <p className="font-bold text-amber-900 dark:text-amber-200"> Force expire = bypass revert MikroTik</p>
-              <p className="text-amber-800/90 dark:text-amber-300/90 mt-1">
-                Hanya gunakan kalau kamu <strong>sudah set profile manual lewat WinBox</strong> ke <code className="font-mono bg-amber-200/60 dark:bg-amber-900/60 px-1 rounded">{forceExpireFor?.originalPppProfile ?? "profile asli"}</code>.
+            <div className="p-2.5 rounded-md bg-warning/10 border border-warning/30 text-xs">
+              <p className="font-bold text-warning"> Force expire = bypass revert MikroTik</p>
+              <p className="text-warning/90 mt-1">
+                Hanya gunakan kalau kamu <strong>sudah set profile manual lewat WinBox</strong> ke <code className="font-mono bg-warning/25 px-1 rounded">{forceExpireFor?.originalPppProfile ?? "profile asli"}</code>.
                 Tindakan ini akan di-log di audit trail dengan alasan kamu.
               </p>
             </div>
@@ -626,7 +626,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                   forceExpireMut.mutate({ id: forceExpireFor.id, reason: forceExpireReason.trim() });
                 }}
                 disabled={forceExpireMut.isPending || !forceExpireReason.trim()}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                className="bg-warning hover:brightness-95 text-white"
               >
                 {forceExpireMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                 Force Expire
@@ -641,7 +641,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-amber-500" /> Backfill Loyalty Points
+              <Sparkles className="h-5 w-5 text-warning" /> Backfill Loyalty Points
             </DialogTitle>
             <DialogDescription>
               Berikan point loyalty awal ke customer existing berdasarkan tenure (kapan bergabung - auto parse dari customer ID format <code className="font-mono text-[10px] bg-muted px-1 rounded">MMYYNNNNN</code>).
@@ -656,7 +656,7 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                   <div key={tier} className="rounded-md border p-2.5 bg-muted/30">
                     <div className="font-semibold text-[11px] truncate">{tier}</div>
                     <div className="flex items-baseline gap-1.5 mt-1">
-                      <span className="text-lg font-bold tabular-nums text-emerald-600">{info.count}</span>
+                      <span className="text-lg font-bold tabular-nums text-success">{info.count}</span>
                       <span className="text-[10px] text-muted-foreground">customer</span>
                     </div>
                   </div>
@@ -665,19 +665,19 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
 
               {/* Summary */}
               <div className="grid grid-cols-3 gap-2 pt-2 border-t">
-                <div className="rounded-md bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/60 p-2.5">
-                  <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-300">Akan Dapat</div>
-                  <div className="text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300 mt-0.5">{(backfillPreview.eligibleCount ?? 0).toLocaleString("id-ID")}</div>
+                <div className="rounded-md bg-success/10 border border-success/30 p-2.5">
+                  <div className="text-[10px] uppercase font-bold text-success">Akan Dapat</div>
+                  <div className="text-xl font-bold tabular-nums text-success mt-0.5">{(backfillPreview.eligibleCount ?? 0).toLocaleString("id-ID")}</div>
                   <div className="text-[10px] text-muted-foreground">customer</div>
                 </div>
-                <div className="rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/60 p-2.5">
-                  <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-300">Total Pts</div>
-                  <div className="text-xl font-bold tabular-nums text-amber-700 dark:text-amber-300 mt-0.5">{(backfillPreview.totalPointsToGrant ?? 0).toLocaleString("id-ID")}</div>
+                <div className="rounded-md bg-warning/10 border border-warning/30 p-2.5">
+                  <div className="text-[10px] uppercase font-bold text-warning">Total Pts</div>
+                  <div className="text-xl font-bold tabular-nums text-warning mt-0.5">{(backfillPreview.totalPointsToGrant ?? 0).toLocaleString("id-ID")}</div>
                   <div className="text-[10px] text-muted-foreground">akan dikeluarkan</div>
                 </div>
-                <div className="rounded-md bg-slate-50 dark:bg-slate-900 border p-2.5">
-                  <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300">Sudah Dapat</div>
-                  <div className="text-xl font-bold tabular-nums text-slate-700 dark:text-slate-300 mt-0.5">{(backfillPreview.alreadyGrantedCount ?? 0).toLocaleString("id-ID")}</div>
+                <div className="rounded-md bg-muted/50 border p-2.5">
+                  <div className="text-[10px] uppercase font-bold text-foreground">Sudah Dapat</div>
+                  <div className="text-xl font-bold tabular-nums text-foreground mt-0.5">{(backfillPreview.alreadyGrantedCount ?? 0).toLocaleString("id-ID")}</div>
                   <div className="text-[10px] text-muted-foreground">customer (skip)</div>
                 </div>
               </div>
@@ -704,9 +704,9 @@ export function PointRedemptionsTab({ canEdit, stats, showDeleted, onShowDeleted
                               <div className="text-[10px] text-muted-foreground font-mono">#{s.customerId}</div>
                             </td>
                             <td className="px-2 py-1.5 text-right tabular-nums">{s.tenureMonths}m</td>
-                            <td className="px-2 py-1.5 text-right tabular-nums font-bold text-emerald-600">+{s.points.toLocaleString("id-ID")}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums font-bold text-success">+{s.points.toLocaleString("id-ID")}</td>
                             <td className="px-2 py-1.5 text-[10px]">
-                              {s.alreadyGranted ? <span className="text-muted-foreground">sudah</span> : <span className="text-emerald-600 font-semibold">eligible</span>}
+                              {s.alreadyGranted ? <span className="text-muted-foreground">sudah</span> : <span className="text-success font-semibold">eligible</span>}
                             </td>
                           </tr>
                         ))}
