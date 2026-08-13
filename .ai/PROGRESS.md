@@ -3,6 +3,20 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7b: BroadcastTargetPage warna -> token + TEMUAN sweep tak aman
+**Agen:** claude | **Status:** selesai (1 page aman) + temuan penting
+**Kenapa:** Lanjut #7. BroadcastTargetPage TANPA varian `dark:` (0) -> aman dimigrasi.
+**Perubahan:** `client/pages/whatsapp/BroadcastTargetPage.tsx` (76 swap). Famili status+neutral
+-> token: rose->destructive, emerald->success, amber/yellow->warning, zinc->muted/foreground/
+border. Badge tint di-map ke varian transparan (`bg-warning/15 text-warning`) = teks terbaca.
+Famili kategorikal (violet/sky/blue) SENGAJA ditinggal (pembeda kategori, bukan status).
+4 `bg-*-50/40` (sudah transparan) ditinggal (zero-change).
+**File:** client/pages/whatsapp/BroadcastTargetPage.tsx.
+**Verifikasi:** `tsc` 0 error, build OK. 0 hover kolaps, 0 badge tak-terlihat, diff color-only.
+**TEMUAN (lihat DECISIONS):** Sweep warna BUTA ke page lain TIDAK aman - mayoritas punya
+varian `dark:` LIVE + badge tint yg rusak oleh map buta (bukti: teks tak terlihat, kontras
+kolaps). Sweep dihentikan; sisa #7 (page ber-`dark:`) butuh migrasi per-pola manual + OK user.
+
 ## 2026-08-13 - #7 (mulai): TicketCategoriesPage warna -> token semantik
 **Agen:** claude | **Status:** selesai (1 file; sisa #7 ditunda per DECISIONS)
 **Kenapa:** 158 warna hardcoded (64 arbitrary `[#hex]` + 94 kelas palet mentah) -> token

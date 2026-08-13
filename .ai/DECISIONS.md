@@ -2,6 +2,23 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-13 - #7 TEMUAN: sweep warna buta TIDAK aman (dark-mode + badge tint)
+**Konteks:** Lanjut #7 ke banyak page. Coba transform semantik ter-generalisasi (status+neutral)
+ke PointRedemptionsTab/PointsTab -> KETAHUAN regresi nyata, di-revert.
+**Bukti:** (a) `bg-amber-200 text-amber-900` -> `bg-warning text-warning` = **teks tak terlihat**
+(warna sama di atas warna sama). (b) `text-amber-900 dark:text-amber-200` -> `text-warning
+dark:text-warning` = pasangan kontras terang/gelap yg di-tuning tangan KOLAPS + teks gelap jadi
+terang. (c) Mayoritas page (Dashboard 49 dark:, IntegrationPage 68) punya varian `dark:` LIVE
+(dark-mode = fitur nyata: toggle di TopBar/Sidebar/CommandPalette, `darkMode:["class"]`).
+Bahkan `FullBleedPage` `bg-slate-50/40 dark:bg-slate-950/40` -> 1 token = geser bg dark-mode.
+**Keputusan:** Sweep buta DIHENTIKAN. #7 hanya aman untuk page yang (1) TANPA varian `dark:`
+(tak ada pasangan terang/gelap utk dirusak) DAN (2) badge tint di-map ke varian transparan
+(`bg-{tok}/15`, bukan solid) sehingga teks tetap terbaca. Skip semua famili kategorikal
+(violet/sky/blue/indigo/purple/teal/cyan/orange) - itu pembeda kategori, bukan status.
+**Alasan:** Jaga fitur dark-mode + keterbacaan (dilarang kompromi stabilitas app LIVE). Sisa
+page ber-`dark:` butuh migrasi per-pola manual (rewrite cluster terang+gelap -> 1 token
+theme-aware + hapus `dark:` redundan) = kerja desain, bukan sweep. Butuh keputusan user.
+
 ## 2026-08-13 - #7 Warna token: strategi + batas (mulai TicketCategoriesPage)
 **Konteks:** #7 migrasi warna hardcoded ke token. Audit ungkap 3 jenis kerja BEDA, tak bisa
 disapu seragam: (a) file className (TicketCategories, CanvassingHistory) - swap className;

@@ -83,11 +83,11 @@ interface Recipient {
 interface RecipientList { items: Recipient[]; counts: { total: number; pending: number; sent: number; failed: number; skipped: number; }; }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  draft:     { label: "Draft",     color: "bg-zinc-100 text-zinc-700" },
-  running:   { label: "Mengirim",  color: "bg-yellow-100 text-yellow-800" },
-  completed: { label: "Terkirim",  color: "bg-emerald-100 text-emerald-700" },
-  failed:    { label: "Gagal Terkirim", color: "bg-rose-100 text-rose-700" },
-  cancelled: { label: "Dibatalkan", color: "bg-zinc-100 text-zinc-700" },
+  draft:     { label: "Draft",     color: "bg-muted text-foreground" },
+  running:   { label: "Mengirim",  color: "bg-warning/15 text-warning" },
+  completed: { label: "Terkirim",  color: "bg-success/15 text-success" },
+  failed:    { label: "Gagal Terkirim", color: "bg-destructive/15 text-destructive" },
+  cancelled: { label: "Dibatalkan", color: "bg-muted text-foreground" },
 };
 
 // Status efektif untuk display: campaign yang "completed" tapi SEMUA penerima gagal
@@ -622,7 +622,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
 
         {/* Pilih Nomor */}
         <div>
-          <label className="text-xs font-bold uppercase tracking-wider">Pilih Nomor Whatsapp <span className="text-rose-600">*</span></label>
+          <label className="text-xs font-bold uppercase tracking-wider">Pilih Nomor Whatsapp <span className="text-destructive">*</span></label>
           <select
             value={deviceId ?? ""}
             onChange={(e) => setDeviceId(e.target.value ? Number(e.target.value) : null)}
@@ -634,14 +634,14 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
             ))}
           </select>
           {devices.length === 0 && (
-            <p className="text-[10px] text-rose-600 mt-1">Belum ada device aktif. Daftarkan di menu Nomor Whatsapp dulu.</p>
+            <p className="text-[10px] text-destructive mt-1">Belum ada device aktif. Daftarkan di menu Nomor Whatsapp dulu.</p>
           )}
         </div>
 
         {/* Pilih Template + Live Preview v4.2.24 */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider">Pilih Template <span className="text-rose-600">*</span></label>
+            <label className="text-xs font-bold uppercase tracking-wider">Pilih Template <span className="text-destructive">*</span></label>
             <select
               value={templateId ?? ""}
               onChange={(e) => { setTemplateId(e.target.value ? Number(e.target.value) : null); setSelectedTargetIds(new Set()); }}
@@ -656,9 +656,9 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
               <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground flex-wrap">
                 {selectedTemplate.mediaUrl && <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-700"> Image</span>}
                 {selectedTemplate.buttons && <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700"> Button</span>}
-                {selectedTemplate.compatMode === "text-link" && <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Text+Link</span>}
-                {selectedTemplate.compatMode !== "text-link" && selectedTemplate.buttons && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Native</span>}
-                {selectedTemplate.customerFilter === "unpaid" && target === "pelanggan" && <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">Filter: Belum Bayar</span>}
+                {selectedTemplate.compatMode === "text-link" && <span className="px-1.5 py-0.5 rounded bg-success/15 text-success">Text+Link</span>}
+                {selectedTemplate.compatMode !== "text-link" && selectedTemplate.buttons && <span className="px-1.5 py-0.5 rounded bg-warning/15 text-warning">Native</span>}
+                {selectedTemplate.customerFilter === "unpaid" && target === "pelanggan" && <span className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">Filter: Belum Bayar</span>}
               </div>
             )}
           </div>
@@ -731,10 +731,10 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
         {/* PHONEBOOK PICKER */}
         {templateId && audienceSource === "phonebook" && target === "pelanggan" && (
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider">Pilih Phonebook <span className="text-rose-600">*</span></label>
+            <label className="text-xs font-bold uppercase tracking-wider">Pilih Phonebook <span className="text-destructive">*</span></label>
             {phonebooks.length === 0 ? (
-              <div className="mt-1 rounded-md border bg-amber-50/30 border-amber-200 px-3 py-3 text-xs text-amber-900">
-                Belum ada phonebook. <a href="/whatsapp/phonebook" className="font-bold text-amber-700 underline">Buat phonebook dulu</a> untuk pakai source ini.
+              <div className="mt-1 rounded-md border bg-amber-50/30 border-warning/30 px-3 py-3 text-xs text-warning">
+                Belum ada phonebook. <a href="/whatsapp/phonebook" className="font-bold text-warning underline">Buat phonebook dulu</a> untuk pakai source ini.
               </div>
             ) : (
               <>
@@ -759,7 +759,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                           Pilih Semua
                         </Button>
                         {selectedContactIds.size > 0 && (
-                          <Button size="xs" variant="ghost" onClick={() => setSelectedContactIds(new Set())} className="text-rose-600">Clear</Button>
+                          <Button size="xs" variant="ghost" onClick={() => setSelectedContactIds(new Set())} className="text-destructive">Clear</Button>
                         )}
                       </div>
                     </div>
@@ -778,7 +778,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                           )}
                         >
                           <div className={cn("h-4 w-4 rounded border-2 grid place-items-center shrink-0",
-                            selectedContactIds.has(c.id) ? "bg-sky-600 border-sky-600" : "border-zinc-300"
+                            selectedContactIds.has(c.id) ? "bg-sky-600 border-sky-600" : "border-border"
                           )}>
                             {selectedContactIds.has(c.id) && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                           </div>
@@ -787,7 +787,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                             <div className="text-[10px] text-muted-foreground">
                               {c.phone}
                               {c.email && <span> · {c.email}</span>}
-                              {c.customerId && <span className="ml-1 px-1 rounded bg-emerald-100 text-emerald-700">Linked customer</span>}
+                              {c.customerId && <span className="ml-1 px-1 rounded bg-success/15 text-success">Linked customer</span>}
                             </div>
                           </div>
                         </button>
@@ -805,9 +805,9 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
           <div>
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
               <label className="text-xs font-bold uppercase tracking-wider">
-                Pilih {targetLabel} <span className="text-rose-600">*</span>
+                Pilih {targetLabel} <span className="text-destructive">*</span>
                 {selectedTemplate?.customerFilter === "unpaid" && target === "pelanggan" && (
-                  <span className="ml-2 text-[10px] font-normal text-amber-700">(template: hanya Belum Bayar)</span>
+                  <span className="ml-2 text-[10px] font-normal text-warning">(template: hanya Belum Bayar)</span>
                 )}
               </label>
               <div className="flex items-center gap-2 text-[11px]">
@@ -815,7 +815,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                 <span className="text-muted-foreground">·</span>
                 <span className="text-muted-foreground">{targetListFull.length} match filter</span>
                 {selectedTargetIds.size > 0 && (
-                  <Button size="xs" variant="ghost" onClick={() => setSelectedTargetIds(new Set())} className="text-rose-600">Clear pilihan</Button>
+                  <Button size="xs" variant="ghost" onClick={() => setSelectedTargetIds(new Set())} className="text-destructive">Clear pilihan</Button>
                 )}
               </div>
             </div>
@@ -831,7 +831,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                     )}
                   </div>
                   {activeFilterCount > 0 && (
-                    <Button size="xs" variant="ghost" onClick={clearAllFilters} className="text-rose-600 h-6">
+                    <Button size="xs" variant="ghost" onClick={clearAllFilters} className="text-destructive h-6">
                       Reset semua
                     </Button>
                   )}
@@ -1087,7 +1087,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                               >
                                 <div className={cn(
                                   "h-4 w-4 rounded border-2 grid place-items-center shrink-0",
-                                  selectedTargetIds.has(t.id) ? "bg-violet-600 border-violet-600" : "border-zinc-300"
+                                  selectedTargetIds.has(t.id) ? "bg-violet-600 border-violet-600" : "border-border"
                                 )}>
                                   {selectedTargetIds.has(t.id) && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                                 </div>
@@ -1126,7 +1126,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
                     >
                       <div className={cn(
                         "h-4 w-4 rounded border-2 grid place-items-center shrink-0",
-                        selectedTargetIds.has(t.id) ? "bg-violet-600 border-violet-600" : "border-zinc-300"
+                        selectedTargetIds.has(t.id) ? "bg-violet-600 border-violet-600" : "border-border"
                       )}>
                         {selectedTargetIds.has(t.id) && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                       </div>
@@ -1154,7 +1154,7 @@ function BroadcastForm({ target, onBack }: Props & { onBack: () => void }) {
 
         {/* Submit */}
         <div className="pt-3 border-t flex items-center justify-end gap-2">
-          <Button variant="ghost" onClick={onBack} className="text-rose-600">Batal</Button>
+          <Button variant="ghost" onClick={onBack} className="text-destructive">Batal</Button>
           <Button
             onClick={() => sendMut.mutate()}
             disabled={!deviceId || !templateId || selectedTargetIds.size === 0 || sendMut.isPending}
@@ -1259,8 +1259,8 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
   const isTextLink = template.compatMode === "text-link";
 
   return (
-    <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/40 p-3 lg:sticky lg:top-4">
-      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-2">
+    <div className="rounded-lg border-2 border-success/30 bg-emerald-50/40 p-3 lg:sticky lg:top-4">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-success mb-2">
          Preview Pesan WhatsApp
       </div>
       <div className="rounded-lg p-3 max-w-full" style={{
@@ -1325,7 +1325,7 @@ function TemplatePreview({ template, target, manualText, manualDate }: {
           </div>
         </div>
       </div>
-      <p className="text-[10px] text-emerald-700 mt-2 italic">
+      <p className="text-[10px] text-success mt-2 italic">
         Sample data dipakai untuk preview. Saat broadcast, placeholder akan diisi data pelanggan asli.
       </p>
     </div>
@@ -1412,11 +1412,11 @@ function BroadcastDetail({ campaignId, target, onBack }: {
   }
 
   const statusConfig: Record<string, { label: string; cls: string }> = {
-    sent:     { label: "Terkirim",  cls: "bg-emerald-100 text-emerald-700" },
-    failed:   { label: "Gagal",     cls: "bg-rose-100 text-rose-700" },
-    pending:  { label: "Pending",   cls: "bg-zinc-100 text-zinc-700" },
-    sending:  { label: "Mengirim",  cls: "bg-amber-100 text-amber-800" },
-    skipped:  { label: "Skipped",   cls: "bg-yellow-100 text-yellow-800" },
+    sent:     { label: "Terkirim",  cls: "bg-success/15 text-success" },
+    failed:   { label: "Gagal",     cls: "bg-destructive/15 text-destructive" },
+    pending:  { label: "Pending",   cls: "bg-muted text-foreground" },
+    sending:  { label: "Mengirim",  cls: "bg-warning/15 text-warning" },
+    skipped:  { label: "Skipped",   cls: "bg-warning/15 text-warning" },
   };
 
   const targetLabel = target === "pelanggan" ? "Pelanggan" : "Reseller";
@@ -1441,10 +1441,10 @@ function BroadcastDetail({ campaignId, target, onBack }: {
             return (
             <div className="flex items-center gap-2 mt-0.5 text-xs flex-wrap">
               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[10px]",
-                effStatus === "completed" ? "bg-emerald-100 text-emerald-700" :
-                effStatus === "running" ? "bg-amber-100 text-amber-800" :
-                effStatus === "failed" ? "bg-rose-100 text-rose-700" :
-                effStatus === "cancelled" ? "bg-zinc-100 text-zinc-700" :
+                effStatus === "completed" ? "bg-success/15 text-success" :
+                effStatus === "running" ? "bg-warning/15 text-warning" :
+                effStatus === "failed" ? "bg-destructive/15 text-destructive" :
+                effStatus === "cancelled" ? "bg-muted text-foreground" :
                 "bg-blue-100 text-blue-700"
               )}>
                 {effStatus === "failed" && campaign.status === "completed" ? "Gagal" : campaign.status}
@@ -1458,7 +1458,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
           {campaign?.status === "running" && (
-            <Button size="sm" variant="ghost" onClick={() => { if (confirm("Cancel broadcast?")) cancelMut.mutate(); }} className="text-rose-600" leftIcon={<XCircle className="h-3.5 w-3.5" />}>
+            <Button size="sm" variant="ghost" onClick={() => { if (confirm("Cancel broadcast?")) cancelMut.mutate(); }} className="text-destructive" leftIcon={<XCircle className="h-3.5 w-3.5" />}>
               Cancel
             </Button>
           )}
@@ -1479,20 +1479,20 @@ function BroadcastDetail({ campaignId, target, onBack }: {
           <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Recipient</div>
           <div className="text-2xl font-black tabular-nums">{campaign?.audienceCount ?? counts.total}</div>
         </div>
-        <div className="rounded-lg border bg-emerald-50/40 border-emerald-200 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">✓ Terkirim</div>
-          <div className="text-2xl font-black tabular-nums text-emerald-900">{counts.sent}</div>
-          <div className="text-[10px] text-emerald-700 mt-0.5">
+        <div className="rounded-lg border bg-emerald-50/40 border-success/30 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-success">✓ Terkirim</div>
+          <div className="text-2xl font-black tabular-nums text-success">{counts.sent}</div>
+          <div className="text-[10px] text-success mt-0.5">
             {campaign?.audienceCount ? `${Math.round((counts.sent / campaign.audienceCount) * 100)}%` : "-"}
           </div>
         </div>
-        <div className="rounded-lg border bg-rose-50/40 border-rose-200 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">✗ Gagal</div>
-          <div className="text-2xl font-black tabular-nums text-rose-900">{counts.failed}</div>
+        <div className="rounded-lg border bg-rose-50/40 border-destructive/30 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-destructive">✗ Gagal</div>
+          <div className="text-2xl font-black tabular-nums text-destructive">{counts.failed}</div>
         </div>
-        <div className="rounded-lg border bg-amber-50/40 border-amber-200 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-amber-700">⏳ Pending</div>
-          <div className="text-2xl font-black tabular-nums text-amber-900">{counts.pending + ((counts as any).sending ?? 0)}</div>
+        <div className="rounded-lg border bg-amber-50/40 border-warning/30 p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-warning">⏳ Pending</div>
+          <div className="text-2xl font-black tabular-nums text-warning">{counts.pending + ((counts as any).sending ?? 0)}</div>
         </div>
       </div>
 
@@ -1506,7 +1506,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
               <span className="text-muted-foreground">Oleh:</span>
               <span className="font-semibold">
                 {campaign.createdByUser
-                  ? <>{campaign.createdByUser.name} <span className="text-muted-foreground font-normal">@{campaign.createdByUser.username}</span>{campaign.createdByUser.role && <span className="ml-1 text-[9px] px-1 rounded bg-zinc-100 text-zinc-700 uppercase">{campaign.createdByUser.role}</span>}</>
+                  ? <>{campaign.createdByUser.name} <span className="text-muted-foreground font-normal">@{campaign.createdByUser.username}</span>{campaign.createdByUser.role && <span className="ml-1 text-[9px] px-1 rounded bg-muted text-foreground uppercase">{campaign.createdByUser.role}</span>}</>
                   : (campaign.createdBy ? `User #${campaign.createdBy}` : "System")}
               </span>
             </div>
@@ -1600,7 +1600,7 @@ function BroadcastDetail({ campaignId, target, onBack }: {
             </thead>
             <tbody className="divide-y">
               {filteredRecipients.map((r, i) => {
-                const cfg = statusConfig[r.status] ?? { label: r.status, cls: "bg-zinc-100 text-zinc-700" };
+                const cfg = statusConfig[r.status] ?? { label: r.status, cls: "bg-muted text-foreground" };
                 return (
                   <tr key={r.id} className="hover:bg-muted/30 transition">
                     <td className="px-3 py-2 text-muted-foreground tabular-nums">{i + 1}</td>
@@ -1619,9 +1619,9 @@ function BroadcastDetail({ campaignId, target, onBack }: {
                     </td>
                     <td className="px-3 py-2 text-xs">
                       {r.errorMessage ? (
-                        <span className="text-rose-700 line-clamp-2">{r.errorMessage}</span>
+                        <span className="text-destructive line-clamp-2">{r.errorMessage}</span>
                       ) : r.status === "sent" ? (
-                        <span className="text-emerald-700 text-[10px]">{(() => {
+                        <span className="text-success text-[10px]">{(() => {
                           try { const p = JSON.parse(r.mpwaResponse ?? "{}"); return p.mode ? `mode: ${p.mode}` : "OK"; }
                           catch { return "OK"; }
                         })()}</span>
@@ -1673,8 +1673,8 @@ function BroadcastDetail({ campaignId, target, onBack }: {
 
               {selectedRecipient.errorMessage && (
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700 mb-1">Error</div>
-                  <div className="rounded-md bg-rose-50 border border-rose-200 px-3 py-2 text-rose-900 font-mono text-[11px]">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-destructive mb-1">Error</div>
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-destructive font-mono text-[11px]">
                     {selectedRecipient.errorMessage}
                   </div>
                 </div>

@@ -51,8 +51,15 @@
 - [x] **#7a TicketCategoriesPage SELESAI** (2026-08-13): 158 warna (64 arbitrary + 94 palet)
   -> token semantik. Navy brand `#1e40af/#1e3a8a` -> `blue-800/900` (tak ada padanan semantik,
   zero shift). 2 hover-gelap kolaps -> `hover:brightness-95`. 0 arbitrary `[#hex]` tersisa.
-- [ ] **#7b CanvassingHistoryPage DITUNDA** - pakai sub-tema HANGAT (coklat/taupe #827472/
-  #350800/#504442/#755750/#f4f3f2 = warna teks+bg utama). Migrasi = re-tema penuh hangat->dingin,
+- [x] **#7b BroadcastTargetPage SELESAI** (2026-08-13): 76 swap status+neutral->token (page
+  TANPA `dark:` = aman). Kategorikal violet/sky/blue ditinggal.
+- [ ] **#7-BLOCKED: sweep buta TIDAK aman (lihat DECISIONS 2026-08-13).** Mayoritas page punya
+  varian `dark:` LIVE (Dashboard 49, IntegrationPage 68, dll) + badge tint -> map buta =
+  regresi (teks tak-terlihat, kontras kolaps). Aman HANYA utk page tanpa `dark:`. Sisa page
+  ber-`dark:` = migrasi per-pola MANUAL (rewrite cluster terang+gelap -> 1 token theme-aware +
+  hapus `dark:` redundan). Butuh keputusan user: (a) manual per-page bertahap, atau (b) de-scope.
+- [ ] **#7 CanvassingHistoryPage DITUNDA** - sub-tema HANGAT (coklat/taupe #827472/#350800/
+  #504442/#755750/#f4f3f2 = warna teks+bg utama). Migrasi = re-tema penuh hangat->dingin,
   koheren hanya all-or-nothing. Keputusan aestetik sendiri (bukan shift kecil) - butuh OK user.
 - [ ] **#7c File inline-`style={{}}` DITUNDA (rewrite, bukan swap):** TechnicianWorkPage
   (102 inline hex - SELURUH styling inline), `components/map/MapInfoWindow.tsx` (24). Butuh
