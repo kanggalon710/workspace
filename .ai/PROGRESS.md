@@ -3,6 +3,18 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #7g: Batch 9 file warna -> token (tail bersih)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut (user: continue). 9 file status-bersih ber-`dark:` (page + komponen + portal).
+**Perubahan:** CoverageCheckPage (6 dark:/35 map), loyalty/SummaryTab (11/29),
+components/tickets/panels (5/28), loyalty/ReferralsTable (15/16), PublicApiPage (6/24),
+customers/IntegrationAuditDialog (9/25), portal/dashboard/BillingTab (9/12),
+portal/dashboard/shared (19/33), customers/CustomerForm (6/14). 3 hover kolaps ->
+`hover:brightness-95`. Kategorikal (sky/blue/violet/indigo/purple/orange/pink/fuchsia) utuh.
+**File:** 9 file di atas (portal customer-facing termasuk - shift kecil + dark-aware).
+**Verifikasi:** `tsc` 0 error, build OK. Per file: 0 badge tak-terlihat, 0 hover kolaps,
+0 sisa palet, 0 baris non-warna berubah.
+
 ## 2026-08-13 - #7f: Batch 5 page warna -> token (Mpwa/GenieAcs/Monitoring/Audit/Profile)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut batch manual per-pola (user: merge main + continue). 5 page status-bersih.

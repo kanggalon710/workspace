@@ -15,8 +15,8 @@ import { Plus, UserPlus, Loader2, Trash2, X, FileText, Camera, MapPin, Flag } fr
 export function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <span className="text-gray-400 text-xs block">{label}</span>
-      <span className="text-gray-800">{value}</span>
+      <span className="text-muted-foreground text-xs block">{label}</span>
+      <span className="text-foreground">{value}</span>
     </div>
   );
 }
@@ -51,7 +51,7 @@ export function WorkflowSection({ ticketId }: { ticketId: number }) {
 
   return (
     /* ==== Ticket workflow-progress timeline ==== */
-    <div data-section="ticket-workflow-timeline" className="mt-4 rounded-lg border bg-gradient-to-br from-zinc-50/50 to-transparent dark:from-zinc-900/30 overflow-hidden">
+    <div data-section="ticket-workflow-timeline" className="mt-4 rounded-lg border bg-gradient-to-br from-zinc-50/50 to-transparent overflow-hidden">
       <div className="px-4 py-2 border-b bg-muted/40 flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workflow Progress</span>
         <span className="text-[10px] text-muted-foreground">
@@ -67,13 +67,13 @@ export function WorkflowSection({ ticketId }: { ticketId: number }) {
           return (
             <div key={stage.key} className={cn(
               "flex items-start gap-3 py-1.5",
-              isActive && "rounded-md -mx-2 px-2 bg-amber-50/60 dark:bg-amber-950/20",
+              isActive && "rounded-md -mx-2 px-2 bg-warning/60",
             )}>
               <div className={cn(
                 "h-6 w-6 rounded-full grid place-items-center shrink-0 mt-0.5 font-mono text-[10px] font-bold",
-                isCompleted && "bg-emerald-500 text-white",
-                isActive && "ring-2 ring-amber-300 dark:ring-amber-800 animate-pulse",
-                isFuture && "bg-zinc-100 dark:bg-zinc-800 text-muted-foreground border border-zinc-300 dark:border-zinc-700",
+                isCompleted && "bg-success text-white",
+                isActive && "ring-2 ring-warning animate-pulse",
+                isFuture && "bg-muted text-muted-foreground border border-border",
               )} style={{ backgroundColor: isActive ? (stage.color ?? "#F59E0B") : undefined, color: isActive ? "white" : undefined }}>
                 {isCompleted ? "✓" : idx + 1}
               </div>
@@ -84,7 +84,7 @@ export function WorkflowSection({ ticketId }: { ticketId: number }) {
                     isFuture && "text-muted-foreground",
                   )}>{stage.label}</span>
                   {stage.isFinal && <Badge variant="outline" className="text-[9px] uppercase tracking-wider px-1 py-0 font-bold">Final</Badge>}
-                  {isActive && <Badge className="text-[9px] uppercase tracking-wider px-1.5 py-0 font-bold bg-amber-500 text-white border-0">Aktif</Badge>}
+                  {isActive && <Badge className="text-[9px] uppercase tracking-wider px-1.5 py-0 font-bold bg-warning text-white border-0">Aktif</Badge>}
                   {transition?.durationSec != null && <span className="text-[10px] font-mono tabular-nums text-muted-foreground">· {fmtDur(transition.durationSec)}</span>}
                 </div>
                 {transition?.note && (
@@ -217,20 +217,20 @@ export function TeamPanel({
             <div key={m.id} className="flex items-center gap-2 bg-white rounded-md px-2.5 py-1.5 border border-purple-100">
               <div className={cn(
                 "h-6 w-6 rounded-full grid place-items-center text-[10px] font-bold shrink-0",
-                m.role === "lead" ? "bg-amber-500 text-white" : "bg-sky-100 text-sky-700",
+                m.role === "lead" ? "bg-warning text-white" : "bg-sky-100 text-sky-700",
               )}>{(m.userName || "?").charAt(0).toUpperCase()}</div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold truncate">{m.userName}</div>
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   <span className={cn(
                     "px-1 py-0 rounded text-[9px] uppercase tracking-wider font-bold",
-                    m.role === "lead" ? "bg-amber-100 text-amber-800" : "bg-sky-100 text-sky-800",
+                    m.role === "lead" ? "bg-warning/15 text-warning" : "bg-sky-100 text-sky-800",
                   )}>{m.role === "lead" ? "Lead" : "Helper"}</span>
                   {m.checkInAt && <span>· in {new Date(m.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>}
                   {m.checkOutAt && <span>· out {new Date(m.checkOutAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>}
                 </div>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Keluarkan ${m.userName} dari tim?`)) onRemove(m.id); }} className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50">
+              <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Keluarkan ${m.userName} dari tim?`)) onRemove(m.id); }} className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10">
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -484,9 +484,9 @@ export function TechnicianWorkloadPanel() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold truncate">{w.userName}</span>
-                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0 rounded bg-zinc-100 text-zinc-700 font-bold">{w.userRole}</span>
+                    <span className="text-[10px] uppercase tracking-wider px-1.5 py-0 rounded bg-muted text-foreground font-bold">{w.userRole}</span>
                     {w.asLead > 0 && (
-                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0 rounded bg-amber-100 text-amber-800 font-bold">
+                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0 rounded bg-warning/15 text-warning font-bold">
                         {w.asLead} Lead
                       </span>
                     )}
@@ -499,13 +499,13 @@ export function TechnicianWorkloadPanel() {
                   <div className="mt-0.5 flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums flex-wrap">
                     <span><strong className="text-foreground">{w.totalAssigned}</strong> total</span>
                     {activeTotal > 0 && <span className="text-orange-700"><strong>{activeTotal}</strong> aktif</span>}
-                    {w.resolvedThisMonth > 0 && <span className="text-emerald-700"><strong>{w.resolvedThisMonth}</strong> selesai bulan ini</span>}
+                    {w.resolvedThisMonth > 0 && <span className="text-success"><strong>{w.resolvedThisMonth}</strong> selesai bulan ini</span>}
                     {w.avgWorkMinutes !== null && <span className="text-muted-foreground/70">avg {w.avgWorkMinutes}m/tiket</span>}
                     {/* v4.2.17: CSAT score */}
                     {(() => {
                       const csat = csatByUser.get(w.userId);
                       if (!csat || csat.totalResponses === 0) return null;
-                      const tone = csat.avgRating >= 4.2 ? "text-emerald-700 bg-emerald-50 border-emerald-200" : csat.avgRating >= 3.5 ? "text-amber-700 bg-amber-50 border-amber-200" : "text-rose-700 bg-rose-50 border-rose-200";
+                      const tone = csat.avgRating >= 4.2 ? "text-success bg-success/10 border-success/30" : csat.avgRating >= 3.5 ? "text-warning bg-warning/10 border-warning/30" : "text-destructive bg-destructive/10 border-destructive/30";
                       return (
                         <span className={`inline-flex items-center gap-1 px-1.5 py-0 rounded border ${tone}`} title={`${csat.totalResponses} respons · ${csat.positiveCount} positif · ${csat.negativeCount} negatif`}>
                            {csat.avgRating.toFixed(1)} <span className="text-muted-foreground">({csat.totalResponses})</span>
@@ -524,7 +524,7 @@ export function TechnicianWorkloadPanel() {
                       <div title={`${w.inProgress} dikerjakan`} className="h-6 bg-orange-400 rounded-sm" style={{ width: Math.max(8, (w.inProgress / activeTotal) * 80) }} />
                     )}
                     {w.pending > 0 && (
-                      <div title={`${w.pending} pending`} className="h-6 bg-amber-400 rounded-sm" style={{ width: Math.max(8, (w.pending / activeTotal) * 80) }} />
+                      <div title={`${w.pending} pending`} className="h-6 bg-warning rounded-sm" style={{ width: Math.max(8, (w.pending / activeTotal) * 80) }} />
                     )}
                   </div>
                 )}

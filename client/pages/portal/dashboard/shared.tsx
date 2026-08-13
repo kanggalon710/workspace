@@ -14,8 +14,8 @@ export function LoadingState() {
 
 export function AlertCard({ variant, icon, title, desc, cta }: any) {
   const styles = {
-    danger: "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300",
-    warning: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300",
+    danger: "bg-destructive/10 border-destructive/30 text-destructive",
+    warning: "bg-warning/10 border-warning/30 text-warning",
   }[variant as string] ?? "";
   return (
     <div className={`rounded-xl border p-4 flex items-start gap-3 ${styles}`}>
@@ -34,9 +34,9 @@ export function AlertCard({ variant, icon, title, desc, cta }: any) {
 }
 
 export function MiniStat({ icon, label, value, mono, tone }: { icon: React.ReactNode; label: string; value: string; mono?: boolean; tone?: "good" | "warn" | "bad" | "muted" }) {
-  const toneCls = tone === "good" ? "text-emerald-600 dark:text-emerald-400" :
-                  tone === "warn" ? "text-amber-600 dark:text-amber-400" :
-                  tone === "bad" ? "text-rose-600 dark:text-rose-400" :
+  const toneCls = tone === "good" ? "text-success" :
+                  tone === "warn" ? "text-warning" :
+                  tone === "bad" ? "text-destructive" :
                   tone === "muted" ? "text-muted-foreground" : "";
   return (
     <div>
@@ -53,8 +53,8 @@ export function MiniStat({ icon, label, value, mono, tone }: { icon: React.React
 
 export function BigStat({ icon, label, value, mono, tone }: { icon: React.ReactNode; label: string; value: string; mono?: boolean; tone?: "sky" | "emerald" | "amber" }) {
   const toneCls = tone === "sky" ? "text-sky-600 dark:text-sky-400" :
-                  tone === "emerald" ? "text-emerald-600 dark:text-emerald-400" :
-                  tone === "amber" ? "text-amber-600 dark:text-amber-400" : "";
+                  tone === "emerald" ? "text-success" :
+                  tone === "amber" ? "text-warning" : "";
   return (
     <div className="p-3 rounded-lg border bg-card">
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -76,8 +76,8 @@ export function IdentityField({ label, value, mono }: { label: string; value: st
 }
 
 export function DataField({ label, value, meta, metaTone }: { label: string; value: string; meta?: string; metaTone?: "danger" | "warn" | "muted" }) {
-  const metaCls = metaTone === "danger" ? "text-rose-600" :
-                  metaTone === "warn" ? "text-amber-600" :
+  const metaCls = metaTone === "danger" ? "text-destructive" :
+                  metaTone === "warn" ? "text-warning" :
                   "text-muted-foreground";
   return (
     <div>
@@ -106,15 +106,15 @@ export function QuickAction({
       gradient: "from-sky-500/5 to-transparent",
     },
     emerald: {
-      bg: "bg-emerald-500/10",
-      icon: "text-emerald-600 dark:text-emerald-400",
-      hover: "group-hover:border-emerald-300 dark:group-hover:border-emerald-700",
+      bg: "bg-success/10",
+      icon: "text-success",
+      hover: "group-hover:border-success/30",
       gradient: "from-emerald-500/5 to-transparent",
     },
     amber: {
-      bg: "bg-amber-500/10",
-      icon: "text-amber-600 dark:text-amber-400",
-      hover: "group-hover:border-amber-300 dark:group-hover:border-amber-700",
+      bg: "bg-warning/10",
+      icon: "text-warning",
+      hover: "group-hover:border-warning/30",
       gradient: "from-amber-500/5 to-transparent",
     },
     violet: {
@@ -124,9 +124,9 @@ export function QuickAction({
       gradient: "from-violet-500/5 to-transparent",
     },
     rose: {
-      bg: "bg-rose-500/10",
-      icon: "text-rose-600 dark:text-rose-400",
-      hover: "group-hover:border-rose-300 dark:group-hover:border-rose-700",
+      bg: "bg-destructive/10",
+      icon: "text-destructive",
+      hover: "group-hover:border-destructive/30",
       gradient: "from-rose-500/5 to-transparent",
     },
   };
@@ -158,9 +158,9 @@ export function QuickAction({
 }
 
 export function BillingStatusBadge({ status, isOverdue }: { status: string; isOverdue: boolean }) {
-  const cfg = isOverdue ? { label: "TERLAMBAT", cls: "bg-rose-100 text-rose-700 border-rose-200" } :
-              status === "lunas" || status === "paid" ? { label: "LUNAS", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" } :
-              status === "isolir" ? { label: "ISOLIR", cls: "bg-rose-100 text-rose-700 border-rose-200" } :
+  const cfg = isOverdue ? { label: "TERLAMBAT", cls: "bg-destructive/15 text-destructive border-destructive/30" } :
+              status === "lunas" || status === "paid" ? { label: "LUNAS", cls: "bg-success/15 text-success border-success/30" } :
+              status === "isolir" ? { label: "ISOLIR", cls: "bg-destructive/15 text-destructive border-destructive/30" } :
               { label: (status ?? "-").toUpperCase(), cls: "bg-sky-100 text-sky-700 border-sky-200" };
   return (
     <div className={`inline-flex items-center px-3 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider ${cfg.cls}`}>
@@ -170,8 +170,8 @@ export function BillingStatusBadge({ status, isOverdue }: { status: string; isOv
 }
 
 export function ReferralStat({ value, label, tone }: { value: number; label: string; tone?: "amber" | "emerald" }) {
-  const cls = tone === "amber" ? "text-amber-600 dark:text-amber-400" :
-              tone === "emerald" ? "text-emerald-600 dark:text-emerald-400" :
+  const cls = tone === "amber" ? "text-warning" :
+              tone === "emerald" ? "text-success" :
               "text-foreground";
   return (
     <div>

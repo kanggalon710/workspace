@@ -222,7 +222,7 @@ export default function PublicApiPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
               API Key Dibuat: {viewKeyName}
             </DialogTitle>
             <DialogDescription>
@@ -230,10 +230,10 @@ export default function PublicApiPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-4 rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
+          <div className="p-4 rounded-lg border-2 border-dashed border-warning/30 bg-warning/10">
             <div className="flex items-start gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+              <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+              <div className="text-xs font-semibold text-warning">
                 One-time display - pastikan key sudah tersimpan di password manager / env var integrasi
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function PublicApiPage() {
                       <td className="py-1.5 px-2 text-muted-foreground whitespace-nowrap">{new Date(u.createdAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" })}</td>
                       <td className="py-1.5 px-2 font-mono font-semibold">{u.method}</td>
                       <td className="py-1.5 px-2 font-mono text-[11px] truncate max-w-xs">{u.endpoint}</td>
-                      <td className={`py-1.5 px-2 text-right font-mono font-semibold ${u.statusCode >= 400 ? "text-rose-600" : "text-emerald-600"}`}>{u.statusCode}</td>
+                      <td className={`py-1.5 px-2 text-right font-mono font-semibold ${u.statusCode >= 400 ? "text-destructive" : "text-success"}`}>{u.statusCode}</td>
                       <td className="py-1.5 px-2 text-right font-mono">{u.responseMs}</td>
                       <td className="py-1.5 px-2 font-mono text-[10px] text-muted-foreground">{u.ipAddress ?? "-"}</td>
                     </tr>
@@ -321,11 +321,11 @@ function KeyCard({ apiKey: k, canEdit, onView, onToggle, onRevoke, onDelete }: a
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h3 className="font-semibold text-sm">{k.name}</h3>
               {isRevoked ? (
-                <Badge className="bg-rose-500 text-[10px]">Dicabut</Badge>
+                <Badge className="bg-destructive text-[10px]">Dicabut</Badge>
               ) : isExpired ? (
-                <Badge className="bg-slate-500 text-[10px]">Expired</Badge>
+                <Badge className="bg-muted text-[10px]">Expired</Badge>
               ) : k.enabled ? (
-                <Badge className="bg-emerald-500 text-[10px]">Aktif</Badge>
+                <Badge className="bg-success text-[10px]">Aktif</Badge>
               ) : (
                 <Badge variant="secondary" className="text-[10px]">Nonaktif</Badge>
               )}
@@ -360,14 +360,14 @@ function KeyCard({ apiKey: k, canEdit, onView, onToggle, onRevoke, onDelete }: a
                 <span className="italic">Belum pernah digunakan</span>
               )}
               {k.expiresAt && (
-                <span className={`inline-flex items-center gap-1 ${isExpired ? "text-rose-600" : ""}`}>
+                <span className={`inline-flex items-center gap-1 ${isExpired ? "text-destructive" : ""}`}>
                   {isExpired ? "Expired" : "Expires"} {new Date(k.expiresAt).toLocaleDateString("id-ID")}
                 </span>
               )}
             </div>
 
             {isRevoked && k.revokedReason && (
-              <div className="mt-2 text-[11px] text-rose-600 dark:text-rose-400">
+              <div className="mt-2 text-[11px] text-destructive">
                 Dicabut: {k.revokedReason} ({new Date(k.revokedAt).toLocaleDateString("id-ID")})
               </div>
             )}
@@ -379,16 +379,16 @@ function KeyCard({ apiKey: k, canEdit, onView, onToggle, onRevoke, onDelete }: a
             </Button>
             {canEdit && !isRevoked && (
               <Button size="sm" variant="ghost" onClick={onToggle} title={k.enabled ? "Nonaktifkan" : "Aktifkan"}>
-                {k.enabled ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5 text-emerald-600" />}
+                {k.enabled ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5 text-success" />}
               </Button>
             )}
             {canEdit && !isRevoked && (
-              <Button size="sm" variant="ghost" onClick={onRevoke} title="Revoke" className="text-amber-600 hover:text-amber-700">
+              <Button size="sm" variant="ghost" onClick={onRevoke} title="Revoke" className="text-warning hover:text-warning">
                 <AlertTriangle className="h-3.5 w-3.5" />
               </Button>
             )}
             {canEdit && (
-              <Button size="sm" variant="ghost" onClick={onDelete} title="Hapus permanen" className="text-rose-600 hover:text-rose-700">
+              <Button size="sm" variant="ghost" onClick={onDelete} title="Hapus permanen" className="text-destructive hover:text-destructive">
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             )}
@@ -706,12 +706,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function CodeBlock({ code }: { code: string }) {
   return (
     <div className="relative group">
-      <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg text-[11px] font-mono overflow-x-auto">
+      <pre className="bg-muted text-muted-foreground p-3 rounded-lg text-[11px] font-mono overflow-x-auto">
         <code>{code}</code>
       </pre>
       <button
         onClick={() => { navigator.clipboard.writeText(code); toast.success("Disalin"); }}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-slate-300 p-1.5 rounded hover:bg-slate-700"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-muted text-muted-foreground p-1.5 rounded hover:bg-muted"
       >
         <Copy className="h-3 w-3" />
       </button>
@@ -722,7 +722,7 @@ function CodeBlock({ code }: { code: string }) {
 function EndpointRow({ method, path, desc, scope }: { method: string; path: string; desc: string; scope?: string }) {
   return (
     <div className="flex items-start gap-2 p-2 rounded border bg-muted/20">
-      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold font-mono bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 rounded">
+      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold font-mono bg-success/15 text-success rounded">
         {method}
       </span>
       <code className="font-mono text-[11px] text-foreground">{path}</code>

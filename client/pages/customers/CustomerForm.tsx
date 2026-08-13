@@ -275,7 +275,7 @@ export function CustomerForm({ item, onSubmit, isPending }: { item: Customer | n
                     <span className="flex items-center gap-2">
                       <span
                         className={`w-2 h-2 rounded-full inline-block shrink-0 ${
-                          isFull ? "bg-red-500" : used / cap >= 0.75 ? "bg-yellow-500" : "bg-green-500"
+                          isFull ? "bg-destructive" : used / cap >= 0.75 ? "bg-warning" : "bg-success"
                         }`}
                       />
                       {o.name} - {used}/{cap} port
@@ -290,7 +290,7 @@ export function CustomerForm({ item, onSubmit, isPending }: { item: Customer | n
             const util = odpUtil?.odps.find((u) => u.id === watchedOdpId);
             if (!util) return null;
             const pct = util.usedPct ?? 0;
-            const barColor = pct >= 100 ? "bg-red-500" : pct >= 75 ? "bg-yellow-500" : "bg-green-500";
+            const barColor = pct >= 100 ? "bg-destructive" : pct >= 75 ? "bg-warning" : "bg-success";
             return (
               <div className="space-y-1 pt-1">
                 <div className="flex justify-between text-[11px] text-muted-foreground">
@@ -308,7 +308,7 @@ export function CustomerForm({ item, onSubmit, isPending }: { item: Customer | n
           <Label>Nomor Port ODP</Label>
           <Input {...register("portNumber", { valueAsNumber: true })} type="number" placeholder="1" min="1" />
           {!item && watchedOdpId && odpUtil?.odps.find((u) => u.id === watchedOdpId)?.nextPort && (
-            <p className="text-[11px] text-green-600 dark:text-green-400">
+            <p className="text-[11px] text-success">
               ✓ Port {odpUtil?.odps.find((u) => u.id === watchedOdpId)?.nextPort} terisi otomatis
             </p>
           )}
@@ -339,24 +339,24 @@ export function CustomerForm({ item, onSubmit, isPending }: { item: Customer | n
           );
         }
         return (
-          <div className="rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 p-3 text-xs">
+          <div className="rounded-lg border border-warning/30 bg-warning/50 p-3 text-xs">
             <div className="flex items-start gap-2">
-              <Lock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <Lock className="h-4 w-4 text-warning shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-semibold text-amber-700 dark:text-amber-300">
+                <p className="font-semibold text-warning">
                   {locks.length} field dilindungi dari sync billing
                 </p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {locks.map(f => {
                     const lbl = LOCKABLE_FIELDS.find(l => l.key === f)?.label ?? f;
                     return (
-                      <Badge key={f} variant="outline" className="text-[10px] border-amber-400 text-amber-700 dark:text-amber-300">
+                      <Badge key={f} variant="outline" className="text-[10px] border-warning/30 text-warning">
                         <Lock className="h-2.5 w-2.5 mr-1" /> {lbl}
                       </Badge>
                     );
                   })}
                 </div>
-                <p className="text-amber-600/80 dark:text-amber-400/80 mt-1.5">
+                <p className="text-warning/80 mt-1.5">
                   Field ini tidak akan ketimpa saat sync billing. Klik "Reset Proteksi" di tabel untuk membuka kunci.
                 </p>
               </div>

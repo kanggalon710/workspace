@@ -62,11 +62,15 @@
   (preserve opacity: `bg-rose-500/10`->`bg-destructive/10`, bukan solid).
 - [x] **#7f Batch SELESAI** (2026-08-13): MpwaPage, GenieAcsDevicesPage, MonitoringPage,
   AuditLogPage, ProfilePage (manual per-pola, 9 hover fix, kategorikal utuh).
-- [ ] **#7 sisa page ber-`dark:` (MANUAL, 1-2/ronde).** Pakai `collapse-darkmode.mjs` lalu audit.
-  Kandidat status-bersih: CoverageCheckPage, loyalty/SummaryTab, components/tickets/panels,
-  + page lain dgn palet status. HATI-HATI: SplitterChainPage (kategorikal-berat viz splitter),
-  Dashboard (14 famili), IntegrationPage (kartu brand) - penilaian per-pakai, JANGAN alat buta.
-  Cek `bg-white dark:` -> `bg-card` manual per page dulu.
+- [x] **#7g Batch 9 SELESAI** (2026-08-13): CoverageCheckPage, loyalty/SummaryTab,
+  tickets/panels, loyalty/ReferralsTable, PublicApiPage, customers/IntegrationAuditDialog,
+  portal/dashboard/{BillingTab,shared}, customers/CustomerForm. 3 hover fix.
+- [ ] **#7 sisa (MANUAL, batch/ronde).** Sisa tail file status-bersih ber-`dark:` (cek
+  `bg-white dark:` -> `bg-card` dulu): portal/dashboard/{TrafficTab,WifiTab}, MikrotikRoutersPage,
+  loyalty/*, TicketHeatmapPage, integrations/AppUpdateCard, CapacityCalculatorModal,
+  collection/CollectionDetail, customers/*, + komponen lain. Scan ulang tiap ronde.
+  HATI-HATI (JANGAN alat buta, penilaian per-pakai): CustomersPage (71), IntegrationPage (142,
+  kartu brand), Dashboard (168, 14 famili), SplitterChainPage (viz splitter kategorikal).
   HATI-HATI page kategorikal-berat (Dashboard 14 famili, IntegrationPage kartu brand) - butuh
   penilaian per-pakai lebih dalam, JANGAN pakai alat buta. bg-white+dark: -> `bg-card` (cek
   manual per page; PointRedemptions tak ada, page lain mungkin ada).

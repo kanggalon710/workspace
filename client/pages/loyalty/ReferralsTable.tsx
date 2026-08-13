@@ -231,10 +231,10 @@ export function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedC
               </thead>
               <tbody>
                 {filtered.map((r: any) => {
-                  const statusColor = r.status === "rewarded" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  const statusColor = r.status === "rewarded" ? "bg-success/15 text-success"
                     : r.status === "registered" ? "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
-                    : r.status === "expired" ? "bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400"
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300";
+                    : r.status === "expired" ? "bg-muted text-muted-foreground"
+                    : "bg-warning/15 text-warning";
                   const isDeleted = !!r.deletedAt;
                   return (
                     <tr key={r.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${isDeleted ? "opacity-50 line-through" : ""}`}>
@@ -253,15 +253,15 @@ export function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedC
                       </td>
                       <td className="py-3 px-4">
                         {r.refereeStatus === "belum_daftar" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground">
                             <UserPlus className="h-3 w-3" />
                             Belum daftar
                           </span>
                         )}
                         {r.refereeStatus === "aktif" && (
                           <div>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success">
+                              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                               Aktif
                             </span>
                             {r.refereeCustomerName && (
@@ -274,7 +274,7 @@ export function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedC
                         )}
                         {r.refereeStatus === "non_aktif" && (
                           <div>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-destructive/15 text-destructive">
                               Non-aktif
                             </span>
                             <div className="text-[10px] text-muted-foreground mt-0.5">
@@ -301,7 +301,7 @@ export function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedC
                       <td className="py-3 px-4">
                         {r.refereeCustomerId ? (
                           <div>
-                            <div className="text-emerald-600 dark:text-emerald-400 text-sm font-medium inline-flex items-center gap-1">
+                            <div className="text-success text-sm font-medium inline-flex items-center gap-1">
                               <CheckCircle2 className="h-3.5 w-3.5" /> {r.refereeCustomerName}
                             </div>
                             <div className="text-[10px] text-muted-foreground font-mono">#{r.refereeBillingId}</div>
@@ -374,7 +374,7 @@ export function ReferralsTable({ referrals, loading, showDeleted, onShowDeletedC
                 Pilih Pengundang
               </Label>
               {manualForm.referrerCustomerId > 0 ? (
-                <div className="flex items-center justify-between p-2.5 rounded-md border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900">
+                <div className="flex items-center justify-between p-2.5 rounded-md border bg-success/10 border-success/30">
                   <div className="min-w-0">
                     <div className="font-semibold text-sm truncate">{manualForm.referrerName}</div>
                     <div className="text-[10px] text-muted-foreground">Customer #{manualForm.referrerCustomerId}</div>

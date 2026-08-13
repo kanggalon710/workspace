@@ -69,16 +69,16 @@ interface CoverageResult {
 }
 
 const VERDICT_CONFIG: Record<NonNullable<CoverageResult["verdict"]>, { label: string; color: string; bg: string; border: string; icon: any }> = {
-  covered:         { label: "Tercover ✓",            color: "text-green-700 dark:text-green-400", bg: "bg-green-500/10",  border: "border-green-500/30",  icon: CheckCircle2 },
-  covered_full:    { label: "Tercover (Penuh)",      color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/10",  border: "border-amber-500/30",  icon: AlertTriangle },
+  covered:         { label: "Tercover ✓",            color: "text-success", bg: "bg-success/10",  border: "border-success/30",  icon: CheckCircle2 },
+  covered_full:    { label: "Tercover (Penuh)",      color: "text-warning", bg: "bg-warning/10",  border: "border-warning/30",  icon: AlertTriangle },
   marginal:        { label: "Marginal",              color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/30", icon: AlertTriangle },
-  out_of_coverage: { label: "Di Luar Coverage",      color: "text-red-700 dark:text-red-400",     bg: "bg-red-500/10",    border: "border-red-500/30",    icon: XCircle },
+  out_of_coverage: { label: "Di Luar Coverage",      color: "text-destructive",     bg: "bg-destructive/10",    border: "border-destructive/30",    icon: XCircle },
 };
 
 const POWER_STATUS_CONFIG: Record<PowerBudget["status"], { label: string; color: string }> = {
-  ok:      { label: "Aman",     color: "text-green-600" },
-  warning: { label: "Marginal", color: "text-amber-600" },
-  fail:    { label: "Gagal",    color: "text-red-600" },
+  ok:      { label: "Aman",     color: "text-success" },
+  warning: { label: "Marginal", color: "text-warning" },
+  fail:    { label: "Gagal",    color: "text-destructive" },
 };
 
 function formatDistance(m: number): string {
@@ -468,7 +468,7 @@ export default function CoverageCheckPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-yellow-500" />
+                      <Zap className="h-4 w-4 text-warning" />
                       ODP Terbaik (Rekomendasi)
                     </CardTitle>
                   </CardHeader>
@@ -557,7 +557,7 @@ export default function CoverageCheckPage() {
                               <span className="text-[10px] text-muted-foreground font-mono">{odp.code}</span>
                               {odp.splitterType && <span className="text-[10px] text-muted-foreground">· {odp.splitterType}</span>}
                               {odp.inCoverage && (
-                                <Badge variant="outline" className="text-[9px] h-4 px-1 border-green-500/50 text-green-600">
+                                <Badge variant="outline" className="text-[9px] h-4 px-1 border-success/30 text-success">
                                   in-radius
                                 </Badge>
                               )}
@@ -566,9 +566,9 @@ export default function CoverageCheckPage() {
                               <div className="flex-1 h-1.5 bg-muted rounded overflow-hidden">
                                 <div
                                   className={`h-full transition-all ${
-                                    odp.availablePorts === 0 ? "bg-red-500" :
-                                    odp.usedCapacity / odp.capacity >= 0.8 ? "bg-amber-500" :
-                                    "bg-green-500"
+                                    odp.availablePorts === 0 ? "bg-destructive" :
+                                    odp.usedCapacity / odp.capacity >= 0.8 ? "bg-warning" :
+                                    "bg-success"
                                   }`}
                                   style={{ width: `${Math.min(100, (odp.usedCapacity / odp.capacity) * 100)}%` }}
                                 />
@@ -588,18 +588,18 @@ export default function CoverageCheckPage() {
 
               {/* -- Lead Capture Form -- */}
               {(result.verdict === "covered" || result.verdict === "covered_full" || result.verdict === "marginal") && (
-                <Card className="border-green-500/30 bg-green-500/5">
+                <Card className="border-success/30 bg-success/5">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
                       {result.verdict === "marginal" ? (
                         <>
-                          <AlertTriangle className="h-5 w-5 text-amber-500" />
-                          <span className="text-amber-700 dark:text-amber-400">Area Anda Dalam Jangkauan</span>
+                          <AlertTriangle className="h-5 w-5 text-warning" />
+                          <span className="text-warning">Area Anda Dalam Jangkauan</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          <span className="text-green-700 dark:text-green-400">Selamat! Area Anda Tercover Fiber Optic JABNET</span>
+                          <CheckCircle2 className="h-5 w-5 text-success" />
+                          <span className="text-success">Selamat! Area Anda Tercover Fiber Optic JABNET</span>
                         </>
                       )}
                     </CardTitle>
@@ -608,7 +608,7 @@ export default function CoverageCheckPage() {
                     {/* Trust signals */}
                     <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1.5">
-                        <Zap className="h-3.5 w-3.5 text-yellow-500" />
+                        <Zap className="h-3.5 w-3.5 text-warning" />
                         <span>Kecepatan hingga 100 Mbps</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -626,7 +626,7 @@ export default function CoverageCheckPage() {
                         <p className="text-sm font-semibold text-foreground">Daftar Sekarang</p>
 
                         <div>
-                          <Label className="text-xs">Nama Lengkap <span className="text-red-500">*</span></Label>
+                          <Label className="text-xs">Nama Lengkap <span className="text-destructive">*</span></Label>
                           <Input
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
@@ -636,7 +636,7 @@ export default function CoverageCheckPage() {
                         </div>
 
                         <div>
-                          <Label className="text-xs">Nomor WhatsApp <span className="text-red-500">*</span></Label>
+                          <Label className="text-xs">Nomor WhatsApp <span className="text-destructive">*</span></Label>
                           <Input
                             type="tel"
                             value={regPhone}
@@ -672,7 +672,7 @@ export default function CoverageCheckPage() {
                         </div>
 
                         <Button
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          className="w-full bg-success hover:brightness-95 text-white"
                           onClick={handleRegister}
                           disabled={regSubmitting}
                         >
@@ -686,9 +686,9 @@ export default function CoverageCheckPage() {
                       </div>
                     ) : (
                       <div className="space-y-3 text-center">
-                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
-                          <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                          <p className="font-semibold text-green-700 dark:text-green-400">Pendaftaran Berhasil!</p>
+                        <div className="p-4 rounded-lg bg-success/10 border border-success/30">
+                          <CheckCircle2 className="h-8 w-8 text-success mx-auto mb-2" />
+                          <p className="font-semibold text-success">Pendaftaran Berhasil!</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Tim kami akan menghubungi Anda via WhatsApp dalam 1x24 jam
                           </p>
@@ -699,7 +699,7 @@ export default function CoverageCheckPage() {
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 text-sm transition"
+                          className="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-success hover:brightness-95 text-white font-medium py-2.5 px-4 text-sm transition"
                         >
                           <MessageCircle className="h-4 w-4" />
                           Chat WhatsApp Langsung

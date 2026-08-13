@@ -166,15 +166,15 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
               </div>
               <div className="px-4 py-3">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Punya Kandidat</div>
-                <div className="text-2xl font-bold tabular-nums text-emerald-600 mt-0.5">{audit.withCandidate.toLocaleString("id-ID")}</div>
+                <div className="text-2xl font-bold tabular-nums text-success mt-0.5">{audit.withCandidate.toLocaleString("id-ID")}</div>
               </div>
               <div className="px-4 py-3">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Confident ≥90%</div>
-                <div className="text-2xl font-bold tabular-nums text-amber-600 mt-0.5">{audit.highConfidenceCount.toLocaleString("id-ID")}</div>
+                <div className="text-2xl font-bold tabular-nums text-warning mt-0.5">{audit.highConfidenceCount.toLocaleString("id-ID")}</div>
               </div>
               <div className="px-4 py-3">
                 <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Tidak Ada Match</div>
-                <div className="text-2xl font-bold tabular-nums text-rose-600 mt-0.5">{audit.noCandidate.toLocaleString("id-ID")}</div>
+                <div className="text-2xl font-bold tabular-nums text-destructive mt-0.5">{audit.noCandidate.toLocaleString("id-ID")}</div>
               </div>
             </div>
 
@@ -230,21 +230,21 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
                     return (
                       <div key={item.customerId} className={cn(
                         "px-5 py-3 transition-colors",
-                        isSelected ? "bg-emerald-50/40 dark:bg-emerald-950/15" : "hover:bg-muted/30",
+                        isSelected ? "bg-success/40" : "hover:bg-muted/30",
                       )}>
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-semibold text-sm text-foreground">{item.customerName}</span>
                               <span className="text-[10px] font-mono text-muted-foreground">#{item.customerBillingId}</span>
-                              {isSelected && <Badge className="bg-emerald-500 text-white text-[9px] uppercase tracking-wider px-1.5 py-0 border-0">✓ akan di-pair</Badge>}
+                              {isSelected && <Badge className="bg-success text-white text-[9px] uppercase tracking-wider px-1.5 py-0 border-0">✓ akan di-pair</Badge>}
                             </div>
                             <div className="mt-0.5 text-[11px] text-muted-foreground">
                               PPPoE customer: <span className="font-mono font-semibold text-foreground/80">{item.customerPppoe}</span>
                             </div>
                           </div>
                           {item.candidates.length === 0 && (
-                            <span className="text-[10px] uppercase tracking-wider font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 px-1.5 py-0.5 rounded shrink-0">
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-destructive bg-destructive/10 border border-destructive/30 px-1.5 py-0.5 rounded shrink-0">
                               Tidak ada match
                             </span>
                           )}
@@ -268,15 +268,15 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
                                   disabled={!bestSn}
                                   className={cn(
                                     "w-full text-left px-3 py-2 rounded-md flex items-center gap-3 transition-all",
-                                    isThisSelected ? "bg-emerald-100 dark:bg-emerald-950/40 ring-2 ring-emerald-400" : "bg-muted/40 hover:bg-muted/70",
+                                    isThisSelected ? "bg-success/15 ring-2 ring-success" : "bg-muted/40 hover:bg-muted/70",
                                     !bestSn && "opacity-50 cursor-not-allowed",
                                   )}
                                 >
                                   <div className={cn(
                                     "px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tabular-nums shrink-0",
-                                    confTone === "emerald" && "bg-emerald-500 text-white",
-                                    confTone === "amber" && "bg-amber-500 text-white",
-                                    confTone === "zinc" && "bg-zinc-400 text-white",
+                                    confTone === "emerald" && "bg-success text-white",
+                                    confTone === "amber" && "bg-warning text-white",
+                                    confTone === "zinc" && "bg-muted text-white",
                                   )}>
                                     {c.confidence}%
                                   </div>
@@ -284,11 +284,11 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="font-mono text-xs font-semibold text-foreground truncate">{c.devicePppoe}</span>
                                       {c.deviceStatus === "online" ? (
-                                        <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">Online</span>
+                                        <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-success/15 text-success">Online</span>
                                       ) : c.deviceStatus === "offline" ? (
-                                        <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400">Offline</span>
+                                        <span className="text-[9px] uppercase tracking-wider font-bold px-1 py-0 rounded bg-destructive/15 text-destructive">Offline</span>
                                       ) : null}
-                                      <span className="text-[9px] uppercase tracking-wider font-semibold px-1 py-0 rounded bg-zinc-100 dark:bg-zinc-800 text-muted-foreground">
+                                      <span className="text-[9px] uppercase tracking-wider font-semibold px-1 py-0 rounded bg-muted text-muted-foreground">
                                         {METHOD_LABELS[c.matchMethod]}
                                       </span>
                                     </div>
@@ -296,15 +296,15 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
                                       <div className="flex items-center gap-2 flex-wrap">
                                         {c.devicePonSerialNumber && (
                                           <span className="font-mono">
-                                            <span className="text-emerald-600 font-bold">PON SN:</span> {c.devicePonSerialNumber}
-                                            <span className="text-emerald-700 dark:text-emerald-400 ml-1 text-[9px]">(yang OLT register)</span>
+                                            <span className="text-success font-bold">PON SN:</span> {c.devicePonSerialNumber}
+                                            <span className="text-success ml-1 text-[9px]">(yang OLT register)</span>
                                           </span>
                                         )}
                                       </div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         {c.deviceSerialNumber && c.deviceSerialNumber !== c.devicePonSerialNumber && (
                                           <span className="font-mono opacity-70">
-                                            <span className="text-zinc-500">Factory SN:</span> {c.deviceSerialNumber}
+                                            <span className="text-muted-foreground">Factory SN:</span> {c.deviceSerialNumber}
                                           </span>
                                         )}
                                         {c.deviceManufacturer && <span>· {c.deviceManufacturer} {c.deviceModel}</span>}
@@ -313,7 +313,7 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
                                   </div>
                                   <div className={cn(
                                     "h-5 w-5 rounded-full border-2 grid place-items-center shrink-0",
-                                    isThisSelected ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground/30",
+                                    isThisSelected ? "bg-success border-success/30" : "border-muted-foreground/30",
                                   )}>
                                     {isThisSelected && <Check className="h-3 w-3 text-white" />}
                                   </div>
@@ -339,7 +339,7 @@ export function IntegrationAuditDialog({ open, onClose }: { open: boolean; onClo
                 <Button
                   onClick={applySelections}
                   disabled={selectedCount === 0 || pairMut.isPending}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-success hover:brightness-95 text-white"
                 >
                   {pairMut.isPending ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Apply...</> : <> Apply {selectedCount} Pairing</>}
                 </Button>

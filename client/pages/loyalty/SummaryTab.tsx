@@ -61,7 +61,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
   });
 
   const budgetUtilization = budget?.limitMonthly > 0 ? (budget.issuedTotal / budget.limitMonthly) * 100 : 0;
-  const budgetColor = budgetUtilization >= 90 ? "bg-rose-500" : budgetUtilization >= 70 ? "bg-amber-500" : "bg-emerald-500";
+  const budgetColor = budgetUtilization >= 90 ? "bg-destructive" : budgetUtilization >= 70 ? "bg-warning" : "bg-success";
 
   return (
     <div className="space-y-4">
@@ -116,7 +116,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                  <Wallet className="h-4 w-4 text-emerald-500" /> Budget Program Bulan Ini
+                  <Wallet className="h-4 w-4 text-success" /> Budget Program Bulan Ini
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {new Date(budget.period?.from).toLocaleDateString("id-ID", { month: "long", year: "numeric" })}
@@ -154,14 +154,14 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
                     <div className="text-lg font-bold tabular-nums mt-0.5">{fmtRp(budget.issuedTotal)}</div>
                     <div className="text-[10px] text-muted-foreground">{budget.issuedCount} reward</div>
                   </div>
-                  <div className="p-2 rounded-md border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900">
-                    <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-semibold">Applied</div>
-                    <div className="text-lg font-bold tabular-nums mt-0.5 text-emerald-700 dark:text-emerald-300">{fmtRp(budget.appliedTotal)}</div>
+                  <div className="p-2 rounded-md border bg-success/10 border-success/30">
+                    <div className="text-[10px] uppercase tracking-wider text-success font-semibold">Applied</div>
+                    <div className="text-lg font-bold tabular-nums mt-0.5 text-success">{fmtRp(budget.appliedTotal)}</div>
                     <div className="text-[10px] text-muted-foreground">{budget.appliedCount} tersalurkan</div>
                   </div>
-                  <div className="p-2 rounded-md border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
-                    <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-semibold">Pending</div>
-                    <div className="text-lg font-bold tabular-nums mt-0.5 text-amber-700 dark:text-amber-300">{fmtRp(budget.pendingTotal)}</div>
+                  <div className="p-2 rounded-md border bg-warning/10 border-warning/30">
+                    <div className="text-[10px] uppercase tracking-wider text-warning font-semibold">Pending</div>
+                    <div className="text-lg font-bold tabular-nums mt-0.5 text-warning">{fmtRp(budget.pendingTotal)}</div>
                     <div className="text-[10px] text-muted-foreground">{budget.pendingCount} menunggu</div>
                   </div>
                   <div className="p-2 rounded-md border bg-sky-50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900">
@@ -184,7 +184,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
                       <div className={`h-full transition-all ${budgetColor}`} style={{ width: `${Math.min(100, budgetUtilization)}%` }} />
                     </div>
                     {budgetUtilization >= 90 && (
-                      <p className="text-[11px] text-rose-600 mt-1 font-medium flex items-center gap-1">
+                      <p className="text-[11px] text-destructive mt-1 font-medium flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" /> Hampir mencapai limit bulan ini!
                       </p>
                     )}
@@ -198,10 +198,10 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
 
       {/* Fraud Guard */}
       {fraud.length > 0 && (
-        <Card className="border-rose-200 bg-rose-50/50 dark:bg-rose-950/20 dark:border-rose-900">
+        <Card className="border-destructive/30 bg-destructive/50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-rose-700 dark:text-rose-300">
+              <h3 className="font-semibold text-sm flex items-center gap-1.5 text-destructive">
                 <ShieldAlert className="h-4 w-4" /> Referral Mencurigakan ({fraud.length})
               </h3>
               <span className="text-[10px] text-muted-foreground">Tinjau manual sebelum reward cair</span>
@@ -210,7 +210,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
               {fraud.slice(0, 5).map((f: any, i: number) => (
                 <div key={`${f.referralId}-${i}`} className="flex items-start gap-2 p-2 rounded-md border bg-background text-xs">
                   <span className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${
-                    f.severity === "high" ? "bg-rose-500" : f.severity === "medium" ? "bg-amber-500" : "bg-slate-400"
+                    f.severity === "high" ? "bg-destructive" : f.severity === "medium" ? "bg-warning" : "bg-muted"
                   }`} />
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">{f.reason}</div>
@@ -250,8 +250,8 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
             <div className="grid grid-cols-3 gap-2 mb-4">
               {[
                 { label: "Diundang", value: funnel.funnel.invited, pct: 100, color: "bg-sky-500" },
-                { label: "Terdaftar", value: funnel.funnel.registered, pct: funnel.funnel.invitedToRegisteredPct, color: "bg-amber-500" },
-                { label: "Reward Cair", value: funnel.funnel.rewarded, pct: funnel.funnel.overallConversionPct, color: "bg-emerald-500" },
+                { label: "Terdaftar", value: funnel.funnel.registered, pct: funnel.funnel.invitedToRegisteredPct, color: "bg-warning" },
+                { label: "Reward Cair", value: funnel.funnel.rewarded, pct: funnel.funnel.overallConversionPct, color: "bg-success" },
               ].map(s => (
                 <div key={s.label} className="p-3 rounded-md border bg-muted/30">
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{s.label}</div>
@@ -274,21 +274,21 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
                     <div key={c.month} className="flex items-center gap-2 text-xs">
                       <div className="w-16 font-mono text-muted-foreground">{c.month}</div>
                       <div className="flex-1 h-5 bg-muted rounded overflow-hidden flex">
-                        <div className="bg-emerald-500 flex items-center justify-end px-1.5 text-white text-[10px] font-semibold" style={{ width: `${c.invited > 0 ? (c.rewarded / c.invited) * 100 : 0}%` }}>
+                        <div className="bg-success flex items-center justify-end px-1.5 text-white text-[10px] font-semibold" style={{ width: `${c.invited > 0 ? (c.rewarded / c.invited) * 100 : 0}%` }}>
                           {c.rewarded > 0 ? c.rewarded : ""}
                         </div>
-                        <div className="bg-amber-400" style={{ width: `${c.invited > 0 ? ((c.registered - c.rewarded) / c.invited) * 100 : 0}%` }} />
+                        <div className="bg-warning" style={{ width: `${c.invited > 0 ? ((c.registered - c.rewarded) / c.invited) * 100 : 0}%` }} />
                         <div className="bg-sky-400" style={{ width: `${c.invited > 0 ? ((c.invited - c.registered) / c.invited) * 100 : 0}%` }} />
                       </div>
                       <div className="w-20 text-right font-mono tabular-nums text-[11px]">
-                        <strong>{c.invited}</strong> inv · <span className="text-emerald-600">{c.conversionPct}%</span>
+                        <strong>{c.invited}</strong> inv · <span className="text-success">{c.conversionPct}%</span>
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-2">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-sm" /> Rewarded</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-amber-400 rounded-sm" /> Registered</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-success rounded-sm" /> Rewarded</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 bg-warning rounded-sm" /> Registered</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 bg-sky-400 rounded-sm" /> Invited only</span>
                 </div>
               </div>
@@ -306,7 +306,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
                 <h3 className="font-semibold text-sm">Distribusi Level Sahabat</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">{totalLevelCount.toLocaleString("id-ID")} pelanggan aktif · 7 level</p>
               </div>
-              <Crown className="h-5 w-5 text-amber-500" />
+              <Crown className="h-5 w-5 text-warning" />
             </div>
 
             {/* Level rows with progress bars */}
@@ -353,7 +353,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
                 <h3 className="font-semibold text-sm">Struktur Tier Mitra</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">3 tingkat kemitraan - auto-upgrade saat Perunggu</p>
               </div>
-              <Star className="h-5 w-5 text-amber-500" />
+              <Star className="h-5 w-5 text-warning" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <TierCard
@@ -390,7 +390,7 @@ export function SummaryTab({ summary, leaderboard, canEdit }: any) {
                 <h3 className="font-semibold text-sm">Top 5 Sahabat</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Berdasar total referral sukses</p>
               </div>
-              <Trophy className="h-5 w-5 text-amber-500" />
+              <Trophy className="h-5 w-5 text-warning" />
             </div>
             <div className="space-y-2">
               {leaderboard.slice(0, 5).map((l: any, i: number) => {
