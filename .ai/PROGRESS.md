@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-13 - #9: Pecah TechnicianWorkPage (1819 -> 162 baris)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut pecah file besar. State-machine mode-based -> tiap mode/screen komponen
+mandiri prop-driven, banyak leaf helper dipakai lintas mode.
+**Perubahan:** folder `client/pages/technician/`: `shared.tsx` (tipe + helper
+extractRawNote/fmtTimeIDN/fmtDateTimeIDN/fmtDuration/fmtSLA/getGpsPosition/compressImage/
+useLiveCountdown + leaf StageDot/Label/Badge/PriorityBadge/CustomFieldRender/FieldCard/
+SpeedField/Metric/Activity14), lalu `ActiveMode`, `CompletedMode`, `CancelledMode`,
+`StageExecutionScreen`. Main tinggal shell state-machine (162 baris, doc-comment header
+dipertahankan). Byte-identik (pindah + `export`); import di-prune.
+**Verifikasi:** `tsc` 0 error, 297 test pass, build sukses, 0 deklarasi dobel di main.
+**Catatan:** Dua celah tool ketahuan & diperbaiki: (1) `compressImage` = `async function`
+(regex exportize lama tak match) -> exportize kini dukung `async function`; (2) file diawali
+block-comment `/** */` -> prune.mjs kini simpan preamble komentar lalu tetap prune import
+(sebelumnya prune diam saat baris pertama komentar). Perbaikan generik, berguna utk split
+berikutnya. Gate (tsc) menangkap sebelum commit.
+
 ## 2026-08-13 - #9: Pecah CollectionPipelinePage (2020 -> 719 baris) + hapus dead code
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut pecah file besar. File ini punya React context bersama (StageCtx/useStages)

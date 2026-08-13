@@ -81,8 +81,11 @@
   `client/pages/collection/` (shared [helper+tipe+context StageCtx/useStages], CollectionCard,
   CollectionDetail, AssigneePicker[+body], CollectionSettingsDialog, PipelineManagerDialog
   [+StageDeleteDialog]). Dead code StatCard+MiniStat dihapus. Byte-identik, prune.
-- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** TechnicianWorkPage (1819),
-  GenieAcsDevicesPage (1449), Dashboard (1428), MapPage (1379). Split seam tersedia.
+- [x] **TechnicianWorkPage SELESAI** (2026-08-13): 1819 -> 162 baris. Folder
+  `client/pages/technician/` (shared [tipe+helper+9 leaf], ActiveMode, CompletedMode,
+  CancelledMode, StageExecutionScreen). Byte-identik, prune (prune.mjs kini simpan doc-comment).
+- [ ] **Sisa file besar frontend (opsional, pola sama & aman):** GenieAcsDevicesPage (1449),
+  Dashboard (1428), MapPage (1379), CanvassingPage (1296), MitraPage (1266). Split seam tersedia.
 
 ## Terpisah - RISIKO TINGGI (butuh rencana + persetujuan sendiri)
 - [ ] **#10 Pecah `server/routes.ts` (16.972) & `server/storage.ts` (16.045)** jadi
