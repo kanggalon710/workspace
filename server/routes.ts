@@ -3212,6 +3212,25 @@ router.get("/api/odps/:id/detail", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+/** GET /api/odps/:id/customers - daftar pelanggan terhubung ke ODP (dipakai di form Edit ODP). */
+router.get("/api/odps/:id/customers", async (req: Request, res: Response) => {
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
+  try {
+    const id = Number(req.params.id);
+    const custs = await storage.getCustomersByOdp(id); // tenant-scoped
+    const out = custs.map((c) => ({
+      id: c.id,
+      customerId: c.customerId,
+      name: c.name,
+      connStatus: customerConnStatus(c),
+      portNumber: c.portNumber,
+      package: c.package,
+      phone: c.phone,
+    }));
+    sendSuccess(res, out);
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
 /** GET /api/odps/:id/ont-status - optical power ONT semua pelanggan satu ODP.
  *  Device list GenieACS di-cache 60s per-mitra (klik ODP berurutan tidak refetch ACS). */
 router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {

@@ -3,6 +3,24 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - /odps: fix panah lightbox nutup modal + daftar pelanggan + tombol Update sticky
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** User lapor bug + 2 permintaan setelah lightbox live di prod.
+**Perubahan:**
+1. **Bug panah lightbox:** klik panah malah menutup foto DAN modal ODP. Sebab: `ImageLightbox`
+   di-portal ke body (di LUAR Dialog Radix); native `pointerdown` di overlay dianggap "klik luar"
+   oleh DismissableLayer Radix -> modal tertutup (React stopPropagation tak cukup, Radix pakai
+   listener native document). Fix: stop native `pointerdown`/`mousedown` di root overlay via ref.
+2. **Daftar pelanggan di Edit ODP:** endpoint baru `GET /api/odps/:id/customers` (gate
+   NETWORK_READ_KEYS, reuse `getCustomersByOdp` + `customerConnStatus`). Komponen
+   `OdpCustomersList` di OdpForm, di BAWAH foto: port#, nama, customerId, paket, badge status
+   (Aktif/Isolir/Suspend/Terminated) + hitung N/kapasitas port.
+3. **Tombol Update sticky:** dibungkus `sticky bottom-0 -mx-6 -mb-6 border-t bg-background` di dalam
+   DialogContent (`overflow-y-auto p-6`) -> selalu terlihat, tak perlu scroll ke bawah.
+**File:** client/components/ui/image-lightbox.tsx, client/pages/OdpsPage.tsx, server/routes.ts.
+**Verifikasi:** `tsc` 0 error, build OK.
+**Belum deploy** (di dev). Catatan bug panah = regresi yg sudah live di prod (lightbox ter-merge duluan).
+
 ## 2026-08-14 - Foto /odps: lightbox full-page ala Telegram + fallback foto rusak
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** User: di /odps sebagian foto tak tampil (cuma alt text), dan klik foto hanya menutupi

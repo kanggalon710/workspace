@@ -26,6 +26,7 @@ export function ImageLightbox({
   const count = images.length;
   const [errored, setErrored] = useState(false);
   const touchX = useRef<number | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   // Reset status error tiap kali foto yang tampil berganti.
   useEffect(() => { setErrored(false); }, [index]);
@@ -54,6 +55,22 @@ export function ImageLightbox({
     };
   }, [go, onClose]);
 
+  // Lightbox di-portal ke document.body (di LUAR Dialog Radix). Tanpa ini, native pointerdown
+  // di overlay dianggap "klik di luar" oleh DismissableLayer Radix -> modal ODP ikut tertutup saat
+  // klik panah. Stop native pointerdown di root overlay agar listener document Radix tidak terpicu.
+  // (React stopPropagation TIDAK cukup: Radix pakai listener native di document, bukan React.)
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    const stop = (e: Event) => e.stopPropagation();
+    el.addEventListener("pointerdown", stop);
+    el.addEventListener("mousedown", stop);
+    return () => {
+      el.removeEventListener("pointerdown", stop);
+      el.removeEventListener("mousedown", stop);
+    };
+  }, []);
+
   if (count === 0 || index < 0 || index >= count) return null;
   const cur = images[index];
 
@@ -67,6 +84,7 @@ export function ImageLightbox({
 
   return createPortal(
     <div
+      ref={overlayRef}
       className="fixed inset-0 z-[120] flex flex-col bg-black/85 backdrop-blur-sm animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"

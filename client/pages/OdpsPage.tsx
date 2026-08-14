@@ -6,10 +6,78 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Odp, InsertOdp } from "@shared/schema";
 import { reverseGeocode } from "@/lib/geocode";
 import { garutDistricts, resolveDistrict, getVillages } from "@/lib/garut-demography";
 import { AssetPhotosGallery } from "@/components/shared/AssetPhotosGallery";
+import { api } from "@/lib/api";
+import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
+
+// ==================== CONNECTED CUSTOMERS ====================
+
+interface OdpCustomer {
+  id: number;
+  customerId: string;
+  name: string;
+  connStatus: "active" | "isolir" | "suspend" | "terminated" | "unknown";
+  portNumber: number | null;
+  package: string | null;
+  phone: string | null;
+}
+
+// Peta status koneksi pelanggan → badge design-system (selaras customerConnStatus server).
+const CONN_BADGE: Record<OdpCustomer["connStatus"], { variant: StatusVariant; label: string }> = {
+  active: { variant: "success", label: "Aktif" },
+  isolir: { variant: "danger", label: "Isolir" },
+  suspend: { variant: "warning", label: "Suspend" },
+  terminated: { variant: "neutral", label: "Terminated" },
+  unknown: { variant: "neutral", label: "?" },
+};
+
+function OdpCustomersList({ odpId, capacity }: { odpId: number; capacity: number }) {
+  const { data: customers = [], isLoading } = useQuery<OdpCustomer[]>({
+    queryKey: ["/api/odps", odpId, "customers"],
+    queryFn: () => api.get<OdpCustomer[]>(`/odps/${odpId}/customers`),
+    enabled: odpId > 0,
+  });
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold">
+        Pelanggan Terhubung{" "}
+        <span className="text-muted-foreground font-normal">({customers.length}/{capacity} port)</span>
+      </Label>
+      {isLoading ? (
+        <div className="text-xs text-muted-foreground">Memuat pelanggan...</div>
+      ) : customers.length === 0 ? (
+        <div className="text-xs text-muted-foreground border border-dashed rounded-md p-3 text-center">
+          Belum ada pelanggan terhubung ke ODP ini.
+        </div>
+      ) : (
+        <ul className="max-h-64 overflow-y-auto no-scrollbar divide-y divide-border rounded-md border border-border">
+          {customers.map((c) => {
+            const badge = CONN_BADGE[c.connStatus] ?? CONN_BADGE.unknown;
+            return (
+              <li key={c.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                <span className="w-9 shrink-0 text-center font-mono-tight text-xs text-muted-foreground">
+                  {c.portNumber != null ? `#${c.portNumber}` : "-"}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{c.name}</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {c.customerId}{c.package ? ` · ${c.package}` : ""}
+                  </div>
+                </div>
+                <StatusBadge variant={badge.variant} label={badge.label} size="sm" />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 
 // ==================== USAGE BAR ====================
@@ -177,9 +245,19 @@ function OdpForm({
           <AssetPhotosGallery assetType="odp" assetId={item.id} layout="scroll" />
         </div>
       )}
-      <Button type="submit" disabled={isPending} className="w-full">
-        {isPending ? "Menyimpan..." : item ? "Update" : "Simpan"}
-      </Button>
+      {item && (
+        <div className="pt-2 border-t border-border">
+          {/* Pelanggan yang terhubung ke ODP ini (di bawah foto) */}
+          <OdpCustomersList odpId={item.id} capacity={item.capacity ?? 0} />
+        </div>
+      )}
+      {/* Tombol simpan sticky di dasar dialog (negatif margin membatalkan p-6 DialogContent)
+          agar user tidak perlu scroll sampai bawah untuk update. */}
+      <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-background px-6 py-3">
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? "Menyimpan..." : item ? "Update" : "Simpan"}
+        </Button>
+      </div>
     </form>
   );
 }
