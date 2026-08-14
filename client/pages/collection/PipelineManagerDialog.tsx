@@ -386,7 +386,7 @@ export function StageDeleteDialog({ target, stages, cardCount, onClose, onDelete
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-red-500" /> Hapus Stage "{target?.label}"
+            <Trash2 className="h-5 w-5 text-destructive" /> Hapus Stage "{target?.label}"
           </DialogTitle>
           <DialogDescription className="text-xs">
             {cardCount > 0
@@ -396,7 +396,7 @@ export function StageDeleteDialog({ target, stages, cardCount, onClose, onDelete
         </DialogHeader>
 
         {isProtected ? (
-          <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="rounded-md bg-warning/10 border border-warning p-3 text-xs text-warning">
             Stage ini memegang peran sistem <strong>{target?.role === "entry" ? "Awal/Masuk" : "Lunas"}</strong> yang
             wajib ada. Pindahkan dulu perannya ke stage lain (lewat dropdown peran) sebelum menghapus.
           </div>
@@ -419,16 +419,16 @@ export function StageDeleteDialog({ target, stages, cardCount, onClose, onDelete
               </div>
             </label>
 
-            <label className="flex items-start gap-2 p-2.5 rounded-md border cursor-pointer hover:bg-muted/40 border-red-200 dark:border-red-900">
+            <label className="flex items-start gap-2 p-2.5 rounded-md border cursor-pointer hover:bg-muted/40 border-destructive">
               <input type="radio" checked={mode === "purge"} onChange={() => setMode("purge")} className="mt-0.5" />
               <div className="flex-1">
-                <div className="text-sm font-medium text-red-600 dark:text-red-400">Hapus permanen semua kartu</div>
+                <div className="text-sm font-medium text-destructive">Hapus permanen semua kartu</div>
                 <div className="text-[11px] text-muted-foreground">
                    Semua kartu di stage ini beserta riwayat aktivitasnya akan dihapus permanen. Tidak bisa dibatalkan.
                 </div>
                 {mode === "purge" && cardCount > 0 && (
                   <div className="mt-2">
-                    <p className="text-[11px] text-red-600 dark:text-red-400 mb-1">Ketik <strong>HAPUS</strong> untuk konfirmasi:</p>
+                    <p className="text-[11px] text-destructive mb-1">Ketik <strong>HAPUS</strong> untuk konfirmasi:</p>
                     <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="HAPUS" className="h-8 text-sm" />
                   </div>
                 )}
@@ -443,7 +443,7 @@ export function StageDeleteDialog({ target, stages, cardCount, onClose, onDelete
             <Button
               onClick={() => delMut.mutate()}
               disabled={delMut.isPending || !purgeReady || !migrateReady}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              className="flex-1 bg-destructive hover:brightness-95 text-white"
             >
               {delMut.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
               {mode === "purge" ? "Hapus Permanen" : "Hapus & Pindahkan"}

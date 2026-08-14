@@ -33,26 +33,26 @@ export function CollectionCard({ c, onClick }: { c: CollectionWithCustomer; onCl
           <div className="font-semibold" style={{ color: stageColor(stage) }}>
             {fmtRp(c.openedAmount)}
           </div>
-          <Badge variant="secondary" className={`text-[10px] ${isUrgent ? "bg-red-100 dark:bg-red-950 text-red-700" : ""}`}>
+          <Badge variant="secondary" className={`text-[10px] ${isUrgent ? "bg-destructive/15 text-destructive" : ""}`}>
             <Clock className="h-3 w-3 mr-1" /> {ageDays}h
           </Badge>
         </div>
 
         {c.issueType && (
-          <Badge variant="secondary" className="text-[10px] bg-red-100 dark:bg-red-950 text-red-700 w-full justify-start">
+          <Badge variant="secondary" className="text-[10px] bg-destructive/15 text-destructive w-full justify-start">
             <AlertTriangle className="h-3 w-3 mr-1" /> {COLLECTION_ISSUE_LABELS[c.issueType as CollectionIssueType] ?? c.issueType}
           </Badge>
         )}
 
         {c.promiseDate && (
-          <Badge variant="secondary" className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-700 w-full justify-start">
+          <Badge variant="secondary" className="text-[10px] bg-warning/15 text-warning w-full justify-start">
             <Calendar className="h-3 w-3 mr-1" /> Janji: {fmtDate(c.promiseDate)}
           </Badge>
         )}
 
         {/* Overdue: dihitung server (lewat janji bayar / SLA stage). */}
         {c.overdue && (
-          <Badge variant="secondary" className="text-[10px] bg-red-600 text-white dark:bg-red-700 w-full justify-start">
+          <Badge variant="secondary" className="text-[10px] bg-destructive text-white w-full justify-start">
             <AlertTriangle className="h-3 w-3 mr-1" /> Overdue{c.overdueReason === "sla" ? " (SLA)" : c.promiseDate ? ` — ${fmtDate(c.promiseDate)}` : ""}
           </Badge>
         )}

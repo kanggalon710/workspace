@@ -250,7 +250,7 @@ export default function CanvassingReportsPage() {
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide">
                 <Clock className="h-3 w-3" /> Hari Ini
               </div>
-              <div className="text-2xl font-bold mt-0.5 text-emerald-500">{stats?.today ?? 0}</div>
+              <div className="text-2xl font-bold mt-0.5 text-success">{stats?.today ?? 0}</div>
               <div className="text-[10px] text-muted-foreground">laporan baru</div>
             </CardContent>
           </Card>
@@ -270,7 +270,7 @@ export default function CanvassingReportsPage() {
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide">
                 <AlertTriangle className="h-3 w-3" /> Kritis
               </div>
-              <div className="text-2xl font-bold mt-0.5 text-red-500">{stats?.critical ?? 0}</div>
+              <div className="text-2xl font-bold mt-0.5 text-destructive">{stats?.critical ?? 0}</div>
               <div className="text-[10px] text-muted-foreground">butuh follow up</div>
             </CardContent>
           </Card>
@@ -386,7 +386,7 @@ export default function CanvassingReportsPage() {
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMut.mutate(deleteId)}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-destructive hover:brightness-95"
             >
               Hapus Permanen
             </AlertDialogAction>
@@ -531,7 +531,7 @@ function ReportDetailDialog({
               </DialogDescription>
             </div>
             {canDelete(report) && (
-              <Button size="icon" variant="ghost" aria-label="Hapus laporan" onClick={() => onDelete(report.id)} className="text-red-500 hover:bg-red-500/10 shrink-0">
+              <Button size="icon" variant="ghost" aria-label="Hapus laporan" onClick={() => onDelete(report.id)} className="text-destructive hover:bg-destructive/10 shrink-0">
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}

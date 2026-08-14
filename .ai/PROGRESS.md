@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - #7k: Batch 3 file warna -> token (tail lanjut)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut (user: continue). 3 file status-bersih (collection + canvassing).
+**Perubahan:** collection/PipelineManagerDialog (dialog hapus stage - merah/amber danger/warning),
+collection/CollectionCard (badge urgensi/status), CanvassingReportsPage (KPI hari/kritis +
+tombol/hapus). Alat + 3 koreksi manual.
+**File:** 3 file di atas.
+**Verifikasi:** `tsc` 0 error, build OK. 0 badge tak-terlihat, 0 hover kolaps, 0 sisa palet
+(kecuali SEVERITY_CFG yg SENGAJA dipertahankan).
+**Koreksi/keputusan manual:** (1) `SEVERITY_CFG` CanvassingReports (info=blue/warning=amber/
+critical=red) DIPERTAHANKAN utuh - set severity koheren dg anggota `info` biru (kategorikal,
+blue tak ditokenkan); setengah-token bikin set tak konsisten. (2) 2 tombol hapus `bg-destructive
+hover:bg-destructive`->`hover:brightness-95`.
+**DILEWATI sadar:** portal/dashboard/LoyaltyTab - tema reward dekoratif (gold/emerald) +
+gradient `from-amber-50 to-emerald-50` ber-dark-tuning (alat akan rusak gradient dark).
+PermissionMatrixEditor - tak ada kelas status/neutral.
+
 ## 2026-08-14 - #7j: Batch 3 file warna -> token (tail lanjut)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut (user: continue). 3 file status-bersih.

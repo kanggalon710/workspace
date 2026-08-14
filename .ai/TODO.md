@@ -78,13 +78,16 @@
 - [x] **#7j Batch 3 SELESAI** (2026-08-14): loyalty/DiscountRow, mitra/MitraCard,
   portal/dashboard/TicketsTab. 4 koreksi manual (dot slate-400->muted-foreground, hover fix,
   drop redundant hover:text). loyalty/tiles.tsx DILEWATI: peta aksen kategorikal (indigo).
+- [x] **#7k Batch 3 SELESAI** (2026-08-14): collection/PipelineManagerDialog,
+  collection/CollectionCard, CanvassingReportsPage. SEVERITY_CFG CanvassingReports
+  DIPERTAHANKAN (set severity dg info=blue). 2 hover fix. LoyaltyTab dilewati (gradient reward
+  dark-tuned). PermissionMatrixEditor tak ada kelas status.
 - [ ] **#7 sisa (MANUAL, batch/ronde).** Scan ulang tiap ronde (`grep -rlE "dark:(text|bg|border)-
   (rose|red|amber|green|emerald)"` lalu cek `bg-white dark:` + kategorikal). Sisa a.l.: LoyaltyAdminPage,
-  collection/{PipelineManagerDialog,CollectionCard}, CanvassingReportsPage,
-  portal/dashboard/{LoyaltyTab,OverviewTab[bg-white!]},
-  MarketingDashboardPage, PermissionMatrixEditor, dst.
-  CATATAN kategorikal (SKIP, bukan status): AnnouncementsPage (CATEGORY/SEVERITY_CFG),
-  loyalty/tiles.tsx (aksen indigo/slate/emerald).
+  portal/dashboard/OverviewTab[bg-white!], MarketingDashboardPage, dst.
+  KATEGORIKAL/DEKORATIF (SKIP, bukan status): AnnouncementsPage (CATEGORY/SEVERITY_CFG),
+  loyalty/tiles.tsx (aksen indigo/slate/emerald), portal/dashboard/LoyaltyTab (gradient reward
+  dark-tuned), CanvassingReportsPage SEVERITY_CFG (info=blue).
   BUTUH PENILAIAN TERPISAH (JANGAN alat buta): components/ui/status-badge.tsx (primitif inti),
   TicketHeatmapPage (skala warna), integration/shared + IntegrationPage (domain brand),
   NotificationBell (per tipe notif), CustomersPage (71), Dashboard (168, 14 famili),
