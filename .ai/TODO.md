@@ -82,12 +82,26 @@
   collection/CollectionCard, CanvassingReportsPage. SEVERITY_CFG CanvassingReports
   DIPERTAHANKAN (set severity dg info=blue). 2 hover fix. LoyaltyTab dilewati (gradient reward
   dark-tuned). PermissionMatrixEditor tak ada kelas status.
-- [ ] **#7 sisa (MANUAL, batch/ronde).** Scan ulang tiap ronde (`grep -rlE "dark:(text|bg|border)-
-  (rose|red|amber|green|emerald)"` lalu cek `bg-white dark:` + kategorikal). Sisa a.l.: LoyaltyAdminPage,
-  portal/dashboard/OverviewTab[bg-white!], MarketingDashboardPage, dst.
-  KATEGORIKAL/DEKORATIF (SKIP, bukan status): AnnouncementsPage (CATEGORY/SEVERITY_CFG),
-  loyalty/tiles.tsx (aksen indigo/slate/emerald), portal/dashboard/LoyaltyTab (gradient reward
-  dark-tuned), CanvassingReportsPage SEVERITY_CFG (info=blue).
+- [x] **#7l Batch 3 SELESAI** (2026-08-14): CollectionPipelinePage, SlaCalendarPage,
+  portal/dashboard/OverviewTab. 6 koreksi manual (2 hover, off-state muted-foreground,
+  sky-500->info zero-shift, bg-white dark:slate-900->bg-card). PowerBudgetPage dilewati (meteran
+  data-viz).
+- [ ] **#7 sisa (MANUAL, batch/ronde).** Tail bersih mid-size HABIS. Yang tersisa = subsistem
+  besar KOHEREN atau page flagged - kerjakan sebagai RONDE FOKUS tersendiri, jangan dicicil:
+  - **Subsistem tiket** (TicketingPage 60, CreateTicketWizard 29, DetailDialog 28, SlaWidget 17,
+    CategoryManagementDialog 14, TicketActionToolbar 13, CreateEditDialog 13, ConfirmStageModal 12,
+    ActivityTimeline 12): warna status/prioritas tiket - cek dulu apakah ada helper warna bersama
+    supaya konsisten satu skema.
+  - **Subsistem WhatsApp** (NomorWhatsappPage 58, PhonebookPage 27, TemplateWhatsappPage 25,
+    BroadcastPage 24, broadcast/{TemplateEditor 15,CampaignWizard 11}).
+  - **MarketingAdsPage 44, PortalTrackerPage 28, LoyaltyAdminPage 16** (KpiCard shadow ditahan),
+    SlaWidget, dst.
+  FLAGGED (JANGAN alat buta, penilaian per-pakai): Dashboard (168, 14 famili), IntegrationPage
+  (142, brand), CustomersPage (71), CanvassingHistoryPage (62, Terra hangat), SplitterChainPage
+  (27, viz), TicketHeatmapPage (21, skala warna), integration/shared (20), NotificationBell (18,
+  per tipe), status-badge.tsx (primitif), PowerBudgetPage (18, meteran viz).
+  KATEGORIKAL/DEKORATIF (SKIP): AnnouncementsPage (CATEGORY/SEVERITY_CFG), loyalty/tiles.tsx
+  (indigo), portal/dashboard/LoyaltyTab (gradient reward), CanvassingReportsPage SEVERITY_CFG.
   BUTUH PENILAIAN TERPISAH (JANGAN alat buta): components/ui/status-badge.tsx (primitif inti),
   TicketHeatmapPage (skala warna), integration/shared + IntegrationPage (domain brand),
   NotificationBell (per tipe notif), CustomersPage (71), Dashboard (168, 14 famili),

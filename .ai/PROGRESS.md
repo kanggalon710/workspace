@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - #7l: Batch 3 file warna -> token (tail lanjut)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut (user: continue). 3 file status-bersih (collection + SLA + portal overview).
+**Perubahan:** CollectionPipelinePage (alert/callout sukses/tombol hapus), SlaCalendarPage
+(toggle/callout/hapus), portal/dashboard/OverviewTab (bar+dot online, due-date bar, tempo).
+Alat + 6 koreksi manual.
+**File:** 3 file di atas.
+**Verifikasi:** `tsc` 0 error, build OK. 0 badge tak-terlihat, 0 hover kolaps, 0 sisa palet.
+**Koreksi manual:** (1) 2 tombol hapus `bg-destructive hover:bg-destructive`->`hover:brightness-95`;
+(2) toggle off-track + bar offline `bg-muted`->`bg-muted-foreground/40` (bukan nyaris tak-terlihat);
+(3) dot offline `bg-muted`->`bg-muted-foreground`; (4) due-date "ok" bar `bg-sky-500`->`bg-info`
+(zero-shift: --info == sky-500, tapi dark-aware); (5) toolbar `bg-white dark:bg-slate-900`->
+`bg-card` (permukaan tema; alat hapus dark: lalu bg-white sendirian salah di dark). Thumb toggle
+`bg-white` DIPERTAHANKAN (knob kontrol, putih di kedua mode).
+**DILEWATI sadar:** PowerBudgetPage - meteran ambang RX power (zona merah/kuning/hijau + garis
+penanda) = DATA-VIZ, butuh verifikasi visual (tint /25 vs -200 solid). Ronde tersendiri.
+
 ## 2026-08-14 - #7k: Batch 3 file warna -> token (tail lanjut)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut (user: continue). 3 file status-bersih (collection + canvassing).

@@ -22,7 +22,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? "bg-emerald-500" : "bg-zinc-300"}`}
+      className={`inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? "bg-success" : "bg-muted-foreground/40"}`}
     >
       <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
     </button>
@@ -153,7 +153,7 @@ export default function SlaCalendarPage() {
         </div>
 
         {draft.enabled && (
-          <div className="mt-4 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
+          <div className="mt-4 px-3 py-2 rounded-md bg-warning/10 border border-warning text-warning text-xs flex items-start gap-2">
             <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <div>
               <strong>Heads up:</strong> Tiket yang sudah ada tidak akan otomatis recalc - hanya tiket baru pakai aturan ini. Untuk tiket aktif, /workflow endpoint akan respect jam kerja saat compute remaining time.
@@ -199,7 +199,7 @@ export default function SlaCalendarPage() {
                         variant="ghost"
                         aria-label="Hapus jam SLA"
                         onClick={() => removeWindow(dow, i)}
-                        className="text-rose-600 hover:bg-rose-50"
+                        className="text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -246,7 +246,7 @@ export default function SlaCalendarPage() {
               <button
                 key={h}
                 onClick={() => removeHoliday(h)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-100 text-rose-800 text-xs font-mono hover:bg-rose-200"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-destructive/15 text-destructive text-xs font-mono hover:bg-destructive/25"
                 title="Klik untuk hapus"
               >
                 {h}

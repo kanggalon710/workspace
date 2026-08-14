@@ -46,12 +46,12 @@ export function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab
       <section className={`grid grid-cols-1 ${FEATURE_BILLING_ENABLED ? "md:grid-cols-3" : "md:grid-cols-1"} gap-3 md:gap-4`}>
         <Card className={`${FEATURE_BILLING_ENABLED ? "md:col-span-2" : ""} relative overflow-hidden`}>
           <div
-            className={`absolute top-0 left-0 right-0 h-1 ${online ? "bg-emerald-500" : "bg-slate-300"}`}
+            className={`absolute top-0 left-0 right-0 h-1 ${online ? "bg-success" : "bg-muted-foreground/40"}`}
           />
           <CardContent className="p-5 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${online ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                <div className={`w-2 h-2 rounded-full ${online ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Status Koneksi
                 </span>
@@ -62,7 +62,7 @@ export function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab
             </div>
 
             <div className="flex items-baseline gap-3">
-              <h2 className={`text-3xl md:text-4xl font-bold tracking-tight ${online ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+              <h2 className={`text-3xl md:text-4xl font-bold tracking-tight ${online ? "text-success" : "text-muted-foreground"}`}>
                 {online ? "Online" : "Offline"}
               </h2>
               {online && pppoe.uptime && (
@@ -94,7 +94,7 @@ export function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab
         {/* Billing quick card - v4.2.14: hide saat billing belum integrasi */}
         {FEATURE_BILLING_ENABLED && (
           <Card className="relative overflow-hidden">
-            <div className={`absolute top-0 left-0 right-0 h-1 ${isOverdue ? "bg-rose-500" : isDueSoon ? "bg-amber-500" : "bg-sky-500"}`} />
+            <div className={`absolute top-0 left-0 right-0 h-1 ${isOverdue ? "bg-destructive" : isDueSoon ? "bg-warning" : "bg-info"}`} />
             <CardContent className="p-5 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -111,9 +111,9 @@ export function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab
                 <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
                   <Clock className="h-3 w-3" />
                   {isOverdue ? (
-                    <span className="text-rose-600 font-semibold">Lewat {Math.abs(daysUntilDue!)} hari</span>
+                    <span className="text-destructive font-semibold">Lewat {Math.abs(daysUntilDue!)} hari</span>
                   ) : isDueSoon ? (
-                    <span className="text-amber-600 font-semibold">Jatuh tempo {daysUntilDue} hari lagi</span>
+                    <span className="text-warning font-semibold">Jatuh tempo {daysUntilDue} hari lagi</span>
                   ) : (
                     <span>Jatuh tempo {daysUntilDue} hari lagi</span>
                   )}
@@ -217,7 +217,7 @@ export function OverviewTab({ me, billing, loyalty, meLoading, onRefresh, setTab
               </div>
               <button
                 onClick={() => setTab("loyalty")}
-                className="shrink-0 p-2 rounded-lg bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow"
+                className="shrink-0 p-2 rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow"
               >
                 <ChevronRight className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               </button>

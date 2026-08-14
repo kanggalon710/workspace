@@ -359,7 +359,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
         <div data-section="collections-toolbar" className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0 flex-1">
             <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-red-500 shrink-0" />
+              <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-destructive shrink-0" />
               {division ? DIV_META[division].title : "Collection Pipeline"}
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1 line-clamp-1 md:line-clamp-none">
@@ -591,9 +591,9 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
               </div>
             )}
             {stageDialogFor?.targetRole === "paid" && (
-              <div className="flex items-start gap-2 p-3 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-green-800 dark:text-green-200">
+              <div className="flex items-start gap-2 p-3 rounded-md bg-success/10 border border-success">
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                <div className="text-xs text-success">
                   <div className="font-semibold">Manual mark sebagai Lunas</div>
                   <div className="mt-0.5 text-[11px]">Pastikan pembayaran sudah diterima. Kalau belum terdeteksi di billing sync, upload bukti transfer di bawah.</div>
                 </div>
@@ -637,7 +637,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
                   <img src={stagePhoto} alt="bukti" className="h-32 w-32 object-cover rounded-md border" />
                   <button
                     onClick={() => setStagePhoto(null)}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center hover:brightness-95"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -689,7 +689,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && deleteMut.mutate(deleteId)} className="bg-red-500 hover:bg-red-600">
+            <AlertDialogAction onClick={() => deleteId && deleteMut.mutate(deleteId)} className="bg-destructive hover:brightness-95">
               Hapus Permanen
             </AlertDialogAction>
           </AlertDialogFooter>
