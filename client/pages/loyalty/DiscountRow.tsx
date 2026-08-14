@@ -48,13 +48,13 @@ export function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }:
               </span>
               {isPercent && d.billingPrice && (
                 <span>
-                  Tagihan <strong>{fmtRp(d.billingPrice)}</strong> → hemat <strong className="text-emerald-600">{fmtRp(Math.round(d.billingPrice * d.discountValue / 100))}</strong>
+                  Tagihan <strong>{fmtRp(d.billingPrice)}</strong> → hemat <strong className="text-success">{fmtRp(Math.round(d.billingPrice * d.discountValue / 100))}</strong>
                 </span>
               )}
             </div>
           </div>
           <div className="text-right shrink-0 border-l pl-4">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">{rewardValueStr}</div>
+            <div className="text-2xl font-bold text-success whitespace-nowrap tabular-nums">{rewardValueStr}</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mt-0.5">
               {isVoucher ? "Voucher/Cash" : isPercent ? (d.discountValue === 100 ? "GRATIS" : "Diskon") : d.discountType.replace(/_/g, " ")}
             </div>
@@ -64,7 +64,7 @@ export function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }:
       {d.status === "pending" && (
         <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t flex-wrap">
           {isExpired ? (
-            <span className="text-xs text-rose-600 font-medium inline-flex items-center gap-1">
+            <span className="text-xs text-destructive font-medium inline-flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" /> Expired {fmtDate(d.expiresAt)}
             </span>
           ) : (
@@ -87,8 +87,8 @@ export function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }:
               >
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </Button>
-              <Button size="sm" variant="outline" onClick={onCancel} className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40">Batalkan</Button>
-              <Button size="sm" onClick={onApply} className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700">
+              <Button size="sm" variant="outline" onClick={onCancel} className="h-8 text-xs text-destructive hover:bg-destructive/10">Batalkan</Button>
+              <Button size="sm" onClick={onApply} className="h-8 text-xs bg-success hover:brightness-95">
                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Apply
               </Button>
             </div>
@@ -97,7 +97,7 @@ export function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }:
       )}
       {d.status === "applied" && (
         <div className="mt-3 pt-3 border-t text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
           <span className="flex-1">
             Applied oleh <strong className="text-foreground">{d.appliedByName ?? "-"}</strong> · {fmtDate(d.appliedAt)}
             {d.invoiceRef && <span> · Ref: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">{d.invoiceRef}</code></span>}
@@ -116,7 +116,7 @@ export function DiscountRow({ d, canEdit, onApply, onCancel, onEdit, onDelete }:
         </div>
       )}
       {d.status === "cancelled" && (
-        <div className="mt-3 pt-3 border-t text-[11px] text-rose-600 flex items-center gap-2 flex-wrap">
+        <div className="mt-3 pt-3 border-t text-[11px] text-destructive flex items-center gap-2 flex-wrap">
           <XCircle className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1">
             Dibatalkan {fmtDate(d.appliedAt ?? d.createdAt)}

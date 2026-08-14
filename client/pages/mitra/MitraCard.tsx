@@ -47,10 +47,10 @@ export function MitraCard({ mitra, canEdit, onClick, onToggleActive, onDelete }:
             <div className="mt-1">
               <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
                 isActive
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                  ? "bg-success/15 text-success"
+                  : "bg-muted text-muted-foreground"
               }`}>
-                <span className={`w-1 h-1 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+                <span className={`w-1 h-1 rounded-full ${isActive ? "bg-success" : "bg-muted-foreground"}`} />
                 {isActive ? "Aktif" : "Nonaktif"}
               </span>
             </div>
@@ -83,7 +83,7 @@ export function MitraCard({ mitra, canEdit, onClick, onToggleActive, onDelete }:
             <Button
               size="sm"
               variant="outline"
-              className={`h-7 px-2 text-[11px] ${isActive ? "text-amber-600 hover:text-amber-700" : "text-emerald-600 hover:text-emerald-700"}`}
+              className={`h-7 px-2 text-[11px] ${isActive ? "text-warning" : "text-success"}`}
               onClick={onToggleActive}
             >
               {isActive ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}

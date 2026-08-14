@@ -3,6 +3,21 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - #7j: Batch 3 file warna -> token (tail lanjut)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut (user: continue). 3 file status-bersih.
+**Perubahan:** loyalty/DiscountRow (emerald=hemat/success, rose=batal/destructive),
+mitra/MitraCard (badge+dot aktif/nonaktif), portal/dashboard/TicketsTab (status map
+ditangani/selesai/ditutup). Alat + 4 koreksi manual.
+**File:** 3 file di atas.
+**Verifikasi:** `tsc` 0 error, build OK. Per file: 0 sisa palet, 0 dark: status/neutral,
+0 badge tak-terlihat, 0 hover kolaps.
+**Koreksi manual:** dot nonaktif `slate-400`->`bg-muted-foreground` (bukan bg-muted tak-terlihat);
+tombol Terapkan `bg-success hover:bg-success`->`hover:brightness-95`; drop 3 `hover:text-*`
+redundant (MitraCard toggle, DiscountRow Batalkan).
+**DILEWATI sadar:** loyalty/tiles.tsx - peta aksen KATEGORIKAL (slate/indigo/emerald + dot
+amber/emerald/rose per prop `color`/`dot`), bukan status -> harus utuh.
+
 ## 2026-08-14 - #7i: Batch 4 file warna -> token (tail lanjut)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut (user: continue). 4 file status-bersih ber-`dark:`.

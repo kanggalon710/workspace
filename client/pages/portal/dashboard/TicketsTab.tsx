@@ -29,9 +29,9 @@ export function TicketsTab({ tickets, apiFetch, qc }: any) {
   const STATUS_CFG: Record<string, { label: string; color: string }> = {
     open: { label: "Baru", color: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" },
     assigned: { label: "Ditugaskan", color: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300" },
-    in_progress: { label: "Ditangani", color: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" },
-    resolved: { label: "Selesai", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
-    closed: { label: "Ditutup", color: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400" },
+    in_progress: { label: "Ditangani", color: "bg-warning/15 text-warning" },
+    resolved: { label: "Selesai", color: "bg-success/15 text-success" },
+    closed: { label: "Ditutup", color: "bg-muted text-muted-foreground" },
   };
 
   return (

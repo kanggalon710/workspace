@@ -75,12 +75,16 @@
   bg-muted nyaris tak terlihat), 2 hover kolaps -> `hover:brightness-95` / drop redundant.
   AnnouncementsPage SENGAJA dilewati: `CATEGORY_CFG`/`SEVERITY_CFG` = palet KATEGORIKAL
   (sky/emerald/indigo/amber/violet per kategori) - harus utuh, bukan status.
+- [x] **#7j Batch 3 SELESAI** (2026-08-14): loyalty/DiscountRow, mitra/MitraCard,
+  portal/dashboard/TicketsTab. 4 koreksi manual (dot slate-400->muted-foreground, hover fix,
+  drop redundant hover:text). loyalty/tiles.tsx DILEWATI: peta aksen kategorikal (indigo).
 - [ ] **#7 sisa (MANUAL, batch/ronde).** Scan ulang tiap ronde (`grep -rlE "dark:(text|bg|border)-
   (rose|red|amber|green|emerald)"` lalu cek `bg-white dark:` + kategorikal). Sisa a.l.: LoyaltyAdminPage,
-  collection/{PipelineManagerDialog,CollectionCard}, mitra/MitraCard, CanvassingReportsPage,
-  loyalty/{tiles,DiscountRow}, portal/dashboard/{TicketsTab,LoyaltyTab,OverviewTab[bg-white!]},
+  collection/{PipelineManagerDialog,CollectionCard}, CanvassingReportsPage,
+  portal/dashboard/{LoyaltyTab,OverviewTab[bg-white!]},
   MarketingDashboardPage, PermissionMatrixEditor, dst.
-  CATATAN: AnnouncementsPage = palet kategorikal (skip, bukan status).
+  CATATAN kategorikal (SKIP, bukan status): AnnouncementsPage (CATEGORY/SEVERITY_CFG),
+  loyalty/tiles.tsx (aksen indigo/slate/emerald).
   BUTUH PENILAIAN TERPISAH (JANGAN alat buta): components/ui/status-badge.tsx (primitif inti),
   TicketHeatmapPage (skala warna), integration/shared + IntegrationPage (domain brand),
   NotificationBell (per tipe notif), CustomersPage (71), Dashboard (168, 14 famili),
