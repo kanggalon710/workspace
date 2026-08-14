@@ -1366,11 +1366,20 @@ router.post("/api/mitras/:id/users", async (req: Request, res: Response) => {
     }
     // Tenant isolation + System-Admin guard
     if (finalRoleId) {
-      const role = await storage.getRoleById(finalRoleId);
+      let role = await storage.getRoleById(finalRoleId);
       if (!role) return sendError(res, "Role tidak ditemukan", 404);
-      // Role yang di-assign harus milik mitra target (kecuali System-Admin yang memang lintas-tenant di mitra 1)
+      // Role yang di-assign harus milik mitra target.
       if (role.mitraId !== mitraId) {
-        return sendError(res, "Role bukan milik mitra ini", 400);
+        // JABNET-root (System-Admin) lintas-tenant: remap ke role setara milik mitra target,
+        // fallback ke Admin (kontrol penuh tenant tsb). Non-sysadmin tetap ditolak.
+        if (req.authUser?.isSystemAdmin) {
+          const mapped = (await storage.getRoleByName(role.name, mitraId))
+            ?? (await storage.seedAdminRoleForMitra(mitraId));
+          role = mapped;
+          finalRoleId = mapped.id;
+        } else {
+          return sendError(res, "Role bukan milik mitra ini", 400);
+        }
       }
       if (role.name === "System-Admin" && !req.authUser?.isSystemAdmin) {
         return sendError(res, "Hanya System-Admin yang boleh assign role System-Admin", 403);
@@ -1407,7 +1416,7 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
   if (!Number.isFinite(mitraId) || !Number.isFinite(userId) || !Number.isFinite(Number(roleId))) {
     return sendError(res, "Invalid params (mitraId, userId, roleId required)", 400);
   }
-  const roleIdNum = Number(roleId);
+  let roleIdNum = Number(roleId);
 
   // Authz: System-Admin atau Admin di target mitra.
   // Cek role di TARGET mitra (bukan activeMitraId) supaya Admin bisa manage own mitra
@@ -1423,12 +1432,20 @@ router.patch("/api/mitras/:mitraId/members/:userId", async (req: Request, res: R
 
   try {
     // Lookup target role
-    const role = await storage.getRoleById(roleIdNum);
+    let role = await storage.getRoleById(roleIdNum);
     if (!role) return sendError(res, "Role tidak ditemukan", 404);
 
     // Tenant isolation: role yang di-assign wajib milik mitra target (cegah assign role mitra lain).
     if (role.mitraId !== mitraId) {
-      return sendError(res, "Role bukan milik mitra ini", 400);
+      // JABNET-root lintas-tenant: remap ke role setara milik mitra target (fallback Admin).
+      if (req.authUser.isSystemAdmin) {
+        const mapped = (await storage.getRoleByName(role.name, mitraId))
+          ?? (await storage.seedAdminRoleForMitra(mitraId));
+        role = mapped;
+        roleIdNum = mapped.id;
+      } else {
+        return sendError(res, "Role bukan milik mitra ini", 400);
+      }
     }
 
     // Only System-Admin can grant System-Admin role
@@ -2217,8 +2234,13 @@ router.post("/api/users/bulk-action", async (req: Request, res: Response) => {
 router.get("/api/roles", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
-    // Tenant isolation: hanya role milik mitra aktif user (Ygao admin tidak lihat role JABNET).
-    const scopeMitraId = req.authUser.activeMitraId ?? 1;
+    // Tenant isolation: default = mitra aktif user (Ygao admin tidak lihat role JABNET).
+    // JABNET-root (System-Admin) boleh minta role mitra lain via ?mitraId untuk kelola lintas-tenant.
+    const requestedMitraId = Number(req.query.mitraId);
+    const scopeMitraId =
+      isJabnetRoot(req) && Number.isFinite(requestedMitraId) && requestedMitraId > 0
+        ? requestedMitraId
+        : (req.authUser.activeMitraId ?? 1);
     const rows = await storage.getRoles(scopeMitraId);
     const isAdmin = req.authUser.role === "admin";
     // Bulk get user counts kalau admin (untuk tampilkan "X users" per role di RolesPage).

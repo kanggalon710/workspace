@@ -3,6 +3,30 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - Fix: System-Admin JABNET gagal tambah user ke mitra lain
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** yoga (System-Admin JABNET) tak bisa tambah dirinya ke mitra diar -> error
+"Role bukan milik mitra ini". JABNET = pemilik lintas-tenant, harus bisa kelola mitra lain.
+**Akar masalah:** Dropdown role di Add-Member (`MitraDetailDrawer` MembersTab) fetch
+`GET /api/roles` TANPA param mitra -> backend scope ke `activeMitraId` (=1 utk sysadmin JABNET)
+-> list role JABNET -> POST kirim roleId mitra-1 ke `/api/mitras/<diar>/users` -> handler tolak
+`role.mitraId (1) !== mitraId (diar)`. Handler ini (POST 1372 + PATCH 1430) tak punya bypass
+System-Admin (beda dg 3 handler `...mitra Anda` yg sudah punya).
+**Perubahan:** (1) `GET /api/roles` terima `?mitraId` HANYA utk `isJabnetRoot` (else diabaikan ->
+scope sendiri). (2) Frontend MembersTab fetch `/roles?mitraId=${mitra.id}` (queryKey + mitra.id)
++ default-role effect stale-safe (reset kalau roleId tak ada di list target). (3) Defense-in-depth:
+POST+PATCH, saat `role.mitraId !== mitraId` DAN requester System-Admin -> remap ke role setara
+milik mitra target (`getRoleByName(name, mitraId)` else `seedAdminRoleForMitra`) alih-alih 400.
+Non-sysadmin tetap 400. Keputusan user: cross-tenant = System-Admin SAJA (JABNET Admin tidak);
+default role = Admin milik mitra target.
+**File:** server/routes.ts (GET /api/roles; POST /api/mitras/:id/users; PATCH
+/api/mitras/:mitraId/members/:userId), client/pages/mitra/MitraDetailDrawer.tsx.
+**Verifikasi:** `tsc` 0 error, build OK, 297/297 test pass. Isolasi terjaga: non-sysadmin
+`?mitraId` diabaikan, remap sysadmin-only, `GET /api/mitras` tetap sysadmin-only,
+guard min-1-System-Admin @mitra1 + System-Admin-only-@mitra1 utuh.
+**Catatan:** Perlu tes manual runtime (login yoga -> mitra diar -> Anggota -> tambah diri ->
+switch-tenant). Belum deploy ke produksi (tunggu OK user).
+
 ## 2026-08-14 - #7l: Batch 3 file warna -> token (tail lanjut)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut (user: continue). 3 file status-bersih (collection + SLA + portal overview).

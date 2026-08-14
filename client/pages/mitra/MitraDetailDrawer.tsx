@@ -326,8 +326,8 @@ export function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: bool
   });
 
   const { data: roles = [] } = useQuery<{ id: number; name: string; isSystem: boolean }[]>({
-    queryKey: ["/api/roles"],
-    queryFn: () => api.get<{ id: number; name: string; isSystem: boolean }[]>("/roles"),
+    queryKey: ["/api/roles", mitra.id],
+    queryFn: () => api.get<{ id: number; name: string; isSystem: boolean }[]>(`/roles?mitraId=${mitra.id}`),
     enabled: canEdit,
   });
 
@@ -337,13 +337,15 @@ export function MembersTab({ mitra, canEdit }: { mitra: MitraItem; canEdit: bool
     [roles, mitra.id],
   );
 
-  // Default to "Admin" role when roles load
+  // Default to this mitra's own "Admin" role; reset if the selected role is not in the
+  // target mitra's list (prevents submitting a stale foreign roleId when switching drawers).
   useEffect(() => {
-    if (availableRoles.length > 0 && !addRoleId) {
+    const stillValid = addRoleId && availableRoles.some((r) => String(r.id) === addRoleId);
+    if (availableRoles.length > 0 && !stillValid) {
       const adminRole = availableRoles.find((r) => r.name === "Admin");
-      if (adminRole) setAddRoleId(String(adminRole.id));
+      setAddRoleId(adminRole ? String(adminRole.id) : "");
     }
-  }, [availableRoles, addRoleId]);
+  }, [availableRoles, addRoleId, mitra.id]);
 
   const addMut = useMutation({
     mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
