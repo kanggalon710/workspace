@@ -306,7 +306,14 @@ export function CustomerForm({ item, onSubmit, isPending }: { item: Customer | n
         </div>
         <div className="space-y-2">
           <Label>Nomor Port ODP</Label>
-          <Input {...register("portNumber", { valueAsNumber: true })} type="number" placeholder="1" min="1" />
+          <Input
+            {...register("portNumber", { valueAsNumber: true })}
+            type="number"
+            placeholder="1"
+            min="1"
+            step={1}
+            max={odpUtil?.odps.find((u) => u.id === watchedOdpId)?.capacity}
+          />
           {!item && watchedOdpId && odpUtil?.odps.find((u) => u.id === watchedOdpId)?.nextPort && (
             <p className="text-[11px] text-success">
               ✓ Port {odpUtil?.odps.find((u) => u.id === watchedOdpId)?.nextPort} terisi otomatis

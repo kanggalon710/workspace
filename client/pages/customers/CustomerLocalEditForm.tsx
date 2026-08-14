@@ -33,14 +33,36 @@ export function CustomerLocalEditForm({
 
   const { data: odps } = useOdps();
   const { data: odpUtil } = useOdpUtilization();
+  // Utilisasi ODP yang sedang dipilih (untuk batas port + cek bentrok).
+  const sel = odpUtil?.odps.find((o) => o.id === odpId);
+  // Port milik pelanggan ini sendiri hanya "bebas" kalau masih di ODP yang sama.
+  const ownPort = odpId === item.odpId ? item.portNumber : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const portTrimmed = portNumber.trim();
+    if (portTrimmed) {
+      const port = Number(portTrimmed);
+      if (!Number.isInteger(port) || port < 1) {
+        toast.error("Port number harus bilangan bulat >= 1");
+        return;
+      }
+      if (sel) {
+        if (port > sel.capacity) {
+          toast.error(`Port maksimal ${sel.capacity} (kapasitas ODP ${sel.name})`);
+          return;
+        }
+        if (port !== ownPort && sel.usedPortList.includes(port)) {
+          toast.error(`Port ${port} sudah dipakai pelanggan lain di ODP ini`);
+          return;
+        }
+      }
+    }
     const payload: any = { notes, ontSerialNumber };
     payload.lat = lat.trim() ? Number(lat) : null;
     payload.lng = lng.trim() ? Number(lng) : null;
     payload.odpId = odpId;
-    payload.portNumber = portNumber.trim() ? Number(portNumber) : null;
+    payload.portNumber = portTrimmed ? Number(portTrimmed) : null;
     onSubmit(payload);
   };
 
@@ -131,11 +153,19 @@ export function CustomerLocalEditForm({
             <Input
               type="number"
               min="1"
+              max={sel?.capacity}
+              step={1}
               placeholder="1, 2, 3, ..."
               value={portNumber}
               onChange={(e) => setPortNumber(e.target.value)}
               className="font-mono"
             />
+            {sel && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Port 1–{sel.capacity} · {sel.availablePorts} kosong
+                {sel.nextPort ? ` · next: ${sel.nextPort}` : " · penuh"}
+              </p>
+            )}
           </div>
         </div>
 

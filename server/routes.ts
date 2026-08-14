@@ -3225,6 +3225,8 @@ router.get("/api/odps/:id/customers", async (req: Request, res: Response) => {
       connStatus: customerConnStatus(c),
       portNumber: c.portNumber,
       package: c.package,
+      billingPrice: c.billingPrice,
+      ontSerialNumber: c.ontSerialNumber,
       phone: c.phone,
     }));
     sendSuccess(res, out);
@@ -3234,7 +3236,9 @@ router.get("/api/odps/:id/customers", async (req: Request, res: Response) => {
 /** GET /api/odps/:id/ont-status - optical power ONT semua pelanggan satu ODP.
  *  Device list GenieACS di-cache 60s per-mitra (klik ODP berurutan tidak refetch ACS). */
 router.get("/api/odps/:id/ont-status", async (req: Request, res: Response) => {
-  if (!requirePermission(req, res, "map")) return;
+  // Read-only status ONT: siapa pun dengan izin baca jaringan (map/odps/dll) boleh lihat optic power,
+  // termasuk teknisi yang buka form Edit ODP (bukan hanya izin "map").
+  if (!requireAnyPermission(req, res, NETWORK_READ_KEYS)) return;
   try {
     const id = Number(req.params.id);
     const config = await getGenieConfig().catch(() => null);
@@ -3733,6 +3737,29 @@ router.put("/api/customers/:id", async (req, res) => {
       for (let p = 1; p <= cap; p++) {
         if (!usedPorts.has(p)) { updateData.portNumber = p; break; }
       }
+    }
+
+    // Validasi port number (authoritative - UI bisa di-bypass): integer 1..kapasitas ODP + tidak dipakai
+    // pelanggan lain di ODP yang sama. Cegah nilai ngawur (mis. 132142) & tabrakan port.
+    if (updateData.portNumber !== undefined && updateData.portNumber !== null) {
+      const port = Number(updateData.portNumber);
+      if (!Number.isInteger(port) || port < 1) {
+        return sendError(res, "Port number harus bilangan bulat >= 1");
+      }
+      const targetOdpId = updateData.odpId ?? existing.odpId;
+      if (targetOdpId) {
+        const odp = await storage.getOdp(targetOdpId);
+        const cap = odp?.capacity || 8;
+        if (port > cap) {
+          return sendError(res, `Port number maksimal ${cap} (kapasitas ODP ${odp?.name ?? targetOdpId})`);
+        }
+        const taken = await storage.getCustomersByOdp(targetOdpId);
+        const clash = taken.find((c) => c.id !== id && c.portNumber === port);
+        if (clash) {
+          return sendError(res, `Port ${port} sudah dipakai pelanggan ${clash.name} (${clash.customerId}) di ODP ini`);
+        }
+      }
+      updateData.portNumber = port;
     }
 
     const data = await storage.updateCustomer(id, updateData);

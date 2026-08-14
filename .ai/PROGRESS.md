@@ -3,6 +3,29 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - /odps: enrich daftar pelanggan + reuse modal edit + batas port number
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** User minta detail lebih (paket/mbps/harga/optic), klik nama buka modal edit pelanggan
+(reuse /customers, bisa pindah ODP), + bug port number bisa diisi angka ngawur.
+**Perubahan:**
+1. **Enrich daftar** (OdpCustomersList di OdpsPage): endpoint `/odps/:id/customers` +`billingPrice`
+   +`ontSerialNumber`. UI tampil paket + mbps (parse best-effort dari nama paket, TAK ada kolom mbps)
+   + harga (`formatRupiah`) + optic RX (reuse `useOdpOntStatus` + `OpticalPowerBadge`, lazy/boleh
+   gagal) + "Update <lastInform relatif>". Gate `/odps/:id/ont-status` dilonggarkan map->NETWORK_READ_KEYS.
+2. **Klik nama -> modal** `CustomerLocalEditForm` (reuse komponen /customers apa adanya). Fetch full
+   customer via `GET /api/customers/:id` (izin "customers"). Simpan via PUT langsung (BUKAN useCustomers
+   - hindari fetch seluruh daftar). Invalidate customers-ODP + ont-status + utilisasi. Pindah ODP +
+   ubah port jalan (server auto-assign port bebas saat pindah + kosong).
+3. **Batas port number:** frontend `CustomerLocalEditForm` (max=kapasitas, step=1, validasi submit:
+   integer 1..kapasitas + tak bentrok via usedPortList, hint next port) + `CustomerForm` (max/step).
+   **Backend PUT /api/customers/:id authoritative:** tolak port non-integer/<1/>kapasitas/bentrok
+   (getCustomersByOdp). Ini fix sebenarnya (UI bisa di-bypass).
+**File:** server/routes.ts, client/pages/OdpsPage.tsx, client/pages/customers/CustomerLocalEditForm.tsx,
+client/pages/customers/CustomerForm.tsx.
+**Verifikasi:** `tsc` 0 error, build OK, 297/297 test.
+**Catatan:** mbps = best-effort parse (tak ada data field). Skip unique index (odp_id,port_number)
+- data lama mungkin sudah ada duplikat; guard app-layer cukup. Belum deploy.
+
 ## 2026-08-14 - /odps: fix panah lightbox nutup modal + daftar pelanggan + tombol Update sticky
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** User lapor bug + 2 permintaan setelah lightbox live di prod.

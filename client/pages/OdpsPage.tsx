@@ -5,14 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
-import { useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Odp, InsertOdp } from "@shared/schema";
+import { useEffect, useCallback, useState } from "react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { Odp, InsertOdp, Customer, InsertCustomer } from "@shared/schema";
 import { reverseGeocode } from "@/lib/geocode";
 import { garutDistricts, resolveDistrict, getVillages } from "@/lib/garut-demography";
 import { AssetPhotosGallery } from "@/components/shared/AssetPhotosGallery";
 import { api } from "@/lib/api";
 import { StatusBadge, type StatusVariant } from "@/components/ui/status-badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { CustomerLocalEditForm } from "@/pages/customers/CustomerLocalEditForm";
+import { useOdpOntStatus } from "@/hooks/useOdpDetail";
+import { OpticalPowerBadge } from "@/components/map/OpticalPowerBadge";
+import { formatRupiah } from "@shared/currency";
+import { formatRelative } from "@/lib/dateFormat";
+import { useAuth } from "@/context/AuthContext";
 
 // ==================== CONNECTED CUSTOMERS ====================
 
@@ -23,6 +31,8 @@ interface OdpCustomer {
   connStatus: "active" | "isolir" | "suspend" | "terminated" | "unknown";
   portNumber: number | null;
   package: string | null;
+  billingPrice: number | null;
+  ontSerialNumber: string | null;
   phone: string | null;
 }
 
@@ -35,12 +45,54 @@ const CONN_BADGE: Record<OdpCustomer["connStatus"], { variant: StatusVariant; la
   unknown: { variant: "neutral", label: "?" },
 };
 
+// Mbps tidak punya kolom sendiri - ambil best-effort dari nama paket (mis. "Home 20 Mbps" → "20 Mbps").
+function packageMbps(pkg: string | null): string | null {
+  const m = pkg?.match(/(\d+)\s*mb/i);
+  return m ? `${m[1]} Mbps` : null;
+}
+
 function OdpCustomersList({ odpId, capacity }: { odpId: number; capacity: number }) {
+  const qc = useQueryClient();
+  const { canWrite } = useAuth();
+  const canEditCustomer = canWrite("customers");
+
+  const customersKey = ["/api/odps", odpId, "customers"];
   const { data: customers = [], isLoading } = useQuery<OdpCustomer[]>({
-    queryKey: ["/api/odps", odpId, "customers"],
+    queryKey: customersKey,
     queryFn: () => api.get<OdpCustomer[]>(`/odps/${odpId}/customers`),
     enabled: odpId > 0,
   });
+
+  // Optic power (RX) live dari GenieACS - lazy, boleh gagal/timeout tanpa ganggu daftar.
+  const { data: ont } = useOdpOntStatus(odpId, odpId > 0);
+
+  // Modal edit pelanggan (reuse komponen /customers). Fetch full customer saat nama diklik.
+  const [editId, setEditId] = useState<number | null>(null);
+  const { data: editCustomer } = useQuery<Customer>({
+    queryKey: ["/api/customers", editId],
+    queryFn: () => api.get<Customer>(`/customers/${editId}`),
+    enabled: editId != null && canEditCustomer,
+  });
+  // Update pakai PUT langsung (bukan useCustomers - hindari fetch SELURUH daftar pelanggan di halaman ODP).
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<InsertCustomer> }) =>
+      api.put<Customer>(`/customers/${id}`, data),
+  });
+
+  const handleCustomerUpdate = async (data: Partial<InsertCustomer>) => {
+    if (editId == null) return;
+    try {
+      await updateMut.mutateAsync({ id: editId, data });
+      toast.success("Data pelanggan diperbarui");
+      setEditId(null);
+      qc.invalidateQueries({ queryKey: customersKey });
+      qc.invalidateQueries({ queryKey: ["odp-ont-status", odpId] });
+      qc.invalidateQueries({ queryKey: ["odps", "utilization"] });
+      qc.invalidateQueries({ queryKey: ["odps"] }); // utilisasi ODP dihitung realtime dari customer
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal update pelanggan");
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -55,19 +107,44 @@ function OdpCustomersList({ odpId, capacity }: { odpId: number; capacity: number
           Belum ada pelanggan terhubung ke ODP ini.
         </div>
       ) : (
-        <ul className="max-h-64 overflow-y-auto no-scrollbar divide-y divide-border rounded-md border border-border">
+        <ul className="max-h-72 overflow-y-auto no-scrollbar divide-y divide-border rounded-md border border-border">
           {customers.map((c) => {
             const badge = CONN_BADGE[c.connStatus] ?? CONN_BADGE.unknown;
+            const mbps = packageMbps(c.package);
+            const acs = ont?.configured ? ont.byCustomer?.[c.id] : undefined;
             return (
-              <li key={c.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-                <span className="w-9 shrink-0 text-center font-mono-tight text-xs text-muted-foreground">
+              <li key={c.id} className="flex items-start gap-3 px-3 py-2 text-sm">
+                <span className="w-9 shrink-0 pt-0.5 text-center font-mono-tight text-xs text-muted-foreground">
                   {c.portNumber != null ? `#${c.portNumber}` : "-"}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{c.name}</div>
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  {canEditCustomer ? (
+                    <button
+                      type="button"
+                      onClick={() => setEditId(c.id)}
+                      className="truncate font-medium text-primary hover:underline text-left"
+                    >
+                      {c.name}
+                    </button>
+                  ) : (
+                    <div className="truncate font-medium">{c.name}</div>
+                  )}
                   <div className="truncate text-xs text-muted-foreground">
-                    {c.customerId}{c.package ? ` · ${c.package}` : ""}
+                    {c.customerId}
+                    {c.package ? ` · ${c.package}` : ""}
+                    {mbps ? ` · ${mbps}` : ""}
+                    {c.billingPrice ? ` · ${formatRupiah(c.billingPrice)}/bln` : ""}
                   </div>
+                  {acs && (acs.rxPower || acs.lastInform) && (
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <OpticalPowerBadge value={acs.rxPower} kind="RX" thresholds={ont!.thresholds} />
+                      {acs.lastInform && (
+                        <span className="text-[10px] text-muted-foreground">
+                          Update {formatRelative(acs.lastInform)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <StatusBadge variant={badge.variant} label={badge.label} size="sm" />
               </li>
@@ -75,6 +152,21 @@ function OdpCustomersList({ odpId, capacity }: { odpId: number; capacity: number
           })}
         </ul>
       )}
+
+      {/* Modal edit pelanggan - reuse komponen /customers (lihat detail + pindah ODP + ubah port) */}
+      <Dialog open={editId != null} onOpenChange={(o) => !o && setEditId(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto max-w-2xl dialog-w">
+          <DialogHeader>
+            <DialogTitle>Edit Data Lokal Pelanggan</DialogTitle>
+            <DialogDescription>
+              {editCustomer ? `${editCustomer.name} (${editCustomer.customerId})` : "Memuat data pelanggan..."}
+            </DialogDescription>
+          </DialogHeader>
+          {editCustomer && (
+            <CustomerLocalEditForm item={editCustomer} onSubmit={handleCustomerUpdate} isPending={updateMut.isPending} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
