@@ -3,6 +3,23 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - #7i: Batch 4 file warna -> token (tail lanjut)
+**Agen:** claude | **Status:** selesai
+**Kenapa:** Lanjut (user: continue). 4 file status-bersih ber-`dark:`.
+**Perubahan:** SahabatDetailDrawer (2 dark:/status ternary+badge), map/CableDetailPanel
+(4 dark:/KPI tiles+dot core), ActiveSessionsPage (2 dark:/online-error), UpdateBanner
+(6 dark:/banner amber tunggal-warna=warning). Alat `collapse-darkmode.mjs` + 5 koreksi manual.
+**File:** 4 file di atas.
+**Verifikasi:** `tsc` 0 error, build OK (13s). Per file: 0 sisa palet status/neutral, 0 dark:
+status/neutral, 0 badge tak-terlihat, 0 hover kolaps, kategorikal (orange icon cable) utuh.
+**Koreksi manual pasca-alat (edge case penting):** (1) progress gold `bg-yellow-300`->`bg-warning`
+solid (bukan `/40` pudar); (2) callout `bg-emerald-50/50`->`bg-success/10` (alat preserve op ->
+`/50` over-saturasi krn base pindah 50->500); (3) dot core rusak `gray-400`->`bg-muted-foreground`
+(bukan `bg-muted` nyaris tak terlihat sbg dot); (4) tombol `bg-warning hover:bg-warning`->
+`hover:brightness-95`; (5) drop redundant `hover:text-destructive`.
+**DILEWATI sadar:** AnnouncementsPage - `CATEGORY_CFG`/`SEVERITY_CFG` palet KATEGORIKAL per
+kategori (sky/emerald/indigo/amber/violet), bukan status -> harus utuh, jangan ditokenkan.
+
 ## 2026-08-13 - #7h: Batch 8 file warna -> token (tail lanjut)
 **Agen:** claude | **Status:** selesai
 **Kenapa:** Lanjut (user: continue). 8 file status-bersih ber-`dark:`.

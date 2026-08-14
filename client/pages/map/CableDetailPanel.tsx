@@ -64,10 +64,10 @@ export function CableDetailPanel({ cableId, cableName, onClose }: { cableId: num
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="bg-green-50 dark:bg-green-950 rounded p-2"><div className="text-lg font-bold text-green-600">{stats!.available}</div><div className="text-[10px] text-muted-foreground">Tersedia</div></div>
-              <div className="bg-red-50 dark:bg-red-950 rounded p-2"><div className="text-lg font-bold text-red-600">{stats!.used}</div><div className="text-[10px] text-muted-foreground">Terpakai</div></div>
-              <div className="bg-yellow-50 dark:bg-yellow-950 rounded p-2"><div className="text-lg font-bold text-yellow-600">{stats!.reserved}</div><div className="text-[10px] text-muted-foreground">Reserved</div></div>
-              <div className="bg-gray-50 dark:bg-gray-900 rounded p-2"><div className="text-lg font-bold text-gray-500">{stats!.broken}</div><div className="text-[10px] text-muted-foreground">Rusak</div></div>
+              <div className="bg-success/10 rounded p-2"><div className="text-lg font-bold text-success">{stats!.available}</div><div className="text-[10px] text-muted-foreground">Tersedia</div></div>
+              <div className="bg-destructive/10 rounded p-2"><div className="text-lg font-bold text-destructive">{stats!.used}</div><div className="text-[10px] text-muted-foreground">Terpakai</div></div>
+              <div className="bg-warning/10 rounded p-2"><div className="text-lg font-bold text-warning">{stats!.reserved}</div><div className="text-[10px] text-muted-foreground">Reserved</div></div>
+              <div className="bg-muted rounded p-2"><div className="text-lg font-bold text-muted-foreground">{stats!.broken}</div><div className="text-[10px] text-muted-foreground">Rusak</div></div>
             </div>
             {Object.entries(tubeGroups).map(([tubeNum, tube]) => (
               <div key={tubeNum} className="space-y-1.5">
@@ -77,7 +77,7 @@ export function CableDetailPanel({ cableId, cableName, onClose }: { cableId: num
                 </div>
                 <div className="grid grid-cols-6 gap-1">
                   {tube.cores.map((core) => {
-                    const statusColor = core.status === "available" ? "bg-green-500" : core.status === "used" ? "bg-red-500" : core.status === "reserved" ? "bg-yellow-500" : "bg-gray-400";
+                    const statusColor = core.status === "available" ? "bg-success" : core.status === "used" ? "bg-destructive" : core.status === "reserved" ? "bg-warning" : "bg-muted-foreground";
                     return (
                       <div key={core.id} className={`aspect-square rounded-sm flex items-center justify-center text-[9px] font-mono text-white ${statusColor}`} title={`Core ${core.coreNumber} (${core.coreColor}) - ${core.status}`}>
                         {core.coreNumber}

@@ -68,12 +68,19 @@
 - [x] **#7h Batch 8 SELESAI** (2026-08-13): AppUpdateCard, Customer360Panel, portal/TrafficTab,
   CapacityCalculatorModal, DevDbSyncCard, collection/CollectionDetail, portal/WifiTab,
   MikrotikRoutersPage. 3 hover fix.
+- [x] **#7i Batch 4 SELESAI** (2026-08-14): SahabatDetailDrawer, map/CableDetailPanel,
+  ActiveSessionsPage, UpdateBanner (status-bersih ber-`dark:`). 5 koreksi manual pasca-alat:
+  progress gold `bg-yellow-300`->`bg-warning` (bukan /40 pudar), callout `bg-emerald-50/50`->
+  `bg-success/10` (bukan /50 over-saturasi), dot rusak `gray-400`->`bg-muted-foreground` (bukan
+  bg-muted nyaris tak terlihat), 2 hover kolaps -> `hover:brightness-95` / drop redundant.
+  AnnouncementsPage SENGAJA dilewati: `CATEGORY_CFG`/`SEVERITY_CFG` = palet KATEGORIKAL
+  (sky/emerald/indigo/amber/violet per kategori) - harus utuh, bukan status.
 - [ ] **#7 sisa (MANUAL, batch/ronde).** Scan ulang tiap ronde (`grep -rlE "dark:(text|bg|border)-
-  (rose|red|amber|green|emerald)"` lalu cek `bg-white dark:` + kategorikal). Sisa a.l.: AnnouncementsPage,
-  SahabatDetailDrawer, map/CableDetailPanel, LoyaltyAdminPage, ActiveSessionsPage, UpdateBanner,
+  (rose|red|amber|green|emerald)"` lalu cek `bg-white dark:` + kategorikal). Sisa a.l.: LoyaltyAdminPage,
   collection/{PipelineManagerDialog,CollectionCard}, mitra/MitraCard, CanvassingReportsPage,
   loyalty/{tiles,DiscountRow}, portal/dashboard/{TicketsTab,LoyaltyTab,OverviewTab[bg-white!]},
   MarketingDashboardPage, PermissionMatrixEditor, dst.
+  CATATAN: AnnouncementsPage = palet kategorikal (skip, bukan status).
   BUTUH PENILAIAN TERPISAH (JANGAN alat buta): components/ui/status-badge.tsx (primitif inti),
   TicketHeatmapPage (skala warna), integration/shared + IntegrationPage (domain brand),
   NotificationBell (per tipe notif), CustomersPage (71), Dashboard (168, 14 famili),

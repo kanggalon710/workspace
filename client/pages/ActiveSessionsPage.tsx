@@ -171,9 +171,9 @@ export default function ActiveSessionsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={Users} label="Total Online" value={stats.total} color="text-green-600" bg="bg-green-500/10" />
+        <StatCard icon={Users} label="Total Online" value={stats.total} color="text-success" bg="bg-success/10" />
         <StatCard icon={Server} label="Router Aktif" value={stats.routers} color="text-blue-600" bg="bg-blue-500/10" />
-        <StatCard icon={AlertTriangle} label="Router Error" value={stats.errors} color="text-red-600" bg="bg-red-500/10" />
+        <StatCard icon={AlertTriangle} label="Router Error" value={stats.errors} color="text-destructive" bg="bg-destructive/10" />
         <div className="flex items-center gap-3 p-4 rounded-xl border border-border/60">
           <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
             <Timer className="h-5 w-5 text-primary" />
@@ -187,13 +187,13 @@ export default function ActiveSessionsPage() {
 
       {/* Router Errors */}
       {routerErrors.length > 0 && (
-        <Card className="border-red-500/30 bg-red-500/5">
+        <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 space-y-1">
-            <p className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5" /> Router tidak bisa dihubungi:
             </p>
             {routerErrors.map((e, i) => (
-              <p key={i} className="text-xs text-red-600/80 dark:text-red-400/80 pl-5">
+              <p key={i} className="text-xs text-destructive/80 pl-5">
                 <b>{e.name}</b>: {e.error}
               </p>
             ))}
@@ -275,8 +275,8 @@ export default function ActiveSessionsPage() {
                   <tr key={`${s.routerId}-${s.id || s[".id"]}-${i}`} className="border-t border-border/60 hover:bg-muted/30 transition-colors">
                     <td className="py-2.5 px-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
-                          <Signal className="h-3.5 w-3.5 text-green-600" />
+                        <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
+                          <Signal className="h-3.5 w-3.5 text-success" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-foreground truncate">{s.name}</p>
@@ -307,7 +307,7 @@ export default function ActiveSessionsPage() {
                     <td className="py-2.5 px-4 text-right">
                       <Button
                         variant="outline" size="sm"
-                        className="h-7 text-xs gap-1 text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                        className="h-7 text-xs gap-1 text-destructive hover:bg-destructive/10"
                         onClick={() => setDisconnectTarget({
                           routerId: s.routerId, routerName: s.routerName,
                           sessionId: s.id || s[".id"] || "", username: s.name,
@@ -329,7 +329,7 @@ export default function ActiveSessionsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Unplug className="h-5 w-5 text-red-500" /> Putuskan Sesi PPPoE?
+              <Unplug className="h-5 w-5 text-destructive" /> Putuskan Sesi PPPoE?
             </DialogTitle>
             <DialogDescription>
               User <b>{disconnectTarget?.username}</b> akan diputus dari <b>{disconnectTarget?.routerName}</b>.

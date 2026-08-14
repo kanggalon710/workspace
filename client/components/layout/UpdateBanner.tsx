@@ -36,22 +36,22 @@ export function UpdateBanner() {
   if (dismissed === sha || (typeof sessionStorage !== "undefined" && sessionStorage.getItem(key))) return null;
 
   return (
-    <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm dark:border-amber-900 dark:bg-amber-950/30">
-      <DownloadCloud className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+    <div className="mb-4 flex items-center gap-3 rounded-xl border border-warning bg-warning/10 px-4 py-2.5 text-sm">
+      <DownloadCloud className="h-4 w-4 shrink-0 text-warning" />
       <div className="min-w-0 flex-1">
-        <span className="font-semibold text-amber-800 dark:text-amber-200">Versi terbaru tersedia ({sha}).</span>{" "}
-        <span className="text-amber-700/80 dark:text-amber-300/80">Buka Integrasi untuk memperbarui aplikasi.</span>
+        <span className="font-semibold text-warning">Versi terbaru tersedia ({sha}).</span>{" "}
+        <span className="text-warning/80">Buka Integrasi untuk memperbarui aplikasi.</span>
       </div>
       <button
         onClick={() => navigate("/integrations")}
-        className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+        className="shrink-0 rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-white hover:brightness-95"
       >
         Update
       </button>
       <button
         aria-label="Tutup"
         onClick={() => { try { sessionStorage.setItem(key, "1"); } catch { /* - */ } setDismissed(sha); }}
-        className="shrink-0 rounded-md p-1 text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/40"
+        className="shrink-0 rounded-md p-1 text-warning hover:bg-warning/15"
       >
         <X className="h-4 w-4" />
       </button>

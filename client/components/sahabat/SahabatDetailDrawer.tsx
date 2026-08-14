@@ -181,7 +181,7 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
                   </span>
                 </div>
                 <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-300 transition-all" style={{ width: `${detail.levelProgress?.progressPct ?? 0}%` }} />
+                  <div className="h-full bg-warning transition-all" style={{ width: `${detail.levelProgress?.progressPct ?? 0}%` }} />
                 </div>
               </div>
             </DialogHeader>
@@ -287,9 +287,9 @@ export function SahabatDetailDrawer({ open, customerId, onOpenChange, onOpenKit 
                         <div className="flex items-center justify-between mb-1">
                           <div className="font-semibold">{r.description ?? r.discount_type}</div>
                           <Badge variant="outline" className={
-                            r.status === "applied" ? "text-emerald-600 border-emerald-200"
-                            : r.status === "cancelled" ? "text-rose-600 border-rose-200"
-                            : "text-amber-600 border-amber-200"
+                            r.status === "applied" ? "text-success border-success"
+                            : r.status === "cancelled" ? "text-destructive border-destructive"
+                            : "text-warning border-warning"
                           }>
                             {r.status}
                           </Badge>
@@ -485,10 +485,10 @@ function Stat({ icon, label, value, mono }: { icon: React.ReactNode; label: stri
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const color = status === "rewarded" ? "bg-emerald-100 text-emerald-700"
+  const color = status === "rewarded" ? "bg-success/15 text-success"
     : status === "registered" ? "bg-sky-100 text-sky-700"
-    : status === "expired" ? "bg-slate-100 text-slate-500"
-    : "bg-amber-100 text-amber-700";
+    : status === "expired" ? "bg-muted text-muted-foreground"
+    : "bg-warning/15 text-warning";
   return <Badge className={`${color} border-0 text-[10px]`}>{status}</Badge>;
 }
 
@@ -751,8 +751,8 @@ function TierUpgradeDialog({ open, onOpenChange, customerId, customerName, curre
           </div>
 
           {tier === "desa" && (
-            <div className="space-y-2 p-3 rounded-md border bg-emerald-50/50 dark:bg-emerald-950/20">
-              <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Setup Sahabat Desa</div>
+            <div className="space-y-2 p-3 rounded-md border bg-success/10">
+              <div className="text-xs font-semibold text-success">Setup Sahabat Desa</div>
               <div>
                 <Label className="text-xs">Nama Desa</Label>
                 <Input value={desaName} onChange={(e) => setDesaName(e.target.value)} placeholder="Desa Cilawu" className="mt-1 text-sm" />
