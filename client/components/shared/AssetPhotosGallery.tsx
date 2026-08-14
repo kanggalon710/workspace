@@ -1,7 +1,7 @@
 // Galeri foto aset generik - dipakai oleh ODP/ODC/Tiang di halaman aset (grid) & panel /map (scroll).
 // Backend: GET/POST/DELETE /api/asset-photos/:type/:id (+ /cover). Penyimpanan filesystem via server/uploads.ts.
 // Sumber data tunggal tabel asset_photos (odp_photos lama sudah dimigrasi).
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { X } from "lucide-react";
+import { ImageOff } from "lucide-react";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 
 export type AssetPhotoKind = "odp" | "odc" | "pole";
 
@@ -44,14 +45,11 @@ export function AssetPhotosGallery({
   const canEdit = canWrite(FEATURE_BY_KIND[assetType]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  // Lightbox: klik foto buka popup (bukan redirect ke tab baru). null = tertutup.
-  const [viewer, setViewer] = useState<number | null>(null);
-  useEffect(() => {
-    if (viewer == null) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setViewer(null); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [viewer]);
+  // Lightbox: klik foto buka penampil full-page (index foto). null = tertutup.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  // Foto yang gagal dimuat (file hilang di disk / 404) → tampilkan placeholder, bukan ikon rusak.
+  const [broken, setBroken] = useState<Set<number>>(new Set());
+  const markBroken = (id: number) => setBroken((prev) => new Set(prev).add(id));
 
   const base = `/asset-photos/${assetType}/${assetId}`;
   const photosKey = ["/api/asset-photos", assetType, assetId, "photos"];
@@ -166,7 +164,7 @@ export function AssetPhotosGallery({
               : "grid grid-cols-3 gap-2",
           )}
         >
-          {photos.map((p) => (
+          {photos.map((p, i) => (
             <div
               key={p.id}
               className={cn(
@@ -174,14 +172,22 @@ export function AssetPhotosGallery({
                 isScroll ? "snap-start shrink-0 w-28" : "group",
               )}
             >
-              {/* Tap/klik gambar → buka popup lightbox (bisa di-exit), bukan redirect ke tab baru */}
-              <button type="button" onClick={() => setViewer(p.id)} className="block w-full" aria-label="Perbesar foto">
-                <img
-                  src={`/api${base}/${p.id}`}
-                  alt={p.caption ?? `Foto ${assetType} ${p.id}`}
-                  className="w-full h-24 object-cover cursor-zoom-in"
-                  loading="lazy"
-                />
+              {/* Tap/klik gambar → buka lightbox full-page (bisa geser kiri/kanan), bukan redirect ke tab baru */}
+              <button type="button" onClick={() => setViewerIndex(i)} className="block w-full" aria-label="Perbesar foto">
+                {broken.has(p.id) ? (
+                  <div className="flex h-24 w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                    <ImageOff className="size-5" />
+                    <span className="text-[10px]">Tak tersedia</span>
+                  </div>
+                ) : (
+                  <img
+                    src={`/api${base}/${p.id}`}
+                    alt={p.caption ?? `Foto ${assetType} ${p.id}`}
+                    className="w-full h-24 object-cover cursor-zoom-in"
+                    loading="lazy"
+                    onError={() => markBroken(p.id)}
+                  />
+                )}
               </button>
               {p.isCover && (
                 <span className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-semibold pointer-events-none">
@@ -243,29 +249,18 @@ export function AssetPhotosGallery({
         </div>
       )}
 
-      {/* Lightbox popup - klik latar / tombol X / ESC untuk keluar (tidak redirect) */}
-      {viewer != null && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 animate-in fade-in duration-150"
-          onClick={() => setViewer(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            type="button"
-            onClick={() => setViewer(null)}
-            aria-label="Tutup"
-            className="absolute top-4 right-4 flex size-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25"
-          >
-            <X className="size-5" />
-          </button>
-          <img
-            src={`/api${base}/${viewer}`}
-            alt="Foto aset"
-            className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+      {/* Lightbox full-page (portal ke body) - geser kiri/kanan antar foto, Esc/klik latar untuk keluar */}
+      {viewerIndex != null && (
+        <ImageLightbox
+          images={photos.map((p) => ({
+            src: `/api${base}/${p.id}`,
+            alt: p.caption ?? `Foto ${assetType} ${p.id}`,
+            caption: p.caption ?? undefined,
+          }))}
+          index={viewerIndex}
+          onIndexChange={setViewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
       )}
     </div>
   );

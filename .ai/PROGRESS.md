@@ -3,6 +3,34 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - Foto /odps: lightbox full-page ala Telegram + fallback foto rusak
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** User: di /odps sebagian foto tak tampil (cuma alt text), dan klik foto hanya menutupi
+modal ODP (bukan 1 layar penuh). Mau perilaku ala Telegram (overlay gelap-transparan, foto di
+tengah, geser kiri/kanan).
+**Akar masalah:** (1) Lightbox lama di `AssetPhotosGallery` = `<div fixed inset-0>` di DALAM
+`DialogContent` yang ber-`transform` -> ancestor ber-transform jadi containing block utk `position:
+fixed`, jadi overlay hanya menutup modal, bukan viewport. (2) `<img>` foto = endpoint stream
+`/api/asset-photos/odp/:id/:photoId` (auth via cookie); sebagian baris (hasil migrasi ke cPanel)
+menunjuk file yg TIDAK ADA di disk -> 404; TANPA `onError` -> browser tampilkan ikon rusak/alt.
+Tak ada base64 di DB (asset_photos & odp_photos cuma simpan photoPath) -> foto hilang = file benar2
+hilang di server (ops, bukan bug kode).
+**Perubahan:** Komponen baru reusable `client/components/ui/image-lightbox.tsx` - di-portal ke
+`document.body` (lolos dari stacking modal), `fixed inset-0 z-[120] bg-black/85 backdrop-blur`, foto
+`object-contain`, panah ChevronLeft/Right (>1 foto), tombol X, keyboard Esc/←/→, swipe sentuh,
+penghitung n/m, caption, `onError` -> placeholder "Foto tidak tersedia", kunci scroll body.
+`AssetPhotosGallery` di-refactor pakainya (array foto + index -> geser antar foto), thumbnail dapat
+`onError` -> placeholder "Tak tersedia". Berlaku utk ODP/ODC/Pole (komponen sama).
+**File:** client/components/ui/image-lightbox.tsx (baru), client/components/shared/AssetPhotosGallery.tsx.
+**Verifikasi:** `tsc` 0 error, build OK.
+**CATATAN PENTING (ops, bukan bug kode):** foto yg 404 = file-nya tak ada di disk cPanel. DB tak
+simpan binary, jadi tak bisa dipulihkan dari kode. Perlu cek server: `JABNET_UPLOAD_ROOT` benar +
+file lama (dari server lama fiber-tools.arkanova.id) belum tersalin ke cPanel `<slug>/odps/YYYY/MM/*.jpg`.
+Placeholder frontend menutup UX-nya. Opsional: bisa dibuat endpoint diagnostik "hitung baris foto
+tanpa file".
+**Follow-up opsional (DRY):** 3 overlay foto lain (CollectionDetail, CanvassingReportsPage,
+pipelines/AttachmentGallery yg buka tab baru) bisa dipindah ke `ImageLightbox` yang sama.
+
 ## 2026-08-14 - Settings per-mitra: MPWA/Telegram/Meta/Loyalty/Collection global -> per-tenant
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** User: config integrasi harus per-mitra (bukan global app_settings). Tiap tenant punya
