@@ -12432,12 +12432,13 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
   async updateTicketTeamMember(id: number, data: Partial<TicketTeamMember>): Promise<TicketTeamMember | undefined> {
-    await this.db.update(ticketTeam).set(data).where(eq(ticketTeam.id, id));
-    const [row] = await this.db.select().from(ticketTeam).where(eq(ticketTeam.id, id));
+    // Tenant isolation (defense-in-depth): jangan sentuh baris mitra lain.
+    await this.db.update(ticketTeam).set(data).where(and(eq(ticketTeam.id, id), eq(ticketTeam.mitraId, getMitraId())));
+    const [row] = await this.db.select().from(ticketTeam).where(and(eq(ticketTeam.id, id), eq(ticketTeam.mitraId, getMitraId())));
     return row;
   }
   async removeTicketTeamMember(id: number): Promise<void> {
-    await this.db.delete(ticketTeam).where(eq(ticketTeam.id, id));
+    await this.db.delete(ticketTeam).where(and(eq(ticketTeam.id, id), eq(ticketTeam.mitraId, getMitraId())));
   }
 
   // ---- TICKET EVIDENCE ----
@@ -12483,10 +12484,12 @@ export class DatabaseStorage implements IStorage {
     return { photoPath: rows[0].photoPath ?? null, photoData: rows[0].photoData ?? null, ticketId: Number(rows[0].ticketId) };
   }
   async deleteTicketEvidence(id: number): Promise<void> {
+    // Tenant isolation (defense-in-depth): hanya evidence milik mitra pemanggil.
     const [row] = await this.db.select({ photoPath: ticketEvidence.photoPath })
-      .from(ticketEvidence).where(eq(ticketEvidence.id, id));
-    if (row?.photoPath) await deletePhoto(row.photoPath);
-    await this.db.delete(ticketEvidence).where(eq(ticketEvidence.id, id));
+      .from(ticketEvidence).where(and(eq(ticketEvidence.id, id), eq(ticketEvidence.mitraId, getMitraId())));
+    if (!row) return;
+    if (row.photoPath) await deletePhoto(row.photoPath);
+    await this.db.delete(ticketEvidence).where(and(eq(ticketEvidence.id, id), eq(ticketEvidence.mitraId, getMitraId())));
   }
 
   // ---- TICKET GPS LOGS ----
@@ -12925,8 +12928,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTicketComment(commentId: number): Promise<void> {
+    // Tenant isolation (defense-in-depth): hanya komentar milik mitra pemanggil.
     await this.db.update(ticketComments).set({ deletedAt: new Date().toISOString() } as any)
-      .where(eq(ticketComments.id, commentId));
+      .where(and(eq(ticketComments.id, commentId), eq(ticketComments.mitraId, getMitraId())));
   }
 
   // ====================  v4.2.18 (B.7 + C.1): Hold/Pause mechanism  ====================

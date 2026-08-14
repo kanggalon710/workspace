@@ -3,6 +3,32 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - Security: tutup lubang lintas-tenant (mitra-admin over-permit + ticket IDOR)
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** Audit lintas-tenant (3 agent) menemukan bug isolasi nyata. User minta fix A+B ronde ini.
+**Akar masalah (A):** `isMitraAdmin(req)` = "admin di mana pun", bukan "admin mitra target". Handler
+mitra-management pakai `:id` dari URL tanpa cek `id === activeMitraId`. Admin mitra non-JABNET bisa
+baca/ubah/hapus mitra lain (termasuk JABNET). Plus sink: `PUT/POST /api/users` menulis teks `role`
+dari client mentah -> escalate ke "admin".
+**Akar masalah (B):** endpoint child tiket (evidence/gps/team/comments/pauses/checkpoint/timeline)
+tak verifikasi tiket `:id` milik mitra pemanggil (IDOR lintas-tenant baca/hapus).
+**Perubahan:**
+- Helper baru `canAdminMitra(req, targetMitraId)` = isJabnetRoot ATAU (isMitraAdmin && target===activeMitraId).
+  Dipasang di `GET/PUT /api/mitras/:id`, `POST /api/mitras/:id/users`, `DELETE /api/mitras/:id/users/:userId`.
+  `DELETE /api/mitras/:id` -> owner-only (`isJabnetRoot`). `PUT` field platform-sensitif (isActive/slug/
+  features) hanya System-Admin JABNET.
+- Sink role: `PUT /api/users/:id` berhenti tulis teks `role` client; `POST /api/users` teks legacy
+  diturunkan aman (`role==="admin"?"admin":"operator"`) - resolusi roleId server-side tetap (terkunci).
+- Helper `loadTicketInTenant(req,res)` (pakai `getTicket` ter-scope) dipasang di ~11 endpoint child tiket.
+  Defense-in-depth storage: filter `mitraId=getMitraId()` di updateTicketTeamMember, removeTicketTeamMember,
+  deleteTicketComment, deleteTicketEvidence.
+**File:** server/routes.ts (helper + 5 handler mitra + 2 handler user + 11 route tiket),
+server/storage.ts (4 method destruktif tiket).
+**Verifikasi:** `tsc` 0 error, build OK, 297/297 test pass. Isolasi: System-Admin tetap lintas-tenant;
+admin own-tenant tetap penuh atas mitra+tiket sendiri; fix `?mitraId`/remap sebelumnya utuh.
+**Butuh tes manual runtime + belum deploy.** DITUNDA (Group C hardening + settings per-mitra + roles CRUD
+lintas-tenant) - lihat TODO.
+
 ## 2026-08-14 - Fix: System-Admin JABNET gagal tambah user ke mitra lain
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** yoga (System-Admin JABNET) tak bisa tambah dirinya ke mitra diar -> error

@@ -982,6 +982,17 @@ function isJabnetRoot(req: Request): boolean {
   return !!req.authUser?.isSystemAdmin;
 }
 
+/**
+ * Boleh kelola mitra target: System-Admin JABNET (lintas-tenant) ATAU admin mitra itu SENDIRI.
+ * `isMitraAdmin` saja tidak cukup - itu true utk admin mitra mana pun; wajib dibatasi ke mitra aktif.
+ */
+function canAdminMitra(req: Request, targetMitraId: number): boolean {
+  if (!req.authUser) return false;
+  if (isJabnetRoot(req)) return true; // JABNET System-Admin = pemilik lintas-tenant
+  if (!isMitraAdmin(req)) return false; // harus admin dulu
+  return Number(req.authUser.activeMitraId ?? 1) === Number(targetMitraId); // ...dan hanya mitra sendiri
+}
+
 /** GET /api/mitras - list all mitras (owner cross-tenant view) */
 router.get("/api/mitras", async (req: Request, res: Response) => {
   // System admin only - mitra admin tidak boleh lihat list mitra lain
@@ -1015,9 +1026,10 @@ router.get("/api/mitras", async (req: Request, res: Response) => {
 
 /** GET /api/mitras/:id - detail + members list */
 router.get("/api/mitras/:id", async (req: Request, res: Response) => {
-  if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
+  const id = Number(req.params.id);
+  // Tenant isolation: hanya System-Admin (lintas-tenant) atau admin mitra ini sendiri.
+  if (!canAdminMitra(req, id)) return sendError(res, "Forbidden", 403);
   try {
-    const id = Number(req.params.id);
     const m = await storage.getMitra(id);
     if (!m) return sendError(res, "Mitra tidak ditemukan", 404);
     let features: Record<string, boolean> = {};
@@ -1215,9 +1227,12 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
 
 /** PUT /api/mitras/:id - update mitra fields + features */
 router.put("/api/mitras/:id", async (req: Request, res: Response) => {
-  if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
+  const id = Number(req.params.id);
+  // Tenant isolation: System-Admin (lintas-tenant) atau admin mitra ini sendiri.
+  if (!canAdminMitra(req, id)) return sendError(res, "Forbidden", 403);
+  // Field platform-sensitif (aktif/slug/features) hanya boleh diubah System-Admin JABNET.
+  const canEditPlatformFields = isJabnetRoot(req);
   try {
-    const id = Number(req.params.id);
     const existing = await storage.getMitra(id);
     if (!existing) return sendError(res, "Mitra tidak ditemukan", 404);
     const b = req.body ?? {};
@@ -1236,13 +1251,13 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
     mapField("primaryContactPhone", "primary_contact_phone");
     mapField("logoUrl", "logo_url");
     mapField("notes", "notes");
-    if (typeof b.isActive === "number" || typeof b.isActive === "boolean") {
+    if (canEditPlatformFields && (typeof b.isActive === "number" || typeof b.isActive === "boolean")) {
       updates.push("is_active = ?");
       params.push(b.isActive ? 1 : 0);
     }
     // Slug change - validate uniqueness, rename upload dir SEBELUM DB update (best-effort rollback di catch)
     let pendingSlugRename: { from: string; to: string } | null = null;
-    if (b.slug !== undefined && b.slug !== existing.slug) {
+    if (canEditPlatformFields && b.slug !== undefined && b.slug !== existing.slug) {
       const newSlug = String(b.slug).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
       if (!newSlug) return sendError(res, "Slug tidak valid");
       const dup = await storage.getMitraBySlug(newSlug);
@@ -1250,8 +1265,8 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
       updates.push("slug = ?"); params.push(newSlug);
       pendingSlugRename = { from: existing.slug || `mitra-${id}`, to: newSlug };
     }
-    // Features merge - caller can patch partial
-    if (b.features && typeof b.features === "object") {
+    // Features merge - caller can patch partial (platform-sensitif: System-Admin JABNET saja).
+    if (canEditPlatformFields && b.features && typeof b.features === "object") {
       let current: Record<string, boolean> = {};
       try { current = JSON.parse((existing as any).features ?? "{}"); } catch {}
       const merged = { ...current, ...b.features };
@@ -1279,7 +1294,7 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
       throw e;
     }
     if (pendingSlugRename) storage.invalidateMitraSlugCache(id);
-    if (b.features && typeof b.features === "object") {
+    if (canEditPlatformFields && b.features && typeof b.features === "object") {
       // Feature toggle changes effective permissions for this mitra's users - drop cached perms.
       invalidatePermCacheAtMitra();
     }
@@ -1305,7 +1320,8 @@ router.put("/api/mitras/:id", async (req: Request, res: Response) => {
 
 /** DELETE /api/mitras/:id - soft delete (set inactive). Hard delete needs explicit ?hard=true */
 router.delete("/api/mitras/:id", async (req: Request, res: Response) => {
-  if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
+  // Hapus/deaktivasi tenant = owner-only (System-Admin JABNET).
+  if (!isJabnetRoot(req)) return sendError(res, "Forbidden", 403);
   try {
     const id = Number(req.params.id);
     if (id === 1) return sendError(res, "Mitra default (JABNET) tidak boleh dihapus", 400);
@@ -1347,9 +1363,10 @@ router.delete("/api/mitras/:id", async (req: Request, res: Response) => {
 
 /** POST /api/mitras/:id/users - add existing user as member of this mitra */
 router.post("/api/mitras/:id/users", async (req: Request, res: Response) => {
-  if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
+  const mitraId = Number(req.params.id);
+  // Tenant isolation: System-Admin (lintas-tenant) atau admin mitra ini sendiri.
+  if (!canAdminMitra(req, mitraId)) return sendError(res, "Forbidden", 403);
   try {
-    const mitraId = Number(req.params.id);
     const { userId, isPrimary, roleId } = req.body ?? {};
     if (!Number.isFinite(Number(userId))) return sendError(res, "userId wajib");
     const m = await storage.getMitra(mitraId);
@@ -1395,9 +1412,10 @@ router.post("/api/mitras/:id/users", async (req: Request, res: Response) => {
 
 /** DELETE /api/mitras/:id/users/:userId - remove user membership */
 router.delete("/api/mitras/:id/users/:userId", async (req: Request, res: Response) => {
-  if (!isMitraAdmin(req)) return sendError(res, "Forbidden", 403);
+  const mitraId = Number(req.params.id);
+  // Tenant isolation: System-Admin (lintas-tenant) atau admin mitra ini sendiri.
+  if (!canAdminMitra(req, mitraId)) return sendError(res, "Forbidden", 403);
   try {
-    const mitraId = Number(req.params.id);
     const userId = Number(req.params.userId);
     if (mitraId === 1 && userId === req.authUser!.id) {
       return sendError(res, "Tidak boleh hapus membership diri sendiri dari mitra default", 400);
@@ -1894,6 +1912,8 @@ const ADMIN_EDITABLE_FIELDS = [
 router.post("/api/users", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
+    // `role` hanya dipakai utk resolusi roleId server-side (`role==="admin"` -> role terkunci);
+    // teks legacy yang DISIMPAN diturunkan aman, bukan free-text client (cegah escalation via role text).
     const { username, password, name, role, roleId, permissions } = req.body;
     if (!username || !password || !name) return sendError(res, "Username, password, dan nama wajib diisi");
     if (username.length < 3 || username.length > 30) return sendError(res, "Username harus 3-30 karakter");
@@ -1959,7 +1979,7 @@ router.post("/api/users", async (req: Request, res: Response) => {
 
     const user = await storage.createUser({
       username, password: hashed, name,
-      role: role || "operator",
+      role: role === "admin" ? "admin" : "operator",
       roleId: resolvedRoleId,
       isActive: 1,
       createdAt: new Date().toISOString(),
@@ -2012,7 +2032,8 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
     if (!(await requireUserInScope(req, res, id))) return;
-    const { role, roleId, permissions, isActive, password } = req.body;
+    // Legacy `role` text SENGAJA tidak diambil dari client (escalation sink) - sumber kebenaran = roleId.
+    const { roleId, permissions, isActive, password } = req.body;
     const updateData: any = {};
     const changes: string[] = [];
 
@@ -2044,7 +2065,6 @@ router.put("/api/users/:id", async (req: Request, res: Response) => {
       changes.push(f);
     }
 
-    if (role !== undefined) { updateData.role = role; changes.push(`role→${role}`); }
 
     // Handle roleId - FIX BUG 1 (role_id tersimpan ke DB)
     if (roleId !== undefined) {
@@ -13107,10 +13127,21 @@ router.get("/api/tickets/:id/activities", async (req: Request, res: Response) =>
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+/**
+ * Muat tiket ter-scope ke mitra pemanggil (getTicket sudah difilter mitra); 404 kalau bukan miliknya.
+ * Dipakai di endpoint child tiket yang query by ticket/child id tanpa filter mitra (cegah IDOR lintas-tenant).
+ */
+async function loadTicketInTenant(req: Request, res: Response) {
+  const t = await storage.getTicket(Number(req.params.id));
+  if (!t) { sendError(res, "Ticket tidak ditemukan", 404); return null; }
+  return t;
+}
+
 router.get("/api/tickets/:id/team", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const enriched = await storage.getTicketTeamWithUsers(Number(req.params.id));
     sendSuccess(res, enriched);
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -13119,6 +13150,7 @@ router.get("/api/tickets/:id/team", async (req: Request, res: Response) => {
 router.post("/api/tickets/:id/team", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const { userId, role } = req.body;
     if (!userId) return sendError(res, "userId wajib diisi");
     const member = await storage.addTicketTeamMember({ ticketId: Number(req.params.id), userId, role: role || "helper" });
@@ -13139,6 +13171,7 @@ router.post("/api/tickets/:id/team", async (req: Request, res: Response) => {
 router.delete("/api/tickets/:id/team/:memberId", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const ticketId = Number(req.params.id);
     const memberId = Number(req.params.memberId);
     // Capture sebelum delete untuk audit
@@ -13159,6 +13192,7 @@ router.delete("/api/tickets/:id/team/:memberId", async (req: Request, res: Respo
 router.post("/api/tickets/:id/check-in", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const ticketId = Number(req.params.id);
     const { lat, lng } = req.body;
     // Find user's team assignment
@@ -13181,6 +13215,7 @@ router.post("/api/tickets/:id/check-in", async (req: Request, res: Response) => 
 router.post("/api/tickets/:id/check-out", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const ticketId = Number(req.params.id);
     const { lat, lng, resolution, actualDuration } = req.body;
     const team = await storage.getTicketTeam(ticketId);
@@ -13209,6 +13244,7 @@ router.get("/api/tickets/:id/evidence", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const evidence = await storage.getTicketEvidence(Number(req.params.id));
     sendSuccess(res, evidence);
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -13271,6 +13307,7 @@ router.get("/api/tickets/:id/gps", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const logs = await storage.getTicketGpsLogs(Number(req.params.id));
     sendSuccess(res, logs);
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -13728,6 +13765,7 @@ router.post("/api/tickets/:id/comments", async (req: Request, res: Response) => 
 router.delete("/api/tickets/:id/comments/:commentId", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const ticketId = Number(req.params.id);
     const commentId = Number(req.params.commentId);
     await storage.deleteTicketComment(commentId);
@@ -13785,6 +13823,7 @@ router.get("/api/tickets/:id/pauses", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const id = Number(req.params.id);
     const pauses = await storage.getTicketPauses(id);
     const active = await storage.getActivePause(id);
@@ -13867,6 +13906,7 @@ router.get("/api/odps/:id/active-tickets", async (req: Request, res: Response) =
 router.post("/api/tickets/:id/checkpoint", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const ticketId = Number(req.params.id);
     const { action, note, evidenceId, lat, lng, metadata } = req.body || {};
     if (!action) return sendError(res, "action wajib (depart|arrive|start_work|progress|pause|resume|escalate|complete|note)");
@@ -13915,6 +13955,7 @@ router.get("/api/tickets/:id/timeline", async (req: Request, res: Response) => {
   if (!requirePermission(req, res, "tickets")) return;
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
+    if (!await loadTicketInTenant(req, res)) return;
     const ticketId = Number(req.params.id);
     const checkpoints = await storage.getTicketCheckpoints(ticketId);
     const metrics = await storage.getTicketTimeMetrics(ticketId);
