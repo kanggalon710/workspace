@@ -102,8 +102,8 @@ export function resolvePairingCode(code: string): number | null {
 }
 
 export async function loadTelegramConfig(): Promise<TelegramConfig | null> {
-  const enabled = (await storage.getSetting("telegram_enabled")) === "true";
-  const botToken = await storage.getSetting("telegram_bot_token");
+  const enabled = (await storage.getMitraSetting("telegram_enabled")) === "true";
+  const botToken = await storage.getMitraSetting("telegram_bot_token");
   if (!botToken) return null;
   return { enabled, botToken };
 }
@@ -148,17 +148,17 @@ export async function sendTelegramMessage(
     const success = res.ok && bodyJson?.ok === true;
     if (!success) {
       const errMsg = bodyJson?.description || `HTTP ${res.status}`;
-      await storage.setSetting("telegram_last_error", errMsg, "telegram");
-      await storage.setSetting("telegram_last_error_at", new Date().toISOString(), "telegram");
+      await storage.setMitraSetting("telegram_last_error", errMsg);
+      await storage.setMitraSetting("telegram_last_error_at", new Date().toISOString());
       return { sent: false, error: errMsg, response: bodyJson, status: res.status };
     }
-    await storage.setSetting("telegram_last_success_at", new Date().toISOString(), "telegram");
-    await storage.setSetting("telegram_last_error", "", "telegram");
+    await storage.setMitraSetting("telegram_last_success_at", new Date().toISOString());
+    await storage.setMitraSetting("telegram_last_error", "");
     return { sent: true, response: bodyJson, status: res.status };
   } catch (err: any) {
     const msg = err.message || "Unknown Telegram error";
-    await storage.setSetting("telegram_last_error", msg, "telegram");
-    await storage.setSetting("telegram_last_error_at", new Date().toISOString(), "telegram");
+    await storage.setMitraSetting("telegram_last_error", msg);
+    await storage.setMitraSetting("telegram_last_error_at", new Date().toISOString());
     return { sent: false, error: msg };
   }
 }

@@ -1065,7 +1065,7 @@ customerPortalRouter.get("/api/portal/loyalty/referrals", async (req: Request, r
  * Helper: load redemption catalog dari settings (JSON), fallback ke default.
  */
 async function loadSpeedBoostCatalog(): Promise<Array<{ key: string; label: string; description: string; pointsCost: number; speedMultiplier: number; durationHours: number }>> {
-  const raw = await storage.getSetting("speed_boost_catalog");
+  const raw = await storage.getMitraSetting("speed_boost_catalog");
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
@@ -1222,7 +1222,7 @@ customerPortalRouter.get("/api/portal/loyalty/leaderboard", async (_req: Request
 /** GET /api/portal/loyalty/campaign - active seasonal campaign (for portal banner) */
 customerPortalRouter.get("/api/portal/loyalty/campaign", async (_req: Request, res: Response) => {
   try {
-    const raw = await storage.getSetting("sahabat_seasonal_campaign");
+    const raw = await storage.getMitraSetting("sahabat_seasonal_campaign");
     const parsed = raw ? (() => { try { return JSON.parse(raw); } catch { return null; } })() : null;
     const now = Date.now();
     const isActive = parsed?.startDate && parsed?.endDate

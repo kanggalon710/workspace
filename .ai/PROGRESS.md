@@ -3,6 +3,32 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - Settings per-mitra: MPWA/Telegram/Meta/Loyalty/Collection global -> per-tenant
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** User: config integrasi harus per-mitra (bukan global app_settings). Tiap tenant punya
+gateway/konfig sendiri.
+**Strategi (NON-BREAKING):** `getMitraSetting(key)` sudah fallback ke `app_settings` global -> nilai
+global lama otomatis jadi DEFAULT/fallback tiap mitra sampai mitra set override. Tak perlu migrasi data.
+Semua read/write site sudah terverifikasi jalan dalam tenant context (request atau worker `withMitra`)
+- audit context per-site (mpwa/telegram/billing-worker/broadcast-worker/index SLA semua di-wrap withMitra).
+**Perubahan:** 49 read `getSetting`->`getMitraSetting` + 43 write `setSetting`->`setMitraSetting` (drop
+arg kategori, `{isSecret:true}` utk mpwa_token/telegram_bot_token) di 6 file: routes.ts, mpwa.ts,
+telegram.ts, wa-providers.ts, billing-sync-worker.ts, customer-portal-routes.ts. Family: MPWA (config+
+status+button+wa_default_button_image), Telegram (config+status), Meta (pixel/token), Loyalty/Sahabat
+(campaign/expiry/budget/points/speed_boost), Collection SOP (enabled/trigger/writeoff/reminder+
+last_run/last_opened). Alat: scratchpad `migrate-per-mitra-settings.mjs`.
+**DIKECUALIKAN (tetap global, benar):** platform keys (google_maps_api_key, company_name, self_update_*,
+billing_reseller_*, anthropic_api_key, dll), `collections_isolir_cleanup_v1` (flag migrasi one-time),
+`collections_engine_mode`/`collections_pipeline_id` (sudah per-mitra sebelumnya), generic `PUT
+/api/settings` (endpoint dynamic-key utk platform config global).
+**Bonus fix:** status keys (mpwa/telegram `*_last_error/success`, collection `*_last_run/opened`) dulu
+di-tulis ke GLOBAL dari konteks per-mitra -> saling timpa antar-mitra. Sekarang per-mitra (panel status
+tiap tenant benar).
+**File:** 6 file server di atas.
+**Verifikasi:** `tsc` 0 error, build OK, 297/297 test. Non-breaking (fallback global). Belum deploy.
+**Catatan follow-up (opsional):** tambah key Telegram/Meta ke `INTEGRATION_KEY_SPECS` (hint UI halaman
+/integrations) supaya muncul di editor per-mitra generic.
+
 ## 2026-08-14 - Security Group C: hardening escalation lintas-tenant
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** Lanjutan audit (user: "do c"). Tutup rantai escalation + inkonsistensi isolasi.

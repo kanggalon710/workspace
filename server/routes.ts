@@ -2637,8 +2637,8 @@ router.post("/api/coverage-check", async (req: Request, res: Response) => {
 import { trackLead as metaTrackLead, trackPurchase as metaTrackPurchase, type MetaCapiConfig } from "./meta-capi.js";
 
 async function getMetaCapiConfig(): Promise<MetaCapiConfig | null> {
-  const pixelId = await storage.getSetting("meta_pixel_id");
-  const accessToken = await storage.getSetting("meta_access_token");
+  const pixelId = await storage.getMitraSetting("meta_pixel_id");
+  const accessToken = await storage.getMitraSetting("meta_access_token");
   if (!pixelId || !accessToken) return null;
   return { pixelId, accessToken };
 }
@@ -4891,13 +4891,13 @@ router.get("/api/collections/settings", async (req: Request, res: Response) => {
   if (!hasPermission(req, "collections")) return sendError(res, "Akses ditolak", 403);
   try {
     sendSuccess(res, {
-      enabled: (await storage.getSetting("collection_enabled")) !== "false",
-      triggerDays: Number(await storage.getSetting("collection_trigger_days") ?? "3"),
-      writeoffDays: Number(await storage.getSetting("collection_writeoff_days") ?? "90"),
-      reminderH3Enabled: (await storage.getSetting("collection_reminder_h3_enabled")) === "true",
-      reminderH3TemplateKey: (await storage.getSetting("collection_reminder_h3_template")) || "tagihan_reminder",
-      lastRunAt: await storage.getSetting("collection_trigger_last_run_at"),
-      lastOpenedCount: Number(await storage.getSetting("collection_trigger_last_opened") ?? "0"),
+      enabled: (await storage.getMitraSetting("collection_enabled")) !== "false",
+      triggerDays: Number(await storage.getMitraSetting("collection_trigger_days") ?? "3"),
+      writeoffDays: Number(await storage.getMitraSetting("collection_writeoff_days") ?? "90"),
+      reminderH3Enabled: (await storage.getMitraSetting("collection_reminder_h3_enabled")) === "true",
+      reminderH3TemplateKey: (await storage.getMitraSetting("collection_reminder_h3_template")) || "tagihan_reminder",
+      lastRunAt: await storage.getMitraSetting("collection_trigger_last_run_at"),
+      lastOpenedCount: Number(await storage.getMitraSetting("collection_trigger_last_opened") ?? "0"),
     });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -4906,19 +4906,19 @@ router.put("/api/collections/settings", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
     const { enabled, triggerDays, writeoffDays, reminderH3Enabled, reminderH3TemplateKey } = req.body ?? {};
-    if (enabled !== undefined) await storage.setSetting("collection_enabled", enabled ? "true" : "false", "collection");
+    if (enabled !== undefined) await storage.setMitraSetting("collection_enabled", enabled ? "true" : "false");
     if (triggerDays !== undefined) {
       const n = Number(triggerDays);
       if (isNaN(n) || n < 0 || n > 365) return sendError(res, "triggerDays harus 0-365 hari");
-      await storage.setSetting("collection_trigger_days", String(n), "collection");
+      await storage.setMitraSetting("collection_trigger_days", String(n));
     }
     if (writeoffDays !== undefined) {
       const n = Number(writeoffDays);
       if (isNaN(n) || n < 0 || n > 3650) return sendError(res, "writeoffDays harus 0-3650 (0 = disabled)");
-      await storage.setSetting("collection_writeoff_days", String(n), "collection");
+      await storage.setMitraSetting("collection_writeoff_days", String(n));
     }
-    if (reminderH3Enabled !== undefined) await storage.setSetting("collection_reminder_h3_enabled", reminderH3Enabled ? "true" : "false", "collection");
-    if (reminderH3TemplateKey !== undefined) await storage.setSetting("collection_reminder_h3_template", String(reminderH3TemplateKey).trim(), "collection");
+    if (reminderH3Enabled !== undefined) await storage.setMitraSetting("collection_reminder_h3_enabled", reminderH3Enabled ? "true" : "false");
+    if (reminderH3TemplateKey !== undefined) await storage.setMitraSetting("collection_reminder_h3_template", String(reminderH3TemplateKey).trim());
     await logAudit(req, "UPDATE", "collection_settings", undefined, undefined, { enabled, triggerDays, writeoffDays, reminderH3Enabled });
     sendSuccess(res, { saved: true });
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -9342,7 +9342,7 @@ router.get("/api/loyalty/admin/budget", async (req: Request, res: Response) => {
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
     const data = await storage.getLoyaltyBudgetSummary(monthStart, monthEnd);
     // Read optional budget limits dari settings
-    const limitMonthly = Number(await storage.getSetting("sahabat_budget_monthly_limit")) || 0;
+    const limitMonthly = Number(await storage.getMitraSetting("sahabat_budget_monthly_limit")) || 0;
     sendSuccess(res, { ...data, period: { from: monthStart, to: monthEnd }, limitMonthly });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -9354,7 +9354,7 @@ router.put("/api/loyalty/admin/budget/config", async (req: Request, res: Respons
   try {
     const limit = Number(req.body?.limitMonthly);
     if (isNaN(limit) || limit < 0) return sendError(res, "limitMonthly harus angka non-negatif");
-    await storage.setSetting("sahabat_budget_monthly_limit", String(limit), "loyalty");
+    await storage.setMitraSetting("sahabat_budget_monthly_limit", String(limit));
     sendSuccess(res, { limitMonthly: limit });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -9364,7 +9364,7 @@ router.get("/api/loyalty/admin/campaign", async (req: Request, res: Response) =>
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
   try {
-    const raw = await storage.getSetting("sahabat_seasonal_campaign");
+    const raw = await storage.getMitraSetting("sahabat_seasonal_campaign");
     const parsed = raw ? (() => { try { return JSON.parse(raw); } catch { return null; } })() : null;
     const now = Date.now();
     const isActive = parsed?.startDate && parsed?.endDate
@@ -9394,7 +9394,7 @@ router.put("/api/loyalty/admin/campaign", async (req: Request, res: Response) =>
       updatedAt: new Date().toISOString(),
       updatedBy: req.authUser.id,
     };
-    await storage.setSetting("sahabat_seasonal_campaign", JSON.stringify(payload), "loyalty");
+    await storage.setMitraSetting("sahabat_seasonal_campaign", JSON.stringify(payload));
     await logAudit(req, "UPDATE", "sahabat_campaign", undefined, name, payload);
     sendSuccess(res, payload);
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -9405,7 +9405,7 @@ router.delete("/api/loyalty/admin/campaign", async (req: Request, res: Response)
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
   try {
-    await storage.setSetting("sahabat_seasonal_campaign", "", "loyalty");
+    await storage.setMitraSetting("sahabat_seasonal_campaign", "");
     await logAudit(req, "DELETE", "sahabat_campaign");
     sendSuccess(res, { cleared: true });
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -9501,9 +9501,9 @@ router.get("/api/loyalty/admin/expiry-config", async (req: Request, res: Respons
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
   try {
     sendSuccess(res, {
-      referralInviteExpiryDays: Number(await storage.getSetting("sahabat_referral_expiry_days")) || 60,
-      referralReminderDays: Number(await storage.getSetting("sahabat_referral_reminder_days")) || 7,
-      rewardExpiryDays: Number(await storage.getSetting("sahabat_reward_expiry_days")) || 90,
+      referralInviteExpiryDays: Number(await storage.getMitraSetting("sahabat_referral_expiry_days")) || 60,
+      referralReminderDays: Number(await storage.getMitraSetting("sahabat_referral_reminder_days")) || 7,
+      rewardExpiryDays: Number(await storage.getMitraSetting("sahabat_reward_expiry_days")) || 90,
     });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -9514,9 +9514,9 @@ router.put("/api/loyalty/admin/expiry-config", async (req: Request, res: Respons
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
   try {
     const { referralInviteExpiryDays, referralReminderDays, rewardExpiryDays } = req.body ?? {};
-    if (referralInviteExpiryDays != null) await storage.setSetting("sahabat_referral_expiry_days", String(Math.max(1, Number(referralInviteExpiryDays))), "loyalty");
-    if (referralReminderDays != null) await storage.setSetting("sahabat_referral_reminder_days", String(Math.max(1, Number(referralReminderDays))), "loyalty");
-    if (rewardExpiryDays != null) await storage.setSetting("sahabat_reward_expiry_days", String(Math.max(1, Number(rewardExpiryDays))), "loyalty");
+    if (referralInviteExpiryDays != null) await storage.setMitraSetting("sahabat_referral_expiry_days", String(Math.max(1, Number(referralInviteExpiryDays))));
+    if (referralReminderDays != null) await storage.setMitraSetting("sahabat_referral_reminder_days", String(Math.max(1, Number(referralReminderDays))));
+    if (rewardExpiryDays != null) await storage.setMitraSetting("sahabat_reward_expiry_days", String(Math.max(1, Number(rewardExpiryDays))));
     sendSuccess(res, { saved: true });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -9876,10 +9876,10 @@ router.get("/api/loyalty/admin/points/config", async (req: Request, res: Respons
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   if (!hasPermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak", 403);
   try {
-    const onTime = Number(await storage.getSetting("points_earn_on_time")) || 100;
-    const earlyBonus = Number(await storage.getSetting("points_earn_early_bonus")) || 50;
-    const earlyDays = Number(await storage.getSetting("points_earn_early_days_threshold")) || 3;
-    const catalogRaw = await storage.getSetting("speed_boost_catalog");
+    const onTime = Number(await storage.getMitraSetting("points_earn_on_time")) || 100;
+    const earlyBonus = Number(await storage.getMitraSetting("points_earn_early_bonus")) || 50;
+    const earlyDays = Number(await storage.getMitraSetting("points_earn_early_days_threshold")) || 3;
+    const catalogRaw = await storage.getMitraSetting("speed_boost_catalog");
     let catalog: any[] = [];
     if (catalogRaw) {
       try { catalog = JSON.parse(catalogRaw); } catch { /* ignore */ }
@@ -9899,12 +9899,12 @@ router.put("/api/loyalty/admin/points/config", async (req: Request, res: Respons
   if (!hasWritePermission(req, "loyalty_admin")) return sendError(res, "Akses ditolak (write)", 403);
   try {
     const { earnOnTimePts, earnEarlyBonusPts, earnEarlyDaysThreshold, catalog } = req.body ?? {};
-    if (earnOnTimePts != null) await storage.setSetting("points_earn_on_time", String(Math.max(0, Number(earnOnTimePts))), "loyalty");
-    if (earnEarlyBonusPts != null) await storage.setSetting("points_earn_early_bonus", String(Math.max(0, Number(earnEarlyBonusPts))), "loyalty");
-    if (earnEarlyDaysThreshold != null) await storage.setSetting("points_earn_early_days_threshold", String(Math.max(0, Number(earnEarlyDaysThreshold))), "loyalty");
+    if (earnOnTimePts != null) await storage.setMitraSetting("points_earn_on_time", String(Math.max(0, Number(earnOnTimePts))));
+    if (earnEarlyBonusPts != null) await storage.setMitraSetting("points_earn_early_bonus", String(Math.max(0, Number(earnEarlyBonusPts))));
+    if (earnEarlyDaysThreshold != null) await storage.setMitraSetting("points_earn_early_days_threshold", String(Math.max(0, Number(earnEarlyDaysThreshold))));
     if (catalog) {
       if (!Array.isArray(catalog)) return sendError(res, "catalog harus array");
-      await storage.setSetting("speed_boost_catalog", JSON.stringify(catalog), "loyalty");
+      await storage.setMitraSetting("speed_boost_catalog", JSON.stringify(catalog));
     }
     await logAudit(req, "UPDATE", "points_config", undefined, undefined, { earnOnTimePts, earnEarlyBonusPts, hasCatalog: !!catalog });
     sendSuccess(res, { saved: true });
@@ -14769,7 +14769,7 @@ router.post("/api/whatsapp/upload-image", async (req: Request, res: Response) =>
 router.get("/api/settings/wa-default-button-image", async (req: Request, res: Response) => {
   if (!req.authUser) return sendError(res, "Unauthorized", 401);
   try {
-    const url = (await storage.getSetting("wa_default_button_image")) || "";
+    const url = (await storage.getMitraSetting("wa_default_button_image")) || "";
     sendSuccess(res, { url });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -14777,7 +14777,7 @@ router.put("/api/settings/wa-default-button-image", async (req: Request, res: Re
   if (!requireAdmin(req, res)) return;
   try {
     const { url } = req.body ?? {};
-    await storage.setSetting("wa_default_button_image", String(url ?? "").trim(), "whatsapp");
+    await storage.setMitraSetting("wa_default_button_image", String(url ?? "").trim());
     sendSuccess(res, { saved: true });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -14956,9 +14956,9 @@ router.get("/api/mpwa/status", async (req: Request, res: Response) => {
   try {
     const config = await loadMpwaConfig();
     const configured = config !== null;
-    const lastSuccess = await storage.getSetting("mpwa_last_success_at");
-    const lastError = await storage.getSetting("mpwa_last_error");
-    const lastErrorAt = await storage.getSetting("mpwa_last_error_at");
+    const lastSuccess = await storage.getMitraSetting("mpwa_last_success_at");
+    const lastError = await storage.getMitraSetting("mpwa_last_error");
+    const lastErrorAt = await storage.getMitraSetting("mpwa_last_error_at");
     let deviceStatus: any = null;
     if (configured) {
       deviceStatus = await getMpwaDeviceStatus();
@@ -15006,12 +15006,12 @@ router.get("/api/mpwa/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
     sendSuccess(res, {
-      enabled: (await storage.getSetting("mpwa_enabled")) === "true",
-      url: (await storage.getSetting("mpwa_url")) || "https://mpwa.jabnet.id",
-      token: (await storage.getSetting("mpwa_token")) || "",
-      senderNumber: (await storage.getSetting("mpwa_sender_number")) || "",
+      enabled: (await storage.getMitraSetting("mpwa_enabled")) === "true",
+      url: (await storage.getMitraSetting("mpwa_url")) || "https://mpwa.jabnet.id",
+      token: (await storage.getMitraSetting("mpwa_token")) || "",
+      senderNumber: (await storage.getMitraSetting("mpwa_sender_number")) || "",
       // v4.2.19: optional native button endpoint (kalau MPWA gateway support)
-      buttonEndpoint: (await storage.getSetting("mpwa_button_endpoint")) || "",
+      buttonEndpoint: (await storage.getMitraSetting("mpwa_button_endpoint")) || "",
     });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -15021,11 +15021,11 @@ router.put("/api/mpwa/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
     const { enabled, url, token, senderNumber, buttonEndpoint } = req.body ?? {};
-    if (enabled !== undefined) await storage.setSetting("mpwa_enabled", enabled ? "true" : "false", "portal");
-    if (url !== undefined) await storage.setSetting("mpwa_url", String(url).trim(), "portal");
-    if (token !== undefined && !isSecretMaskEcho(token)) await storage.setSetting("mpwa_token", String(token).trim(), "portal");
-    if (senderNumber !== undefined) await storage.setSetting("mpwa_sender_number", String(senderNumber).trim(), "portal");
-    if (buttonEndpoint !== undefined) await storage.setSetting("mpwa_button_endpoint", String(buttonEndpoint).trim(), "portal");
+    if (enabled !== undefined) await storage.setMitraSetting("mpwa_enabled", enabled ? "true" : "false");
+    if (url !== undefined) await storage.setMitraSetting("mpwa_url", String(url).trim());
+    if (token !== undefined && !isSecretMaskEcho(token)) await storage.setMitraSetting("mpwa_token", String(token).trim(), { isSecret: true });
+    if (senderNumber !== undefined) await storage.setMitraSetting("mpwa_sender_number", String(senderNumber).trim());
+    if (buttonEndpoint !== undefined) await storage.setMitraSetting("mpwa_button_endpoint", String(buttonEndpoint).trim());
     await logAudit(req, "UPDATE", "mpwa_config", undefined, undefined, { enabled, hasToken: !!token, senderNumber });
     sendSuccess(res, { saved: true });
   } catch (e: any) { sendError(res, e.message, 500); }
@@ -15049,14 +15049,14 @@ import {
 router.get("/api/telegram/config", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
   try {
-    const token = (await storage.getSetting("telegram_bot_token")) || "";
+    const token = (await storage.getMitraSetting("telegram_bot_token")) || "";
     sendSuccess(res, {
-      enabled: (await storage.getSetting("telegram_enabled")) === "true",
+      enabled: (await storage.getMitraSetting("telegram_enabled")) === "true",
       botToken: token,
-      botUsername: (await storage.getSetting("telegram_bot_username")) || "",
-      lastSuccessAt: await storage.getSetting("telegram_last_success_at"),
-      lastError: await storage.getSetting("telegram_last_error"),
-      lastErrorAt: await storage.getSetting("telegram_last_error_at"),
+      botUsername: (await storage.getMitraSetting("telegram_bot_username")) || "",
+      lastSuccessAt: await storage.getMitraSetting("telegram_last_success_at"),
+      lastError: await storage.getMitraSetting("telegram_last_error"),
+      lastErrorAt: await storage.getMitraSetting("telegram_last_error_at"),
     });
   } catch (e: any) { sendError(res, e.message, 500); }
 });
@@ -15067,18 +15067,18 @@ router.put("/api/telegram/config", async (req: Request, res: Response) => {
   try {
     const { enabled, botToken } = req.body ?? {};
     if (enabled !== undefined) {
-      await storage.setSetting("telegram_enabled", enabled ? "true" : "false", "telegram");
+      await storage.setMitraSetting("telegram_enabled", enabled ? "true" : "false");
     }
     if (botToken !== undefined) {
       const tok = String(botToken).trim();
       if (tok) {
         const info = await getBotInfo(tok);
         if (!info.ok) return sendError(res, `Token invalid: ${info.error}`);
-        await storage.setSetting("telegram_bot_token", tok, "telegram");
-        if (info.username) await storage.setSetting("telegram_bot_username", info.username, "telegram");
+        await storage.setMitraSetting("telegram_bot_token", tok, { isSecret: true });
+        if (info.username) await storage.setMitraSetting("telegram_bot_username", info.username);
       } else {
-        await storage.setSetting("telegram_bot_token", "", "telegram");
-        await storage.setSetting("telegram_bot_username", "", "telegram");
+        await storage.setMitraSetting("telegram_bot_token", "", { isSecret: true });
+        await storage.setMitraSetting("telegram_bot_username", "");
       }
     }
     await logAudit(req, "UPDATE", "telegram_config", undefined, undefined, { enabled, hasToken: !!botToken });
@@ -15108,7 +15108,7 @@ router.post("/api/auth/me/telegram/pair/request", async (req: Request, res: Resp
   try {
     const cfg = await loadTelegramConfig();
     if (!cfg) return sendError(res, "Telegram belum dikonfigurasi admin", 503);
-    const botUsername = (await storage.getSetting("telegram_bot_username")) || "";
+    const botUsername = (await storage.getMitraSetting("telegram_bot_username")) || "";
     const code = generatePairingCode(req.authUser.id);
     sendSuccess(res, {
       code,

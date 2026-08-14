@@ -86,10 +86,10 @@ export class BillingSyncWorker {
    * Berguna untuk testing/operasional setelah admin ubah settings.
    */
   async triggerThresholdCheck(): Promise<{ opened: number; writtenOff: number; advanced: number; overdueMoved: number; closed: number }> {
-    const enabled = (await storage.getSetting("collection_enabled")) !== "false";
+    const enabled = (await storage.getMitraSetting("collection_enabled")) !== "false";
     if (!enabled) return { opened: 0, writtenOff: 0, advanced: 0, overdueMoved: 0, closed: 0 };
-    const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
-    const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "90");
+    const triggerDays = Number(await storage.getMitraSetting("collection_trigger_days") ?? "3");
+    const writeoffDays = Number(await storage.getMitraSetting("collection_writeoff_days") ?? "90");
     const result = await this.runCollectionThresholds(triggerDays, writeoffDays);
     const mid = getMitraIdOrNull() ?? 1;
     // Reconcile: samakan board dengan status isolir (buka kartu isolir-tanpa-kartu, tutup non-isolir → Lunas).
@@ -99,8 +99,8 @@ export class BillingSyncWorker {
     // Overdue: auto-pindah kartu lewat tenggat ke stage Overdue (untuk stage overdueAction="move").
     // Setelah SOP advance supaya kartu yang baru maju tak langsung di-overdue-kan.
     const overdue = await withMitra(mid, () => storage.runCollectionOverdueSweep());
-    await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
-    await storage.setSetting("collection_trigger_last_opened", String(result.opened + recon.opened), "collection");
+    await storage.setMitraSetting("collection_trigger_last_run_at", new Date().toISOString());
+    await storage.setMitraSetting("collection_trigger_last_opened", String(result.opened + recon.opened));
     return { opened: result.opened + recon.opened, writtenOff: result.writtenOff, advanced: sop.advanced, overdueMoved: overdue.moved, closed: recon.closed };
   }
 
@@ -306,10 +306,10 @@ export class BillingSyncWorker {
       const collectionsMode = parseCollectionsMode(await storage.getMitraSetting("collections_engine_mode"));
       if (legacyCollectionsActive(collectionsMode)) {
         // -- Phase 2: Collection threshold triggers (overdue days + auto-writeoff) --
-        const collectionEnabled = (await storage.getSetting("collection_enabled")) !== "false";
+        const collectionEnabled = (await storage.getMitraSetting("collection_enabled")) !== "false";
         if (collectionEnabled) {
-          const triggerDays = Number(await storage.getSetting("collection_trigger_days") ?? "3");
-          const writeoffDays = Number(await storage.getSetting("collection_writeoff_days") ?? "90");
+          const triggerDays = Number(await storage.getMitraSetting("collection_trigger_days") ?? "3");
+          const writeoffDays = Number(await storage.getMitraSetting("collection_writeoff_days") ?? "90");
           const collectionResults = await this.runCollectionThresholds(triggerDays, writeoffDays);
           (stats.transitions as any).auto_opened_overdue = collectionResults.opened;
           (stats.transitions as any).auto_writeoff = collectionResults.writtenOff;
@@ -318,8 +318,8 @@ export class BillingSyncWorker {
             const sop = await storage.runCollectionSopAdvance();
             (stats.transitions as any).sop_auto_delegated = sop.advanced;
           } catch (e: any) { console.warn(`[BillingSyncWorker] SOP advance error: ${e.message}`); }
-          await storage.setSetting("collection_trigger_last_run_at", new Date().toISOString(), "collection");
-          await storage.setSetting("collection_trigger_last_opened", String(collectionResults.opened), "collection");
+          await storage.setMitraSetting("collection_trigger_last_run_at", new Date().toISOString());
+          await storage.setMitraSetting("collection_trigger_last_opened", String(collectionResults.opened));
         }
 
         // -- Phase 3: Reconciliation pass - auto-fix customer<->collection drift --
@@ -719,9 +719,9 @@ export class BillingSyncWorker {
           const due = new Date(billing.due_date).getTime();
           // Tepat waktu: bayar SEBELUM atau PAS due_date
           if (paid <= due + 24 * 3600_000) {
-            const onTimePts = Number(await storage.getSetting("points_earn_on_time")) || 100;
-            const earlyBonusPts = Number(await storage.getSetting("points_earn_early_bonus")) || 50;
-            const earlyDays = Number(await storage.getSetting("points_earn_early_days_threshold")) || 3;
+            const onTimePts = Number(await storage.getMitraSetting("points_earn_on_time")) || 100;
+            const earlyBonusPts = Number(await storage.getMitraSetting("points_earn_early_bonus")) || 50;
+            const earlyDays = Number(await storage.getMitraSetting("points_earn_early_days_threshold")) || 3;
             // refId pakai timestamp epoch payment date untuk idempotency per pembayaran
             const refId = Math.floor(paid / 1000);
             await storage.earnPoints({

@@ -126,19 +126,19 @@ export async function sendMpwaMessage(
       const errMsg = bodyJson?.msg
         || (bodyJson?.errors ? JSON.stringify(bodyJson.errors) : null)
         || `HTTP ${res.status}`;
-      await storage.setSetting("mpwa_last_error", errMsg, "portal");
-      await storage.setSetting("mpwa_last_error_at", new Date().toISOString(), "portal");
+      await storage.setMitraSetting("mpwa_last_error", errMsg);
+      await storage.setMitraSetting("mpwa_last_error_at", new Date().toISOString());
       return { sent: false, error: errMsg, response: bodyJson, status: res.status };
     }
 
     // Success
-    await storage.setSetting("mpwa_last_success_at", new Date().toISOString(), "portal");
-    await storage.setSetting("mpwa_last_error", "", "portal");
+    await storage.setMitraSetting("mpwa_last_success_at", new Date().toISOString());
+    await storage.setMitraSetting("mpwa_last_error", "");
     return { sent: true, response: bodyJson, status: res.status };
   } catch (err: any) {
     const msg = err.message || "Unknown MPWA error";
-    await storage.setSetting("mpwa_last_error", msg, "portal");
-    await storage.setSetting("mpwa_last_error_at", new Date().toISOString(), "portal");
+    await storage.setMitraSetting("mpwa_last_error", msg);
+    await storage.setMitraSetting("mpwa_last_error_at", new Date().toISOString());
     return { sent: false, error: msg };
   }
 }
@@ -345,7 +345,7 @@ export async function sendMpwaRichMessage(
   // -- 1. NATIVE BUTTON (buttons + image) --
   // MPWA /public/send-button mewajibkan image. Kalau template kasih image, kirim native button.
   if (hasButtons && isImage) {
-    const endpointSetting = (await storage.getSetting("mpwa_button_endpoint")) ?? "";
+    const endpointSetting = (await storage.getMitraSetting("mpwa_button_endpoint")) ?? "";
     const endpoint = endpointSetting && endpointSetting.trim() !== ""
       ? (endpointSetting.startsWith("/") ? endpointSetting : "/" + endpointSetting)
       : DEFAULT_BUTTON_ENDPOINT;
@@ -411,7 +411,7 @@ async function postMpwa(url: string, body: any): Promise<{ sent: boolean; error?
     try { bodyJson = await res.json(); } catch {}
     const success = res.ok && bodyJson?.status === true;
     if (success) {
-      await storage.setSetting("mpwa_last_success_at", new Date().toISOString(), "portal");
+      await storage.setMitraSetting("mpwa_last_success_at", new Date().toISOString());
       return { sent: true, response: bodyJson, status: res.status };
     }
     const errMsg = bodyJson?.msg

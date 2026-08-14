@@ -14,9 +14,9 @@
   /users+bulk; M3 promote owner bootstrap-only; M4 blok nama role dicadangkan; M6 repoint cover mitra 1;
   roles CRUD honor ?mitraId utk System-Admin. `canSeeAllData` SENGAJA tetap utk admin tenant (supervisor
   internal, bukan escalation lintas-tenant). Lihat PROGRESS.
-- [ ] **Settings per-mitra (user minta per-mitra, DITUNDA - ronde sendiri):** Telegram/MPWA/Meta/loyalty/
-  collection-SOP disimpan via `setSetting` global, bukan `setMitraSetting` (routes.ts 2608/4877/9325/
-  14971/15017). Perubahan data+behavior per key family.
+- [x] **Settings per-mitra SELESAI** (2026-08-14, di dev): 92 site MPWA/Telegram/Meta/loyalty/collection-SOP
+  `getSetting/setSetting` -> `getMitraSetting/setMitraSetting` (fallback global = non-breaking). Status keys
+  ikut per-mitra (fix clobber). Platform keys tetap global. Lihat PROGRESS.
 - [ ] **`deleteCollection`** hapus child activities sebelum cek parent ter-scope (storage.ts ~1955;
   route sysadmin-only, low); pipeline card sub-entity by bare id (storage.ts ~3192/3300).
 

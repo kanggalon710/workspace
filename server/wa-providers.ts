@@ -190,7 +190,7 @@ async function sendMpwa(cfg: WaProviderConfig, sender: string, to: string, p: Se
     let effectiveImageUrl = p.imageUrl;
     if (hasButtons && !effectiveImageUrl) {
       const { storage } = await import("./storage.js");
-      const defaultImage = await storage.getSetting("wa_default_button_image");
+      const defaultImage = await storage.getMitraSetting("wa_default_button_image");
       // Fallback hardcoded - imgur reliable, MPWA bisa fetch
       effectiveImageUrl = defaultImage || "https://i.imgur.com/9xbmtMm.jpeg";
     }
