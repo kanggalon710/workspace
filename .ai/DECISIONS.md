@@ -2,6 +2,26 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-14 - #7 TEMUAN: subsistem Tiket = warna KATEGORIKAL (bukan target token)
+**Konteks:** Tail bersih mid-size habis (optim-16..27, 43 file total). Sebelum ronde fokus
+subsistem tiket, cek arsitektur warnanya (apakah ada helper bersama utk tokenisasi terpusat).
+**Bukti:** `client/components/tickets/shared.ts` = sumber warna tiket, semua **peta config
+kategorikal**: `STATUS_CONFIG` (6 hue: open=blue, assigned=cyan, in_progress=orange,
+pending=amber, resolved=green, closed=gray), `PRIORITY_CONFIG` (low=gray, medium=blue,
+high=orange, urgent=red), `ACTIVITY_ICON_CONFIG` (per-tipe: created=green, status_change=blue,
+assigned=purple, note=gray, schedule_change=amber). Warna dipakai utk MEMBEDAKAN kategori/status,
+bukan skala success/warning/danger. `client/lib/utils.ts getStatusColor` (status pelanggan)
+juga campur: active=green, maintenance=yellow, inactive=red, suspended=orange (orange kategorikal).
+**Keputusan:** Subsistem tiket TIDAK ditokenkan (kecuali one-off destructive/success murni per
+file, low-value). Tokenisasi sebagian (hanya amber/green/gray) akan MERUSAK skema 6-warna yg
+koheren. Konsisten dg aturan: famili kategorikal (blue/cyan/orange/purple/indigo/violet/sky/
+teal) = pembeda kategori, DILEWATI.
+**Alasan:** #7 = tokenisasi STATUS semantik, bukan me-recolor sistem kategorikal. Menyentuhnya =
+regresi visual (status coding hilang). Ini menandai AKHIR praktis dari tail #7 yg aman-otomatis;
+sisa = page flagged (Dashboard/IntegrationPage/CustomersPage - penilaian per-pakai), data-viz
+(PowerBudget/TicketHeatmap/SplitterChain), tema hangat (CanvassingHistory - butuh OK), atau
+file inline-`style` (TechnicianWork/MapInfoWindow - rewrite). Semua butuh keputusan/ronde sendiri.
+
 ## 2026-08-13 - #7 TEMUAN: sweep warna buta TIDAK aman (dark-mode + badge tint)
 **Konteks:** Lanjut #7 ke banyak page. Coba transform semantik ter-generalisasi (status+neutral)
 ke PointRedemptionsTab/PointsTab -> KETAHUAN regresi nyata, di-revert.
