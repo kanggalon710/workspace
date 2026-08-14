@@ -2314,6 +2314,9 @@ router.get("/api/roles/:id/users", async (req: Request, res: Response) => {
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 
+// Nama role bawaan/terkunci yang tidak boleh dibuat/di-rename manual (cegah spoof System-Admin).
+const RESERVED_ROLE_NAMES = ["system-admin", "administrator"];
+
 // POST /api/roles - create custom role (admin only)
 router.post("/api/roles", async (req: Request, res: Response) => {
   if (!requireAdmin(req, res)) return;
@@ -2323,8 +2326,14 @@ router.post("/api/roles", async (req: Request, res: Response) => {
       return sendError(res, "Nama role wajib diisi (min 2 karakter)");
     }
     const trimmed = name.trim();
-    // Tenant scope: role baru dibuat di mitra aktif; nama unik per-mitra (bukan global).
-    const scopeMitraId = req.authUser!.activeMitraId ?? 1;
+    if (RESERVED_ROLE_NAMES.includes(trimmed.toLowerCase())) {
+      return sendError(res, "Nama role tersebut dicadangkan sistem", 400);
+    }
+    // Tenant scope: role baru dibuat di mitra aktif; System-Admin JABNET boleh via ?mitraId (lintas-tenant).
+    const requestedMitraId = Number(req.query.mitraId);
+    const scopeMitraId = isJabnetRoot(req) && Number.isFinite(requestedMitraId) && requestedMitraId > 0
+      ? requestedMitraId
+      : (req.authUser!.activeMitraId ?? 1);
     const existing = await storage.getRoleByName(trimmed, scopeMitraId);
     if (existing) return sendError(res, "Nama role sudah digunakan di mitra ini");
 
@@ -2353,8 +2362,8 @@ router.put("/api/roles/:id", async (req: Request, res: Response) => {
     const existing = await storage.getRoleById(id);
     if (!existing) return sendError(res, "Role tidak ditemukan", 404);
 
-    // Tenant isolation: role hanya bisa diedit dari dalam mitra pemiliknya.
-    const scopeMitraId = req.authUser!.activeMitraId ?? 1;
+    // Tenant isolation: admin biasa hanya edit role mitra aktifnya; System-Admin JABNET boleh lintas-tenant.
+    const scopeMitraId = isJabnetRoot(req) ? existing.mitraId : (req.authUser!.activeMitraId ?? 1);
     if (existing.mitraId !== scopeMitraId) {
       return sendError(res, "Role ini milik mitra lain - tidak bisa diedit dari sini", 403);
     }
@@ -2370,6 +2379,9 @@ router.put("/api/roles/:id", async (req: Request, res: Response) => {
     if (name !== undefined && existing.isSystem !== 1) {
       const trimmed = String(name).trim();
       if (trimmed.length < 2) return sendError(res, "Nama role min 2 karakter");
+      if (RESERVED_ROLE_NAMES.includes(trimmed.toLowerCase())) {
+        return sendError(res, "Nama role tersebut dicadangkan sistem", 400);
+      }
       if (trimmed !== existing.name) {
         const dup = await storage.getRoleByName(trimmed, scopeMitraId);
         if (dup && dup.id !== id) return sendError(res, "Nama role sudah digunakan di mitra ini");
@@ -2415,8 +2427,8 @@ router.delete("/api/roles/:id", async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
     const role = await storage.getRoleById(id);
     if (!role) return sendError(res, "Role tidak ditemukan", 404);
-    // Tenant isolation: tidak bisa hapus role milik mitra lain.
-    const scopeMitraId = req.authUser!.activeMitraId ?? 1;
+    // Tenant isolation: admin biasa hanya hapus role mitra aktifnya; System-Admin JABNET boleh lintas-tenant.
+    const scopeMitraId = isJabnetRoot(req) ? role.mitraId : (req.authUser!.activeMitraId ?? 1);
     if (role.mitraId !== scopeMitraId) {
       return sendError(res, "Role ini milik mitra lain - tidak bisa dihapus dari sini", 403);
     }

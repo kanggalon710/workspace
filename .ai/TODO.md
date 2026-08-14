@@ -9,16 +9,11 @@
 - [x] **A+B SELESAI** (2026-08-14, di dev): mitra-admin over-permit (`isMitraAdmin` tak ter-scope ->
   helper `canAdminMitra`), sink teks `role` client, IDOR child tiket (`loadTicketInTenant` + filter
   mitra storage). Lihat PROGRESS.
-- [ ] **Group C - hardening escalation (DITUNDA):**
-  - `_resolvePermsAtMitra` fallback `users.roleId` tak cek `role.mitraId===mitraId` (storage.ts ~11456).
-  - `updateUser` propagasi `roleId` menimpa SEMUA membership termasuk mitra 1; tak ada guard
-    min-System-Admin di `PUT /api/users` & bulk-action (storage.ts ~9087, routes.ts ~2050/2198).
-  - `POST /api/roles` tak blok nama "System-Admin"/"Administrator" & tak batasi `canSeeAllData`
-    (routes.ts ~2298); `PUT /api/roles` sama.
-  - self-heal repoint role asing lewati mitra 1 (storage.ts ~11041).
-  - migrasi promote System-Admin via substring username/name yang bisa diedit (storage.ts ~10875).
-- [ ] **Roles CRUD lintas-tenant (false-deny, DITUNDA):** `POST/PUT/DELETE /api/roles` belum honor
-  `?mitraId` utk System-Admin seperti `GET /api/roles` (routes.ts ~2307/2338/2400).
+- [x] **Group C SELESAI** (2026-08-14, di dev): M1 resolver fallback ter-scope mitra + legacy admin
+  hanya mitra 1; M2 updateUser propagasi roleId ter-scope mitra konteks; M5 guard min-System-Admin di
+  /users+bulk; M3 promote owner bootstrap-only; M4 blok nama role dicadangkan; M6 repoint cover mitra 1;
+  roles CRUD honor ?mitraId utk System-Admin. `canSeeAllData` SENGAJA tetap utk admin tenant (supervisor
+  internal, bukan escalation lintas-tenant). Lihat PROGRESS.
 - [ ] **Settings per-mitra (user minta per-mitra, DITUNDA - ronde sendiri):** Telegram/MPWA/Meta/loyalty/
   collection-SOP disimpan via `setSetting` global, bukan `setMitraSetting` (routes.ts 2608/4877/9325/
   14971/15017). Perubahan data+behavior per key family.

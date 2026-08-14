@@ -9078,19 +9078,33 @@ export class DatabaseStorage implements IStorage {
     return row!;
   }
   async updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined> {
+    // Guard min-1 System-Admin di JABNET: cegah demote System-Admin terakhir via /users atau bulk-action
+    // (paritas dgn PATCH /api/mitras/1/members/:userId). Hanya cek di konteks request mitra 1.
+    if (data.roleId !== undefined && data.roleId !== null && getMitraIdOrNull() === 1) {
+      const membership = await this.getUserMitraMembership(id, 1);
+      const currentRole = membership?.roleId ? await this.getRoleById(membership.roleId) : null;
+      if (currentRole?.name === "System-Admin") {
+        const newRole = await this.getRoleById(Number(data.roleId));
+        if (newRole?.name !== "System-Admin") {
+          const count = await this.countSystemAdminsAtMitra1();
+          if (count <= 1) throw new Error("Tidak bisa demote - minimal 1 System-Admin di JABNET wajib ada");
+        }
+      }
+    }
     await this.db.update(users).set(data).where(eq(users.id, id));
-    // If roleId changed, propagate to ALL user_mitras memberships for this user.
-    // getUserEffectivePermissionsAtMitra resolves user_mitras.role_id FIRST (falls through to
-    // users.role_id only when NULL), so without this propagation, /users page role changes are
-    // silently ignored for users with any mitra membership.
-    // Per-mitra overrides can still be applied later via PATCH /api/mitras/:id/members/:userId.
+    // Propagasi roleId HANYA ke membership mitra konteks aktif - jangan timpa role user di tenant lain
+    // (termasuk mitra 1). getUserEffectivePermissionsAtMitra baca user_mitras.role_id dulu, jadi perubahan
+    // di /users tetap berlaku di mitra aktif. Override per-mitra lain lewat PATCH member.
     if (data.roleId !== undefined && data.roleId !== null) {
-      try {
-        await this.db.execute(sql`
-          UPDATE user_mitras SET role_id = ${data.roleId} WHERE user_id = ${id}
-        `);
-      } catch (e: any) {
-        console.warn("[updateUser] user_mitras.role_id propagation failed (column missing?):", e?.message);
+      const ctxMitra = getMitraIdOrNull();
+      if (ctxMitra != null) {
+        try {
+          await this.db.execute(sql`
+            UPDATE user_mitras SET role_id = ${data.roleId} WHERE user_id = ${id} AND mitra_id = ${ctxMitra}
+          `);
+        } catch (e: any) {
+          console.warn("[updateUser] user_mitras.role_id propagation failed (column missing?):", e?.message);
+        }
       }
     }
     // Invalidate cache if role-related field changed
@@ -10870,7 +10884,11 @@ export class DatabaseStorage implements IStorage {
     try {
       const sysAdminResult: any = await this.db.execute(sql`SELECT id FROM roles WHERE name = 'System-Admin' LIMIT 1`);
       const sysAdminId = (sysAdminResult[0] as any[])[0]?.id;
-      if (sysAdminId) {
+      // BOOTSTRAP-ONLY: promosi via username/name (field yang BISA diedit) hanya dijalankan saat belum ada
+      // System-Admin sama sekali di mitra 1. Cegah re-promote tiap restart (mis. user ganti nama jadi "Bah Yus"
+      // lalu ter-promote otomatis). Setelah min. 1 System-Admin ada, roster dikelola manual via UI.
+      const existingSysAdmins = await this.countSystemAdminsAtMitra1().catch(() => 0);
+      if (sysAdminId && existingSysAdmins === 0) {
         // a. Ensure users.role_id = System-Admin for 4 known platform owners
         await this.db.execute(sql`
           UPDATE users SET role_id = ${sysAdminId}
@@ -11051,6 +11069,16 @@ export class DatabaseStorage implements IStorage {
             AND role_id NOT IN (SELECT id FROM roles WHERE mitra_id = ${m})
         `);
       }
+      // Mitra 1 (JABNET) juga: membership yang menunjuk role milik mitra LAIN -> Admin mitra 1.
+      // Membership System-Admin tidak tersentuh (role-nya milik mitra 1).
+      const jabnetAdmin = await this.seedAdminRoleForMitra(1);
+      await this.db.execute(sql`
+        UPDATE user_mitras
+        SET role_id = ${jabnetAdmin.id}
+        WHERE mitra_id = 1
+          AND role_id IS NOT NULL
+          AND role_id NOT IN (SELECT id FROM roles WHERE mitra_id = 1)
+      `);
       if (otherMitras.length > 0) {
         console.log(`[seed-roles] tenant-isolated roles untuk ${otherMitras.length} mitra non-JABNET (Admin role + repoint membership)`);
         invalidatePermCacheAtMitra();
@@ -11463,7 +11491,9 @@ export class DatabaseStorage implements IStorage {
 
       if (roleId) {
         const role = await this.getRoleById(roleId);
-        if (role) {
+        // Tenant isolation: role global (users.role_id) HANYA berlaku di mitra pemiliknya.
+        // Role bersifat per-mitra; jangan pakai role mitra lain sebagai fallback di mitra ini.
+        if (role && role.mitraId === mitraId) {
           let parsed: Record<string, PermissionLevel> = {};
           try { parsed = JSON.parse(role.permissions); } catch { parsed = {}; }
           const result = {
@@ -11477,8 +11507,8 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // 3. Legacy fallback: users.role text === "admin"
-      if (u.role === "admin") {
+      // 3. Legacy fallback: users.role text === "admin" - HANYA di mitra JABNET (1), bukan lintas-tenant.
+      if (u.role === "admin" && mitraId === 1) {
         const obj: Record<string, PermissionLevel> = {};
         for (const k of ALL_PERMISSION_KEYS) obj[k] = "write";
         const result = { perms: obj, canSeeAllData: true, roleName: "admin (legacy)", isSystem: true, roleId: null };

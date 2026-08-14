@@ -3,6 +3,33 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-14 - Security Group C: hardening escalation lintas-tenant
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** Lanjutan audit (user: "do c"). Tutup rantai escalation + inkonsistensi isolasi.
+**Perubahan (server/storage.ts):**
+- **M1** `_resolvePermsAtMitra`: fallback `users.role_id` HANYA dipakai kalau role milik mitra yg
+  diminta (`role.mitraId === mitraId`); legacy `role==="admin"` full-access HANYA di mitra 1.
+  (Cegah role mitra lain bocor sbg fallback lintas-tenant.)
+- **M2** `updateUser`: propagasi `roleId` di-scope ke membership mitra KONTEKS AKTIF saja (dulu semua
+  membership termasuk mitra 1). Edit role di /users kini hanya ubah role di tenant aktif; default
+  global tetap ke-set.
+- **M5** `updateUser`: guard min-1 System-Admin di mitra 1 (throw kalau demote System-Admin terakhir) -
+  paritas dgn PATCH member.
+- **M3** migrasi promote owner via username/name (field editable) kini BOOTSTRAP-ONLY (hanya saat 0
+  System-Admin di mitra 1) - cegah re-promote tiap restart via nama yg diedit.
+- **M6** self-heal repoint role asing kini juga cover mitra 1 (membership mitra 1 yg tunjuk role mitra
+  lain -> Admin mitra 1; System-Admin tak tersentuh).
+**Perubahan (server/routes.ts):**
+- **M4** `POST/PUT /api/roles`: blok nama dicadangkan ("System-Admin"/"Administrator") saat create/rename
+  (konstanta `RESERVED_ROLE_NAMES`). `canSeeAllData` DIBIARKAN utk admin tenant (supervisor mode
+  INTERNAL tenant, storage tetap filter mitra - bukan escalation lintas-tenant).
+- Roles CRUD lintas-tenant: `POST/PUT/DELETE /api/roles` kini honor `?mitraId`/role.mitraId utk
+  System-Admin JABNET (paritas dgn GET) - hilangkan false-deny.
+**Verifikasi:** `tsc` 0 error, build OK, 297/297 test pass.
+**Nuansa perilaku (lebih benar, perlu cek manual):** M1 (role global tak berlaku lintas-tenant),
+M2 (edit /users hanya tenant aktif). Common case (staff JABNET = member mitra 1) tetap normal.
+**Belum deploy.** Sisa: settings per-mitra (ronde sendiri), deleteCollection/pipeline child (low).
+
 ## 2026-08-14 - Security: tutup lubang lintas-tenant (mitra-admin over-permit + ticket IDOR)
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** Audit lintas-tenant (3 agent) menemukan bug isolasi nyata. User minta fix A+B ronde ini.
