@@ -76,7 +76,7 @@ export function CableQuickForm({ points, onSubmit, onCancel, isPending }: {
               <Label className="text-xs">Tipe</Label>
               <select className="flex h-7 w-full rounded border border-input bg-transparent px-2 text-xs" defaultValue="feeder" onChange={(e) => set("cableType", e.target.value)}>
                 <option value="feeder">Feeder</option>
-                <option value="distribution">Distribution</option>
+                <option value="distribution">Distribusi</option>
                 <option value="drop">Drop</option>
               </select>
             </div>

@@ -75,7 +75,7 @@ function CableForm({
         <select {...register("cableType")} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
           <option value="">Pilih tipe...</option>
           <option value="feeder">Feeder</option>
-          <option value="distribution">Distribution</option>
+          <option value="distribution">Distribusi</option>
           <option value="drop">Drop</option>
         </select>
       </div>

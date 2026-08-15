@@ -3,6 +3,19 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-15 - Fix simpan kabel /map gagal (enum cableType tak sinkron)
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** Tarik kabel di /map lalu simpan gagal: `insertCableSchema.cableType` satu-satunya tempat
+pakai nilai Indonesia `"distribusi"`, sementara SEMUA sisanya (kedua form, data DB, agregasi dashboard
+`metersMap["distribution"]`, warna/chart) pakai `"distribution"`. POST /api/cables validasi lewat enum
+itu -> setiap kabel distribusi ditolak. Feeder & drop lolos.
+**Perubahan:** Samakan enum ke `["feeder","distribution","drop"]` (nilai internal, bukan teks user;
+DB + 8 file lain sudah pakai ini -> TANPA migrasi data). Label opsi form diubah teks tampil
+"Distribution" -> "Distribusi" (value tetap `distribution`) agar UI konsisten Indonesia.
+**File:** shared/schema.ts, client/pages/map/CableQuickForm.tsx, client/pages/CablesPage.tsx
+**Catatan:** typecheck 0 error, build OK. Alternatif standarisasi ke "distribusi" ditolak (butuh
+migrasi baris DB lama + ~8 file, riskan di prod live).
+
 ## 2026-08-14 - /odps: enrich daftar pelanggan + reuse modal edit + batas port number
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** User minta detail lebih (paket/mbps/harga/optic), klik nama buka modal edit pelanggan
