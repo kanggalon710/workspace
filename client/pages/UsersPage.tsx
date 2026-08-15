@@ -44,7 +44,7 @@ interface SafeUser {
   mitraNames?: string[];   // mitra yang bisa diakses user ini (nama saja)
 }
 
-type PermissionLevel = "none" | "read" | "write";
+type PermissionLevel = "none" | "read" | "write" | "delete";
 
 interface RoleItem {
   id: number; name: string; description: string | null;
@@ -762,12 +762,12 @@ function ActivityTab({ logs }: any) {
  *  Managed via GET/PUT /api/users/:id/permission-grants (admin only). */
 function SpecialAccessEditor({ user }: { user: any }) {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery<{ grants: Record<string, "read" | "write">; effective: Record<string, string>; roleName: string | null }>({
+  const { data, isLoading } = useQuery<{ grants: Record<string, "read" | "write" | "delete">; effective: Record<string, string>; roleName: string | null }>({
     queryKey: ["/api/users", user.id, "permission-grants"],
     queryFn: () => api.get(`/users/${user.id}/permission-grants`),
     enabled: !!user,
   });
-  const [draft, setDraft] = useState<Record<string, "read" | "write">>({});
+  const [draft, setDraft] = useState<Record<string, "read" | "write" | "delete">>({});
   const [dirty, setDirty] = useState(false);
   useEffect(() => { setDraft(data?.grants ?? {}); setDirty(false); }, [data?.grants, user.id]);
 
@@ -777,7 +777,7 @@ function SpecialAccessEditor({ user }: { user: any }) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const setLevel = (key: string, level: "read" | "write") => { setDraft((d) => ({ ...d, [key]: level })); setDirty(true); };
+  const setLevel = (key: string, level: "read" | "write" | "delete") => { setDraft((d) => ({ ...d, [key]: level })); setDirty(true); };
   const remove = (key: string) => { setDraft((d) => { const n = { ...d }; delete n[key]; return n; }); setDirty(true); };
   const add = (key: string | null) => { if (!key) return; setDraft((d) => (d[key] ? d : { ...d, [key]: "read" })); setDirty(true); };
 
@@ -813,13 +813,15 @@ function SpecialAccessEditor({ user }: { user: any }) {
                       <div className="text-[10px] font-mono text-muted-foreground">{k}</div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {(["read", "write"] as const).map((lvl) => (
+                      {(["read", "write", "delete"] as const).map((lvl) => (
                         <button key={lvl} type="button" onClick={() => setLevel(k, lvl)}
                           className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-colors ${
                             draft[k] === lvl
-                              ? (lvl === "write" ? "bg-success/15 text-success" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300")
+                              ? (lvl === "delete" ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                                : lvl === "write" ? "bg-success/15 text-success"
+                                : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300")
                               : "text-muted-foreground hover:bg-muted"}`}>
-                          {lvl === "write" ? "FULL" : "READ"}
+                          {lvl === "delete" ? "HAPUS" : lvl === "write" ? "EDIT" : "READ"}
                         </button>
                       ))}
                       <button type="button" onClick={() => remove(k)} title="Hapus izin"
@@ -898,9 +900,11 @@ function PermissionsTab({ role, user }: any) {
                   <div key={p.key} className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-md bg-muted/40">
                     <span className="text-sm">{p.label}</span>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                      lvl === "write" ? "bg-success/15 text-success" : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                      lvl === "delete" ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                        : lvl === "write" ? "bg-success/15 text-success"
+                        : "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
                     }`}>
-                      {lvl === "write" ? "READ + WRITE" : "READ ONLY"}
+                      {lvl === "delete" ? "EDIT + HAPUS" : lvl === "write" ? "EDIT" : "READ ONLY"}
                     </span>
                   </div>
                 );

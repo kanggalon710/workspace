@@ -142,6 +142,7 @@ export default function CablesPage() {
   return (
     <AssetTable<Cable>
       title="Kabel"
+      deletePermissionKey="cables"
       description="Data kabel fiber optik - core/tube usage tracking"
       data={data}
       isLoading={isLoading}

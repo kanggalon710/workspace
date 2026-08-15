@@ -1,6 +1,6 @@
 import { FEATURE_PERMISSIONS } from "../shared/schema.js";
 
-type Level = "none" | "read" | "write";
+type Level = "none" | "read" | "write" | "delete";
 
 /**
  * Strip the permissions of any disabled feature for a mitra.

@@ -5,6 +5,16 @@
 > per item, verifikasi hijau (typecheck + test + build), lalu update file ini +
 > `PROGRESS.md`. **Tanpa memecah stabilitas/fitur** (app LIVE di produksi).
 
+## Izin & fitur (2026-08-15)
+- [x] **Level izin "delete" (app-wide) SELESAI** (2026-08-15, di dev): tangga none<read<write<delete;
+  gate terpusat di globalWriteGuard cabang DELETE; role editor/user grant dapat opsi "HAPUS"; AssetTable
+  + peta (Kabel/POP) hormati canDelete. Migrasi explicit-grant (non-admin kehilangan hapus sampai diberi).
+  Lihat PROGRESS + DECISIONS.
+  - [ ] Follow-up: setelah deploy, admin perlu buka /roles dan set level "HAPUS" per fitur untuk role
+    non-admin yang memang boleh menghapus (mis. operator teknis). Belum ada auto-migrasi (sengaja).
+  - [ ] Opsional: unique index DB `(odp_id, port_number)` + FK onDelete cascade utk cable_cores (saat ini
+    cascade di app-layer). Belum dikerjakan (data lama bisa duplikat).
+
 ## Keamanan lintas-tenant (audit 2026-08-14)
 - [x] **A+B SELESAI** (2026-08-14, di dev): mitra-admin over-permit (`isMitraAdmin` tak ter-scope ->
   helper `canAdminMitra`), sink teks `role` client, IDOR child tiket (`loadTicketInTenant` + filter

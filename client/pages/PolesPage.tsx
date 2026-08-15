@@ -113,6 +113,7 @@ export default function PolesPage() {
   return (
     <AssetTable<Pole>
       title="Tiang"
+      deletePermissionKey="poles"
       description="Data tiang jaringan FTTH"
       data={data}
       isLoading={isLoading}

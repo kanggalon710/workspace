@@ -2,9 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { sanitizeGrants, parseGrants, mergeAdditiveGrants } from "./permissionGrants";
 
-test("sanitizeGrants keeps valid keys/levels, drops the rest", () => {
+test("sanitizeGrants keeps valid keys/levels (incl. delete), drops the rest", () => {
   const g = sanitizeGrants({ customers: "read", tickets: "write", collections: "none", bogus_key: "write", map: "delete" });
-  assert.deepEqual(g, { customers: "read", tickets: "write" });
+  assert.deepEqual(g, { customers: "read", tickets: "write", map: "delete" });
 });
 
 test("sanitizeGrants handles non-objects", () => {
@@ -26,6 +26,13 @@ test("mergeAdditiveGrants raises but never lowers", () => {
   assert.equal(merged.customers, "read");
   assert.equal(merged.tickets, "write");
   assert.equal(merged.collections, "write");
+});
+
+test("mergeAdditiveGrants raises write->delete, and delete cannot be lowered", () => {
+  const role = { cables: "write", pops: "delete" } as Record<string, "none" | "read" | "write" | "delete">;
+  const merged = mergeAdditiveGrants(role, { cables: "delete", pops: "read" });
+  assert.equal(merged.cables, "delete"); // write -> delete (raised)
+  assert.equal(merged.pops, "delete");   // delete stays (grant read cannot lower)
 });
 
 test("mergeAdditiveGrants adds a brand-new key", () => {

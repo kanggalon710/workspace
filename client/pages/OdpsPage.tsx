@@ -395,6 +395,7 @@ export default function OdpsPage() {
       isLoading={isLoading}
       columns={columns}
       editOnClickKeys={["code", "name"]}
+      deletePermissionKey="odps"
       filters={[
         { key: "status", label: "Semua Status", options: statusOptions },
         { key: "district", label: "Semua Kecamatan", options: districts.map(d => ({ value: d, label: d })) },

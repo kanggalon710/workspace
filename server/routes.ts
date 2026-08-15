@@ -313,7 +313,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
       }
       // Resolve per-mitra permissions. isSystemAdmin is true only for System-Admin role at mitra=1.
       const { eff, isSystemAdmin } = await computeAuthFlags(user.id, activeMitraId);
-      const legacyPerms = Object.keys(eff.perms).filter(k => eff.perms[k] === "read" || eff.perms[k] === "write");
+      const legacyPerms = Object.keys(eff.perms).filter(k => eff.perms[k] === "read" || eff.perms[k] === "write" || eff.perms[k] === "delete");
       req.authUser = {
         id: user.id,
         username: user.username,
@@ -414,6 +414,14 @@ function hasWritePermission(req: Request, feature: string): boolean {
   return checkPermLevel(req.authUser.permLevels, feature, "write");
 }
 
+/** Check if user has DELETE access to a feature (level tertinggi). System admin always passes. */
+function hasDeletePermission(req: Request, feature: string): boolean {
+  if (!req.authUser) return false;
+  if (req.authUser.isSystemAdmin) return true;
+  if (req.authUser.role === "admin" && !req.authUser.roleId && req.authUser.activeMitraId === 1) return true;
+  return checkPermLevel(req.authUser.permLevels, feature, "delete");
+}
+
 /** Guard: require READ permission or return 403 */
 function requirePermission(req: Request, res: Response, feature: string): boolean {
   if (!req.authUser) { sendError(res, "Unauthorized", 401); return false; }
@@ -457,7 +465,7 @@ function hasAnyPipelineKey(req: Request, needWrite: boolean): boolean {
   for (const k of Object.keys(pl)) {
     if (k !== "pipelines" && !k.startsWith("pipelines_")) continue;
     const lvl = pl[k];
-    if (needWrite ? lvl === "write" : (lvl === "read" || lvl === "write")) return true;
+    if (needWrite ? (lvl === "write" || lvl === "delete") : (lvl === "read" || lvl === "write" || lvl === "delete")) return true;
   }
   return false;
 }
@@ -557,6 +565,18 @@ function globalWriteGuard(req: Request, res: Response, next: NextFunction) {
   // Match path → feature
   const matched = PATH_TO_FEATURE.find(m => m.pattern.test(path));
   if (!matched) return next(); // endpoint belum di-map → biarkan (fallback ke guard internal route)
+
+  // DELETE butuh level "delete" (terpisah dari modify/create). App-wide: berlaku untuk
+  // semua fitur yang ter-map. Level delete adalah superset dari write, jadi user write-only
+  // bisa create/edit tapi TIDAK bisa hapus sampai diberi level "delete".
+  if (method === "DELETE") {
+    // Teamspace: board tugas tim boleh dihapus dgn delete pada 'pipelines' ATAU 'team_tasks'.
+    if (matched.feature === "pipelines" && hasDeletePermission(req, "team_tasks")) return next();
+    if (!hasDeletePermission(req, matched.feature)) {
+      return sendError(res, `Akses ditolak: tidak punya izin HAPUS untuk fitur '${matched.feature}' (path=${path})`, 403);
+    }
+    return next();
+  }
 
   // Teamspace: endpoint pipeline dipakai juga board tugas tim - team_tasks write setara
   // (keamanan per-pipeline tetap di getPipelineCapabilities).
@@ -857,7 +877,7 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
 
     // Resolve per-mitra permissions. isSystemAdmin is true only for System-Admin role at mitra=1.
     const { eff, isSystemAdmin } = await computeAuthFlags(user.id, activeMitraId);
-    const legacyPerms = Object.keys(eff.perms).filter(k => eff.perms[k] === "read" || eff.perms[k] === "write");
+    const legacyPerms = Object.keys(eff.perms).filter(k => eff.perms[k] === "read" || eff.perms[k] === "write" || eff.perms[k] === "delete");
 
     req.authUser = {
       id: user.id, username: user.username, name: user.name,
@@ -1145,7 +1165,7 @@ router.post("/api/mitras", async (req: Request, res: Response) => {
     // 2b. Create per-mitra locked "Admin" role (isolasi role per mitra). Full-write, isSystem=1
     //     → tidak bisa diedit/dihapus oleh admin mitra (hanya platform owner). Setiap mitra wajib punya ini.
     const adminPermsObj: Record<string, string> = {};
-    for (const k of ALL_PERMISSION_KEYS) adminPermsObj[k] = "write";
+    for (const k of ALL_PERMISSION_KEYS) adminPermsObj[k] = "delete";
     const [roleResult]: any = await conn.execute(
       `INSERT INTO roles (mitra_id, name, description, is_system, can_see_all_data, permissions, created_at, updated_at)
        VALUES (?, 'Admin', ?, 1, 0, ?, ?, ?)`,
@@ -2398,15 +2418,11 @@ router.put("/api/roles/:id", async (req: Request, res: Response) => {
       update.canSeeAllData = canSeeAllData ? 1 : 0;
     }
     if (permissions && typeof permissions === "object") {
-      const cleanPerms: Record<string, PermissionLevel> = {};
-      for (const key of ALL_PERMISSION_KEYS) {
-        const v = (permissions as any)[key];
-        if (v === "read" || v === "write") cleanPerms[key] = v;
-        else cleanPerms[key] = "none";
-      }
-      // System-Admin wajib tetap full write
+      // cleansePermissionMatrix menerima none/read/write/delete + drop key tak dikenal (DRY, satu sumber).
+      const cleanPerms = cleansePermissionMatrix(permissions);
+      // System-Admin wajib tetap full akses (level tertinggi = delete).
       if (existing.name === "System-Admin") {
-        for (const key of ALL_PERMISSION_KEYS) cleanPerms[key] = "write";
+        for (const key of ALL_PERMISSION_KEYS) cleanPerms[key] = "delete";
       }
       update.permissions = JSON.stringify(cleanPerms);
     }
@@ -2822,7 +2838,7 @@ router.delete("/api/pops/:id", async (req, res) => {
     if (!ok) return sendError(res, "POP not found", 404);
     await logAudit(req, "DELETE", "POP", id, existing?.name);
     sendSuccess(res, { deleted: true });
-  } catch (e: any) { sendError(res, e.message, 500); }
+  } catch (e: any) { sendError(res, e.message, /masih punya/.test(e?.message ?? "") ? 400 : 500); }
 });
 
 // ==================== ODC ====================

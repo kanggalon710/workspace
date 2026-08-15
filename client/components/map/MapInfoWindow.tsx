@@ -1,5 +1,5 @@
 import React from "react";
-import { Pencil, Link2, MapPin, CircleDot, Radio, Box, Users, Landmark, Cable, X } from "lucide-react";
+import { Pencil, Link2, MapPin, CircleDot, Radio, Box, Users, Landmark, Cable, X, Trash2 } from "lucide-react";
 import { ASSET_COLORS, odpUsageColor } from "@/lib/assetColors";
 
 interface MapInfoWindowProps {
@@ -13,6 +13,8 @@ interface MapInfoWindowProps {
   onViewCableDetail?: () => void;
   onAddAssetAtCable?: (type: "odp" | "odc" | "pole") => void;
   onAddCustomerDrop?: () => void;
+  /** Hapus aset (POP/Kabel). Hanya dikirim MapPage utk user dgn level delete. */
+  onDelete?: () => void;
 }
 
 // -- Helpers ---------------------------------------------------------------
@@ -85,7 +87,7 @@ const TYPE_META: Record<string, { abbr: string; colorKey: keyof typeof ASSET_COL
 
 // -- Main ------------------------------------------------------------------
 export function MapInfoWindowContent({
-  type, data, onClose, onEdit, onConnect, onViewCableDetail, onAddAssetAtCable, onAddCustomerDrop,
+  type, data, onClose, onEdit, onConnect, onViewCableDetail, onAddAssetAtCable, onAddCustomerDrop, onDelete,
 }: MapInfoWindowProps) {
   const meta = TYPE_META[type];
   if (!meta) return null;
@@ -263,6 +265,16 @@ export function MapInfoWindowContent({
             <Pencil size={12} /> Edit
           </button>
         )}
+        {type !== "cable" && onDelete && (
+          <button onClick={onDelete} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+            padding: "7px 14px", borderRadius: 8, border: "1.5px solid #fecaca",
+            background: "white", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer",
+            flex: "0 0 auto",
+          }}>
+            <Trash2 size={12} /> Hapus
+          </button>
+        )}
         {onConnect && (
           <button onClick={onConnect} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
@@ -291,6 +303,16 @@ export function MapInfoWindowContent({
                 border: "none", cursor: "pointer", textAlign: "left", padding: 0,
               }}>
                 Lihat Detail Core →
+              </button>
+            )}
+            {onDelete && (
+              <button onClick={onDelete} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                padding: "7px 14px", borderRadius: 8, border: "1.5px solid #fecaca",
+                background: "white", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                width: "100%",
+              }}>
+                <Trash2 size={12} /> Hapus Kabel
               </button>
             )}
             {onAddAssetAtCable && (

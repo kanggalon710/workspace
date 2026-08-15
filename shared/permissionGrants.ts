@@ -4,21 +4,21 @@
  *  from the deprecated per-user override). Pure logic - unit-tested, no DB. */
 import { ALL_PERMISSION_KEYS, type PermissionLevel } from "./schema";
 
-export type GrantLevel = "read" | "write";
+export type GrantLevel = "read" | "write" | "delete";
 export type GrantMap = Record<string, GrantLevel>;
 
-const RANK: Record<PermissionLevel, number> = { none: 0, read: 1, write: 2 };
+const RANK: Record<PermissionLevel, number> = { none: 0, read: 1, write: 2, delete: 3 };
 
 const KEYSET = new Set<string>(ALL_PERMISSION_KEYS as readonly string[]);
 
 /** Sanitize an arbitrary object into a valid add-only grant map:
- *  keep only known permission keys with level "read"/"write" (drop "none"/unknown/invalid). */
+ *  keep only known permission keys with level "read"/"write"/"delete" (drop "none"/unknown/invalid). */
 export function sanitizeGrants(input: unknown): GrantMap {
   const out: GrantMap = {};
   if (!input || typeof input !== "object" || Array.isArray(input)) return out;
   for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
     if (!KEYSET.has(k)) continue;
-    if (v === "read" || v === "write") out[k] = v;
+    if (v === "read" || v === "write" || v === "delete") out[k] = v;
   }
   return out;
 }

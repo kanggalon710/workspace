@@ -6,9 +6,9 @@ import {
   ALL_PERMISSION_KEYS,
 } from "./schema.js";
 
-test("admin preset grants write on every permission key", () => {
+test("admin preset grants delete (full) on every permission key", () => {
   const m = buildPermissionMatrixFromPreset("admin");
-  for (const k of ALL_PERMISSION_KEYS) assert.equal(m[k], "write", `key ${k}`);
+  for (const k of ALL_PERMISSION_KEYS) assert.equal(m[k], "delete", `key ${k}`);
 });
 
 test("viewer preset is read-only on dashboard+map, none elsewhere", () => {
@@ -34,5 +34,5 @@ test("matrix has an entry for every canonical key and NO stray label/permissions
   assert.equal((m as any).label, undefined);
   assert.equal((m as any).permissions, undefined);
   // every value is a valid level
-  for (const k of Object.keys(m)) assert.ok(["none", "read", "write"].includes(m[k]));
+  for (const k of Object.keys(m)) assert.ok(["none", "read", "write", "delete"].includes(m[k]));
 });

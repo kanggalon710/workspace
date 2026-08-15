@@ -32,7 +32,7 @@ import {
   RefreshCw, Sparkles, AlertCircle, Star, Globe, Power, Layers,
 } from "lucide-react";
 
-type PermissionLevel = "none" | "read" | "write";
+type PermissionLevel = "none" | "read" | "write" | "delete";
 
 interface RoleItem {
   id: number;
@@ -52,14 +52,16 @@ function fmtDate(iso: string | null): string {
 }
 
 function permStats(perms: Record<string, PermissionLevel>) {
-  let none = 0, read = 0, write = 0;
+  let none = 0, read = 0, write = 0, del = 0;
   for (const k of ALL_PERMISSION_KEYS) {
     const v = perms[k] ?? "none";
-    if (v === "write") write++;
+    if (v === "delete") del++;
+    else if (v === "write") write++;
     else if (v === "read") read++;
     else none++;
   }
-  return { none, read, write, granted: read + write };
+  // `write` di sini = jumlah key yang minimal bisa modify (write + delete) untuk kompat tampilan lama.
+  return { none, read, write: write + del, delete: del, granted: read + write + del };
 }
 
 // =====================================================================

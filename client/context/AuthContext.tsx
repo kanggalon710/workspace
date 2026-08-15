@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
-type PermLevel = "none" | "read" | "write";
+// Ladder: none < read < write < delete. `delete` = level tertinggi (implies write + read).
+type PermLevel = "none" | "read" | "write" | "delete";
 
 export interface MitraSummary {
   id: number;
@@ -49,8 +50,10 @@ interface AuthContextType {
   logout: () => Promise<void>;
   /** True if user has at least "read" for the given permission key. */
   canRead: (key: string) => boolean;
-  /** True if user has "write" for the given permission key. */
+  /** True if user has at least "write" (modify/create) - "delete" level counts too. */
   canWrite: (key: string) => boolean;
+  /** True if user has the top "delete" level for the given permission key. */
+  canDelete: (key: string) => boolean;
   /** Refresh user state dari server (misal setelah update profile). Pakai ini instead of merging partial manually. */
   refreshUser: () => Promise<void>;
   /** Merge partial update ke cached user - dipakai setelah PATCH profile. */
@@ -168,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) return false;
       if (user.isSystemAdmin) return true;
       const level = user.permLevels?.[key];
-      if (level === "read" || level === "write") return true;
+      if (level === "read" || level === "write" || level === "delete") return true;
       if (Array.isArray(user.permissions) && user.permissions.includes(key)) return true;
       return false;
     },
@@ -179,7 +182,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (key: string): boolean => {
       if (!user) return false;
       if (user.isSystemAdmin) return true;
-      return user.permLevels?.[key] === "write";
+      const level = user.permLevels?.[key];
+      // "delete" adalah superset dari write -> ikut lolos canWrite.
+      return level === "write" || level === "delete";
+    },
+    [user]
+  );
+
+  const canDelete = useCallback(
+    (key: string): boolean => {
+      if (!user) return false;
+      if (user.isSystemAdmin) return true;
+      return user.permLevels?.[key] === "delete";
     },
     [user]
   );
@@ -234,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshUser]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, canRead, canWrite, refreshUser, updateCachedUser, switchMitra }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, canRead, canWrite, canDelete, refreshUser, updateCachedUser, switchMitra }}>
       {children}
     </AuthContext.Provider>
   );

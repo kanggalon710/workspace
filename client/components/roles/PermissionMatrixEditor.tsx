@@ -1,7 +1,7 @@
 import { ALL_PERMISSIONS, EDITOR_HIDDEN_KEYS, type PermissionLevel } from "@shared/schema";
 import { DIVISIONS, divisionPermissionKeys } from "@/lib/divisions";
 import { Button } from "@/components/ui/button";
-import { Ban, Eye, Pencil } from "lucide-react";
+import { Ban, Eye, Pencil, Trash2 } from "lucide-react";
 
 // Keys shown in the editor: hide dead/no-effect keys (see EDITOR_HIDDEN_KEYS).
 const VISIBLE_PERMISSIONS = ALL_PERMISSIONS.filter((p) => !EDITOR_HIDDEN_KEYS.has(p.key));
@@ -12,11 +12,16 @@ const DIV_ACCENT: Record<string, string> = {
   info: "bg-info", violet: "bg-violet-500", rose: "bg-rose-500",
 };
 
+// Ladder none < read (lihat) < write (ubah/buat) < delete (hapus, level tertinggi).
 export const LEVEL_CFG: Record<PermissionLevel, { label: string; color: string; bg: string; icon: any }> = {
-  none:  { label: "-",    color: "text-muted-foreground",                       bg: "bg-muted/30",                                  icon: Ban },
-  read:  { label: "READ", color: "text-sky-700 dark:text-sky-300",              bg: "bg-sky-100 dark:bg-sky-950/40",                icon: Eye },
-  write: { label: "FULL", color: "text-emerald-700 dark:text-emerald-300",      bg: "bg-emerald-100 dark:bg-emerald-950/40",        icon: Pencil },
+  none:   { label: "-",     color: "text-muted-foreground",                  bg: "bg-muted/30",                            icon: Ban },
+  read:   { label: "READ",  color: "text-sky-700 dark:text-sky-300",         bg: "bg-sky-100 dark:bg-sky-950/40",          icon: Eye },
+  write:  { label: "EDIT",  color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-100 dark:bg-emerald-950/40",  icon: Pencil },
+  delete: { label: "HAPUS", color: "text-rose-700 dark:text-rose-300",       bg: "bg-rose-100 dark:bg-rose-950/40",        icon: Trash2 },
 };
+
+// Urutan level yang bisa dipilih di editor (tombol segment).
+const LEVEL_OPTIONS: PermissionLevel[] = ["none", "read", "write", "delete"];
 
 export function PermissionRow({ label, keyName, level, onChange, disabled }: { label: string; keyName: string; level: PermissionLevel; onChange: (l: PermissionLevel) => void; disabled?: boolean }) {
   return (
@@ -26,7 +31,7 @@ export function PermissionRow({ label, keyName, level, onChange, disabled }: { l
         <div className="text-[10px] font-mono text-muted-foreground">{keyName}</div>
       </div>
       <div className="flex gap-0.5 shrink-0">
-        {(["none", "read", "write"] as PermissionLevel[]).map((lvl) => {
+        {LEVEL_OPTIONS.map((lvl) => {
           const cfg = LEVEL_CFG[lvl];
           const active = level === lvl;
           return (
@@ -78,18 +83,18 @@ export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = t
   const divisionLevel = (keys: string[]): PermissionLevel | "mixed" => {
     if (keys.length === 0) return "none";
     const lv = keys.map((k) => (value[k] ?? "none") as PermissionLevel);
-    if (lv.every((l) => l === "write")) return "write";
-    if (lv.every((l) => l === "none")) return "none";
-    if (lv.every((l) => l !== "none")) return "read";
+    const first = lv[0];
+    if (lv.every((l) => l === first)) return first; // semua sama level -> tampilkan level itu
     return "mixed";
   };
   return (
     <div className="space-y-4">
       {showBulk && (
         <div className="flex items-center justify-end gap-1.5 p-2 rounded-lg bg-muted/40 border">
-          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("none")} disabled={disabled}><Ban className="h-3 w-3 mr-1" /> All None</Button>
-          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("read")} disabled={disabled}><Eye className="h-3 w-3 mr-1" /> All Read</Button>
-          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("write")} disabled={disabled}><Pencil className="h-3 w-3 mr-1" /> All Full</Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("none")} disabled={disabled}><Ban className="h-3 w-3 mr-1" /> Semua -</Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("read")} disabled={disabled}><Eye className="h-3 w-3 mr-1" /> Semua Read</Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("write")} disabled={disabled}><Pencil className="h-3 w-3 mr-1" /> Semua Edit</Button>
+          <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAll("delete")} disabled={disabled}><Trash2 className="h-3 w-3 mr-1" /> Semua Hapus</Button>
         </div>
       )}
 
@@ -114,7 +119,7 @@ export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = t
                   {lvl === "mixed" && <span className="text-[9px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 shrink-0">sebagian</span>}
                 </div>
                 <div className="flex gap-0.5 shrink-0">
-                  {(["none", "read", "write"] as PermissionLevel[]).map((opt) => {
+                  {LEVEL_OPTIONS.map((opt) => {
                     const cfg = LEVEL_CFG[opt];
                     const active = lvl === opt;
                     return (
@@ -139,9 +144,10 @@ export function PermissionMatrixEditor({ value, onChange, disabled, showBulk = t
             <div className="flex items-center justify-between mb-2 px-1">
               <legend className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{group}</legend>
               <div className="flex gap-1">
-                <button type="button" onClick={() => setAllInGroup(group, "none")} className="text-[10px] px-2 py-0.5 rounded hover:bg-muted text-muted-foreground" disabled={disabled}>None</button>
+                <button type="button" onClick={() => setAllInGroup(group, "none")} className="text-[10px] px-2 py-0.5 rounded hover:bg-muted text-muted-foreground" disabled={disabled}>-</button>
                 <button type="button" onClick={() => setAllInGroup(group, "read")} className="text-[10px] px-2 py-0.5 rounded hover:bg-sky-100 dark:hover:bg-sky-950/40 text-sky-600" disabled={disabled}>Read</button>
-                <button type="button" onClick={() => setAllInGroup(group, "write")} className="text-[10px] px-2 py-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-emerald-600" disabled={disabled}>Full</button>
+                <button type="button" onClick={() => setAllInGroup(group, "write")} className="text-[10px] px-2 py-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-emerald-600" disabled={disabled}>Edit</button>
+                <button type="button" onClick={() => setAllInGroup(group, "delete")} className="text-[10px] px-2 py-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-600" disabled={disabled}>Hapus</button>
               </div>
             </div>
             <div className="space-y-1 rounded-lg border overflow-hidden">

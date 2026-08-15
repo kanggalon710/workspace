@@ -20,6 +20,10 @@ import { MapLayerPanel } from "@/components/map/MapLayerPanel";
 import { MapTypeSelector } from "@/components/map/MapTypeSelector";
 import { MapCameraControls } from "@/components/map/MapCameraControls";
 import { MapInfoWindowContent } from "@/components/map/MapInfoWindow";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { OdpDetailPanel } from "@/components/map/OdpDetailPanel";
 import { MapMitraSelector } from "@/components/map/MapMitraSelector";
 import { MapUtilityButtons } from "@/components/map/MapUtilityButtons";
@@ -38,7 +42,7 @@ import { CableDetailPanel } from "./map/CableDetailPanel";
 import { GARUT_CENTER, DEFAULT_ZOOM, SNAP_THRESHOLD_METERS, haversineMeters, nearestOnSegment, findSnapPoint, type SnapResult, type QuickFormProps } from "./map/shared";
 
 export default function MapPage() {
-  const { user } = useAuth();
+  const { user, canDelete } = useAuth();
   const isMarketing = user?.role === "marketing";
   const isJabnetRoot = !!user?.isSystemAdmin;
   const ownMitraId = user?.activeMitraId ?? 1;
@@ -72,14 +76,30 @@ export default function MapPage() {
 
   const isLoading = infraLoading; // show skeleton only for infra; customers loads progressively
   const { data: odpUtilData } = useOdpUtilization();
-  const { create: createPop, update: updatePop } = usePops();
+  const { create: createPop, update: updatePop, remove: removePop } = usePops();
   const { data: popsList, create: createOdc, update: updateOdc } = useOdcs();
   const { data: odcsList, create: createOdp, update: updateOdp } = useOdps();
   const { data: odpsList, create: createCustomer, update: updateCustomer } = useCustomers();
   const { create: createPole, update: updatePole } = usePoles();
-  const { create: createCable } = useCables();
+  const { create: createCable, remove: removeCable } = useCables();
   const popsData = usePops();
   const [, setLocation] = useLocation();
+  // Hapus aset dari peta (POP/Kabel) - hanya untuk user dgn level delete. Konfirmasi via AlertDialog.
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "pop" | "cable"; id: number; name: string } | null>(null);
+  const canDeleteSelected = (t: string) =>
+    (t === "pop" && canDelete("pops")) || (t === "cable" && canDelete("cables"));
+  const confirmDeleteAsset = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === "pop") await removePop.mutateAsync(deleteTarget.id);
+      else await removeCable.mutateAsync(deleteTarget.id);
+      toast.success(`${deleteTarget.type === "pop" ? "POP" : "Kabel"} "${deleteTarget.name}" dihapus`);
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal menghapus");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   const { isLoaded } = useGoogleMaps();
 
@@ -704,6 +724,10 @@ export default function MapPage() {
                        initialData: asset,
                      } as any);
                   } : undefined}
+                  onDelete={!readOnly && canDeleteSelected(selectedInfo.type) ? () => {
+                    setDeleteTarget({ type: selectedInfo.type as "pop" | "cable", id: selectedInfo.data.id, name: selectedInfo.data.name });
+                    setSelectedInfo(null);
+                  } : undefined}
                 />
               </InfoWindow>
             )}
@@ -906,6 +930,11 @@ export default function MapPage() {
                 initialData: asset,
               } as any);
             } : undefined}
+            onDelete={!readOnly && canDeleteSelected(selectedInfo.type) ? () => {
+              setDeleteTarget({ type: selectedInfo.type as "pop" | "cable", id: selectedInfo.data.id, name: selectedInfo.data.name });
+              setSelectedInfo(null);
+              setMobileInfoSheet(false);
+            } : undefined}
           />
         </BottomSheet>
       )}
@@ -914,6 +943,26 @@ export default function MapPage() {
       {selectedCable && (
         <CableDetailPanel cableId={selectedCable.id} cableName={selectedCable.name} onClose={() => setSelectedCable(null)} />
       )}
+
+      {/* Konfirmasi hapus POP/Kabel dari peta */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {deleteTarget?.type === "pop" ? "POP" : "Kabel"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.type === "cable"
+                ? `Kabel "${deleteTarget?.name}" beserta core dan koneksinya akan dihapus. Data yang dihapus tidak dapat dikembalikan.`
+                : `POP "${deleteTarget?.name}" akan dihapus. Data yang dihapus tidak dapat dikembalikan.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAsset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ODP mini-dashboard - lazy detail + ACS (menggantikan InfoWindow ODP) */}
       {odpPanel && (

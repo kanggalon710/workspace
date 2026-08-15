@@ -350,8 +350,8 @@ export interface IStorage {
   setDefaultRolePreset(id: number): Promise<void>;
   getUserEffectivePermissions(userId: number): Promise<{ perms: Record<string, PermissionLevel>; canSeeAllData: boolean; roleName: string | null; isSystem: boolean }>;
   getUserEffectivePermissionsAtMitra(userId: number, mitraId: number): Promise<{ perms: Record<string, PermissionLevel>; canSeeAllData: boolean; roleName: string | null; isSystem: boolean }>;
-  getUserPermissionGrants(userId: number): Promise<Record<string, "read" | "write">>;
-  setUserPermissionGrants(userId: number, grants: unknown): Promise<Record<string, "read" | "write">>;
+  getUserPermissionGrants(userId: number): Promise<GrantMap>;
+  setUserPermissionGrants(userId: number, grants: unknown): Promise<GrantMap>;
 
   // Collections (v4.1.2)
   upsertCustomerFromBillingWhitelist(data: BillingCustomerRecord): Promise<{ action: 'created' | 'updated' | 'skipped'; customerId: number; transition: 'none' | 'became_suspended' | 'became_active_after_suspended' | 'payment_received'; before: Customer | null; after: Customer | null }>;
@@ -961,6 +961,17 @@ export class DatabaseStorage implements IStorage {
   }
   async deletePop(id: number): Promise<boolean> {
     const mitraId = getMitraId();
+    // Blok hapus kalau POP masih punya anak (ODC/OTB) - cegah wipe cabang jaringan tak sengaja.
+    const [odcCnt] = await this.db.select({ n: sql<number>`count(*)` }).from(odcs).where(and(eq(odcs.popId, id), eq(odcs.mitraId, mitraId)));
+    const [otbCnt] = await this.db.select({ n: sql<number>`count(*)` }).from(otbs).where(and(eq(otbs.popId, id), eq(otbs.mitraId, mitraId)));
+    const nOdc = Number(odcCnt?.n ?? 0);
+    const nOtb = Number(otbCnt?.n ?? 0);
+    if (nOdc > 0 || nOtb > 0) {
+      const parts: string[] = [];
+      if (nOdc > 0) parts.push(`${nOdc} ODC`);
+      if (nOtb > 0) parts.push(`${nOtb} OTB`);
+      throw new Error(`POP masih punya ${parts.join(" & ")} - hapus dulu sebelum menghapus POP ini`);
+    }
     const [result] = await this.db.delete(pops).where(and(eq(pops.id, id), eq(pops.mitraId, mitraId)));
     return (result as any).affectedRows > 0;
   }
@@ -8758,8 +8769,27 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteCable(id: number): Promise<boolean> {
     const mitraId = getMitraId();
-    const [result] = await this.db.delete(cables).where(and(eq(cables.id, id), eq(cables.mitraId, mitraId)));
-    return (result as any).affectedRows > 0;
+    // Core + koneksi core dimiliki oleh kabel (tak berarti tanpa kabelnya) -> cascade dalam transaksi:
+    // hapus core_connections yang mereferensi core kabel ini, lalu cable_cores, lalu kabelnya.
+    const conn = await this.pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.execute(
+        `DELETE cc FROM core_connections cc
+         JOIN cable_cores cec ON cc.cable_core_id = cec.id
+         WHERE cec.cable_id = ? AND cec.mitra_id = ?`,
+        [id, mitraId],
+      );
+      await conn.execute(`DELETE FROM cable_cores WHERE cable_id = ? AND mitra_id = ?`, [id, mitraId]);
+      const [result]: any = await conn.execute(`DELETE FROM cables WHERE id = ? AND mitra_id = ?`, [id, mitraId]);
+      await conn.commit();
+      return Number(result?.affectedRows ?? 0) > 0;
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
   }
 
   // ---- OTB ----
@@ -11120,12 +11150,12 @@ export class DatabaseStorage implements IStorage {
           }
         }
 
-        // System-Admin/Admin: paksa SEMUA permission jadi "write" - akses penuh selalu (idempotent).
-        // Ini handle case dimana fitur baru ditambah dan admin role tidak otomatis di-upgrade.
+        // System-Admin/Admin: paksa SEMUA permission jadi "delete" (level tertinggi = akses penuh
+        // termasuk hapus) - idempotent. Handle case fitur/level baru ditambah tanpa admin di-upgrade.
         if (r.name === "System-Admin" || r.name === "Admin") {
           for (const key of ALL_PERMISSION_KEYS) {
-            if (perms[key] !== "write") {
-              perms[key] = "write";
+            if (perms[key] !== "delete") {
+              perms[key] = "delete";
               changed = true;
             }
           }
@@ -11178,7 +11208,7 @@ export class DatabaseStorage implements IStorage {
       description: "Akses penuh di satu mitra (intra-tenant). Role bawaan terkunci - tidak bisa diedit/dihapus oleh admin mitra.",
       isSystem: 1,
       canSeeAllData: 0,
-      permissions: this.buildPermsAllLevel("write"),
+      permissions: this.buildPermsAllLevel("delete"),
       createdAt: now,
       updatedAt: now,
     } as any);
@@ -11394,7 +11424,7 @@ export class DatabaseStorage implements IStorage {
     // Backward compat: user belum punya roleId, fallback ke role text
     if (u.role === "admin") {
       const obj: Record<string, PermissionLevel> = {};
-      for (const k of ALL_PERMISSION_KEYS) obj[k] = "write";
+      for (const k of ALL_PERMISSION_KEYS) obj[k] = "delete";
       result = { perms: obj, canSeeAllData: true, roleName: "admin (legacy)", isSystem: true };
       setCachedPerms(userId, result);
       return result;
@@ -11510,7 +11540,7 @@ export class DatabaseStorage implements IStorage {
       // 3. Legacy fallback: users.role text === "admin" - HANYA di mitra JABNET (1), bukan lintas-tenant.
       if (u.role === "admin" && mitraId === 1) {
         const obj: Record<string, PermissionLevel> = {};
-        for (const k of ALL_PERMISSION_KEYS) obj[k] = "write";
+        for (const k of ALL_PERMISSION_KEYS) obj[k] = "delete";
         const result = { perms: obj, canSeeAllData: true, roleName: "admin (legacy)", isSystem: true, roleId: null };
         return result;
       }

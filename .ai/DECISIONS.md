@@ -2,6 +2,22 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-15 - Level izin ke-4 "delete" app-wide (pisah hapus dari modify/create)
+**Konteks:** Model izin lama 3 level string-equality (none/read/write); "write" = ubah+buat+hapus
+sekaligus. User minta bisa beri edit/create tanpa hapus.
+**Opsi:** (a) gate delete hanya aset jaringan; (b) gate delete SEMUA data app-wide. Migrasi: (i)
+explicit-grant (role non-admin kehilangan hapus sampai diberi) vs (ii) auto-preserve (write->delete).
+POP dgn anak: (x) blok vs (y) cascade.
+**Keputusan:** (b) app-wide + (i) explicit-grant + (x) blok POP dgn anak. Tangga jadi
+none<read<write<delete (delete = superset). Enforcement terpusat di `globalWriteGuard` cabang DELETE
+(satu titik). Admin/System-Admin bypass + di-seed "delete".
+**Alasan:** User eksplisit pilih app-wide + explicit-grant (sengaja default aman: hapus harus diberi
+sadar). Gate terpusat di globalWriteGuard = perubahan minimal, konsisten. Blok POP cegah wipe cabang
+jaringan tak sengaja; cable cascade cores aman (cores milik cable). Deviasi: ini MENGUBAH perilaku -
+role non-admin yang tadinya bisa hapus jadi tak bisa sampai admin beri "HAPUS" (didokumentasi + dilapor).
+**Edge diketahui:** DELETE route yang TIDAK ter-map `PATH_TO_FEATURE` tetap lolos ke guard internal
+route-nya (mayoritas delete ter-map, jadi cakupan praktis = app-wide).
+
 ## 2026-08-14 - #7 TEMUAN: subsistem Tiket = warna KATEGORIKAL (bukan target token)
 **Konteks:** Tail bersih mid-size habis (optim-16..27, 43 file total). Sebelum ronde fokus
 subsistem tiket, cek arsitektur warnanya (apakah ada helper bersama utk tokenisasi terpusat).

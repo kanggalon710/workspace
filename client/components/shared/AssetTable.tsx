@@ -17,6 +17,7 @@ import {
   Filter, CheckSquare, Square, X,
 } from "lucide-react";
 import { getStatusBadgeVariant } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export interface ColumnDef<T> {
@@ -57,15 +58,21 @@ interface AssetTableProps<T extends { id: number; status?: string | null; lat?: 
   filters?: FilterConfig[];
   /** Column keys whose cells become clickable and open the edit modal (opt-in per page). */
   editOnClickKeys?: string[];
+  /** Permission key for delete-gating. When set, delete affordances (row/edit-modal/bulk) show
+   *  only if the user has the "delete" level on this key. Omit = deletes always visible (legacy). */
+  deletePermissionKey?: string;
 }
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
 export function AssetTable<T extends { id: number; status?: string | null; lat?: number | null; lng?: number | null }>({
   title, description, data, isLoading, columns,
-  renderForm, onCreate, onUpdate, onDelete, renderCard, filters, editOnClickKeys,
+  renderForm, onCreate, onUpdate, onDelete, renderCard, filters, editOnClickKeys, deletePermissionKey,
 }: AssetTableProps<T>) {
   const [, setLocation] = useLocation();
+  const { canDelete } = useAuth();
+  // Boleh hapus jika tak ada key gating (legacy) atau user punya level delete pada key itu.
+  const allowDelete = !deletePermissionKey || canDelete(deletePermissionKey);
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<T | null>(null);
@@ -346,9 +353,11 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
             <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={exportSelectedCSV}>
               <Download className="h-3 w-3" /> Export
             </Button>
-            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={handleBulkDelete}>
-              <Trash2 className="h-3 w-3" /> Hapus
-            </Button>
+            {allowDelete && (
+              <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={handleBulkDelete}>
+                <Trash2 className="h-3 w-3" /> Hapus
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedIds(new Set())}>
               Batal
             </Button>
@@ -511,15 +520,17 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Hapus aset"
-                          onClick={() => setDeleteId(item.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {allowDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Hapus aset"
+                            onClick={() => setDeleteId(item.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -595,7 +606,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
             <DialogDescription>Ubah data {title.toLowerCase()}</DialogDescription>
           </DialogHeader>
           {/* Tombol hapus di sebelah tombol close (X di right-4). Buka konfirmasi AlertDialog. */}
-          {editItem && (
+          {editItem && allowDelete && (
             <button
               type="button"
               onClick={() => setDeleteId(editItem.id)}

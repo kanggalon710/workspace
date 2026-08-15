@@ -152,6 +152,7 @@ export default function PopsPage() {
   return (
     <AssetTable<Pop>
       title="POP"
+      deletePermissionKey="pops"
       description="Point of Presence - titik awal jaringan FTTH"
       data={data}
       isLoading={isLoading}

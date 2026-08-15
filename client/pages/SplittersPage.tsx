@@ -222,6 +222,7 @@ export default function SplittersPage() {
   return (
     <AssetTable<Splitter>
       title="Splitter"
+      deletePermissionKey="splitters"
       description="Splitter optik - pembagi sinyal di jaringan FTTH"
       data={data}
       isLoading={isLoading}

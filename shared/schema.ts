@@ -1668,14 +1668,16 @@ export const rolePresets = mysqlTable("role_presets", {
 export type RolePreset = typeof rolePresets.$inferSelect;
 export type InsertRolePreset = typeof rolePresets.$inferInsert;
 
-// Permission level helper
-export type PermissionLevel = "none" | "read" | "write";
-export function checkPermLevel(perms: Record<string, PermissionLevel> | undefined, feature: string, need: "read" | "write"): boolean {
+// Permission level helper. Ladder (bawah -> atas): none < read < write < delete.
+// `delete` adalah level TERTINGGI: pemegangnya otomatis punya write + read juga.
+export type PermissionLevel = "none" | "read" | "write" | "delete";
+export function checkPermLevel(perms: Record<string, PermissionLevel> | undefined, feature: string, need: "read" | "write" | "delete"): boolean {
   if (!perms) return false;
   const level = perms[feature] || "none";
   if (level === "none") return false;
-  if (need === "read") return level === "read" || level === "write";
-  if (need === "write") return level === "write";
+  if (need === "read") return level === "read" || level === "write" || level === "delete";
+  if (need === "write") return level === "write" || level === "delete";
+  if (need === "delete") return level === "delete";
   return false;
 }
 
@@ -1818,7 +1820,7 @@ export const EDITOR_HIDDEN_KEYS = new Set<string>([
 // Preset templates. `level` = the grant level applied to every listed permission key
 // when the preset is applied (default "write"; "read" for read-only presets).
 export const PERMISSION_PRESETS: Record<string, { label: string; level?: PermissionLevel; permissions: string[] }> = {
-  admin: { label: "Admin (Semua Akses)", permissions: [...ALL_PERMISSION_KEYS] },
+  admin: { label: "Admin (Semua Akses)", level: "delete", permissions: [...ALL_PERMISSION_KEYS] },
   operator: { label: "Operator Teknis", permissions: ["dashboard", "map", "pops", "odcs", "odps", "poles", "cables", "otbs", "bestrays", "splitters", "cable_cores", "core_connections", "splitter_chain", "power_budget", "export_import", "customers", "tickets", "tickets_categories", "tickets_analytics", "tickets_sla"] },
   marketing: { label: "Marketing", permissions: ["marketing_dashboard", "marketing_insights", "canvassing", "canvassing_history", "canvassing_reports", "leads", "collections_marketing", "contacts", "prospects", "marketing_ads"] },
   billing: { label: "Billing & NOC", permissions: ["dashboard", "map", "customers", "packages", "sessions", "devices", "tickets", "collections", "billing_sync", "monitoring", "routers"] },
@@ -1844,8 +1846,8 @@ export function buildPermissionMatrixFromPreset(
 
 /**
  * Normalise an arbitrary permissions object into a full matrix: every canonical key present,
- * values constrained to "none"|"read"|"write", unknown keys dropped. Shared by role + preset
- * create/update so the cleanse logic lives in exactly one place.
+ * values constrained to "none"|"read"|"write"|"delete", unknown keys dropped. Shared by role +
+ * preset create/update so the cleanse logic lives in exactly one place.
  */
 export function cleansePermissionMatrix(
   permissions: unknown,
@@ -1854,7 +1856,7 @@ export function cleansePermissionMatrix(
   const src = permissions && typeof permissions === "object" ? (permissions as Record<string, unknown>) : {};
   for (const key of ALL_PERMISSION_KEYS) {
     const v = src[key];
-    out[key] = v === "read" || v === "write" ? v : "none";
+    out[key] = v === "read" || v === "write" || v === "delete" ? v : "none";
   }
   return out;
 }

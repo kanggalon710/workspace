@@ -177,6 +177,7 @@ export default function OdcsPage() {
   return (
     <AssetTable<Odc>
       title="ODC"
+      deletePermissionKey="odcs"
       description="Optical Distribution Cabinet - kabinet distribusi optik"
       data={data}
       isLoading={isLoading}

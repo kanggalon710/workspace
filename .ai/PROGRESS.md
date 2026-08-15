@@ -3,6 +3,38 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-15 - Level izin ke-4 "delete" (app-wide) + hapus Kabel/POP di /map
+**Agen:** claude | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** User minta pisahkan hapus dari modify/create. Tangga izin baru: none -> read (lihat) ->
+write (ubah/buat) -> delete (hapus). Admin bisa beri edit/create ke role tanpa memberi hapus.
+Admin/Super-admin SELALU bisa hapus. Plus fitur hapus Kabel & POP langsung di peta (konfirmasi).
+**Perubahan (per keputusan user: gate app-wide, migrasi explicit-grant, POP dgn anak diblok):**
+1. **Model level** (`shared/schema.ts` checkPermLevel+PermissionLevel+cleanse+preset admin,
+   `shared/permissionGrants.ts` RANK/GrantLevel/sanitize, `server/feature-gate.ts`): tambah "delete"
+   sebagai level tertinggi (superset write+read).
+2. **Enforcement** (`server/routes.ts`): `hasDeletePermission` + cabang DELETE di `globalWriteGuard`
+   -> semua fitur ter-map butuh level delete utk method DELETE (app-wide). `hasAnyPipelineKey` +
+   `resolvePipelineLevel` + legacyPerms filter perlakukan delete >= write.
+3. **Migrasi** (`server/storage.ts` + routes seed): role System-Admin/Admin dipaksa "delete" (idempotent
+   tiap startup + seed mitra). Role non-admin tetap "write" -> KEHILANGAN hapus sampai admin beri "HAPUS".
+4. **Delete safety**: `deleteCable` cascade cores + core_connections (transaksi); `deletePop` blok kalau
+   masih punya ODC/OTB (pesan jelas, route balikin 400).
+5. **Client**: `AuthContext` canWrite terima delete + `canDelete()` baru + canRead terima delete.
+   `PermissionMatrixEditor` + RolesPage + UsersPage: opsi ke-4 "HAPUS" (write dilabel "EDIT"). AssetTable
+   prop `deletePermissionKey` -> sembunyikan tombol hapus (baris/modal/bulk) kalau tak punya delete;
+   di-wire ke 6 halaman aset (odps/pops/cables/odcs/poles/splitters).
+6. **Peta**: `MapInfoWindow` tombol Hapus (POP & Kabel) + `MapPage` AlertDialog konfirmasi, panggil
+   `usePops().remove`/`useCables().remove`, hanya untuk user `canDelete` & bukan readOnly.
+7. **Test**: +checkPermLevel.test.ts, update permissionGrants/permissionPresets/rolePresets test. 302 pass.
+**File:** shared/schema.ts, shared/permissionGrants.ts, server/feature-gate.ts, server/routes.ts,
+server/storage.ts, server/pipeline-access-helpers.ts, client/context/AuthContext.tsx,
+client/components/roles/PermissionMatrixEditor.tsx, client/pages/RolesPage.tsx, client/pages/UsersPage.tsx,
+client/components/shared/AssetTable.tsx + 6 halaman aset, client/components/map/MapInfoWindow.tsx,
+client/pages/MapPage.tsx, shared/*.test.ts.
+**Catatan (PENTING - lapor user):** Setelah deploy, SEMUA role non-admin kehilangan hapus di semua data
+sampai admin buka /roles dan centang level "HAPUS" per fitur. Admin/System-Admin tak terpengaruh.
+typecheck 0 error, 302 test pass, build OK. Lihat DECISIONS.
+
 ## 2026-08-15 - Modal edit aset: tombol Hapus di samping tombol close + konfirmasi
 **Agen:** claude | **Status:** selesai (dev + main, dideploy)
 **Kenapa:** User minta di modal "Edit ODP" ada tombol hapus di sebelah tombol close (X) yang

@@ -30,12 +30,13 @@ test("resolveDefaultPreset: null when no defaults", () => {
 });
 
 test("cleansePermissionMatrix: keeps valid levels, defaults unknown/invalid to none, no stray keys", () => {
-  const m = cleansePermissionMatrix({ dashboard: "write", map: "read", bogus: "write", pops: "banana" } as any);
+  const m = cleansePermissionMatrix({ dashboard: "write", map: "read", cables: "delete", bogus: "write", pops: "banana" } as any);
   assert.equal(m.dashboard, "write");
   assert.equal(m.map, "read");
+  assert.equal(m.cables, "delete");
   assert.equal(m.pops, "none");
   assert.equal((m as any).bogus, undefined);
-  for (const k of ALL_PERMISSION_KEYS) assert.ok(["none", "read", "write"].includes(m[k]));
+  for (const k of ALL_PERMISSION_KEYS) assert.ok(["none", "read", "write", "delete"].includes(m[k]));
 });
 
 test("cleansePermissionMatrix: non-object → all none", () => {
