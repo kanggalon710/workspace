@@ -3,6 +3,19 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-15 - Modal edit aset: tombol Hapus di samping tombol close + konfirmasi
+**Agen:** claude | **Status:** selesai (dev + main, dideploy)
+**Kenapa:** User minta di modal "Edit ODP" ada tombol hapus di sebelah tombol close (X) yang
+memunculkan konfirmasi sebelum menghapus.
+**Perubahan:** Di `AssetTable` (generik, dipakai semua halaman aset), tambah tombol Trash merah
+di `absolute right-12 top-4` (kiri tombol close X di right-4) dalam DialogContent modal Edit.
+Klik -> `setDeleteId(editItem.id)` -> AlertDialog konfirmasi yang SUDAH ada ("Hapus {title}? Data
+tidak dapat dikembalikan..."). `handleDelete` kini juga `setEditItem(null)` agar modal edit ikut
+tertutup saat hapus dari dalamnya. Berlaku untuk semua modal edit aset (ODP/ODC/Splitter/POP/dll),
+konsisten - semua sudah punya delete.
+**File:** client/components/shared/AssetTable.tsx
+**Catatan:** typecheck 0 error, build OK.
+
 ## 2026-08-15 - /odps: klik Kode/Nama ODP buka modal Edit ODP
 **Agen:** claude | **Status:** selesai (dev + main, dideploy)
 **Kenapa:** User minta klik kode atau nama ODP langsung membuka modal "Edit ODP" (tak perlu cari

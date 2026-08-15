@@ -167,6 +167,7 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
     try {
       await onDelete(deleteId);
       toast.success(`${title} berhasil dihapus`);
+      setEditItem(null); // tutup modal edit kalau hapus dipicu dari dalamnya
     } catch (e: any) {
       toast.error(e.message || "Gagal menghapus data");
     } finally {
@@ -593,6 +594,19 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
             <DialogTitle>Edit {title}</DialogTitle>
             <DialogDescription>Ubah data {title.toLowerCase()}</DialogDescription>
           </DialogHeader>
+          {/* Tombol hapus di sebelah tombol close (X di right-4). Buka konfirmasi AlertDialog. */}
+          {editItem && (
+            <button
+              type="button"
+              onClick={() => setDeleteId(editItem.id)}
+              aria-label={`Hapus ${title}`}
+              title={`Hapus ${title}`}
+              className="absolute right-12 top-4 rounded-sm p-0.5 text-destructive opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Hapus {title}</span>
+            </button>
+          )}
           {renderForm(editItem, handleUpdate, isPending)}
         </DialogContent>
       </Dialog>
