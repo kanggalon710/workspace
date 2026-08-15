@@ -3,6 +3,17 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-15 - /odps: klik Kode/Nama ODP buka modal Edit ODP
+**Agen:** claude | **Status:** selesai (dev + main, dideploy)
+**Kenapa:** User minta klik kode atau nama ODP langsung membuka modal "Edit ODP" (tak perlu cari
+tombol pensil di kolom Aksi).
+**Perubahan:** Tambah prop opsional `editOnClickKeys?: string[]` di `AssetTable` (komponen generik
+dipakai banyak halaman aset). Sel pada kolom yang key-nya terdaftar dibungkus `<button>` yang
+memanggil `setEditItem(item)` (styling link primary). OdpsPage kirim `editOnClickKeys={["code","name"]}`.
+Backward-compatible: halaman aset lain (ODC/Splitter/POP/dll) tak berubah karena tak mengirim prop.
+**File:** client/components/shared/AssetTable.tsx, client/pages/OdpsPage.tsx
+**Catatan:** typecheck 0 error, build OK.
+
 ## 2026-08-15 - Fix simpan kabel /map gagal (enum cableType tak sinkron)
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** Tarik kabel di /map lalu simpan gagal: `insertCableSchema.cableType` satu-satunya tempat

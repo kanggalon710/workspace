@@ -55,13 +55,15 @@ interface AssetTableProps<T extends { id: number; status?: string | null; lat?: 
   renderCard?: (item: T, onEdit: () => void, onDelete: () => void) => React.ReactNode;
   /** Optional additional filter dropdowns */
   filters?: FilterConfig[];
+  /** Column keys whose cells become clickable and open the edit modal (opt-in per page). */
+  editOnClickKeys?: string[];
 }
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
 export function AssetTable<T extends { id: number; status?: string | null; lat?: number | null; lng?: number | null }>({
   title, description, data, isLoading, columns,
-  renderForm, onCreate, onUpdate, onDelete, renderCard, filters,
+  renderForm, onCreate, onUpdate, onDelete, renderCard, filters, editOnClickKeys,
 }: AssetTableProps<T>) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
@@ -462,19 +464,32 @@ export function AssetTable<T extends { id: number; status?: string | null; lat?:
                           : <Square className="h-4 w-4 text-muted-foreground hover:text-foreground" />}
                       </button>
                     </td>
-                    {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3 whitespace-nowrap overflow-hidden text-ellipsis align-middle">
-                        {col.render ? col.render(item) : (
-                          col.key === "status" ? (
-                            <Badge variant={getStatusBadgeVariant((item as any)[col.key] || "active")}>
-                              {(item as any)[col.key] || "active"}
-                            </Badge>
-                          ) : (
-                            String((item as any)[col.key] ?? "-")
-                          )
-                        )}
-                      </td>
-                    ))}
+                    {columns.map((col) => {
+                      const content = col.render ? col.render(item) : (
+                        col.key === "status" ? (
+                          <Badge variant={getStatusBadgeVariant((item as any)[col.key] || "active")}>
+                            {(item as any)[col.key] || "active"}
+                          </Badge>
+                        ) : (
+                          String((item as any)[col.key] ?? "-")
+                        )
+                      );
+                      const clickable = editOnClickKeys?.includes(col.key);
+                      return (
+                        <td key={col.key} className="px-4 py-3 whitespace-nowrap overflow-hidden text-ellipsis align-middle">
+                          {clickable ? (
+                            <button
+                              type="button"
+                              onClick={() => setEditItem(item)}
+                              title={`Edit ${title}`}
+                              className="text-left font-medium text-primary hover:underline focus-visible:underline"
+                            >
+                              {content}
+                            </button>
+                          ) : content}
+                        </td>
+                      );
+                    })}
                     <td className="px-4 py-3 text-right whitespace-nowrap align-middle">
                       <div className="flex items-center justify-end gap-1">
                         {/* View on Map */}
