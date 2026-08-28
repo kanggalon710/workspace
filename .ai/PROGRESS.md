@@ -3,6 +3,35 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-28 - Fix: kartu collection balik ke "Delegasi Masuk" setelah dipindah ke DISMANTEL
+**Agen:** claude (Opus 4.8) | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** Marketing lapor kartu di /collections & /collections/marketing balik ke "Delegasi
+Masuk" setelah dipindah ke kolom DISMANTEL. Akar masalah: dismantel dulu stage TERMINAL yang
+MENUTUP kartu (set closedAt). Pelanggan tetap is_isolir=1, jadi tiap cycle billing-sync
+`reconcileCollectionState` CASE 1 melihat "isolir tapi 0 kartu OPEN" (kartu dismantel closed
+diabaikan) lalu MINT kartu baru di stage entry; SOP auto-advance lalu menaikkannya kembali ke
+delegasi_marketing ("Delegasi Masuk"). Invarian sistem (`getSyncHealthStats`): isolir = 1 kartu
+terbuka. User pilih: kartu tetap TERLIHAT di kolom Dismantel.
+**Perubahan:**
+1. `shared/collectionSop.ts`: tambah `CLOSING_ROLES` (paid, writeoff) + `roleClosesCard()`.
+   `TERMINAL_ROLES` (paid/writeoff/dismantel) DIBIARKAN - masih pakai utk skip auto-advance/overdue
+   + visibility shared. dismantel = terminal (tak di-advance) TAPI tidak menutup kartu.
+2. `server/storage.ts`: `getClosingStageKeys()` (role paid/writeoff saja). `moveCollectionStage`
+   pakai closingKeys utk keputusan close/reopen (bukan terminalKeys) → pindah ke dismantel TIDAK
+   set closedAt, kartu tetap terbuka di kolom Dismantel → reconcile lihat 1 kartu terbuka → tak
+   mint ulang. Usage terminalKeys lain (SOP advance 1690, overdue 1766/1789/1799) tak disentuh.
+3. `server/storage.ts`: heal one-time flag-guarded `healDismantelOpenState()` (flag
+   `collections_dismantel_open_v1`, pola sama `collections_isolir_cleanup_v1`): utk pelanggan masih
+   isolir dgn kartu dismantel CLOSED → buka ulang kartu dismantel terbaru + tutup kartu open lain
+   (phantom re-mint, closeReason `superseded_dismantel_heal`). Idempotent.
+4. `client/pages/CollectionPipelinePage.tsx`: dismantel bukan lagi outcome penutup - alasan
+   dismantel masuk ke catatan (bukan closeReason), copy dialog diperbaiki (kartu tetap terlihat).
+5. `shared/collectionSop.test.ts`: +1 test `roleClosesCard`.
+**Files:** shared/collectionSop.ts, shared/collectionSop.test.ts, server/storage.ts,
+client/pages/CollectionPipelinePage.tsx
+**Verified:** `npx tsc --noEmit` 0 error; `npx tsx --test shared/*.test.ts` 303 pass; `npm run build` ok.
+**Catatan:** Perilaku berubah - lihat DECISIONS. writeoff/churn re-mint TIDAK diubah (di luar scope).
+
 ## 2026-08-15 - Level izin ke-4 "delete" (app-wide) + hapus Kabel/POP di /map
 **Agen:** claude | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** User minta pisahkan hapus dari modify/create. Tangga izin baru: none -> read (lihat) ->

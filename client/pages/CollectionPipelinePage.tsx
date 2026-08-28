@@ -270,15 +270,20 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const submitStageDialog = () => {
     if (!stageDialogFor) return;
     const { id, targetStage, targetRole } = stageDialogFor;
-    const isTerminal = targetRole === "paid" || targetRole === "writeoff" || targetRole === "dismantel";
+    // Stage outcome (paid/writeoff/dismantel) tidak butuh kategori kendala.
+    const isOutcome = targetRole === "paid" || targetRole === "writeoff" || targetRole === "dismantel";
+    // dismantel TIDAK menutup kartu (kartu tetap terlihat di kolom Dismantel) → alasannya
+    // disimpan sebagai catatan, bukan closeReason. Hanya writeoff yang mengirim closeReason.
+    const dismantelReason = targetRole === "dismantel" ? stageCloseReason.trim() : "";
+    const note = [stageNote.trim(), dismantelReason && `Alasan dismantel: ${dismantelReason}`]
+      .filter(Boolean).join(" - ");
     stageMut.mutate({
       id,
       stage: targetStage,
-      issueType: !isTerminal && stageIssueType ? stageIssueType : undefined,
+      issueType: !isOutcome && stageIssueType ? stageIssueType : undefined,
       promiseDate: stagePromiseDate || undefined, // opsional di stage manapun
-      closeReason: targetRole === "writeoff" ? (stageCloseReason || "manual_write_off")
-        : targetRole === "dismantel" ? (stageCloseReason || "manual_dismantel") : undefined,
-      note: stageNote.trim() || undefined,
+      closeReason: targetRole === "writeoff" ? (stageCloseReason || "manual_write_off") : undefined,
+      note: note || undefined,
       photoData: stagePhoto ?? undefined,
     });
   };
@@ -604,7 +609,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
                 <div className="flex items-start gap-2 p-3 rounded-md bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 mb-3">
                   <div className="text-xs text-purple-800 dark:text-purple-200">
                     <div className="font-semibold">Dismantel / Bongkar Perangkat</div>
-                    <div className="mt-0.5 text-[11px]">Pelanggan berhenti dan perangkat dibongkar. Kartu ditutup dan hasilnya masuk ke laporan Keuangan.</div>
+                    <div className="mt-0.5 text-[11px]">Pelanggan berhenti dan perangkat dibongkar. Kartu tetap terlihat di kolom Dismantel sampai selesai dibongkar (tidak balik ke stage awal).</div>
                   </div>
                 </div>
                 <Label className="text-xs">Alasan Dismantel</Label>

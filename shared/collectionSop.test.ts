@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decideSopAdvance, stageKeysForDivision, isSharedStage, parseOwnerDivisions, computeOverdue, type SopStageMeta } from "./collectionSop.js";
+import { decideSopAdvance, stageKeysForDivision, isSharedStage, parseOwnerDivisions, computeOverdue, roleClosesCard, type SopStageMeta } from "./collectionSop.js";
 
 const LADDER: SopStageMeta[] = [
   { key: "new", ownerDivision: "sistem", slaDays: 3, nextStageKey: "contacted", role: "entry" },
@@ -139,6 +139,17 @@ test("computeOverdue - keduanya terpenuhi → reason 'promise' menang", () => {
 test("computeOverdue - stage tanpa SLA tapi ada janji lewat → tetap overdue via promise", () => {
   assert.deepEqual(computeOverdue({ promiseDate: "2026-07-01", slaDays: 0, todayMs: TODAY }),
     { overdue: true, reason: "promise" });
+});
+
+test("roleClosesCard - hanya paid & writeoff menutup kartu; dismantel TIDAK", () => {
+  assert.equal(roleClosesCard("paid"), true);
+  assert.equal(roleClosesCard("writeoff"), true);
+  assert.equal(roleClosesCard("WriteOff"), true); // case-insensitive
+  assert.equal(roleClosesCard("dismantel"), false); // kartu tetap terbuka & terlihat di kolom Dismantel
+  assert.equal(roleClosesCard("entry"), false);
+  assert.equal(roleClosesCard("none"), false);
+  assert.equal(roleClosesCard(null), false);
+  assert.equal(roleClosesCard(undefined), false);
 });
 
 test("computeOverdue - tak ada janji & tak ada SLA → tidak overdue", () => {

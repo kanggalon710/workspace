@@ -2,6 +2,25 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-28 - DISMANTEL jadi stage resting (tidak menutup kartu)
+**Konteks:** Kartu collection balik ke "Delegasi Masuk" setelah dipindah ke DISMANTEL. Sistem
+punya invarian keras (`getSyncHealthStats`): pelanggan isolir = tepat 1 kartu OPEN; reconcile
+CASE 1 memaksanya. dismantel dulu terminal yang MENUTUP kartu, tapi dismantel tidak menghapus
+is_isolir → invarian dilanggar → reconcile mint kartu baru → naik lagi ke Delegasi Masuk.
+**Opsi:** (a) dismantel non-closing (kartu tetap terbuka & terlihat di kolom Dismantel; invarian
+terjaga; reconcile tak mint); (b) tetap closing + suppress reconcile utk churn-terminal (tapi ini
+MELANGGAR invarian: isolir tanpa kartu open → drift naik, alarm health); (c) tampilkan kartu closed
+terminal di board selamanya (query tak terbatas, risiko skala spt cap 200/7-hari yang sudah ada).
+**Keputusan:** (a). dismantel = stage resting yang TIDAK menutup kartu. Hanya paid & writeoff yang
+menutup (`CLOSING_ROLES`). dismantel tetap di `TERMINAL_ROLES` (skip auto-advance/overdue + shared
+visibility) tapi keluar dari keputusan closedAt di `moveCollectionStage` (via `getClosingStageKeys`).
+**Alasan:** Satu-satunya opsi yang konsisten dengan invarian isolir=1-kartu-open, memenuhi
+permintaan user (kartu terlihat di Dismantel), menjaga drift=0, tanpa risiko query tak terbatas.
+Trade-off: pelanggan dismantel ikut hitungan "open collections" (wajar - mereka masih isolir);
+selesai dismantel = pindah ke Loss/Churn (writeoff) atau pelanggan bayar/keluar-isolir. writeoff
+re-mint TIDAK diubah (di luar scope laporan). Heal one-time merapikan data lama (flag
+`collections_dismantel_open_v1`).
+
 ## 2026-08-15 - Level izin ke-4 "delete" app-wide (pisah hapus dari modify/create)
 **Konteks:** Model izin lama 3 level string-equality (none/read/write); "write" = ubah+buat+hapus
 sekaligus. User minta bisa beri edit/create tanpa hapus.

@@ -48,8 +48,20 @@ export function decideSopAdvance(
   return { advance: true, fromStage: currentStageKey, toStage: next, reason: `sla_${sla}d_elapsed` };
 }
 
-/** Role stage terminal - selalu shared (tampil di semua view divisi). */
+/** Role stage terminal - selalu shared (tampil di semua view divisi). Dipakai untuk
+ *  skip auto-advance/overdue + visibility board. CATATAN: "terminal" di sini = "outcome
+ *  akhir yang tidak ikut alur otomatis"; TIDAK sama dengan "menutup kartu" (lihat
+ *  CLOSING_ROLES). dismantel termasuk terminal (tak di-advance) tapi TIDAK menutup kartu. */
 const TERMINAL_ROLES = new Set(["paid", "writeoff", "dismantel"]);
+
+/** Role stage yang MENUTUP kartu (set closedAt) saat kartu dipindah ke sana: hanya paid
+ *  (reaktivasi/lunas) & writeoff (loss/churn) - kasus selesai dari sisi isolir. dismantel
+ *  TIDAK menutup: kartu tetap terbuka & terlihat di kolom Dismantel (invarian: pelanggan
+ *  isolir = 1 kartu terbuka, jadi reconcile tidak mint kartu baru). */
+export const CLOSING_ROLES = new Set(["paid", "writeoff"]);
+export function roleClosesCard(role?: string | null): boolean {
+  return CLOSING_ROLES.has(String(role ?? "").toLowerCase());
+}
 
 /** Parse `owner_division` (kini SET divisi, CSV) → daftar divisi spesifik.
  *  `null`/kosong/mengandung "all" → [] (penanda SHARED = tampil ke semua divisi).

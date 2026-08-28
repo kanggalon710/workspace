@@ -1640,6 +1640,52 @@ export class DatabaseStorage implements IStorage {
     return { deleted };
   }
 
+  /** One-time heal (flag-guarded): dulu memindahkan kartu ke DISMANTEL menutup kartu (closedAt),
+   *  lalu reconcile mint kartu baru di stage entry → kartu "balik" ke Delegasi Masuk. Sejak fix,
+   *  dismantel TIDAK menutup kartu. Heal ini merapikan data lama: untuk tiap pelanggan MASIH
+   *  isolir yang punya kartu CLOSED di stage dismantel, buka ulang kartu dismantel terbaru +
+   *  tutup kartu open lain (phantom re-mint) → sisa 1 kartu terbuka di kolom Dismantel.
+   *  Idempotent (sekali dijalankan kartu dismantel tak lagi closed → tak terpilih ulang). */
+  async healDismantelOpenState(): Promise<{ reopened: number; superseded: number }> {
+    const mitraId = getMitraId();
+    const dismantelStages = await this.db.select().from(collectionStages)
+      .where(and(eq(collectionStages.mitraId, mitraId), eq(collectionStages.role, "dismantel")));
+    const dismantelKeys = dismantelStages.map((s) => s.key);
+    if (dismantelKeys.length === 0) return { reopened: 0, superseded: 0 };
+
+    // Kartu dismantel CLOSED terbaru per pelanggan yang masih isolir.
+    const rows: any = ((await this.db.execute(sql`
+      SELECT col.customer_id AS customerId, MAX(col.id) AS dismantelId
+      FROM collections col JOIN customers cu ON cu.id = col.customer_id
+      WHERE col.mitra_id = ${mitraId} AND col.closed_at IS NOT NULL AND cu.is_isolir = 1
+        AND col.stage IN (${sql.join(dismantelKeys.map((k) => sql`${k}`), sql`, `)})
+      GROUP BY col.customer_id
+    `))[0] as any);
+
+    let reopened = 0, superseded = 0;
+    const now = new Date().toISOString();
+    for (const r of (rows ?? [])) {
+      const customerId = Number(r.customerId);
+      const dismantelId = Number(r.dismantelId);
+      try {
+        // Buka ulang kartu dismantel terbaru → jadi 1 kartu terbuka di kolom Dismantel.
+        await this.db.update(collections)
+          .set({ closedAt: null, closeReason: null, updatedAt: now } as any)
+          .where(and(eq(collections.id, dismantelId), eq(collections.mitraId, mitraId)));
+        reopened++;
+        // Tutup kartu OPEN lain milik pelanggan yang sama (phantom re-mint dari reconcile).
+        const res: any = await this.db.execute(sql`
+          UPDATE collections SET closed_at = ${now}, close_reason = 'superseded_dismantel_heal', updated_at = ${now}
+          WHERE mitra_id = ${mitraId} AND customer_id = ${customerId} AND closed_at IS NULL AND id <> ${dismantelId}
+        `);
+        superseded += Number(res?.[0]?.affectedRows ?? 0);
+      } catch (e: any) {
+        console.error(`[heal-dismantel] customer #${customerId}: ${e.message}`);
+      }
+    }
+    return { reopened, superseded };
+  }
+
   /** Helper: open collection dari customer record (utk reconcile + manual trigger).
    *  Idempotent - kalau sudah ada open, return existing tanpa create baru.
    *  initialStage default 'new' (Baru Isolir). Pakai 'suspend' kalau overdue tapi belum isolir. */
@@ -1941,13 +1987,16 @@ export class DatabaseStorage implements IStorage {
     if (!existing) throw new Error("Collection tidak ditemukan");
     const now = new Date().toISOString();
     const patch: any = { stage, updatedAt: now, ...extra };
-    // Terminal = stage pemegang role paid/writeoff (dinamis per-mitra; fallback legacy paid/written_off).
-    const terminalKeys = await this.getTerminalStageKeys();
-    if (terminalKeys.has(stage)) {
+    // MENUTUP kartu HANYA untuk stage pemegang role paid/writeoff (reaktivasi/lunas atau
+    // loss/churn) - kasus selesai dari sisi isolir. dismantel SENGAJA tidak menutup: kartu
+    // tetap terbuka & terlihat di kolom Dismantel, jaga invarian "pelanggan isolir = 1 kartu
+    // terbuka" supaya reconcile tidak mint kartu baru yang balik ke Delegasi Masuk.
+    const closingKeys = await this.getClosingStageKeys();
+    if (closingKeys.has(stage)) {
       patch.closedAt = now;
       if (!patch.closeReason) patch.closeReason = `manual_${stage}`;
-    } else if (existing.closedAt && !terminalKeys.has(stage)) {
-      // Pindah dari terminal kembali ke stage aktif → buka ulang (reopen).
+    } else if (existing.closedAt && !closingKeys.has(stage)) {
+      // Pindah dari stage penutup kembali ke stage aktif (termasuk dismantel) → buka ulang (reopen).
       patch.closedAt = null;
       patch.closeReason = null;
     }
@@ -2074,6 +2123,19 @@ export class DatabaseStorage implements IStorage {
     const set = new Set(rows.map((r) => r.key));
     // Fallback legacy kalau belum ter-seed
     if (set.size === 0) { set.add("paid"); set.add("written_off"); set.add("dismantel"); }
+    return set;
+  }
+
+  /** Set keys stage yang MENUTUP kartu (set closedAt) saat kartu dipindah ke sana: hanya role
+   *  paid & writeoff. BEDA dari getTerminalStageKeys() yang juga memuat dismantel - dismantel
+   *  terminal (tak ikut auto-advance) TAPI tidak menutup kartu (tetap terbuka di kolom Dismantel). */
+  private async getClosingStageKeys(): Promise<Set<string>> {
+    const mitraId = getMitraId();
+    const rows = await this.db.select().from(collectionStages)
+      .where(and(eq(collectionStages.mitraId, mitraId), inArray(collectionStages.role, ["paid", "writeoff"])));
+    const set = new Set(rows.map((r) => r.key));
+    // Fallback legacy kalau belum ter-seed
+    if (set.size === 0) { set.add("paid"); set.add("written_off"); }
     return set;
   }
 
@@ -10231,6 +10293,23 @@ export class DatabaseStorage implements IStorage {
           if (totalDeleted > 0) console.log(`[migration] cleanup non-isolir open collections: ${totalDeleted} deleted`);
         }
       } catch (e: any) { console.warn(`[migration] non-isolir cleanup skipped: ${e.message}`); }
+      // One-time (flag-guarded): rapikan kartu DISMANTEL lama. Dulu dismantel menutup kartu →
+      // reconcile mint kartu baru yang balik ke Delegasi Masuk. Sejak fix dismantel tidak menutup;
+      // heal ini buka ulang kartu dismantel pelanggan yang masih isolir + tutup phantom re-mint.
+      try {
+        const healDone = await this.getSetting("collections_dismantel_open_v1");
+        if (healDone !== "done") {
+          let totalReopened = 0, totalSuperseded = 0;
+          for (const mid of [1, ...(mitraRows as any[]).map((m: any) => Number(m.id))]) {
+            try {
+              const r = await withMitra(mid, () => this.healDismantelOpenState());
+              totalReopened += r.reopened; totalSuperseded += r.superseded;
+            } catch (e: any) { console.warn(`[migration] dismantel heal mitra ${mid}: ${e.message}`); }
+          }
+          await this.setSetting("collections_dismantel_open_v1", "done", "collection");
+          if (totalReopened > 0) console.log(`[migration] dismantel heal: ${totalReopened} reopened, ${totalSuperseded} superseded`);
+        }
+      } catch (e: any) { console.warn(`[migration] dismantel heal skipped: ${e.message}`); }
       // Normalisasi label ber-prefiks lama ("CS: Delegasi Masuk" -> "Delegasi Masuk", dst).
       // Divisi kini ditunjukkan lewat owner_division + grouping UI, bukan prefiks teks.
       // Idempotent + aman: hanya rename baris yang label-nya MASIH sama persis dengan nilai
