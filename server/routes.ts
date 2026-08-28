@@ -778,7 +778,7 @@ function rateLimitKey(req: Request): string {
 const VERIFY_RESELLER_LIMIT = { bucket: "verify-reseller", maxAttempts: 5,  windowMs: 5 * 60_000,  lockoutMs: 15 * 60_000 };
 const BILLING_SYNC_LIMIT    = { bucket: "billing-sync",    maxAttempts: 10, windowMs: 5 * 60_000,  lockoutMs: 5  * 60_000 };
 const INTEGRATIONS_LIMIT    = { bucket: "integrations",    maxAttempts: 30, windowMs: 5 * 60_000,  lockoutMs: 5  * 60_000 };
-const MANUAL_SYNC_COOLDOWN_MS = 10 * 60_000; // 1 manual sync per mitra per 10 minutes
+const MANUAL_SYNC_COOLDOWN_MS = 5 * 60_000; // 1 manual sync per mitra per 5 minutes
 
 const verifyResellerLimiter = createRateLimiter(VERIFY_RESELLER_LIMIT);
 const billingSyncLimiter    = createRateLimiter(BILLING_SYNC_LIMIT);

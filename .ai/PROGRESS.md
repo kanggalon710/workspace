@@ -3,6 +3,32 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-08-28 - Billing sync: jadwal nightly 2AM semua tenant (jeda 5 mnt) + cooldown manual 5 mnt
+**Agen:** claude (Opus 4.8) | **Status:** selesai (di dev, belum deploy)
+**Kenapa:** Auto-sync billing sebelumnya polling adaptif 60s/600s dan menarik SEMUA tenant
+back-to-back tiap cycle → membebani billing.jabnet.id. User minta: sync semua tenant sekali
+sehari jam 02:00 waktu server, berurutan dengan JEDA 5 menit antar-tenant; plus cooldown
+tombol "Sync Now" manual dikurangi 10→5 menit.
+**Perubahan:**
+1. `server/billing-sync-worker.ts`: scheduling diganti dari `currentInterval()` (peak/off-peak)
+   ke NIGHTLY. `scheduleNext()` hitung ms sampai jam nightly berikutnya (`msUntilNextRun`);
+   `start()` tak lagi boot-run berat (hanya catch-up sekali kalau sukses terakhir >23 jam lalu).
+   `runOnce()` scheduler-path kini `await sleep(gapMs)` antar-tenant (skip setelah tenant
+   terakhir; putus loop kalau di-stop saat jeda). Setting baru: `billing_sync_nightly_hour`
+   (default 2), `billing_sync_tenant_gap_seconds` (default 300). `getStatus()` expose
+   `nextRunAt`/`scheduleMode`/`nightlyHour`/`tenantGapSec`; stale threshold default 5→1560 mnt
+   (26 jam) supaya sync harian tak selalu ditandai "stale". Hapus setting lama peak/off.
+2. `server/routes.ts`: `MANUAL_SYNC_COOLDOWN_MS` 10→5 menit.
+3. `client/pages/IntegrationPage.tsx`: form konfig peak/off diganti "Jam Sync Harian" + "Jeda
+   Antar-Tenant (menit)"; status tampilkan "sync otomatis berikutnya: <waktu>" (bukan interval
+   detik); copy toggle + badge diperbarui ("Sync Harian (Nightly)").
+**Files:** server/billing-sync-worker.ts, server/routes.ts, client/pages/IntegrationPage.tsx
+**Verified:** `npx tsc --noEmit` 0 error; `npx tsx --test shared/*.test.ts` 303 pass; `npm run build` ok.
+**Catatan:** Manual "Sync Now" per-mitra tetap ada (tanpa jeda, single-tenant). Setting lama
+`billing_sync_interval_peak/off/peak_start/peak_end` jadi orphan di DB (dibiarkan, tak dipakai).
+Deploy: setelah restart, kalau sukses terakhir >23 jam lalu worker catch-up ~1 mnt setelah boot,
+lalu jadwal 02:00 harian.
+
 ## 2026-08-28 - Fix: kartu collection balik ke "Delegasi Masuk" setelah dipindah ke DISMANTEL
 **Agen:** claude (Opus 4.8) | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** Marketing lapor kartu di /collections & /collections/marketing balik ke "Delegasi

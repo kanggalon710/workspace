@@ -8,14 +8,18 @@
  *    - isolir → active: auto-close collection (stage=paid)
  *    - payment detected: auto-close collection
  *
- * Scheduling: smart adaptive interval
- *   - Peak hour (08-17 WIB server time): 60 detik default
- *   - Off-peak (17-08): 600 detik default
- *   - Semua configurable via app_settings
+ * Scheduling: nightly full sync untuk SEMUA mitra (tenant), sekuensial.
+ *   - Jalan sekali sehari jam 02:00 waktu server (configurable: billing_sync_nightly_hour).
+ *   - Tiap mitra di-sync berurutan dengan JEDA antar-tenant (default 5 menit,
+ *     configurable: billing_sync_tenant_gap_seconds) supaya tidak membebani billing API.
+ *   - Catch-up: kalau proses baru start dan jadwal terlewat (>23 jam sejak sukses
+ *     terakhir), jalankan sekali ~1 menit setelah boot lalu kembali ke jadwal harian.
+ *   - Manual "Sync Now" per mitra tetap tersedia kapan saja (lewat triggerManual).
  *
- * Error handling: exponential backoff 30s → 1m → 2m → 4m → max 10m
- * Concurrency: runLock mencegah run paralel (manual vs auto)
- * Graceful shutdown: stop() menghentikan scheduler tanpa abort in-flight run
+ * Error handling: per-mitra try/catch (1 tenant gagal tak menghentikan yang lain) +
+ *   exponential backoff 30s → max 10m pada error fetch di dalam 1 tenant.
+ * Concurrency: runLock mencegah run paralel (manual vs nightly per-tenant).
+ * Graceful shutdown: stop() menghentikan scheduler + memutus loop saat jeda antar-tenant.
  */
 
 import { storage } from "./storage.js";
@@ -30,11 +34,9 @@ type WorkerState = "idle" | "running" | "backing_off" | "stopped";
 
 const SETTING_KEYS = {
   enabled: "billing_sync_enabled",
-  intervalPeak: "billing_sync_interval_peak",       // detik, default 60
-  intervalOff: "billing_sync_interval_off",         // detik, default 600
-  peakStart: "billing_sync_peak_start",             // jam, default 8
-  peakEnd: "billing_sync_peak_end",                 // jam, default 17
-  failThresholdMin: "billing_sync_fail_threshold_min", // menit, default 5
+  nightlyHour: "billing_sync_nightly_hour",         // jam 0-23 waktu server, default 2 (02:00)
+  tenantGapSec: "billing_sync_tenant_gap_seconds",  // jeda antar-tenant, detik, default 300 (5 menit)
+  failThresholdMin: "billing_sync_fail_threshold_min", // menit dianggap "stale", default 1560 (26 jam)
   lastRunAt: "billing_sync_last_run_at",
   lastSuccessAt: "billing_sync_last_success_at",
   lastStatus: "billing_sync_last_status",           // success | error
@@ -46,6 +48,7 @@ export class BillingSyncWorker {
   private state: WorkerState = "stopped";
   private timer: NodeJS.Timeout | null = null;
   private runLock = false;
+  private catchUpDone = false;
   private backoffMs = 0;
   private readonly BASE_BACKOFF = 30_000;    // 30 detik
   private readonly MAX_BACKOFF = 600_000;    // 10 menit
@@ -56,11 +59,9 @@ export class BillingSyncWorker {
       return;
     }
     this.state = "idle";
-    console.log("[BillingSyncWorker] starting...");
-    // Run pertama non-blocking (jangan delay app listen())
-    setImmediate(() => {
-      this.runOnce().catch(e => console.error("[BillingSyncWorker] boot run error:", e.message));
-    });
+    const hour = await this.nightlyHour();
+    // TIDAK ada boot run berat: jadwal nightly (atau catch-up sekali kalau jadwal terlewat).
+    console.log(`[BillingSyncWorker] starting (nightly ${String(hour).padStart(2, "0")}:00 waktu server, semua mitra berurutan)...`);
     this.scheduleNext();
   }
 
@@ -160,17 +161,23 @@ export class BillingSyncWorker {
     stale: boolean;
     staleMinutes: number;
     currentIntervalSec: number;
+    scheduleMode: string;
+    nightlyHour: number;
+    nextRunAt: string;
+    tenantGapSec: number;
   }> {
     const lastRunAt = await storage.getSetting(SETTING_KEYS.lastRunAt);
     const lastSuccessAt = await storage.getSetting(SETTING_KEYS.lastSuccessAt);
     const lastStatus = await storage.getSetting(SETTING_KEYS.lastStatus);
     const lastError = await storage.getSetting(SETTING_KEYS.lastError);
     const lastStatsRaw = await storage.getSetting(SETTING_KEYS.lastStats);
-    const thresholdMin = parseInt(await storage.getSetting(SETTING_KEYS.failThresholdMin) ?? "5");
-    const intervalSec = await this.currentInterval() / 1000;
+    // Default stale threshold 26 jam (1560 mnt): sync harian, jadi &gt;26 jam tanpa sukses = benar-benar telat.
+    const thresholdMin = parseInt(await storage.getSetting(SETTING_KEYS.failThresholdMin) ?? "1560");
+    const nightlyHour = await this.nightlyHour();
+    const msNext = this.msUntilNextRun(nightlyHour);
     const staleMinutes = lastSuccessAt
       ? Math.floor((Date.now() - new Date(lastSuccessAt).getTime()) / 60_000)
-      : 999;
+      : 999999;
     return {
       state: this.state,
       lastRunAt,
@@ -180,20 +187,47 @@ export class BillingSyncWorker {
       lastStats: lastStatsRaw ? (() => { try { return JSON.parse(lastStatsRaw); } catch { return null; } })() : null,
       stale: staleMinutes > thresholdMin,
       staleMinutes,
-      currentIntervalSec: intervalSec,
+      currentIntervalSec: Math.round(msNext / 1000), // detik sampai run nightly berikutnya
+      scheduleMode: "nightly",
+      nightlyHour,
+      nextRunAt: new Date(Date.now() + msNext).toISOString(),
+      tenantGapSec: await this.tenantGapSec(),
     };
   }
 
   // --- PRIVATE -------------------------------------------------------------
 
-  private async currentInterval(): Promise<number> {
-    const peakStart = parseInt(await storage.getSetting(SETTING_KEYS.peakStart) ?? "8");
-    const peakEnd = parseInt(await storage.getSetting(SETTING_KEYS.peakEnd) ?? "17");
-    const peak = parseInt(await storage.getSetting(SETTING_KEYS.intervalPeak) ?? "60");
-    const off = parseInt(await storage.getSetting(SETTING_KEYS.intervalOff) ?? "600");
-    const hour = new Date().getHours();
-    const isPeak = hour >= peakStart && hour < peakEnd;
-    return (isPeak ? peak : off) * 1000;
+  private sleep(ms: number): Promise<void> {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  /** Jam nightly (0-23) waktu server, default 2 (02:00). */
+  private async nightlyHour(): Promise<number> {
+    const h = parseInt(await storage.getSetting(SETTING_KEYS.nightlyHour) ?? "2");
+    return Number.isFinite(h) && h >= 0 && h <= 23 ? h : 2;
+  }
+
+  /** Jeda antar-tenant (detik), default 300 (5 menit). */
+  private async tenantGapSec(): Promise<number> {
+    const s = parseInt(await storage.getSetting(SETTING_KEYS.tenantGapSec) ?? "300");
+    return Number.isFinite(s) && s >= 0 ? s : 300;
+  }
+
+  /** ms sampai jam nightly berikutnya (waktu server). Kalau jam-nya sudah lewat hari ini → besok. */
+  private msUntilNextRun(hour: number): number {
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0, 0);
+    if (next.getTime() <= now.getTime()) next.setDate(next.getDate() + 1);
+    return next.getTime() - now.getTime();
+  }
+
+  /** Catch-up: belum pernah sukses / sukses terakhir &gt;23 jam lalu → jalankan sekali setelah boot. */
+  private async shouldCatchUp(): Promise<boolean> {
+    const last = await storage.getSetting(SETTING_KEYS.lastSuccessAt);
+    if (!last) return true;
+    const t = new Date(last).getTime();
+    if (!Number.isFinite(t)) return true;
+    return Date.now() - t > 23 * 3600_000;
   }
 
   private async scheduleNext(): Promise<void> {
@@ -204,8 +238,18 @@ export class BillingSyncWorker {
       this.timer = setTimeout(() => this.scheduleNext(), 60_000);
       return;
     }
-    const base = await this.currentInterval();
-    const delay = base + this.backoffMs;
+    let delay: number;
+    let why: string;
+    if (!this.catchUpDone && await this.shouldCatchUp()) {
+      this.catchUpDone = true;
+      delay = 60_000; // catch-up sekali ~1 menit setelah boot (jadwal harian terlewat)
+      why = "catch-up (jadwal terlewat) ~1 menit lagi";
+    } else {
+      this.catchUpDone = true;
+      delay = this.msUntilNextRun(await this.nightlyHour());
+      why = `nightly ~${(delay / 3600_000).toFixed(1)} jam lagi`;
+    }
+    console.log(`[BillingSyncWorker] next run: ${why}`);
     this.timer = setTimeout(() => {
       this.runOnce()
         .catch(e => console.error("[BillingSyncWorker] run error:", e.message))
@@ -214,15 +258,18 @@ export class BillingSyncWorker {
   }
 
   private async runOnce(triggeredByUserId?: number): Promise<{ total: number; created: number; updated: number; errors: number; transitions: any }> {
-    // Phase D: fan-out per active mitra. User-triggered runs single-pass for caller's mitra.
+    // Fan-out per active mitra. User-triggered (ada caller context) = single-pass mitra caller, TANPA jeda.
     const callerMitra = getMitraIdOrNull();
     if (callerMitra) {
       return withMitra(callerMitra, () => this._runOnceInner(triggeredByUserId)) as Promise<any>;
     }
-    // Scheduler path: iterate all active mitras and accumulate stats
+    // Scheduler path (nightly): iterate all active mitras BERURUTAN dengan jeda antar-tenant.
     const allMitras = await storage.listMitras(false);
+    const gapMs = (await this.tenantGapSec()) * 1000;
+    console.log(`[BillingSyncWorker] nightly run: ${allMitras.length} mitra, jeda ${gapMs / 1000}s antar-tenant`);
     const agg = { total: 0, created: 0, updated: 0, errors: 0, transitions: { became_suspended: 0, became_active_after_suspended: 0, payment_received: 0 } as any };
-    for (const m of allMitras) {
+    for (let i = 0; i < allMitras.length; i++) {
+      const m = allMitras[i];
       try {
         const r = await withMitra(m.id, () => this._runOnceInner(triggeredByUserId));
         agg.total += r.total; agg.created += r.created; agg.updated += r.updated; agg.errors += r.errors;
@@ -232,6 +279,12 @@ export class BillingSyncWorker {
       } catch (e: any) {
         console.error(`[BillingSyncWorker] mitra ${m.id} (${m.slug}) failed:`, e?.message);
         agg.errors += 1;
+      }
+      // Jeda antar-tenant (skip setelah tenant terakhir). Putus loop kalau worker di-stop saat jeda.
+      if (i < allMitras.length - 1 && gapMs > 0) {
+        console.log(`[BillingSyncWorker] jeda ${gapMs / 1000}s sebelum mitra berikutnya...`);
+        await this.sleep(gapMs);
+        if (this.state === "stopped") { console.log("[BillingSyncWorker] stop saat jeda → loop nightly dihentikan"); break; }
       }
     }
     return agg;

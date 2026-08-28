@@ -322,10 +322,8 @@ export default function IntegrationPage() {
 
   // -- Billing Sync (billing.jabnet.id) --
   const [billEnabled, setBillEnabled] = useState(true);
-  const [billPeakSec, setBillPeakSec] = useState("60");
-  const [billOffSec, setBillOffSec] = useState("600");
-  const [billPeakStart, setBillPeakStart] = useState("8");
-  const [billPeakEnd, setBillPeakEnd] = useState("17");
+  const [billNightlyHour, setBillNightlyHour] = useState("2");
+  const [billTenantGapMin, setBillTenantGapMin] = useState("5");
   const [billInited, setBillInited] = useState(false);
   const [billSaving, setBillSaving] = useState(false);
   const [billSyncing, setBillSyncing] = useState(false);
@@ -336,10 +334,8 @@ export default function IntegrationPage() {
       setBillEnabled(
         getSettingValue(allSettings, "billing_sync_enabled", "true") === "true"
       );
-      setBillPeakSec(getSettingValue(allSettings, "billing_sync_interval_peak", "60"));
-      setBillOffSec(getSettingValue(allSettings, "billing_sync_interval_off", "600"));
-      setBillPeakStart(getSettingValue(allSettings, "billing_sync_peak_start", "8"));
-      setBillPeakEnd(getSettingValue(allSettings, "billing_sync_peak_end", "17"));
+      setBillNightlyHour(getSettingValue(allSettings, "billing_sync_nightly_hour", "2"));
+      setBillTenantGapMin(String(Math.round((Number(getSettingValue(allSettings, "billing_sync_tenant_gap_seconds", "300")) || 300) / 60)));
       setBillInited(true);
     }
   }, [allSettings, billInited]);
@@ -363,10 +359,8 @@ export default function IntegrationPage() {
     try {
       await saveBulkMutation.mutateAsync([
         { key: "billing_sync_enabled", value: billEnabled ? "true" : "false", category: "billing", label: "Billing Sync Aktif" },
-        { key: "billing_sync_interval_peak", value: String(Math.max(30, Number(billPeakSec) || 60)), category: "billing", label: "Interval Peak (detik)" },
-        { key: "billing_sync_interval_off", value: String(Math.max(60, Number(billOffSec) || 600)), category: "billing", label: "Interval Off-peak (detik)" },
-        { key: "billing_sync_peak_start", value: String(Math.min(23, Math.max(0, Number(billPeakStart) || 8))), category: "billing", label: "Peak Start (jam)" },
-        { key: "billing_sync_peak_end", value: String(Math.min(23, Math.max(0, Number(billPeakEnd) || 17))), category: "billing", label: "Peak End (jam)" },
+        { key: "billing_sync_nightly_hour", value: String(Math.min(23, Math.max(0, Number(billNightlyHour) || 2))), category: "billing", label: "Jam Sync Harian (0-23)" },
+        { key: "billing_sync_tenant_gap_seconds", value: String(Math.max(0, Math.round((Number(billTenantGapMin) || 5) * 60))), category: "billing", label: "Jeda Antar-Tenant (detik)" },
       ]);
       toast.success("Konfigurasi billing sync disimpan");
       refetchBillStatus();
@@ -1290,8 +1284,8 @@ export default function IntegrationPage() {
                 <span className="font-mono-tight text-foreground">
                   {new Date(billStatus.lastSuccessAt).toLocaleString("id-ID")}
                 </span>
-                {billStatus?.currentIntervalSec && (
-                  <> · interval aktif: <span className="font-mono-tight">{billStatus.currentIntervalSec}s</span></>
+                {billStatus?.nextRunAt && (
+                  <> · sync otomatis berikutnya: <span className="font-mono-tight text-foreground">{new Date(billStatus.nextRunAt).toLocaleString("id-ID")}</span></>
                 )}
               </span>
             </div>
@@ -1389,57 +1383,34 @@ export default function IntegrationPage() {
             <div className="min-w-0">
               <div className="text-sm font-semibold">Aktifkan Auto-sync</div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Worker akan polling billing.jabnet.id sesuai interval di bawah.
+                Worker menarik data billing.jabnet.id sekali sehari untuk semua tenant (jadwal di bawah).
               </div>
             </div>
             <ToggleSwitch checked={billEnabled} onChange={setBillEnabled} />
           </div>
 
-          {/* Interval config */}
+          {/* Nightly schedule config */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Interval Peak (detik)</Label>
-              <Input
-                type="number"
-                min={30}
-                value={billPeakSec}
-                onChange={(e) => setBillPeakSec(e.target.value)}
-
-              />
-              <p className="text-[11px] text-muted-foreground">Min 30 detik. Aktif di jam sibuk.</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Interval Off-peak (detik)</Label>
-              <Input
-                type="number"
-                min={60}
-                value={billOffSec}
-                onChange={(e) => setBillOffSec(e.target.value)}
-
-              />
-              <p className="text-[11px] text-muted-foreground">Min 60 detik. Aktif di luar jam sibuk.</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Peak Start (jam)</Label>
+              <Label className="text-xs font-medium">Jam Sync Harian (0-23)</Label>
               <Input
                 type="number"
                 min={0}
                 max={23}
-                value={billPeakStart}
-                onChange={(e) => setBillPeakStart(e.target.value)}
-
+                value={billNightlyHour}
+                onChange={(e) => setBillNightlyHour(e.target.value)}
               />
+              <p className="text-[11px] text-muted-foreground">Waktu server. Sync semua tenant sekali sehari (default 02:00).</p>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Peak End (jam)</Label>
+              <Label className="text-xs font-medium">Jeda Antar-Tenant (menit)</Label>
               <Input
                 type="number"
                 min={0}
-                max={23}
-                value={billPeakEnd}
-                onChange={(e) => setBillPeakEnd(e.target.value)}
-
+                value={billTenantGapMin}
+                onChange={(e) => setBillTenantGapMin(e.target.value)}
               />
+              <p className="text-[11px] text-muted-foreground">Tunggu sekian menit sebelum sync tenant berikutnya (default 5).</p>
             </div>
           </div>
 
@@ -1449,7 +1420,7 @@ export default function IntegrationPage() {
             <Badge variant="outline">Auto-buka Collection</Badge>
             <Badge variant="outline">Manual Override Lock</Badge>
             <Badge variant="outline">Reconciliation</Badge>
-            <Badge variant="outline">Smart Interval</Badge>
+            <Badge variant="outline">Sync Harian (Nightly)</Badge>
           </div>
 
           {/* Actions */}

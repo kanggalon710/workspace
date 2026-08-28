@@ -2,6 +2,22 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-08-28 - Billing sync jadi nightly 2AM (ganti polling adaptif)
+**Konteks:** Worker billing sync polling adaptif (60s sibuk / 600s off-peak) dan tiap cycle
+menarik SEMUA tenant berturut-turut → beban tinggi ke billing.jabnet.id. User mau sync harian
+saja, jam 02:00, berurutan, dengan jeda antar-tenant.
+**Opsi:** (a) nightly-only ganti polling; (b) JABNET live + nightly untuk semua; (c) tetap polling
++ tambah nightly. User pilih (a) + cooldown manual 5 mnt.
+**Keputusan:** (a). Scheduling clock-based ke jam nightly (default 02:00 waktu server, konsisten
+dgn logika jam eksisting yang pakai `getHours()` server-local). Jeda antar-tenant default 5 mnt.
+Catch-up sekali saat boot kalau jadwal terlewat (>23 jam). Cooldown manual 10→5 mnt.
+**Alasan:** Beban billing API turun drastis (1x/hari vs tiap menit), jeda 5 mnt hindari burst
+paralel. Trade-off: status isolir/collection refresh 1x/hari (billing memang berubah harian);
+untuk kebutuhan real-time ada tombol "Sync Now" manual per-mitra (cooldown 5 mnt) + endpoint
+`POST /api/billing/mitras/:id/sync`. Stale-threshold dinaikkan ke 26 jam supaya banner "stale"
+tidak false-positive di mode harian. Konfigurasi via setting `billing_sync_nightly_hour` +
+`billing_sync_tenant_gap_seconds` (bisa diubah di /integrations tanpa redeploy).
+
 ## 2026-08-28 - DISMANTEL jadi stage resting (tidak menutup kartu)
 **Konteks:** Kartu collection balik ke "Delegasi Masuk" setelah dipindah ke DISMANTEL. Sistem
 punya invarian keras (`getSyncHealthStats`): pelanggan isolir = tepat 1 kartu OPEN; reconcile
