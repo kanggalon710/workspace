@@ -7922,7 +7922,7 @@ router.post("/api/teamspace/teams/:id/announcements", async (req, res) => {
     title: title.trim(), content: content.trim(), category: "announcement",
     authorId: req.authUser!.id, publishedAt: new Date().toISOString(),
     teamId: team.id, isConfidential: Boolean(isConfidential), expiresAt,
-  } as any);
+  });
   if (targetIds.length > 0) await storage.setContentRecipients("announcement", row.id, targetIds);
   // Notifikasi: ke penerima terpilih, atau ke seluruh anggota tim bila broadcast.
   const notifyIds = targetIds.length > 0 ? targetIds
@@ -10350,6 +10350,11 @@ router.get("/api/announcements/:id", async (req: Request, res: Response) => {
     // If unpublished, only admin can see
     if (!row.publishedAt && !hasPermission(req, "announcements_admin")) {
       return sendError(res, "Akses ditolak", 403);
+    }
+    // Pengumuman ber-scope tim bukan konsumsi company-wide: hanya anggota tim (atau admin).
+    if (row.teamId != null && !hasPermission(req, "announcements_admin")
+        && !(await storage.getTeamMembership(row.teamId, req.authUser.id))) {
+      return sendError(res, "Pengumuman tidak ditemukan", 404);
     }
     // Teamspace FR-601: Rahasia → hanya penerima/penulis/admin (404 sembunyikan keberadaan).
     if ((row as any).isConfidential === 1 && !hasPermission(req, "announcements_admin") && row.authorId !== req.authUser.id) {

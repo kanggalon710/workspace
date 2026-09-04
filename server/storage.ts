@@ -10131,6 +10131,28 @@ export class DatabaseStorage implements IStorage {
         console.warn(`[migration] ${table}.${column} add failed: ${e.message}`);
       }
     }
+
+    // Backfill (idempotent): createAnnouncement dulu membuang `teamId`, jadi pengumuman tim
+    // tersimpan dengan team_id NULL - hilang dari tab Pengumuman tim DAN bocor ke news feed
+    // company-wide. Pulihkan scope-nya dari audit trail TEAM_ANNOUNCEMENT_CREATE.
+    try {
+      const [res]: any = await this.pool.execute(
+        `UPDATE announcements a
+           JOIN audit_logs al
+             ON al.entity_type = 'announcement'
+            AND al.action = 'TEAM_ANNOUNCEMENT_CREATE'
+            AND al.entity_id = a.id
+            AND al.mitra_id = a.mitra_id
+            SET a.team_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(al.details, '$.teamId')) AS UNSIGNED)
+          WHERE a.team_id IS NULL
+            AND JSON_VALID(al.details)
+            AND JSON_EXTRACT(al.details, '$.teamId') IS NOT NULL`,
+      );
+      const fixed = Number(res?.affectedRows ?? 0);
+      if (fixed > 0) console.log(`[migration] Backfilled announcements.team_id for ${fixed} team announcement(s) ✓`);
+    } catch (e: any) {
+      console.warn(`[migration] announcements.team_id backfill failed: ${e.message}`);
+    }
   }
 
   async seedAdminIfNeeded(): Promise<void> {
@@ -15509,11 +15531,12 @@ export class DatabaseStorage implements IStorage {
     return ((await this.db.execute(sql`
       SELECT a.id, a.title, a.content, a.category, a.severity, a.version,
         a.author_id AS authorId, a.published_at AS publishedAt, a.pinned_until AS pinnedUntil,
+        a.team_id AS teamId, a.is_confidential AS isConfidential, a.expires_at AS expiresAt,
         a.created_at AS createdAt, a.updated_at AS updatedAt,
         u.name AS authorName, u.username AS authorUsername
       FROM announcements a
       LEFT JOIN users u ON u.id = a.author_id
-      WHERE a.mitra_id = ${mitraId} ${pubClause} ${catClause}
+      WHERE a.mitra_id = ${mitraId} AND a.team_id IS NULL ${pubClause} ${catClause}
       ORDER BY
         CASE WHEN a.pinned_until IS NOT NULL AND a.pinned_until > ${new Date().toISOString()} THEN 0 ELSE 1 END,
         COALESCE(a.published_at, a.created_at) DESC
@@ -15530,7 +15553,7 @@ export class DatabaseStorage implements IStorage {
   async createAnnouncement(data: {
     title: string; content: string; category: string; severity?: string;
     version?: string; authorId: number; publishedAt?: string | null; pinnedUntil?: string | null;
-    isConfidential?: boolean; expiresAt?: string | null;
+    teamId?: number | null; isConfidential?: boolean; expiresAt?: string | null;
   }): Promise<Announcement> {
     const mitraId = getMitraId();
     const now = new Date().toISOString();
@@ -15544,6 +15567,7 @@ export class DatabaseStorage implements IStorage {
       authorId: data.authorId,
       publishedAt: data.publishedAt ?? null,
       pinnedUntil: data.pinnedUntil ?? null,
+      teamId: data.teamId ?? null,
       isConfidential: data.isConfidential ? 1 : 0,
       expiresAt: data.expiresAt ?? null,
       createdAt: now,
