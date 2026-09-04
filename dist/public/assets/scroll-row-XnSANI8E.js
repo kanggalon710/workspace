@@ -1,0 +1,1 @@
+import{j as x}from"./react-vendor-RCstk0y8.js";import{P as s}from"./index-CWd2j6FM.js";function n({children:o,className:r,bleed:m="none"}){return x.jsx("div",{className:s("flex overflow-x-auto no-scrollbar",m==="mobile"&&"-mx-4 px-4 md:mx-0 md:px-0",r),children:o})}export{n as S};
