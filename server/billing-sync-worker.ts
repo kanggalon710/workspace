@@ -163,8 +163,9 @@ export class BillingSyncWorker {
     currentIntervalSec: number;
     scheduleMode: string;
     nightlyHour: number;
-    nextRunAt: string;
+    nextRunAt: string | null;
     tenantGapSec: number;
+    workerRunning: boolean;
   }> {
     const lastRunAt = await storage.getSetting(SETTING_KEYS.lastRunAt);
     const lastSuccessAt = await storage.getSetting(SETTING_KEYS.lastSuccessAt);
@@ -175,6 +176,7 @@ export class BillingSyncWorker {
     const thresholdMin = parseInt(await storage.getSetting(SETTING_KEYS.failThresholdMin) ?? "1560");
     const nightlyHour = await this.nightlyHour();
     const msNext = this.msUntilNextRun(nightlyHour);
+    const workerRunning = this.state !== "stopped";
     const staleMinutes = lastSuccessAt
       ? Math.floor((Date.now() - new Date(lastSuccessAt).getTime()) / 60_000)
       : 999999;
@@ -187,10 +189,13 @@ export class BillingSyncWorker {
       lastStats: lastStatsRaw ? (() => { try { return JSON.parse(lastStatsRaw); } catch { return null; } })() : null,
       stale: staleMinutes > thresholdMin,
       staleMinutes,
-      currentIntervalSec: Math.round(msNext / 1000), // detik sampai run nightly berikutnya
-      scheduleMode: "nightly",
+      // Scheduler hanya hidup kalau start() dipanggil (env BILLING_SYNC_ENABLED + WORKERS_ENABLED).
+      // Kalau mati, jangan laporkan jadwal berikutnya - tidak ada timer yang akan jalan.
+      workerRunning,
+      currentIntervalSec: workerRunning ? Math.round(msNext / 1000) : 0,
+      scheduleMode: workerRunning ? "nightly" : "disabled",
       nightlyHour,
-      nextRunAt: new Date(Date.now() + msNext).toISOString(),
+      nextRunAt: workerRunning ? new Date(Date.now() + msNext).toISOString() : null,
       tenantGapSec: await this.tenantGapSec(),
     };
   }

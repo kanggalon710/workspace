@@ -1228,6 +1228,10 @@ export default function IntegrationPage() {
               <Badge variant="outline" className="text-amber-600 border-amber-200">
                 <AlertTriangle className="h-3 w-3 mr-1" />Dinonaktifkan
               </Badge>
+            ) : billStatus && billStatus.workerRunning === false ? (
+              <Badge className="bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300">
+                <XCircle className="h-3 w-3 mr-1" />Auto-sync mati
+              </Badge>
             ) : billStatus?.stale ? (
               <Badge className="bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300">
                 <AlertTriangle className="h-3 w-3 mr-1" />Stale ({billStatus?.staleMinutes ?? "?"} mnt)
@@ -1284,10 +1288,27 @@ export default function IntegrationPage() {
                 <span className="font-mono-tight text-foreground">
                   {new Date(billStatus.lastSuccessAt).toLocaleString("id-ID")}
                 </span>
-                {billStatus?.nextRunAt && (
+                {billStatus?.nextRunAt ? (
                   <> · sync otomatis berikutnya: <span className="font-mono-tight text-foreground">{new Date(billStatus.nextRunAt).toLocaleString("id-ID")}</span></>
-                )}
+                ) : billStatus?.workerRunning === false ? (
+                  <> · <span className="text-destructive font-medium">tidak ada sync otomatis terjadwal</span></>
+                ) : null}
               </span>
+            </div>
+          )}
+
+          {billStatus?.workerRunning === false && (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-destructive/5 border border-destructive/20 text-xs">
+              <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="font-semibold text-destructive">Worker sync otomatis tidak berjalan</div>
+                <div className="text-muted-foreground">
+                  Tombol &quot;Sync Sekarang&quot; tetap bekerja, tapi tidak ada sync terjadwal.
+                  Worker dimatikan lewat environment server (<code className="font-mono">WORKERS_ENABLED</code> /{" "}
+                  <code className="font-mono">BILLING_SYNC_ENABLED</code>), bukan lewat pengaturan di halaman ini.
+                  Hubungi admin server untuk mengaktifkan lalu restart aplikasi.
+                </div>
+              </div>
             </div>
           )}
 
