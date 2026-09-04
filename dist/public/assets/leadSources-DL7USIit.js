@@ -1,0 +1,6 @@
+import{c as t}from"./index-CWd2j6FM.js";/**
+ * @license lucide-react v0.453.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const r=t("List",[["path",{d:"M3 12h.01",key:"nlz23k"}],["path",{d:"M3 18h.01",key:"1tta3j"}],["path",{d:"M3 6h.01",key:"1rqtza"}],["path",{d:"M8 12h13",key:"1za7za"}],["path",{d:"M8 18h13",key:"1lx6n3"}],["path",{d:"M8 6h13",key:"ik3vkj"}]]),n={canvassing:"canvassing",prospect_finder:"prospect_finder",finder:"prospect_finder",coverage_check:"coverage_check",landing_page:"coverage_check",landing:"coverage_check",meta_leads:"meta_leads",meta_ads:"meta_leads",meta:"meta_leads",facebook:"meta_leads",tiktok_leads:"tiktok_leads",tiktok_ads:"tiktok_leads",tiktok:"tiktok_leads",referral:"referral",inbound:"inbound",pipeline:"pipeline"};function s(e){return n[String(e??"").trim().toLowerCase()]??"other"}const a={canvassing:"Canvassing",prospect_finder:"Prospect Finder",coverage_check:"Coverage Check",meta_leads:"Meta Lead Ads",tiktok_leads:"TikTok Lead Ads",referral:"Referral",inbound:"Inbound",pipeline:"Dari Pipeline",other:"Lainnya"},o=Object.keys(a).map(e=>({value:e,label:a[e]}));export{r as L,a,o as b,s as c};

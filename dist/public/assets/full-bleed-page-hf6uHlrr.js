@@ -1,0 +1,1 @@
+import{j as t}from"./react-vendor-RCstk0y8.js";import{P as l}from"./index-CWd2j6FM.js";const e="flex flex-col min-h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden bg-slate-50/40 dark:bg-slate-950/40 -m-4 md:-m-6 -mt-4 md:-mt-6 pb-20 md:pb-0";function a({children:r,className:m}){return t.jsx("div",{className:m?l(e,m):e,children:r})}export{a as F};
