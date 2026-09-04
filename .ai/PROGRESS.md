@@ -3,6 +3,77 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-09-04 - Diagnosis + fix: pengumuman tim hilang & auto-sync billing tak pernah jalan
+**Agen:** claude (Opus 5, 1M) | **Status:** kode selesai di dev; 1 aksi produksi masih perlu OK user
+**Kenapa:** User lapor (a) fitur pengumuman tidak jalan benar, (b) billing auto-sync tak pernah
+jalan sendiri - counter "stale" sempat >5000 jam dan baru segar setelah klik Sync manual.
+Investigasi langsung ke produksi (`workspace.jabnet.id` = Passenger app `~/repositories/workspace-main`,
+DB `jabnet_workspace_main`).
+
+**Temuan 1 - auto-sync billing memang MATI (bukan cuma counter).**
+`/home/jabnet/private/workspace-main/config/.env` berisi `WORKERS_ENABLED=false` +
+`BILLING_SYNC_ENABLED=false`, jadi `server/index.ts:143` tak pernah memanggil
+`billingSyncWorker.start()` -> `scheduleNext()` tak pernah jalan -> tidak ada timer nightly sama
+sekali. Tombol "Sync Sekarang" tetap bekerja karena route memanggil `triggerManual()` langsung,
+melewati gate env; itulah kenapa `billing_sync_last_success_at` ikut segar tiap kali diklik.
+Bukti DB: `billing_sync_last_success_at = 2026-09-04T06:55:24Z` (= klik manual user), dan setting
+lama `billing_sync_interval_peak/off` masih dari 2026-07-24 sementara `billing_sync_nightly_hour`
+belum pernah ada. Bundle terdeploy (`dist/index.mjs`, 28 Agu) SUDAH versi nightly - jadi bukan
+soal kode lama, murni flag environment.
+
+**Temuan 2 - `createAnnouncement` membuang `teamId` (root cause pengumuman tim).**
+Route tim (`POST /api/teamspace/teams/:id/announcements`) mengirim `teamId: team.id` tapi
+`storage.createAnnouncement()` tidak punya field itu di tipe param maupun di `.values()`, dan
+pemanggilnya memakai `as any` sehingga typecheck diam. Akibatnya `announcements.team_id` selalu
+NULL: (a) `listTeamAnnouncements()` yang filter `eq(teamId)` mengembalikan KOSONG -> tab
+"Pengumuman" tim selalu kosong walau notifikasi terkirim; (b) pengumuman tim malah bocor ke news
+feed company-wide `/announcements`. Bukti produksi: 3 pengumuman (id 1-3) semuanya lahir dari
+`TEAM_ANNOUNCEMENT_CREATE` (audit 14217/15878/15879, details `{"teamId":2|3|1}`) tapi `team_id` NULL.
+
+**Temuan 3 - `listAnnouncements()` tak menyeleksi kolom yang dipakai route.**
+SELECT-nya tidak mengambil `is_confidential`/`expires_at`, padahal route `/api/announcements`
+memfilter `a.isConfidential === 1` dan menghitung `isExpired` dari `a.expiresAt`. Keduanya selalu
+`undefined` -> filter kerahasiaan (FR-601) NO-OP: pengumuman Rahasia "CETAS" (id 1, hanya untuk
+user 2) terbaca SEMUA staf, dan expiry tak pernah berlaku.
+
+**Perubahan:**
+1. `server/storage.ts` `createAnnouncement()`: terima + simpan `teamId`.
+2. `server/storage.ts` `listAnnouncements()`: SELECT `team_id`/`is_confidential`/`expires_at`
+   + `WHERE a.team_id IS NULL` (pengumuman tim bukan konsumsi company-wide).
+3. `server/storage.ts` migrasi startup: backfill idempotent `announcements.team_id` dari audit
+   `TEAM_ANNOUNCEMENT_CREATE` untuk baris lama yang telanjur NULL.
+4. `server/routes.ts`: hapus `as any` di pemanggil createAnnouncement (biar typecheck menangkap
+   regresi serupa) + guard `GET /api/announcements/:id` supaya pengumuman ber-`teamId` hanya
+   terbaca anggota tim / admin.
+5. `server/billing-sync-worker.ts` `getStatus()`: tambah `workerRunning`; `nextRunAt` jadi `null`
+   dan `scheduleMode` jadi `"disabled"` kalau scheduler tak hidup (sebelumnya selalu melaporkan
+   jadwal yang tak akan pernah terjadi).
+6. `client/pages/IntegrationPage.tsx`: badge "Auto-sync mati" + banner penjelas (worker dimatikan
+   lewat env, bukan lewat toggle di halaman) + baris "tidak ada sync otomatis terjadwal".
+**Files:** server/storage.ts, server/routes.ts, server/billing-sync-worker.ts, client/pages/IntegrationPage.tsx
+**Verified:** `npm run typecheck` 0 error; `npx tsx --test shared/*.test.ts server/*.test.ts` 449 pass;
+`npm run build` ok. SQL `listAnnouncements` baru + query backfill diuji read-only langsung ke DB
+produksi: backfill me-resolve id 1->tim 2, id 2->tim 3, id 3->tim 1 (cocok dengan audit trail).
+BELUM diverifikasi di browser (butuh deploy/DB lokal) - perubahan UI status sync masih unverified.
+**Aksi produksi (atas instruksi user, 2026-09-04 07:28 GMT):**
+1. `~/private/workspace-main/config/.env`: `WORKERS_ENABLED=true`, `BILLING_SYNC_ENABLED=true`,
+   ditambah `CHATWOOT_CONTACT_SYNC_ENABLED=false` eksplisit (flag itu default TRUE di
+   `server/index.ts:33` - tanpa baris ini worker Chatwoot ikut menyala). Worker lain tetap false.
+   Cadangan: `.env.bak-20260904`.
+2. `billing_sync_nightly_hour` di-set **19**. Jam server GMT (bukan WIB) dan app tak set `TZ`,
+   jadi default 2 berarti 09:00 WIB - jam sibuk, justru yang mau dihindari. 19 GMT = 02:00 WIB.
+3. Restart Passenger (`touch tmp/restart.txt`).
+4. Ditambahkan cron keep-alive `*/4 * * * * curl -s https://workspace.jabnet.id/api/health`.
+   Cron ini TIDAK ADA sebelumnya walau CLAUDE.md gotcha #12 mengasumsikan ada; tanpa itu app
+   bisa idle spin-down malam hari dan `setTimeout` nightly ikut mati. Cadangan crontab lama:
+   `~/cron-backup-20260904.txt`.
+**Verifikasi produksi:** `/api/health` HTTP 200 (uptime 0 = proses baru);
+`GET /api/billing/sync/status` -> `state:"idle"` (membuktikan `start()` benar-benar jalan;
+`state` hanya berpindah dari "stopped" ke "idle" di dalam `start()`), `scheduleMode:"nightly"`,
+`nightlyHour:19`, `nextRunAt:"2026-09-04T19:00:00.000Z"`, `tenantGapSec:300`.
+**Belum diverifikasi:** run nightly-nya sendiri (baru jatuh 19:00 GMT / 02:00 WIB 5 Sep).
+**Belum di-deploy:** 4 perubahan kode pengumuman + status sync masih staged di dev.
+
 ## 2026-08-28 - Billing sync: jadwal nightly 2AM semua tenant (jeda 5 mnt) + cooldown manual 5 mnt
 **Agen:** claude (Opus 4.8) | **Status:** selesai (di dev, belum deploy)
 **Kenapa:** Auto-sync billing sebelumnya polling adaptif 60s/600s dan menarik SEMUA tenant

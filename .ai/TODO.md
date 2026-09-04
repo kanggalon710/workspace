@@ -1,5 +1,21 @@
 # TODO / Backlog - Optimasi Codebase
 
+## Produksi - butuh aksi manual (2026-09-04)
+- [x] **Auto-sync billing dinyalakan di produksi** (2026-09-04 07:28 GMT). Env + restart +
+  `billing_sync_nightly_hour=19` (GMT = 02:00 WIB) + cron keep-alive `*/4`. Terverifikasi:
+  `/api/billing/sync/status` -> `state:"idle"`, `nextRunAt 2026-09-04T19:00:00Z`.
+  - [ ] Follow-up 5 Sep: pastikan run nightly benar-benar terjadi - cek
+    `billing_sync_last_success_at` > `2026-09-04T19:00:00Z` TANPA ada yang klik Sync manual.
+    Kalau tidak jalan, tersangka utama: Passenger idle spin-down membunuh `setTimeout`
+    (mitigasi cron keep-alive baru ditambahkan hari ini, belum teruji semalaman).
+- [ ] Deploy fix pengumuman tim (backfill `announcements.team_id` jalan otomatis saat startup).
+  Verifikasi sesudahnya: `SELECT id, team_id FROM announcements` -> id 1=2, 2=3, 3=1;
+  tab "Pengumuman" tiap tim menampilkan isinya; `/announcements` company-wide tidak lagi
+  memuat pengumuman tim (termasuk yang Rahasia).
+- [ ] Cek ulang siapa yang sempat membaca pengumuman Rahasia "CETAS" (id 1) selama filter
+  kerahasiaan NO-OP - keputusan user apakah perlu tindak lanjut.
+
+
 > Roadmap optimasi ber-prioritas. Tiap item mencantumkan **angka hasil audit**
 > (grep-verified 2026-08-12) supaya ronde berikutnya langsung ke sasaran. Kerjakan
 > per item, verifikasi hijau (typecheck + test + build), lalu update file ini +
