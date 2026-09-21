@@ -3,6 +3,42 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-09-21 - Filter PIC/assignee (multi-select) di pipeline board
+**Agen:** claude-sonnet-5 (Claude Code) | **Status:** selesai, di-push ke dev+main, dikonfirmasi jalan oleh user
+**Kenapa:** Staf butuh cara mempersempit board `/leads`, `/collections` (+cs/marketing), dan
+board generik pipeline/teamspace ke kartu yang ditangani orang tertentu (mis. supervisor cek
+kartu tim sendiri, atau bandingkan beban dua staf). Sebelumnya cuma ada search + filter tahap.
+**Perubahan:**
+- `shared/cardAssignees.ts`: `matchesAssigneeFilter(primary, secondary, filterId)` diganti jadi
+  `matchesAssigneeFilter(primary, secondary, filterIds: number[])` - OR/ANY, array kosong = tanpa
+  filter (pengganti sentinel `null` lama). Hanya 2 call site di seluruh repo (board page + test-nya)
+  jadi signature diganti langsung, bukan overload.
+- Komponen baru `client/components/pipelines/AssigneeMultiFilter.tsx` - dropdown multi-select
+  dicari (Popover + Command + Checkbox), dipakai di ketiga halaman. **Gotcha kalau nanti disentuh:**
+  `onSelect` di tiap `CommandItem` TIDAK menutup popover (beda dari `Combobox` yang selalu close
+  setelah 1 pilihan) - supaya user bisa pilih beberapa staf dalam satu interaksi. Kalau pattern
+  `Combobox` di-copy-paste ke sini, popover akan menutup sendiri tiap klik dan multi-select rusak.
+- `BoardFilters.tsx` + `PipelineBoardPage.tsx`: generalisasi filter assignee board yang sudah ada
+  dari single-select (`assigneeId: number|null`) ke multi (`assigneeIds: number[]`). Prop
+  `assigneeOptions` yang lama TETAP dipertahankan apa adanya - itu dipakai terpisah oleh
+  `FieldFilterValue` untuk custom-field type "user", bukan filter assignee kartu.
+- `CollectionPipelinePage.tsx`: predikat gabung `assignedTo` (primary) + `assignees[].userId`
+  (junction table, sudah dikirim server `GET /api/collections`) via helper shared di atas.
+- `LeadPipelinePage.tsx`: leads cuma punya `assignedTo` tunggal (tidak ada junction table) -
+  predikat inline, bukan lewat helper shared (helper itu bentuknya primary+secondary).
+- Staf list dropdown reuse query `/users` (Lead/Collection) dan `/pipelines/assignable-users`
+  (board) yang sudah ada di tiap halaman - tidak ada endpoint baru.
+**Files:** shared/cardAssignees.ts(+test), client/components/pipelines/AssigneeMultiFilter.tsx (baru),
+client/components/pipelines/BoardFilters.tsx, client/pages/LeadPipelinePage.tsx,
+client/pages/CollectionPipelinePage.tsx, client/pages/PipelineBoardPage.tsx.
+**Verified:** `npx tsc --noEmit` 0 error; `npx tsx --test shared/*.test.ts` 303/303 hijau;
+`npm run build` sukses. Push `dev` + `main` fast-forward ke commit `4a5c104` (keduanya sama
+persis sebelum commit ini, jadi tidak ada divergensi/merge commit). User mengonfirmasi fitur
+jalan di browser (dev) setelah push - filtering client-side ini yang belum sempat dicek sendiri
+di sandbox (tidak ada akses DB dev lokal di situ).
+**Catatan:** Belum di-deploy ke production - butuh cPanel pull `deploy` branch + restart, atau
+tombol "Update Sekarang" (Integrasi), dan itu belum diminta user.
+
 ## 2026-09-04 - Diagnosis + fix: pengumuman tim hilang & auto-sync billing tak pernah jalan
 **Agen:** claude (Opus 5, 1M) | **Status:** kode selesai di dev; 1 aksi produksi masih perlu OK user
 **Kenapa:** User lapor (a) fitur pengumuman tidak jalan benar, (b) billing auto-sync tak pernah

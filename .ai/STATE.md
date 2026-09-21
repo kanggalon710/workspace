@@ -1,5 +1,5 @@
 # STATE - JABNET Workspace
-Updated: 2026-09-04 by claude-opus-5 (Claude Code)
+Updated: 2026-09-21 by claude-sonnet-5 (Claude Code)
 
 ## What this is
 Platform operasional ISP fiber-to-the-home (PT Arkanova Cipta Inovasi / JABNET Garut).
@@ -25,6 +25,14 @@ Direktori `~/repositories/fiber-jabnet` + DB `jabnet_fiber` sudah TIDAK dijalank
 SSH: `ssh jabnet@103.194.47.165`; MySQL: `mysql -u jabnet_workspace -p <pw di env> jabnet_workspace_main`.
 
 ## Works
+- **Filter PIC/assignee (multi-select) di pipeline board** - `/leads`, `/collections`
+  (+ `/collections/cs`, `/collections/marketing`), dan board generik `/pipelines/:id` +
+  `/teamspace/boards/:id`. Pilih beberapa staf = OR/ANY (kartu tampil kalau match salah
+  satu). Komponen shared `client/components/pipelines/AssigneeMultiFilter.tsx`, predikat
+  shared `shared/cardAssignees.ts` (`matchesAssigneeFilter` sekarang `filterIds: number[]`
+  bukan `filterId: number | null`). Di-push ke `dev` + `main` 2026-09-21 (commit `4a5c104`,
+  fast-forward, tidak ada divergensi), **dikonfirmasi jalan oleh user di dev**. Belum
+  di-deploy ke production (butuh cPanel pull/restart atau tombol Update Sekarang).
 - Build, typecheck, dan 449 unit test hijau di dev per 2026-09-04.
 - Billing sync manual ("Sync Sekarang") berjalan di produksi - 799 pelanggan, 0 error.
 - Fitur v5.x (Teamspace, divisi, HR/SDM, collection SOP) terdeploy; bundle produksi 28 Agu.
@@ -38,8 +46,8 @@ SSH: `ssh jabnet@103.194.47.165`; MySQL: `mysql -u jabnet_workspace -p <pw di en
   `~/cron-backup-20260904.txt`.
 
 ## In progress
-Tidak ada pekerjaan setengah jalan. Perubahan terakhir (fix pengumuman tim + status sync)
-sudah selesai di dev dan belum di-deploy.
+Tidak ada pekerjaan setengah jalan. Filter PIC (lihat Works) sudah selesai, terverifikasi
+di dev oleh user, tinggal menunggu keputusan deploy ke production.
 
 ## Blocked, needs a human
 - Fix pengumuman tim (4 perubahan kode) BELUM di-deploy - masih staged di dev. Butuh
@@ -63,5 +71,9 @@ sudah selesai di dev dan belum di-deploy.
    harus ditambah manual ke SELECT-nya.
 
 ## Recently touched
-server/storage.ts, server/routes.ts, server/billing-sync-worker.ts,
-client/pages/IntegrationPage.tsx - semua oleh claude-opus-5 (Claude Code), 2026-09-04.
+`shared/cardAssignees.ts`(+test), `client/components/pipelines/AssigneeMultiFilter.tsx` (baru),
+`client/components/pipelines/BoardFilters.tsx`, `client/pages/{Lead,Collection}PipelinePage.tsx`,
+`client/pages/PipelineBoardPage.tsx` - semua oleh claude-sonnet-5 (Claude Code), 2026-09-21.
+
+Sebelumnya: server/storage.ts, server/routes.ts, server/billing-sync-worker.ts,
+client/pages/IntegrationPage.tsx - claude-opus-5 (Claude Code), 2026-09-04.

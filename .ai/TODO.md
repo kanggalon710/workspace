@@ -15,6 +15,16 @@
 - [ ] Cek ulang siapa yang sempat membaca pengumuman Rahasia "CETAS" (id 1) selama filter
   kerahasiaan NO-OP - keputusan user apakah perlu tindak lanjut.
 
+## Produksi - butuh aksi manual (2026-09-21)
+- [ ] Deploy filter PIC/assignee (lihat PROGRESS 2026-09-21) ke production - sudah di `main`,
+  tinggal cPanel pull `deploy` + restart (atau tombol "Update Sekarang"). Sudah dikonfirmasi
+  jalan di dev, belum diminta deploy ke prod.
+- [ ] Opsional (bukan blocker): kalau daftar lead/collection makin besar dan filtering
+  client-side mulai berat, tambahkan param server-side `?assignedTo=id1,id2` di
+  `GET /api/marketing/leads` dan `GET /api/collections` (storage.getCollections() saat ini
+  cuma exact-match satu `assignedTo`, tidak cek tabel `collectionAssignees`). Tidak perlu untuk
+  ukuran data sekarang.
+
 
 > Roadmap optimasi ber-prioritas. Tiap item mencantumkan **angka hasil audit**
 > (grep-verified 2026-08-12) supaya ronde berikutnya langsung ke sasaran. Kerjakan
