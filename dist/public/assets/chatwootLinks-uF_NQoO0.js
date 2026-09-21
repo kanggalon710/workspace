@@ -1,0 +1,1 @@
+function c(n,t){return!n||t==null?null:`${n.replace(/\/+$/,"")}/app/accounts/${t}`}function u(n,t){const o=c(n,t);return o?`${o}/dashboard`:null}function l(n,t){const o=c(n,t);return o?`${o}/contacts`:null}function a(n,t,o){const r=c(n,t);return r&&o!=null?`${r}/conversations/${o}`:null}export{l as a,u as b,a as c};
