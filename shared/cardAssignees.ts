@@ -9,10 +9,11 @@ export function allAssigneeIds(primaryId: number | null | undefined, secondaryId
   return out;
 }
 
-/** Board assignee filter: null filter → all match; else match if filter == primary or in secondary. */
+/** Board assignee filter (OR/ANY): empty filterIds → all match; else match if any filterId equals primary or is present in secondaryIds. */
 export function matchesAssigneeFilter(
-  primaryId: number | null | undefined, secondaryIds: number[], filterId: number | null,
+  primaryId: number | null | undefined, secondaryIds: number[], filterIds: number[],
 ): boolean {
-  if (filterId == null) return true;
-  return primaryId === filterId || secondaryIds.includes(filterId);
+  if (filterIds.length === 0) return true;
+  const set = new Set(filterIds);
+  return (primaryId != null && set.has(primaryId)) || secondaryIds.some((id) => set.has(id));
 }

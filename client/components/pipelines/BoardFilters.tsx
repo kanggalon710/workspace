@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { AssigneeMultiFilter, type AssigneeFilterOption } from "@/components/pipelines/AssigneeMultiFilter";
 import { Search, X, ArrowUp, ArrowDown, SlidersHorizontal } from "lucide-react";
 import type { DateRange } from "./boardCardMeta";
 import { filterableFields, sortableFields } from "@shared/pipelineFieldTypes";
@@ -15,9 +16,10 @@ export function BoardFilters({
   onDateField,
   range,
   onRange,
-  assigneeId = null,
-  onAssignee,
+  assigneeIds = [],
+  onAssigneeIds,
   assigneeOptions,
+  assigneeFilterOptions,
   fields = [],
   filterFieldId = null,
   onFilterField,
@@ -36,9 +38,12 @@ export function BoardFilters({
   onDateField: (v: DateField) => void;
   range: DateRange;
   onRange: (r: DateRange) => void;
-  assigneeId?: number | null;
-  onAssignee?: (id: number | null) => void;
+  assigneeIds?: number[];
+  onAssigneeIds?: (ids: number[]) => void;
+  /** User options for FieldFilterValue's "user"-type custom field filter - unrelated to the card-assignee filter below. */
   assigneeOptions?: ComboboxOption[];
+  /** User options for the card-assignee filter itself. */
+  assigneeFilterOptions?: AssigneeFilterOption[];
   fields?: PipelineField[];
   filterFieldId?: number | null;
   onFilterField?: (id: number | null) => void;
@@ -58,12 +63,12 @@ export function BoardFilters({
   const filterField = filterFieldId == null ? undefined : fields.find((f) => f.id === filterFieldId);
   const sortActive = sortFieldId != null && sortable.some((f) => f.id === sortFieldId);
   const anyActive =
-    search !== "" || preset !== "all" || assigneeId != null || !!filterField || sortActive;
+    search !== "" || preset !== "all" || assigneeIds.length > 0 || !!filterField || sortActive;
   // Mobile: filter lanjutan dilipat di balik tombol toggle supaya header board tidak
   // memakan layar (board harus tetap terlihat). ≥sm selalu terbuka (perilaku lama).
   const [expanded, setExpanded] = useState(false);
   const advancedActiveCount =
-    (preset !== "all" ? 1 : 0) + (assigneeId != null ? 1 : 0) + (filterField ? 1 : 0) + (sortActive ? 1 : 0);
+    (preset !== "all" ? 1 : 0) + (assigneeIds.length > 0 ? 1 : 0) + (filterField ? 1 : 0) + (sortActive ? 1 : 0);
 
   // Arah sort selalu tersedia: kalau field kustom dipilih → A-Z/Z-A; kalau tidak, arah
   // berlaku untuk sort tanggal (Dibuat/Update terakhir) → Baru→Lama / Lama→Baru.
@@ -171,15 +176,14 @@ export function BoardFilters({
             size="sm"
           />
         </div>
-        {assigneeOptions && onAssignee && (
+        {assigneeFilterOptions && onAssigneeIds && (
           <div className="w-36 sm:w-40">
-            <Combobox
-              options={assigneeOptions}
-              value={assigneeId == null ? "" : String(assigneeId)}
-              onChange={(v) => onAssignee(v ? Number(v) : null)}
-              placeholder="Assignee"
-              searchPlaceholder="Cari user…"
-              size="sm"
+            <AssigneeMultiFilter
+              options={assigneeFilterOptions}
+              selectedIds={assigneeIds}
+              onChange={onAssigneeIds}
+              label="Assignee"
+              className="w-full"
             />
           </div>
         )}

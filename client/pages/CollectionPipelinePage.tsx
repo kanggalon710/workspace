@@ -17,6 +17,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { AlertTriangle, X, CheckCircle2, Loader2, RefreshCw, ArrowRight, Settings, History, Camera, Upload, Move, ListTree, SlidersHorizontal, ChevronDown, Search } from "lucide-react";
 import { matchesSearch } from "@/lib/search";
+import { matchesAssigneeFilter } from "@shared/cardAssignees";
+import { AssigneeMultiFilter, type AssigneeFilterOption } from "@/components/pipelines/AssigneeMultiFilter";
 import { CollectionCard } from "./collection/CollectionCard";
 import { CollectionDetail } from "./collection/CollectionDetail";
 import { CollectionSettingsDialog } from "./collection/CollectionSettingsDialog";
@@ -57,6 +59,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [selectedStage, setSelectedStage] = useState<CollectionStage | "all">("all");
   const [search, setSearch] = useState(""); // cari: nama, pppoe, id_pelanggan, no. HP
+  const [picFilter, setPicFilter] = useState<number[]>([]);
   const [detailId, setDetailId] = useState<number | null>(null);
   // Unified stage change dialog - dipakai untuk drag-drop + tombol manual
   const [stageDialogFor, setStageDialogFor] = useState<{ id: number; fromStage: CollectionStage; targetStage: CollectionStage; targetRole: string; customerName?: string } | null>(null);
@@ -147,6 +150,14 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
     return m;
   }, [users]);
 
+  const picFilterOptions = useMemo<AssigneeFilterOption[]>(
+    () =>
+      (users ?? [])
+        .map((u: any) => ({ value: u.id, label: u.name || u.username || `User #${u.id}` }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [users],
+  );
+
   // Enrich dengan nama pelanggan
   const enriched = useMemo(() => {
     return (collections ?? []).map((c) => {
@@ -161,13 +172,21 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
     });
   }, [collections, customerById]);
 
-  // Pencarian client-side: nama pelanggan, pppoe, id_pelanggan, no. HP.
+  // Pencarian client-side: nama pelanggan, pppoe, id_pelanggan, no. HP + filter PIC (OR/ANY).
   const searchFiltered = useMemo(() => {
-    if (!search.trim()) return enriched;
-    return enriched.filter((c) =>
-      matchesSearch(search, [c.customerName, c.pppoeUsername, c.customerIdDisplay, c.customerPhone], c.customerPhone),
-    );
-  }, [enriched, search]);
+    let out = enriched;
+    if (search.trim()) {
+      out = out.filter((c) =>
+        matchesSearch(search, [c.customerName, c.pppoeUsername, c.customerIdDisplay, c.customerPhone], c.customerPhone),
+      );
+    }
+    if (picFilter.length > 0) {
+      out = out.filter((c) =>
+        matchesAssigneeFilter(c.assignedTo, (c.assignees ?? []).map((a) => a.userId), picFilter),
+      );
+    }
+    return out;
+  }, [enriched, search, picFilter]);
 
   const byStage = useMemo(() => {
     const map: Record<string, CollectionWithCustomer[]> = {};
@@ -416,6 +435,8 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           </div>
+          {/* PIC - filter kartu berdasarkan staf yang ditugaskan (primary atau salah satu assignee), OR/ANY. */}
+          <AssigneeMultiFilter options={picFilterOptions} selectedIds={picFilter} onChange={setPicFilter} />
           {/* Pencarian: nama, PPPoE, ID pelanggan, no. HP */}
           <div className="relative min-w-[200px] flex-1 sm:flex-none sm:w-64">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
@@ -439,7 +460,7 @@ export default function CollectionPipelinePage({ division }: { division?: "cs" |
             )}
           </div>
           <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-            {search.trim() ? `${searchFiltered.length} / ${enriched.length}` : enriched.length} kartu
+            {search.trim() || picFilter.length > 0 ? `${searchFiltered.length} / ${enriched.length}` : enriched.length} kartu
           </span>
         </div>
       </div>

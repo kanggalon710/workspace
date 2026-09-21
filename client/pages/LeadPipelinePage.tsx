@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { waLink } from "@/lib/wa";
 import { InfoRow } from "@/components/pipelines/InfoRow";
+import { AssigneeMultiFilter, type AssigneeFilterOption } from "@/components/pipelines/AssigneeMultiFilter";
 import { useAuth } from "@/context/AuthContext";
 import {
   LEAD_STAGES, LEAD_STAGE_LABELS, LEAD_STAGE_COLORS,
@@ -1114,6 +1115,7 @@ export default function LeadPipelinePage() {
   const [stageFilter, setStageFilter] = useState<LeadStage | "all">("all");
   const [leadSearch, setLeadSearch] = useState(""); // cari: nama, no. HP, alamat
   const [rangePreset, setRangePreset] = useState<RangePreset>("all");
+  const [picFilter, setPicFilter] = useState<number[]>([]);
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
@@ -1182,11 +1184,25 @@ export default function LeadPipelinePage() {
   // Pencarian client-side (nama + no. HP + alamat) - diterapkan sebelum split stage
   // supaya berlaku di kanban maupun list.
   const searched = useMemo(() => {
-    if (!leadSearch.trim()) return timeFiltered;
-    return timeFiltered.filter((l) =>
-      matchesSearch(leadSearch, [l.name, (l as any).phone, (l as any).address], (l as any).phone),
-    );
-  }, [timeFiltered, leadSearch]);
+    let out = timeFiltered;
+    if (leadSearch.trim()) {
+      out = out.filter((l) =>
+        matchesSearch(leadSearch, [l.name, (l as any).phone, (l as any).address], (l as any).phone),
+      );
+    }
+    if (picFilter.length > 0) {
+      out = out.filter((l) => l.assignedTo != null && picFilter.includes(l.assignedTo));
+    }
+    return out;
+  }, [timeFiltered, leadSearch, picFilter]);
+
+  const picFilterOptions = useMemo<AssigneeFilterOption[]>(
+    () =>
+      users
+        .map((u) => ({ value: u.id, label: u.name || u.username || `User #${u.id}` }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [users],
+  );
 
   const filtered = stageFilter === "all" ? searched : searched.filter(l => l.stage === stageFilter);
   // For kanban view, use searched leads (semua stage) so all columns show data
@@ -1393,6 +1409,8 @@ export default function LeadPipelinePage() {
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             </div>
           )}
+          {/* PIC - filter lead berdasarkan staf yang ditugaskan (assignedTo), OR/ANY. */}
+          <AssigneeMultiFilter options={picFilterOptions} selectedIds={picFilter} onChange={setPicFilter} />
           {/* Custom date range */}
           {rangePreset === "custom" && (
             <div className="flex items-center gap-1.5">
@@ -1406,7 +1424,7 @@ export default function LeadPipelinePage() {
           )}
           {/* Total ringkas (bukan KPI - sekadar konteks jumlah kartu yang tampil) */}
           <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-            {leadSearch.trim() ? `${searched.length} / ${timeFiltered.length}` : timeFiltered.length} lead
+            {leadSearch.trim() || picFilter.length > 0 ? `${searched.length} / ${timeFiltered.length}` : timeFiltered.length} lead
           </span>
         </div>
       </div>

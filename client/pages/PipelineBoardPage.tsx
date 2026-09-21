@@ -61,11 +61,18 @@ export default function PipelineBoardPage() {
         .sort((a, b) => a.label.localeCompare(b.label)),
     [users],
   );
+  const assigneeFilterOptions = useMemo(
+    () =>
+      (users ?? [])
+        .map((u: any) => ({ value: u.id, label: u.name || u.username || `User #${u.id}` }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [users],
+  );
 
   const [, navigate] = useLocation();
   const boardScrollRef = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<number | null>(null);
-  const [assigneeId, setAssigneeId] = useState<number | null>(null);
+  const [assigneeIds, setAssigneeIds] = useState<number[]>([]);
   const [stageDragId, setStageDragId] = useState<number | null>(null);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
 
@@ -118,7 +125,7 @@ export default function PipelineBoardPage() {
       q === "" ||
       c.title.toLowerCase().includes(q) ||
       searchIds.some((fid) => (c.values?.[fid] ?? "").toLowerCase().includes(q));
-    const matchesAssignee = matchesAssigneeFilter(c.assigneeId, (c as any).secondaryAssigneeIds ?? [], assigneeId);
+    const matchesAssignee = matchesAssigneeFilter(c.assigneeId, (c as any).secondaryAssigneeIds ?? [], assigneeIds);
     const matchesDate = inDateRange(
       dateField === "created" ? c.createdAt : (c.updatedAt ?? null),
       range,
@@ -126,7 +133,7 @@ export default function PipelineBoardPage() {
     );
     const matchesFilter = !filterField || cardMatchesFilter(c.values, filterField, filterValue);
     return matchesSearch && matchesAssignee && matchesDate && matchesFilter;
-  }), [cards, q, searchIds, assigneeId, dateField, range, now, filterField, filterValue]);
+  }), [cards, q, searchIds, assigneeIds, dateField, range, now, filterField, filterValue]);
   // Prune selection to only currently-visible cards (filters may hide selected cards).
   useEffect(() => {
     const vis = new Set(visible.map((c) => c.id));
@@ -323,7 +330,7 @@ export default function PipelineBoardPage() {
         )}
         {/* Metrik hanya untuk pipeline ops - board tim tidak perlu (feedback user). */}
         {pipeline && pid != null && !teamParams && <MetricsStrip pipelineId={pid} canManage={can("manage")} onManage={() => setShowMetricsCfg(true)} />}
-        {pipeline && <div className="mt-2"><BoardFilters search={search} onSearch={setSearch} dateField={dateField} onDateField={setDateField} range={range} onRange={setRange} assigneeId={assigneeId} onAssignee={setAssigneeId} assigneeOptions={assigneeOptions} fields={fields} filterFieldId={filterFieldId} onFilterField={setFilterFieldId} filterValue={filterValue} onFilterValue={setFilterValue} sortFieldId={sortFieldId} onSortField={setSortFieldId} sortDir={sortDir} onSortDirToggle={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} visibleCount={visible.length} onReset={() => { setSearch(""); setRange("all"); setAssigneeId(null); setFilterFieldId(null); setFilterValue(""); setSortFieldId(null); setSortDir("asc"); }} /></div>}
+        {pipeline && <div className="mt-2"><BoardFilters search={search} onSearch={setSearch} dateField={dateField} onDateField={setDateField} range={range} onRange={setRange} assigneeIds={assigneeIds} onAssigneeIds={setAssigneeIds} assigneeOptions={assigneeOptions} assigneeFilterOptions={assigneeFilterOptions} fields={fields} filterFieldId={filterFieldId} onFilterField={setFilterFieldId} filterValue={filterValue} onFilterValue={setFilterValue} sortFieldId={sortFieldId} onSortField={setSortFieldId} sortDir={sortDir} onSortDirToggle={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} visibleCount={visible.length} onReset={() => { setSearch(""); setRange("all"); setAssigneeIds([]); setFilterFieldId(null); setFilterValue(""); setSortFieldId(null); setSortDir("asc"); }} /></div>}
       </header>
       <div
         ref={boardScrollRef}
