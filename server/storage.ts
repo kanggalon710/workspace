@@ -5696,6 +5696,19 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
+  /** OTP pending terbaru milik customer - dipakai verify-otp berbasis customerId
+   *  (anti-enumeration: klien tidak lagi perlu memegang otpSessionId sekuensial). */
+  async getLatestPendingOtpByCustomer(customerId: number): Promise<CustomerOtp | undefined> {
+    const mitraId = getMitraId();
+    const [row] = await this.db
+      .select()
+      .from(customerOtps)
+      .where(and(eq(customerOtps.customerId, customerId), eq(customerOtps.mitraId, mitraId), eq(customerOtps.status, "pending")))
+      .orderBy(sql`${customerOtps.id} DESC`)
+      .limit(1);
+    return row;
+  }
+
   async updateCustomerOtp(id: number, data: Partial<CustomerOtp>): Promise<CustomerOtp | undefined> {
     const mitraId = getMitraId();
     await this.db.update(customerOtps).set(data as any).where(and(eq(customerOtps.id, id), eq(customerOtps.mitraId, mitraId)));

@@ -9,8 +9,6 @@ import {
 } from "lucide-react";
 
 interface OtpPending {
-  otpSessionId: number;
-  phoneMasked: string;
   customerId: string;
   ttlSec: number;
   startedAt: number;
@@ -84,7 +82,7 @@ export default function PortalVerifyOtpPage() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      await verifyOtp(pending.otpSessionId, fullCode);
+      await verifyOtp(pending.customerId, fullCode);
       sessionStorage.removeItem("portal_otp_pending");
       setSuccess(true);
       setTimeout(() => {
@@ -106,8 +104,6 @@ export default function PortalVerifyOtpPage() {
     try {
       const result = await requestOtp(pending.customerId);
       const newPending: OtpPending = {
-        otpSessionId: result.otpSessionId,
-        phoneMasked: result.phoneMasked,
         customerId: pending.customerId,
         ttlSec: result.ttlSec,
         startedAt: Date.now(),
@@ -184,9 +180,9 @@ export default function PortalVerifyOtpPage() {
                   Masukkan Kode OTP
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                  6 digit kode dikirim ke
+                  6 digit kode dikirim ke nomor WhatsApp terdaftar untuk ID
                   <br />
-                  <span className="font-mono-tight font-bold text-foreground">{pending.phoneMasked}</span>
+                  <span className="font-mono-tight font-bold text-foreground">{pending.customerId}</span>
                 </p>
 
                 {pending.devMode && pending.debugOtp && (

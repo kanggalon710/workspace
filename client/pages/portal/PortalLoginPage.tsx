@@ -34,8 +34,6 @@ export default function PortalLoginPage() {
     try {
       const result = await requestOtp(cid);
       sessionStorage.setItem("portal_otp_pending", JSON.stringify({
-        otpSessionId: result.otpSessionId,
-        phoneMasked: result.phoneMasked,
         customerId: cid,
         ttlSec: result.ttlSec,
         startedAt: Date.now(),
@@ -43,12 +41,11 @@ export default function PortalLoginPage() {
         debugOtp: result.debugOtp,
       }));
 
-      if (result.devMode) {
+      if (result.devMode && result.debugOtp) {
         toast.success(`Kode OTP (DEV): ${result.debugOtp}`, { duration: 10000 });
-      } else if (result.warning) {
-        toast.warning(result.warning);
       } else {
-        toast.success(`Kode OTP dikirim ke ${result.phoneMasked}`);
+        // Pesan seragam dari server - tidak menyebut nomor/keanggotaan (anti-enumeration)
+        toast.success(result.message);
       }
       setLocation("/portal/verify");
     } catch (err: any) {

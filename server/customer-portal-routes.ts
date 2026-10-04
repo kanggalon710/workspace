@@ -15,11 +15,18 @@
  */
 
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage.js";
 import { tenantContext } from "./tenant-context.js";
-import { sendOtpWhatsApp, maskPhone } from "./mpwa.js";
+import { sendOtpWhatsApp, maskPhone, otpDebugExposeEnabled } from "./mpwa.js";
+import { createRateLimiter, recordRateAttempt } from "./rate-limit.js";
+import {
+  decideOtpRequest,
+  decideOtpVerify,
+  OTP_UNIFORM_MESSAGE,
+  OTP_GENERIC_FAIL,
+} from "../shared/otpPolicy.js";
 import {
   getDevices as genieGetDevices,
   getDevice as genieGetDevice,
@@ -134,7 +141,8 @@ function sendErr(res: Response, message: string, status = 400) {
 }
 
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  // crypto.randomInt: CSPRNG - Math.random tidak layak untuk kode auth.
+  return String(randomInt(100000, 1000000));
 }
 
 function generateSessionToken(): string {
@@ -194,124 +202,163 @@ async function customerAuth(req: Request, res: Response, next: NextFunction) {
 /**
  * POST /api/portal/auth/request-otp
  * Body: { customerId }
- * Return: { otpSessionId, phoneMasked, ttlSec, devMode? (kalau MPWA belum configured) }
+ * Return: { message, ttlSec } - SERAGAM apa pun kondisinya (anti-enumeration,
+ * audit 2026-10-04). Tidak ada lagi otpSessionId/phoneMasked di response publik.
+ *
+ * Throttle PRE-LOOKUP (berlaku sama untuk ID dikenal maupun tidak):
+ *   - per IP: 10 request / 15 menit
+ *   - per customerId yang disubmit: 3 request / 15 menit
+ * Kuota DB per-customer (3/15m) tetap sebagai backstop diam-diam (silent drop).
  */
-customerPortalRouter.post("/api/portal/auth/request-otp", async (req: Request, res: Response) => {
+const OTP_IP_LIMIT = { bucket: "portal-otp-ip", maxAttempts: 10, windowMs: 15 * 60_000, lockoutMs: 15 * 60_000 };
+const OTP_ID_LIMIT = { bucket: "portal-otp-id", maxAttempts: OTP_RATE_LIMIT_MAX, windowMs: OTP_RATE_LIMIT_WINDOW_MIN * 60_000, lockoutMs: OTP_RATE_LIMIT_WINDOW_MIN * 60_000 };
+const otpIpLimiter = createRateLimiter({ ...OTP_IP_LIMIT, keyOf: (req) => `${tenantContext.getStore()?.mitraId ?? 1}:${getClientIp(req)}` });
+const otpIdLimiter = createRateLimiter({
+  ...OTP_ID_LIMIT,
+  keyOf: (req) => `${tenantContext.getStore()?.mitraId ?? 1}:${String(req.body?.customerId ?? "").trim().toLowerCase()}`,
+});
+
+customerPortalRouter.post("/api/portal/auth/request-otp", otpIpLimiter, otpIdLimiter, async (req: Request, res: Response) => {
   try {
+    const ctxMitra = tenantContext.getStore()?.mitraId ?? 1;
+    const ip = getClientIp(req);
+    // Catat attempt SEBELUM lookup - unknown ID ikut kena throttle yang sama.
+    recordRateAttempt(OTP_IP_LIMIT.bucket, `${ctxMitra}:${ip}`, OTP_IP_LIMIT);
+
     const customerIdRaw = String(req.body?.customerId ?? "").trim();
-    if (!customerIdRaw) return sendErr(res, "Customer ID wajib diisi");
-    if (customerIdRaw.length < 3 || customerIdRaw.length > 30) {
+    if (!customerIdRaw || customerIdRaw.length < 3 || customerIdRaw.length > 30) {
+      // Satu-satunya 400 yang berbeda: input kosong/malformed (bukan info keanggotaan).
       return sendErr(res, "Customer ID tidak valid");
     }
+    recordRateAttempt(OTP_ID_LIMIT.bucket, `${ctxMitra}:${customerIdRaw.toLowerCase()}`, OTP_ID_LIMIT);
 
-    // Phase G: use resolved mitra from middleware context (slug → mitra_id)
-    const ctxMitra = tenantContext.getStore()?.mitraId ?? 1;
+    const uniformResponse = { message: OTP_UNIFORM_MESSAGE, ttlSec: OTP_TTL_MINUTES * 60 };
+
     const customer = await storage.getCustomerByBillingCustomerId(customerIdRaw, ctxMitra);
-    if (!customer) return sendErr(res, "Customer ID tidak terdaftar");
-    if (!customer.phone) return sendErr(res, "Nomor HP tidak terdaftar. Hubungi CS untuk update kontak.");
+    const recentCount = customer ? await storage.countRecentOtpRequests(customer.id, OTP_RATE_LIMIT_WINDOW_MIN) : 0;
+    const decision = decideOtpRequest({
+      customerExists: !!customer,
+      hasPhone: !!customer?.phone,
+      recentCustomerRequests: recentCount,
+      maxPerWindow: OTP_RATE_LIMIT_MAX,
+    });
 
-    // Rate limit: max 3 OTP per 15 menit per customer
-    const recentCount = await storage.countRecentOtpRequests(customer.id, OTP_RATE_LIMIT_WINDOW_MIN);
-    if (recentCount >= OTP_RATE_LIMIT_MAX) {
-      console.warn(`[PORTAL-OTP] rate-limit hit untuk customer ${customer.customerId} (${recentCount} req / ${OTP_RATE_LIMIT_WINDOW_MIN}min)`);
-      return sendErr(res, `Terlalu banyak permintaan OTP untuk ${maskPhone(customer.phone)}. Tunggu ${OTP_RATE_LIMIT_WINDOW_MIN} menit lalu coba lagi, atau hubungi CS.`, 429);
+    if (decision.action === "silent_drop") {
+      // Respons identik dengan jalur sukses; alasan hanya ke log/audit server-side.
+      console.warn(`[PORTAL-OTP] drop (${decision.reason}) idInput=${customerIdRaw} ip=${ip}`);
+      return sendOk(res, uniformResponse);
     }
 
-    // Generate OTP + hash
+    // decision.action === "send": customer pasti ada + punya phone di cabang ini.
     const otpCode = generateOtp();
     const otpHash = await bcrypt.hash(otpCode, 10);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + OTP_TTL_MINUTES * 60_000);
 
     const otp = await storage.createCustomerOtp({
-      customerId: customer.id,
+      customerId: customer!.id,
       otpCodeHash: otpHash,
-      phone: customer.phone,
+      phone: customer!.phone,
       expiresAt: expiresAt.toISOString(),
       attempts: 0,
       status: "pending",
-      ipAddress: getClientIp(req),
+      ipAddress: ip,
       userAgent: req.headers["user-agent"]?.slice(0, 255) ?? null,
       createdAt: now.toISOString(),
     } as any);
 
-    // Send OTP via MPWA (fire-and-forget)
-    const sendResult = await sendOtpWhatsApp(customer.phone, otpCode, OTP_TTL_MINUTES);
+    const sendResult = await sendOtpWhatsApp(customer!.phone!, otpCode, OTP_TTL_MINUTES);
 
-    // Log OTP request untuk ops debugging (tanpa plaintext kode OTP)
-    console.log(`[PORTAL-OTP] customer=${customer.customerId} phone=${maskPhone(customer.phone)} sent=${sendResult.sent} devMode=${sendResult.devMode ?? false}${sendResult.error ? ' error=' + sendResult.error : ''}`);
+    // Log untuk ops debugging (tanpa plaintext OTP, nomor dimask)
+    console.log(`[PORTAL-OTP] customer=${customer!.customerId} phone=${maskPhone(customer!.phone!)} sent=${sendResult.sent} devMode=${sendResult.devMode ?? false}${sendResult.error ? " error=" + sendResult.error : ""}`);
 
-    // Audit log (tidak simpan OTP plain ke log)
     await storage.createAuditLog({
-      userId: null, username: "(portal)", userName: customer.name,
+      userId: null, username: "(portal)", userName: customer!.name,
       action: "OTP_REQUEST", entityType: "customer_otp", entityId: otp.id,
-      entityName: customer.customerId,
+      entityName: customer!.customerId,
       details: JSON.stringify({ sent: sendResult.sent, error: sendResult.error, devMode: sendResult.devMode }),
       createdAt: now.toISOString(),
     } as any);
 
-    // Kalau MPWA kirim gagal (bukan dev mode), return error lebih informatif
-    if (!sendResult.sent && !sendResult.devMode) {
-      // Detect common errors dari MPWA
-      const errMsg = sendResult.error ?? "Unknown error";
-      let userFriendly = `Gagal kirim OTP via WhatsApp: ${errMsg}`;
-      if (errMsg.toLowerCase().includes("not sent") || errMsg.toLowerCase().includes("göndəri")) {
-        userFriendly = `OTP gagal terkirim. Kemungkinan nomor HP ${maskPhone(customer.phone)} belum terdaftar di WhatsApp. Hubungi CS untuk update nomor.`;
-      }
-      return sendErr(res, userFriendly, 502);
-    }
-
-    const response: any = {
-      otpSessionId: otp.id,
-      phoneMasked: maskPhone(customer.phone),
-      ttlSec: OTP_TTL_MINUTES * 60,
-      sent: sendResult.sent,
-    };
-    // Dev mode: expose OTP ke response untuk testing (NEVER di production)
-    if (sendResult.devMode) {
+    // Kirim gagal (MPWA error / belum configured) → tetap respons seragam.
+    // Detail kegagalan hanya di log + audit; 502 lama membocorkan error provider + status nomor.
+    const response: Record<string, unknown> = { ...uniformResponse };
+    if (sendResult.devMode && sendResult.debugOtp && otpDebugExposeEnabled()) {
+      // Hanya di dev lokal yang digate OTP_DEV_EXPOSE=true + NODE_ENV!=production.
       response.devMode = true;
       response.debugOtp = sendResult.debugOtp;
     }
     sendOk(res, response);
-  } catch (e: any) { sendErr(res, e.message, 500); }
+  } catch (e: unknown) {
+    console.error("[PORTAL-OTP] request error:", e instanceof Error ? e.stack ?? e.message : e);
+    sendErr(res, "Terjadi kesalahan pada server. Coba lagi nanti.", 500);
+  }
 });
 
 /**
  * POST /api/portal/auth/verify-otp
- * Body: { otpSessionId, code }
- * Return: { token, customer, expiresAt }
+ * Body: { customerId, code } (legacy { otpSessionId, code } masih diterima selama transisi)
+ * Return sukses: { token, customer, expiresAt }
+ * SEMUA kegagalan → satu pesan generik (OTP_GENERIC_FAIL) supaya tidak bisa dipakai
+ * membedakan "ID tidak terdaftar" / "sesi tidak ada" / "kode salah" (anti-enumeration).
  */
-customerPortalRouter.post("/api/portal/auth/verify-otp", async (req: Request, res: Response) => {
+const OTP_VERIFY_LIMIT = { bucket: "portal-otp-verify", maxAttempts: 15, windowMs: 15 * 60_000, lockoutMs: 15 * 60_000 };
+const otpVerifyLimiter = createRateLimiter({
+  ...OTP_VERIFY_LIMIT,
+  keyOf: (req) => `${tenantContext.getStore()?.mitraId ?? 1}:${getClientIp(req)}`,
+});
+
+customerPortalRouter.post("/api/portal/auth/verify-otp", otpVerifyLimiter, async (req: Request, res: Response) => {
   try {
-    const otpSessionId = Number(req.body?.otpSessionId);
+    const ctxMitra = tenantContext.getStore()?.mitraId ?? 1;
+    recordRateAttempt(OTP_VERIFY_LIMIT.bucket, `${ctxMitra}:${getClientIp(req)}`, OTP_VERIFY_LIMIT);
+
     const code = String(req.body?.code ?? "").trim();
-    if (!otpSessionId || !code) return sendErr(res, "OTP session ID dan code wajib diisi");
     if (!/^\d{6}$/.test(code)) return sendErr(res, "OTP harus 6 digit angka");
 
-    const otp = await storage.getCustomerOtp(otpSessionId);
-    if (!otp) return sendErr(res, "OTP session tidak ditemukan", 404);
-    if (otp.status === "verified") return sendErr(res, "OTP sudah pernah diverifikasi");
-    if (otp.status === "locked") return sendErr(res, "OTP sudah di-lock karena terlalu banyak percobaan salah");
-    if (otp.status === "expired" || new Date(otp.expiresAt).getTime() < Date.now()) {
-      await storage.updateCustomerOtp(otpSessionId, { status: "expired" } as any);
-      return sendErr(res, "OTP sudah expired. Minta OTP baru.", 410);
+    // Jalur baru: lookup OTP pending terbaru via customerId. Jalur legacy otpSessionId
+    // dipertahankan untuk bundle SPA lama yang masih ter-cache (hapus setelah 1 rilis).
+    const customerIdRaw = String(req.body?.customerId ?? "").trim();
+    const legacySessionId = Number(req.body?.otpSessionId);
+    let otp: Awaited<ReturnType<typeof storage.getCustomerOtp>>;
+    if (customerIdRaw) {
+      const cust = await storage.getCustomerByBillingCustomerId(customerIdRaw, ctxMitra);
+      otp = cust ? await storage.getLatestPendingOtpByCustomer(cust.id) : undefined;
+    } else if (legacySessionId) {
+      otp = await storage.getCustomerOtp(legacySessionId);
+    } else {
+      return sendErr(res, "Customer ID dan kode OTP wajib diisi");
     }
 
-    // Verify via bcrypt
-    const match = await bcrypt.compare(code, otp.otpCodeHash);
-    if (!match) {
-      const attempts = (otp.attempts ?? 0) + 1;
-      const patch: any = { attempts };
-      if (attempts >= OTP_MAX_ATTEMPTS) patch.status = "locked";
-      await storage.updateCustomerOtp(otpSessionId, patch);
-      const remaining = OTP_MAX_ATTEMPTS - attempts;
-      if (remaining <= 0) return sendErr(res, "OTP terkunci karena salah 5x. Minta OTP baru.", 429);
-      return sendErr(res, `OTP salah. Sisa ${remaining} percobaan.`);
+    const codeMatches = otp ? await bcrypt.compare(code, otp.otpCodeHash) : false;
+    const decision = decideOtpVerify({
+      otpFound: !!otp,
+      status: otp?.status ?? undefined,
+      expiresAtMs: otp ? new Date(otp.expiresAt).getTime() : undefined,
+      nowMs: Date.now(),
+      attempts: otp?.attempts ?? 0,
+      maxAttempts: OTP_MAX_ATTEMPTS,
+      codeMatches,
+    });
+
+    if (decision.outcome === "reject") {
+      if (otp && decision.markExpired) {
+        await storage.updateCustomerOtp(otp.id, { status: "expired" } as any);
+      }
+      if (otp && decision.incrementAttempts) {
+        const attempts = (otp.attempts ?? 0) + 1;
+        const patch: Record<string, unknown> = { attempts };
+        if (decision.lock) patch.status = "locked";
+        await storage.updateCustomerOtp(otp.id, patch);
+      }
+      // Pesan generik tunggal, tanpa sisa-percobaan (membedakan sesi asli vs tidak ada).
+      return sendErr(res, OTP_GENERIC_FAIL, 400);
     }
 
     // OTP correct → create session
-    const customer = await storage.getCustomer(otp.customerId);
-    if (!customer) return sendErr(res, "Pelanggan tidak ditemukan", 404);
+    const customer = await storage.getCustomer(otp!.customerId);
+    if (!customer) return sendErr(res, OTP_GENERIC_FAIL, 400);
+    const otpSessionId = otp!.id;
     const token = generateSessionToken();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + SESSION_TTL_HOURS * 3600_000);

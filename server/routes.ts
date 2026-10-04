@@ -56,6 +56,7 @@ import { parseCollectionsMode } from "../shared/collectionsMode.js";
 import { validateBulkRequest, applyTagChange, parseTags, type BulkOp } from "../shared/bulkCardOps.js";
 import { getCollectionMetrics } from "./collection-metrics.js";
 import { computeAllPipelineMetrics } from "./pipeline-metrics-engine.js";
+import { createRateLimiter, recordRateAttempt, clearRateAttempts, rateLimitKey } from "./rate-limit.js";
 import { METRIC_SOURCES, METRIC_AGGREGATIONS, METRIC_TYPES } from "../shared/pipelineMetrics.js";
 import { TIME_PRESETS } from "../shared/metricTimeWindow.js";
 import { FORMULA_TERM_KEYS, parseFormula } from "../shared/metricFormula.js";
@@ -706,76 +707,8 @@ function clearLoginAttempts(key: string) {
   loginAttempts.delete(key);
 }
 
-// --------------------------------------------------------------------------
-// Generic rate limiter - reusable across integration / billing endpoints.
-// Buckets are isolated per name so verify abuse doesn't lock save abuse.
-// --------------------------------------------------------------------------
-
-interface RateBucketEntry { count: number; firstAttempt: number; lastAttempt: number; lockedUntil: number; }
-const rateBuckets = new Map<string, Map<string, RateBucketEntry>>();
-
-interface RateLimiterOpts {
-  bucket: string;
-  maxAttempts: number;
-  windowMs: number;
-  lockoutMs: number;
-  /** Custom key extractor - default `${userId}:${activeMitraId}:${ip}` */
-  keyOf?: (req: Request) => string;
-}
-
-function createRateLimiter(opts: RateLimiterOpts) {
-  if (!rateBuckets.has(opts.bucket)) rateBuckets.set(opts.bucket, new Map());
-  const bucket = rateBuckets.get(opts.bucket)!;
-
-  return function rateLimiterMiddleware(req: Request, res: Response, next: () => void) {
-    const key = opts.keyOf
-      ? opts.keyOf(req)
-      : `${req.authUser?.id ?? "anon"}:${req.authUser?.activeMitraId ?? "-"}:${getClientIp(req)}`;
-    const now = Date.now();
-    const entry = bucket.get(key);
-    if (entry) {
-      if (entry.lockedUntil > now) {
-        const retryAfterSec = Math.ceil((entry.lockedUntil - now) / 1000);
-        res.setHeader("Retry-After", String(retryAfterSec));
-        return res.status(429).json({
-          success: false,
-          error: `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(retryAfterSec / 60)} menit.`,
-          retryAfterSec,
-          bucket: opts.bucket,
-        });
-      }
-      if (now - entry.firstAttempt > opts.windowMs) {
-        // Window expired - reset
-        bucket.delete(key);
-      }
-    }
-    next();
-  };
-}
-
-function recordRateAttempt(bucket: string, key: string, opts: { maxAttempts: number; windowMs: number; lockoutMs: number }) {
-  const b = rateBuckets.get(bucket);
-  if (!b) return;
-  const now = Date.now();
-  const entry = b.get(key);
-  if (!entry || now - entry.firstAttempt > opts.windowMs) {
-    b.set(key, { count: 1, firstAttempt: now, lastAttempt: now, lockedUntil: 0 });
-    return;
-  }
-  entry.count++;
-  entry.lastAttempt = now;
-  if (entry.count >= opts.maxAttempts) {
-    entry.lockedUntil = now + opts.lockoutMs;
-  }
-}
-
-function clearRateAttempts(bucket: string, key: string) {
-  rateBuckets.get(bucket)?.delete(key);
-}
-
-function rateLimitKey(req: Request): string {
-  return `${req.authUser?.id ?? "anon"}:${req.authUser?.activeMitraId ?? "-"}:${getClientIp(req)}`;
-}
+// Generic rate limiter dipindah ke server/rate-limit.ts (2026-10-04) supaya portal
+// OTP bisa pakai throttle yang sama. Import di atas file ini.
 
 // Pre-configured limiters
 const VERIFY_RESELLER_LIMIT = { bucket: "verify-reseller", maxAttempts: 5,  windowMs: 5 * 60_000,  lockoutMs: 15 * 60_000 };

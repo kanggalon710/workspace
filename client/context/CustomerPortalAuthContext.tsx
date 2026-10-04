@@ -18,14 +18,13 @@ interface PortalCustomer {
   isIsolir: number | null;
 }
 
+// Respons request-otp kini SERAGAM (anti-enumeration): tidak ada lagi
+// otpSessionId/phoneMasked - server tidak membocorkan apakah ID terdaftar.
 interface OtpRequestResult {
-  otpSessionId: number;
-  phoneMasked: string;
+  message: string;
   ttlSec: number;
-  sent: boolean;
   devMode?: boolean;
   debugOtp?: string;
-  warning?: string;
 }
 
 interface PortalSession {
@@ -39,7 +38,7 @@ interface PortalAuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   requestOtp: (customerId: string) => Promise<OtpRequestResult>;
-  verifyOtp: (otpSessionId: number, code: string) => Promise<void>;
+  verifyOtp: (customerId: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   apiFetch: <T = any>(path: string, init?: RequestInit) => Promise<T>;
 }
@@ -103,11 +102,11 @@ export function CustomerPortalAuthProvider({ children }: { children: ReactNode }
     return json.data;
   }, []);
 
-  const verifyOtp = useCallback(async (otpSessionId: number, code: string): Promise<void> => {
+  const verifyOtp = useCallback(async (customerId: string, code: string): Promise<void> => {
     const r = await fetch("/api/portal/auth/verify-otp", withSlugHeader({
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ otpSessionId, code }),
+      body: JSON.stringify({ customerId, code }),
     }));
     const json = await r.json();
     if (!json.success) throw new Error(json.error ?? "Verifikasi OTP gagal");

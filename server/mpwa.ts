@@ -143,6 +143,13 @@ export async function sendMpwaMessage(
   }
 }
 
+/** Expose OTP plaintext HANYA di mode dev lokal yang digate eksplisit (audit 2026-10-04):
+ *  MPWA yang disabled/half-configured di production BUKAN alasan membocorkan OTP -
+ *  dulu itu berarti siapa pun yang tahu customer ID valid langsung dapat kodenya. */
+export function otpDebugExposeEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.NODE_ENV !== "production" && env.OTP_DEV_EXPOSE === "true";
+}
+
 /** Kirim OTP WhatsApp. Dev mode fallback kalau config belum di-set. */
 export async function sendOtpWhatsApp(
   phone: string,
@@ -151,9 +158,13 @@ export async function sendOtpWhatsApp(
 ): Promise<{ sent: boolean; error?: string; devMode?: boolean; debugOtp?: string }> {
   const config = await loadMpwaConfig();
   if (!config) {
-    // Dev mode: MPWA belum configured → log OTP untuk debug
-    console.log(`[MPWA-DEV] OTP ${otpCode} untuk ${phone} (MPWA belum configured/disabled)`);
-    return { sent: true, devMode: true, debugOtp: otpCode };
+    if (otpDebugExposeEnabled()) {
+      console.log(`[MPWA-DEV] OTP ${otpCode} untuk ${maskPhone(phone)} (gated OTP_DEV_EXPOSE)`);
+      return { sent: true, devMode: true, debugOtp: otpCode };
+    }
+    // MPWA tidak tersedia dan TIDAK di mode debug: jangan log/return plaintext OTP.
+    console.warn(`[MPWA] OTP tidak terkirim - MPWA belum configured/disabled (phone=${maskPhone(phone)})`);
+    return { sent: false, devMode: true, error: "MPWA not configured" };
   }
   const message = formatOtpMessage(config.messageTemplate || DEFAULT_TEMPLATE, otpCode, ttlMinutes);
   const result = await sendMpwaMessage(config, phone, message);
