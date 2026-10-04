@@ -133,7 +133,7 @@ DB_POOL_LIMIT=10
 GOOGLE_MAPS_API_KEY=     # ← copy dari prod existing kalau ada
 COVERAGE_API_KEY=
 SESSION_SECRET=          # ← `openssl rand -hex 32` generated
-ADMIN_DEFAULT_PASSWORD=Admin@1234
+ADMIN_DEFAULT_PASSWORD=   # ← WAJIB utk DB kosong; generate sendiri, jangan pakai nilai terdokumentasi
 # Workers default DISABLED - avoid dual-write dgn prod existing 103.194.46.164
 WORKERS_ENABLED=false
 BILLING_SYNC_ENABLED=false

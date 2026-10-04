@@ -178,6 +178,7 @@ import { saveBase64Photo, deletePhoto, ensureMitraDirs } from "./uploads.js";
 import { computePeriodBuckets, assignCountToBuckets, lastValueInBuckets, buildExecutiveFlags, deltaPct, type Period } from "./reporting-helpers.js";
 import { computeInsertPosition } from "./pipeline-helpers.js";
 import { parseRecurrence } from "../shared/ruleRecurrence.js";
+import { decideAdminSeed, AdminSeedError } from "../shared/adminSeed.js";
 import { buildCollectionSnapshot, resolveCollectionStatus, type CollectionSnapshot } from "../shared/collectionMetrics.js";
 import { decideSopAdvance, stageKeysForDivision, parseOwnerDivisions, computeOverdue, type SopStageMeta, type OverdueReason } from "../shared/collectionSop.js";
 import { isCardCommentType } from "../shared/cardCommentTypes.js";
@@ -10928,17 +10929,21 @@ export class DatabaseStorage implements IStorage {
     // Teamspace v5.0 Fase 1 - teams + board tugas (additive, idempotent).
     await this.runTeamspaceMigrations();
 
-    // 2. Seed default admin user
+    // 2. Seed default admin user - password WAJIB dari env, tanpa fallback hardcoded
+    //    (audit 2026-10-04). Keputusan murni di shared/adminSeed.ts (unit-tested).
     const existing = await this.db.select().from(users).limit(1);
-    if (existing.length === 0) {
-      const defaultPw = process.env.ADMIN_DEFAULT_PASSWORD || "Admin@1234";
-      const hashedPassword = bcrypt.hashSync(defaultPw, 12);
+    const seedDecision = decideAdminSeed(existing.length, process.env);
+    if (seedDecision.action === "fail") {
+      throw new AdminSeedError(seedDecision.reason);
+    }
+    if (seedDecision.action === "seed") {
+      const hashedPassword = bcrypt.hashSync(seedDecision.password, 12);
       // Resolve System-Admin role id for the initial admin user (platform owner, mitra 1)
       const adminRole = await this.getRoleByName("System-Admin", 1);
       const adminInsert: any = await this.db.insert(users).values({
-        username: "admin",
+        username: seedDecision.username,
         password: hashedPassword,
-        name: "Administrator",
+        name: seedDecision.name,
         role: "admin",
         roleId: adminRole?.id ?? null,
         isActive: 1,
@@ -10946,7 +10951,7 @@ export class DatabaseStorage implements IStorage {
       });
       const adminId = Number(adminInsert?.[0]?.insertId ?? 0);
       if (adminId > 0) await this.addUserToMitra(adminId, 1, true);
-      console.log("[JABNET FTTH] Admin user created - segera ganti password default!");
+      console.log(`[JABNET FTTH] Admin pertama dibuat (username: ${seedDecision.username}) - segera ganti password dari env setelah login!`);
     } else {
       // 3. Backfill roleId - HATI-HATI multi-tenant: users.role_id adalah fallback GLOBAL
       //    (dipakai computeAuthFlags untuk hitung isSystemAdmin di mitra 1). JANGAN set

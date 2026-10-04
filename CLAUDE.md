@@ -278,7 +278,7 @@ ftth-v411/
    - Filter pills: `overflow-x-auto no-scrollbar -mx-4 md:mx-0 px-4 md:px-0`
    - Dialogs: `max-w-X w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col p-0`
 5. **Branding**: Title "JABNET Workspace", v4.1.10. Logo brand gradient sky-500 → blue-700. Login subtitle "Platform Operasional ISP". Favicon di `/public/favicon.svg` + `.ico` + PNG sizes.
-6. **Default admin**: username `admin`, password `Admin@1234` (or `admin123` after testing). Auto-seeded saat DB kosong via `seedAdminIfNeeded`.
+6. **Admin pertama**: di-seed saat DB kosong via `seedAdminIfNeeded` dari env `ADMIN_DEFAULT_PASSWORD` (WAJIB - tanpa ini server fail-fast di fresh install) + `ADMIN_USERNAME` (default `chief0012`). Tidak ada password default hardcoded (audit 2026-10-04).
 7. **MPWA WhatsApp gateway**: settings via `app_settings` table (`mpwa_url`, `mpwa_token`, `mpwa_enabled`). Dev mode (mpwa_enabled=false): OTP di-log ke console + return `debugOtp` di response.
 8. **Lead API enrichment**: `/api/public/v1/leads` + `/collections` sekarang return `assignedToName`, `assignedToUsername`, `assignedToRole` via `_lookupUsers()` helper batch query.
 9. **Customer fields mapping**: backend uses snake_case, frontend uses camelCase via Drizzle. `customer_id` (text, billing ID like "052500015") berbeda dengan `id` (autoincrement int).

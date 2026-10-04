@@ -196,7 +196,7 @@ DEV_DB_SYNC_ENABLED=true
 PROD_DB_NAME=jabnet_fiber
 
 SESSION_SECRET=<hasil: openssl rand -hex 32>
-ADMIN_DEFAULT_PASSWORD=Admin@1234
+ADMIN_DEFAULT_PASSWORD=   # ← WAJIB utk DB kosong; generate sendiri (openssl rand -base64 18)
 
 BILLING_API_TOKEN=
 BILLING_API_URL=https://billing.jabnet.id/api/pelanggan/list_pelanggan
@@ -290,7 +290,7 @@ mysql -u jabnet_crm_user -p -N -e "SELECT COUNT(*) FROM jabnet_fiber_v2_dev.user
 Log: cPanel -> Setup Node.js App -> View Application Log, atau
 `tail -f ~/repositories/fiber-jabnet-V2/tmp/stdout.log`
 
-DB kosong -> app auto-seed admin `admin` / `Admin@1234`. **Ganti password setelah login pertama.**
+DB kosong -> app seed admin pertama dari env (`ADMIN_USERNAME` default `chief0012`, password = `ADMIN_DEFAULT_PASSWORD`; tanpa env itu server menolak start). **Ganti password setelah login pertama.**
 
 ---
 

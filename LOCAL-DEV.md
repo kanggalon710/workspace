@@ -32,7 +32,7 @@ DB_USER=root
 DB_PASSWORD=root
 DB_NAME=jabnet_fiber
 SESSION_SECRET=ganti-string-random-minimal-32-karakter
-ADMIN_DEFAULT_PASSWORD=Admin@1234
+ADMIN_DEFAULT_PASSWORD=<isi-password-lokal-sendiri-min-8-karakter>
 JABNET_UPLOAD_ROOT=./uploads
 TEAMSPACE_WORKER_ENABLED=true
 APP_PUBLIC_URL=http://localhost:3002
@@ -47,7 +47,7 @@ npm run dev          # startup melengkapi tabel tambahan + seed admin + roles ot
 ```
 
 ## 5. Buka & login
-`http://localhost:3002` - **admin** / **Admin@1234**
+`http://localhost:3002` - username **chief0012** (atau `ADMIN_USERNAME` di .env) / password = `ADMIN_DEFAULT_PASSWORD` yang kamu set.
 
 Sidebar kiri → grup **TEAMSPACE**: Semua Tugas · Tim Saya · Laporan Kinerja · Cheers.
 Buat tim → board 4 list otomatis → tab Chat / Jadwal / Pertanyaan / Dokumen.

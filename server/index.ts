@@ -15,6 +15,7 @@ import { pipelinesTickRouter } from "./pipelines-tick-route.js";
 import { trafficSnapshotWorker } from "./traffic-snapshot-worker.js";
 import { teamspaceWorker } from "./teamspace-worker.js";
 import { withMitra } from "./tenant-context.js";
+import { AdminSeedError } from "../shared/adminSeed.js";
 
 // Worker enable flags - di-set di .env (default: enable kalau env tidak diset = backward compat).
 // Untuk cPanel "prod baru", default-nya false (avoid dual-write dgn prod existing).
@@ -120,7 +121,15 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(500).json({ success: false, error: err?.message ?? "Internal server error" });
 });
 
-storage.seedAdminIfNeeded().catch(console.error);
+storage.seedAdminIfNeeded().catch((e: unknown) => {
+  // Fresh install tanpa ADMIN_DEFAULT_PASSWORD: tolak start (fail loud), jangan
+  // diam-diam jalan tanpa admin. Error migrasi lain tetap non-fatal seperti semula.
+  if (e instanceof AdminSeedError) {
+    console.error(`[FATAL] ${e.message}`);
+    process.exit(1);
+  }
+  console.error(e);
+});
 
 // One-shot cleanup: hapus billing sync worker audit log (noise) setiap startup
 storage.cleanupBillingSyncAuditLogs()
