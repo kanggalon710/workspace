@@ -34,7 +34,15 @@ export function loadServerEnv(env: NodeJS.ProcessEnv = process.env): ServerEnv {
   // (X-Forwarded-For bisa dipalsukan klien langsung -> rate limit per-IP jebol).
   let trustProxy: number | false;
   if (env.TRUST_PROXY !== undefined) {
-    trustProxy = env.TRUST_PROXY === "false" ? false : (Number(env.TRUST_PROXY) || 1);
+    const raw = env.TRUST_PROXY.trim().toLowerCase();
+    if (raw === "false" || raw === "0") {
+      trustProxy = false;
+    } else if (/^[1-9]\d*$/.test(raw)) {
+      trustProxy = Number(raw);
+    } else {
+      // Fail loud - nilai salah di sini = rate limit per-IP bisa di-bypass via XFF palsu.
+      throw new Error(`Env TRUST_PROXY tidak valid: "${env.TRUST_PROXY}" (pakai "false", "0", atau jumlah hop >=1)`);
+    }
   } else {
     trustProxy = isProd ? 1 : false;
   }

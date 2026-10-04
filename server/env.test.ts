@@ -17,9 +17,11 @@ test("production: trust proxy defaults to exactly 1 hop", () => {
   assert.equal(e.trustProxy, 1);
 });
 
-test("TRUST_PROXY override: 'false' disables, number sets hops", () => {
+test("TRUST_PROXY override: 'false'/'0' disable, positive int sets hops, junk throws", () => {
   assert.equal(loadServerEnv({ NODE_ENV: "production", TRUST_PROXY: "false" }).trustProxy, false);
+  assert.equal(loadServerEnv({ NODE_ENV: "production", TRUST_PROXY: "0" }).trustProxy, false);
   assert.equal(loadServerEnv({ TRUST_PROXY: "2" }).trustProxy, 2);
+  assert.throws(() => loadServerEnv({ TRUST_PROXY: "abc" }), /TRUST_PROXY/);
 });
 
 test("invalid PORT fails loudly instead of silently listening elsewhere", () => {

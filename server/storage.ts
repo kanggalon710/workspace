@@ -1,6 +1,7 @@
 import { eq, sql, desc, asc, and, gte, lte, or, inArray, isNull, isNotNull, count, like, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql, { type Pool as MySQLPool } from "mysql2/promise";
+import type { ResultSetHeader } from "mysql2";
 
 // FASE 1B (deferred refactor): legacy `this.sqlite` calls masih ada untuk backward-reference.
 // Jangan dipakai di runtime - semua `this.sqlite.*` akan throw error.
@@ -2696,7 +2697,7 @@ export class DatabaseStorage implements IStorage {
         .select({ maxPos: sql<number>`COALESCE(MAX(${pipelineCards.position}), -1)` })
         .from(pipelineCards)
         .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.stageId, toStageId), sql`${pipelineCards.id} <> ${id}`));
-      const patch: any = { position: Number(maxRow?.maxPos ?? -1) + 1, stageId: toStageId, updatedAt: now, updatedBy: userId };
+      const patch: Partial<PipelineCard> = { position: Number(maxRow?.maxPos ?? -1) + 1, stageId: toStageId, updatedAt: now, updatedBy: userId };
       if (stageChanged) patch.stageEnteredAt = now;
       await this.db.update(pipelineCards).set(patch)
         .where(and(eq(pipelineCards.id, id), eq(pipelineCards.mitraId, mitraId)));
@@ -5722,6 +5723,16 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
+  /** Kadaluarsakan semua OTP pending milik customer - dipanggil sebelum menerbitkan
+   *  OTP baru (resend) supaya hanya kode TERBARU yang berlaku dan row pending lama
+   *  tidak menggantung selamanya. */
+  async expirePendingOtpsForCustomer(customerId: number): Promise<void> {
+    const mitraId = getMitraId();
+    await this.db.update(customerOtps)
+      .set({ status: "expired" } as Partial<CustomerOtp>)
+      .where(and(eq(customerOtps.customerId, customerId), eq(customerOtps.mitraId, mitraId), eq(customerOtps.status, "pending")));
+  }
+
   /** OTP pending terbaru milik customer - dipakai verify-otp berbasis customerId
    *  (anti-enumeration: klien tidak lagi perlu memegang otpSessionId sekuensial). */
   async getLatestPendingOtpByCustomer(customerId: number): Promise<CustomerOtp | undefined> {
@@ -8507,9 +8518,10 @@ export class DatabaseStorage implements IStorage {
   // 2026-10-04: SELECT per-id diganti 1 SELECT ... IN; UPDATE tetap per baris karena
   // nilai tags hasil merge beda tiap kontak (kolom JSON) - tapi tetap 1 koneksi + transaksi.
   async bulkAddTagsToContacts(contactIds: number[], tagsToAdd: string[]): Promise<number> {
+    if (tagsToAdd.length === 0) return 0;
     return this._bulkRewriteContactTags(contactIds, (existing) =>
       Array.from(new Set([...existing, ...tagsToAdd]))
-    , tagsToAdd.length === 0);
+    );
   }
 
   // v4.2.27: bulk remove tag dari kontak
@@ -8520,8 +8532,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   /** Helper bersama add/remove tag: 1 SELECT batch + UPDATE per baris dalam transaksi. */
-  private async _bulkRewriteContactTags(contactIds: number[], rewrite: (existing: string[]) => string[], noop = false): Promise<number> {
-    if (contactIds.length === 0 || noop) return 0;
+  private async _bulkRewriteContactTags(contactIds: number[], rewrite: (existing: string[]) => string[]): Promise<number> {
+    if (contactIds.length === 0) return 0;
     const mitraId = getMitraId();
     const nowIso = new Date().toISOString();
     const placeholders = contactIds.map(() => "?").join(",");
@@ -8615,11 +8627,11 @@ export class DatabaseStorage implements IStorage {
 
     // 2026-10-04: satu DELETE ... IN (atomic) menggantikan loop DELETE per-id;
     // count dari affectedRows (dulu menghitung id yang tidak match sebagai terhapus).
-    const [delResult] = await this.pool.execute(
+    const [delResult] = await this.pool.execute<ResultSetHeader>(
       `DELETE FROM phonebook_contacts WHERE id IN (${placeholders}) AND mitra_id = ?`,
       [...ids, mitraId]
     );
-    const deleted = Number((delResult as any)?.affectedRows ?? 0);
+    const deleted = Number(delResult?.affectedRows ?? 0);
     for (const pid of affectedPhonebookIds) await this._refreshPhonebookCount(pid);
     return deleted;
   }

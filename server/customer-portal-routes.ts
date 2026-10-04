@@ -250,45 +250,58 @@ customerPortalRouter.post("/api/portal/auth/request-otp", otpIpLimiter, otpIdLim
     }
 
     // decision.action === "send": customer pasti ada + punya phone di cabang ini.
-    const otpCode = generateOtp();
-    const otpHash = await bcrypt.hash(otpCode, 10);
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + OTP_TTL_MINUTES * 60_000);
+    const issueOtp = async (): Promise<{ sent: boolean; error?: string; devMode?: boolean; debugOtp?: string }> => {
+      // Resend: kadaluarsakan kode pending lama dulu - hanya kode TERBARU yang
+      // berlaku (verify lookup by-customer), row lama tidak menggantung "pending".
+      await storage.expirePendingOtpsForCustomer(customer!.id);
+      const otpCode = generateOtp();
+      const otpHash = await bcrypt.hash(otpCode, 10);
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + OTP_TTL_MINUTES * 60_000);
+      const otp = await storage.createCustomerOtp({
+        customerId: customer!.id,
+        otpCodeHash: otpHash,
+        phone: customer!.phone,
+        expiresAt: expiresAt.toISOString(),
+        attempts: 0,
+        status: "pending",
+        ipAddress: ip,
+        userAgent: req.headers["user-agent"]?.slice(0, 255) ?? null,
+        createdAt: now.toISOString(),
+      } as any);
+      const sendResult = await sendOtpWhatsApp(customer!.phone!, otpCode, OTP_TTL_MINUTES);
+      // Log untuk ops debugging (tanpa plaintext OTP, nomor dimask). Kirim gagal
+      // (MPWA error/belum configured) TIDAK pernah bocor ke klien - hanya log+audit.
+      console.log(`[PORTAL-OTP] customer=${customer!.customerId} phone=${maskPhone(customer!.phone!)} sent=${sendResult.sent} devMode=${sendResult.devMode ?? false}${sendResult.error ? " error=" + sendResult.error : ""}`);
+      await storage.createAuditLog({
+        userId: null, username: "(portal)", userName: customer!.name,
+        action: "OTP_REQUEST", entityType: "customer_otp", entityId: otp.id,
+        entityName: customer!.customerId,
+        details: JSON.stringify({ sent: sendResult.sent, error: sendResult.error, devMode: sendResult.devMode }),
+        createdAt: now.toISOString(),
+      } as any);
+      return sendResult;
+    };
 
-    const otp = await storage.createCustomerOtp({
-      customerId: customer!.id,
-      otpCodeHash: otpHash,
-      phone: customer!.phone,
-      expiresAt: expiresAt.toISOString(),
-      attempts: 0,
-      status: "pending",
-      ipAddress: ip,
-      userAgent: req.headers["user-agent"]?.slice(0, 255) ?? null,
-      createdAt: now.toISOString(),
-    } as any);
-
-    const sendResult = await sendOtpWhatsApp(customer!.phone!, otpCode, OTP_TTL_MINUTES);
-
-    // Log untuk ops debugging (tanpa plaintext OTP, nomor dimask)
-    console.log(`[PORTAL-OTP] customer=${customer!.customerId} phone=${maskPhone(customer!.phone!)} sent=${sendResult.sent} devMode=${sendResult.devMode ?? false}${sendResult.error ? " error=" + sendResult.error : ""}`);
-
-    await storage.createAuditLog({
-      userId: null, username: "(portal)", userName: customer!.name,
-      action: "OTP_REQUEST", entityType: "customer_otp", entityId: otp.id,
-      entityName: customer!.customerId,
-      details: JSON.stringify({ sent: sendResult.sent, error: sendResult.error, devMode: sendResult.devMode }),
-      createdAt: now.toISOString(),
-    } as any);
-
-    // Kirim gagal (MPWA error / belum configured) → tetap respons seragam.
-    // Detail kegagalan hanya di log + audit; 502 lama membocorkan error provider + status nomor.
-    const response: Record<string, unknown> = { ...uniformResponse };
-    if (sendResult.devMode && sendResult.debugOtp && otpDebugExposeEnabled()) {
-      // Hanya di dev lokal yang digate OTP_DEV_EXPOSE=true + NODE_ENV!=production.
-      response.devMode = true;
-      response.debugOtp = sendResult.debugOtp;
+    if (otpDebugExposeEnabled()) {
+      // Jalur sinkron KHUSUS dev lokal tergate (butuh debugOtp di response; timing tak relevan).
+      const sendResult = await issueOtp();
+      const response: Record<string, unknown> = { ...uniformResponse };
+      if (sendResult.devMode && sendResult.debugOtp) {
+        response.devMode = true;
+        response.debugOtp = sendResult.debugOtp;
+      }
+      return sendOk(res, response);
     }
-    sendOk(res, response);
+
+    // Produksi: respons seragam dikirim SEBELUM kerja berat (bcrypt ~100ms + HTTP MPWA
+    // + 2 INSERT) supaya durasi respons ID terdaftar ~= ID tak dikenal (tutup timing
+    // oracle yang mengalahkan pesan seragam). AsyncLocalStorage tenant context tetap
+    // terbawa ke continuation ini.
+    sendOk(res, uniformResponse);
+    void issueOtp().catch((e: unknown) => {
+      console.error("[PORTAL-OTP] async issue error:", e instanceof Error ? e.message : e);
+    });
   } catch (e: unknown) {
     console.error("[PORTAL-OTP] request error:", e instanceof Error ? e.stack ?? e.message : e);
     sendErr(res, "Terjadi kesalahan pada server. Coba lagi nanti.", 500);

@@ -49,11 +49,19 @@ function substitute(template: string, vars: Record<string, any>): string {
  *  untuk campaign 5000 orang). */
 interface CompanyVars { ispName: string; waCs: string; waFinance: string; portalUrl: string }
 async function loadCompanyVars(): Promise<CompanyVars> {
-  const ispName = (await storage.getSetting("company_name")) ?? "JABNET";
-  const waCs = (await storage.getSetting("company_wa_cs")) ?? "https://wa.me/6281234567890";
-  const waFinance = (await storage.getSetting("company_wa_finance")) ?? waCs;
-  const portalUrl = (await storage.getSetting("customer_portal_url")) ?? "https://portal.jabnet.id";
-  return { ispName, waCs, waFinance, portalUrl };
+  const [nameRaw, waCsRaw, waFinanceRaw, portalRaw] = await Promise.all([
+    storage.getSetting("company_name"),
+    storage.getSetting("company_wa_cs"),
+    storage.getSetting("company_wa_finance"),
+    storage.getSetting("customer_portal_url"),
+  ]);
+  const waCs = waCsRaw ?? "https://wa.me/6281234567890";
+  return {
+    ispName: nameRaw ?? "JABNET",
+    waCs,
+    waFinance: waFinanceRaw ?? waCs,
+    portalUrl: portalRaw ?? "https://portal.jabnet.id",
+  };
 }
 
 function buildVarsPelanggan(c: {
@@ -258,13 +266,11 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
       if (targetType === "reseller") {
         // Lookup full reseller dari map kalau id ada, kalau enggak pakai snapshot
         const full = resellersById.get(Number(r.resellerId ?? r.id));
-        const resellerData: any = full ?? { name: r.name, phone: r.phone };
-        vars = buildVarsReseller(resellerData, extras, company);
+        vars = buildVarsReseller(full ?? { name: r.name ?? "", phone: r.phone }, extras, company);
       } else {
         // Pelanggan: full customer dari map untuk dapat 28 params
         const full = r.id ? customersById.get(Number(r.id)) : undefined;
-        const customerData: any = full ?? { name: r.name, customerId: r.customerId, phone: r.phone };
-        vars = buildVarsPelanggan(customerData, extras, company);
+        vars = buildVarsPelanggan(full ?? { name: r.name ?? "", customerId: r.customerId, phone: r.phone }, extras, company);
       }
       const rendered = substitute(content, vars);
       items.push({
@@ -300,8 +306,7 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
 
   const items: any[] = [];
   for (const a of audience) {
-    const customerData: any = fullById.get(a.id) ?? a;
-    const vars = buildVarsPelanggan(customerData, extras, company);
+    const vars = buildVarsPelanggan(fullById.get(a.id) ?? a, extras, company);
     const rendered = substitute(content, vars);
     items.push({
       campaignId,

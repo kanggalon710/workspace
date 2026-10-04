@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   isKnownSpaPath,
   isIndexablePath,
@@ -68,4 +69,21 @@ test("buildSitemapXml: lists exactly the indexable pages with absolute urls", ()
   const locCount = (xml.match(/<loc>/g) ?? []).length;
   assert.equal(locCount, INDEXABLE_PAGES.length);
   assert.ok(!xml.includes("/login"));
+});
+
+// Drift guard: setiap route di client/App.tsx HARUS dikenali manifest - kalau test ini
+// merah, rute baru belum didaftarkan di routesManifest.ts dan akan di-serve dgn status 404.
+test("every App.tsx route is recognized by isKnownSpaPath (no manifest drift)", () => {
+  const appSrc = readFileSync(new URL("../client/App.tsx", import.meta.url), "utf8");
+  const paths = Array.from(new Set(Array.from(appSrc.matchAll(/path="([^"]+)"/g), (m) => m[1])));
+  assert.ok(paths.length > 50, `sanity: hanya menemukan ${paths.length} route di App.tsx`);
+  const missing: string[] = [];
+  for (const p of paths) {
+    const concrete = p
+      .replace(/:rest\*/g, "x/y")
+      .replace(/:[A-Za-z]+\*/g, "x/y")
+      .replace(/:[A-Za-z]+/g, "x");
+    if (!isKnownSpaPath(concrete)) missing.push(`${p} -> ${concrete}`);
+  }
+  assert.deepEqual(missing, []);
 });

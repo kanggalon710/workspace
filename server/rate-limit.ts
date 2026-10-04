@@ -6,6 +6,21 @@ import type { Request, Response } from "express";
 interface RateBucketEntry { count: number; firstAttempt: number; lastAttempt: number; lockedUntil: number; }
 const rateBuckets = new Map<string, Map<string, RateBucketEntry>>();
 
+// Sweep berkala: entry yang window & lockout-nya sudah lewat dibuang. Tanpa ini,
+// bucket yang di-key string pilihan penyerang (mis. customerId di endpoint portal
+// tanpa auth) tumbuh tanpa batas di proses Passenger yang hidup lama.
+const SWEEP_INTERVAL_MS = 10 * 60_000;
+const MAX_ENTRY_AGE_MS = 60 * 60_000; // paling lama 1 jam (window+lockout terbesar yg dipakai jauh di bawah ini)
+const sweepTimer = setInterval(() => {
+  const now = Date.now();
+  for (const bucket of rateBuckets.values()) {
+    for (const [key, e] of bucket) {
+      if (e.lockedUntil < now && now - e.lastAttempt > MAX_ENTRY_AGE_MS) bucket.delete(key);
+    }
+  }
+}, SWEEP_INTERVAL_MS);
+sweepTimer.unref?.();
+
 export interface RateLimiterOpts {
   bucket: string;
   maxAttempts: number;
@@ -34,11 +49,12 @@ export function createRateLimiter(opts: RateLimiterOpts) {
       if (entry.lockedUntil > now) {
         const retryAfterSec = Math.ceil((entry.lockedUntil - now) / 1000);
         res.setHeader("Retry-After", String(retryAfterSec));
+        // `bucket` sengaja TIDAK ikut di body: nama bucket internal memberi tahu
+        // penyerang dimensi mana yang kena (per-ID vs per-IP) di endpoint publik.
         return res.status(429).json({
           success: false,
           error: `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(retryAfterSec / 60)} menit.`,
           retryAfterSec,
-          bucket: opts.bucket,
         });
       }
       if (now - entry.firstAttempt > opts.windowMs) {
