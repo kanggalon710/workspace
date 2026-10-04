@@ -1,5 +1,43 @@
 # TODO / Backlog - Optimasi Codebase
 
+## Audit 2026-10-04 - remediation backlog
+- [ ] **P0 Security - remove known first-admin credential fallback.**
+  `server/storage.ts:10934` falls back to `Admin@1234` and seeds username `admin`. Fail startup
+  loudly when `ADMIN_DEFAULT_PASSWORD` is absent, or generate/report a one-time secret through an
+  approved untracked channel. Do not commit a replacement password.
+- [ ] **P1 Security - harden session and error handling.**
+  `server/index.ts:47-60` only warns when `SESSION_SECRET` is missing in production and sets
+  `cookie.secure=false`; `server/index.ts:117-120` returns raw exception messages. Fail closed for
+  a missing production secret, enable secure cookies behind the configured proxy, and return a
+  generic 500 response while keeping detailed errors server-side.
+- [ ] **P1 Security - stop OTP account enumeration and add pre-lookup/IP throttling.**
+  `server/customer-portal-routes.ts:198-216` returns distinct messages for an unknown customer,
+  a customer without a phone, and a known customer, while rate limiting starts only after lookup.
+  Use a uniform public response and an IP/tenant throttle before customer lookup.
+- [ ] **P1 Context/order - move `/api/dev/db-sync` after `authMiddleware`.**
+  The route is declared at `server/routes.ts:179`, but middleware is installed at line 349. Its
+  `requireWritePermission` check therefore never receives `req.authUser` when the feature is on.
+- [ ] **P1 Performance - eliminate query-in-loop batch paths.**
+  At minimum: phonebook import/tag updates (`server/storage.ts:8398-8410`, `8433-8440`,
+  `8462+`), pipeline billing intake card creation (`server/pipeline-billing-intake.ts:77+`), and
+  customer/broadcast worker lookups (`server/broadcast-worker.ts:286+`). Prefer batch inserts,
+  one scoped select plus bulk update, and batched lookup maps.
+- [ ] **P1 Public SEO/status - add generated robots/sitemap, route metadata, canonical URLs, and
+  real 404 behavior.** No robots/sitemap files or per-route metadata were found. The catch-all
+  `server/index.ts:110-112` serves `index.html` with HTTP 200 for every unknown non-API path.
+- [ ] **P1 Responsive/accessibility - fix public coverage and map controls.** Browser evidence at
+  360/768/1280: no overflow, but `/coverage-check` has two `h1`s (`CoverageCheckPage.tsx:243,731`),
+  36px buttons, and 14px inputs. Map camera buttons shrink to 28px and use forbidden `max-md:`
+  (`client/components/map/MapCameraControls.tsx:41-72`); icon-only buttons also need labels.
+- [ ] **P2 DRY/design-system debt.** Audit grep found local `KpiCard`/`StatTile`/`StatusBadge`
+  shadows alongside shared primitives and 402 hardcoded/raw palette matches. Extend the shared
+  primitives before migrating call sites; do not perform blind visual substitutions.
+- [ ] **P2 Type/config debt.** Audit grep found 3,777 non-test `any`/`as any` matches and 38 direct
+  `process.env` reads. Introduce a validated server config boundary and migrate risky external-data
+  paths first. Typecheck currently passes, so prioritize boundary correctness over mechanical churn.
+- [ ] **Dependency advisories unverified.** Retry `npm audit --omit=dev --json` when registry TLS is
+  available; the 2026-10-04 attempt failed before advisories were returned.
+
 ## Produksi - butuh aksi manual (2026-09-04)
 - [x] **Auto-sync billing dinyalakan di produksi** (2026-09-04 07:28 GMT). Env + restart +
   `billing_sync_nightly_hour=19` (GMT = 02:00 WIB) + cron keep-alive `*/4`. Terverifikasi:

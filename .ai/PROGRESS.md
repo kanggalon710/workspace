@@ -3,6 +3,22 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-10-04 - Full-stack audit (read-only)
+**Agent:** Codex (GPT-5) | **Status:** audit complete, remediation not started
+**Why:** The owner requested the latest code plus an evidence-based audit covering security,
+performance, context/middleware ordering, semantics, DRY, and responsive behavior.
+**Changes:** No application code changed. Findings were added to `.ai/TODO.md`, including the
+known first-admin password fallback, insecure production cookie flag/raw error leakage, OTP account
+enumeration, pre-auth dev-sync registration, query-in-loop hotspots, public SEO/404 gaps, mobile
+touch/input sizing, duplicate `h1`, remaining design-token/component duplication, and type-safety debt.
+**Files:** `.ai/STATE.md`, `.ai/PROGRESS.md`, `.ai/TODO.md` only.
+**Verified:** `git pull --ff-only` reported already up to date; `npx tsc --noEmit` exited 0;
+`npx tsx --test shared/*.test.ts` passed 303/303; `npm run build` succeeded. Browser check of
+`/coverage-check` at 360/768/1280 found no horizontal overflow and a clean console, but confirmed
+two `h1`s, 36px buttons, and 14px inputs. `npm audit` was attempted but the registry advisory
+endpoint TLS connection failed, so dependency vulnerability status remains unverified.
+**Notes:** This was an audit-only request. Findings are prioritized in TODO for a separate fix round.
+
 ## 2026-09-21 - Filter PIC/assignee (multi-select) di pipeline board
 **Agen:** claude-sonnet-5 (Claude Code) | **Status:** selesai, di-push ke dev+main, dikonfirmasi jalan oleh user
 **Kenapa:** Staf butuh cara mempersempit board `/leads`, `/collections` (+cs/marketing), dan
