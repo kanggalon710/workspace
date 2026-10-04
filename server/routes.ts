@@ -15437,21 +15437,18 @@ router.get("/api/broadcast/campaigns", async (req: Request, res: Response) => {
     const deviceIds = Array.from(new Set(list.map(c => (c as any).deviceId).filter(Boolean) as number[]));
     const templateIds = Array.from(new Set(list.map(c => c.templateId).filter(Boolean)));
 
+    // 2026-10-04: batch lookup (anti N+1) - dulu 3 query per campaign unik.
+    const [usersById, devicesById, templatesById] = await Promise.all([
+      storage.getUsersByIds(userIds),
+      storage.getWaDevicesByIds(deviceIds),
+      storage.getMpwaTemplatesByIds(templateIds),
+    ]);
     const userMap: Record<number, { id: number; name: string; username: string }> = {};
-    for (const uid of userIds) {
-      const u = await storage.getUser(uid).catch(() => null);
-      if (u) userMap[uid] = { id: u.id, name: u.name, username: u.username };
-    }
+    for (const [uid, u] of usersById) userMap[uid] = { id: u.id, name: u.name, username: u.username };
     const deviceMap: Record<number, { id: number; name: string; phone: string }> = {};
-    for (const did of deviceIds) {
-      const d = await storage.getWaDevice(did).catch(() => null);
-      if (d) deviceMap[did] = { id: d.id, name: d.name, phone: d.phone };
-    }
+    for (const [did, d] of devicesById) deviceMap[did] = { id: d.id, name: d.name, phone: d.phone };
     const templateMap: Record<number, { id: number; name: string }> = {};
-    for (const tid of templateIds) {
-      const t = await storage.getMpwaTemplate(tid).catch(() => null);
-      if (t) templateMap[tid] = { id: t.id, name: t.name };
-    }
+    for (const [tid, t] of templatesById) templateMap[tid] = { id: t.id, name: t.name };
     const enriched = list.map(c => ({
       ...c,
       createdByUser: c.createdBy ? userMap[c.createdBy] ?? null : null,

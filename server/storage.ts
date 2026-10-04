@@ -179,6 +179,7 @@ import { computePeriodBuckets, assignCountToBuckets, lastValueInBuckets, buildEx
 import { computeInsertPosition } from "./pipeline-helpers.js";
 import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { decideAdminSeed, AdminSeedError } from "../shared/adminSeed.js";
+import { chunkArray } from "../shared/batch.js";
 import { buildCollectionSnapshot, resolveCollectionStatus, type CollectionSnapshot } from "../shared/collectionMetrics.js";
 import { decideSopAdvance, stageKeysForDivision, parseOwnerDivisions, computeOverdue, type SopStageMeta, type OverdueReason } from "../shared/collectionSop.js";
 import { isCardCommentType } from "../shared/cardCommentTypes.js";
@@ -2620,9 +2621,13 @@ export class DatabaseStorage implements IStorage {
 
   async createCard(pipelineId: number, data: { stageId: number; title: string; description?: string; assigneeId?: number | null; priority?: string; dueDate?: string | null; tags?: string[] | null; sourceCustomerId?: number | null; sourceRuleId?: number | null; masterCardId?: number | null; originCardId?: number | null; relationType?: string | null; collectionCycle?: number | null; }, userId: number): Promise<PipelineCard> {
     const mitraId = getMitraId();
-    const siblings = await this.db.select().from(pipelineCards)
+    // 2026-10-04: MAX(position) agregat - dulu load SEMUA kartu stage cuma untuk
+    // cari posisi max (O(N) data per create; intake billing bisa create ratusan kartu).
+    const [maxRow] = await this.db
+      .select({ maxPos: sql<number>`COALESCE(MAX(${pipelineCards.position}), -1)` })
+      .from(pipelineCards)
       .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.stageId, data.stageId)));
-    const maxPos = siblings.reduce((m, c) => Math.max(m, c.position), -1);
+    const maxPos = Number(maxRow?.maxPos ?? -1);
     const now = new Date().toISOString();
     const result = await this.db.insert(pipelineCards).values({
       mitraId, pipelineId, stageId: data.stageId, title: data.title,
@@ -2681,19 +2686,33 @@ export class DatabaseStorage implements IStorage {
     const mitraId = getMitraId();
     const before = await this.getCard(id);
     if (!before) throw new Error("Kartu tidak ditemukan");
-    const dest = (await this.db.select().from(pipelineCards)
-      .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.stageId, toStageId))))
-      .filter((c) => c.id !== id)
-      .sort((a, b) => a.position - b.position);
-    const insertAt = computeInsertPosition(dest.length, toPosition);
-    const reordered = [...dest.slice(0, insertAt), { id }, ...dest.slice(insertAt)];
     const now = new Date().toISOString();
     const stageChanged = before.stageId !== toStageId;
-    for (let i = 0; i < reordered.length; i++) {
-      const patch: any = { position: i, stageId: toStageId, updatedAt: now, updatedBy: userId };
-      if (stageChanged && reordered[i].id === id) patch.stageEnteredAt = now;
+    if (toPosition === undefined) {
+      // 2026-10-04 fast-path append (dipakai intake billing & auto-advance SOP):
+      // taruh di MAX(position)+1 tanpa menulis ulang posisi semua kartu stage tujuan
+      // (dulu 1 UPDATE per kartu stage). Urutan kartu lain tidak berubah.
+      const [maxRow] = await this.db
+        .select({ maxPos: sql<number>`COALESCE(MAX(${pipelineCards.position}), -1)` })
+        .from(pipelineCards)
+        .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.stageId, toStageId), sql`${pipelineCards.id} <> ${id}`));
+      const patch: any = { position: Number(maxRow?.maxPos ?? -1) + 1, stageId: toStageId, updatedAt: now, updatedBy: userId };
+      if (stageChanged) patch.stageEnteredAt = now;
       await this.db.update(pipelineCards).set(patch)
-        .where(and(eq(pipelineCards.id, reordered[i].id), eq(pipelineCards.mitraId, mitraId)));
+        .where(and(eq(pipelineCards.id, id), eq(pipelineCards.mitraId, mitraId)));
+    } else {
+      const dest = (await this.db.select().from(pipelineCards)
+        .where(and(eq(pipelineCards.mitraId, mitraId), eq(pipelineCards.stageId, toStageId))))
+        .filter((c) => c.id !== id)
+        .sort((a, b) => a.position - b.position);
+      const insertAt = computeInsertPosition(dest.length, toPosition);
+      const reordered = [...dest.slice(0, insertAt), { id }, ...dest.slice(insertAt)];
+      for (let i = 0; i < reordered.length; i++) {
+        const patch: any = { position: i, stageId: toStageId, updatedAt: now, updatedBy: userId };
+        if (stageChanged && reordered[i].id === id) patch.stageEnteredAt = now;
+        await this.db.update(pipelineCards).set(patch)
+          .where(and(eq(pipelineCards.id, reordered[i].id), eq(pipelineCards.mitraId, mitraId)));
+      }
     }
     if (stageChanged) {
       await this.logCardActivity(id, userId, "moved", { fromStage: before.stageId, toStage: toStageId });
@@ -4885,22 +4904,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setCardValues(cardId: number, entries: { fieldId: number; value: string }[]): Promise<void> {
+    if (entries.length === 0) return;
     const mitraId = getMitraId();
     const now = new Date().toISOString();
-    for (const { fieldId, value } of entries) {
-      const isEmpty = value === "" || value == null;
-      const [existing] = await this.db.select().from(pipelineCardValues)
-        .where(and(eq(pipelineCardValues.mitraId, mitraId), eq(pipelineCardValues.cardId, cardId), eq(pipelineCardValues.fieldId, fieldId)));
-      if (isEmpty) {
-        if (existing) await this.db.delete(pipelineCardValues)
-          .where(and(eq(pipelineCardValues.id, existing.id), eq(pipelineCardValues.mitraId, mitraId)));
-        continue;
-      }
-      if (existing) {
-        await this.db.update(pipelineCardValues).set({ value, updatedAt: now })
-          .where(and(eq(pipelineCardValues.id, existing.id), eq(pipelineCardValues.mitraId, mitraId)));
-      } else {
-        await this.db.insert(pipelineCardValues).values({ mitraId, cardId, fieldId, value, createdAt: now } as any);
+    // 2026-10-04: dulu SELECT+write per field (2N query). Hasil akhir identik:
+    // nilai kosong -> DELETE (ada/tidak sama saja), nilai isi -> upsert lewat
+    // unique index uniq_card_field (card_id, field_id).
+    const toDelete = entries.filter(e => e.value === "" || e.value == null).map(e => e.fieldId);
+    const toUpsert = entries.filter(e => !(e.value === "" || e.value == null));
+    if (toDelete.length > 0) {
+      const ph = toDelete.map(() => "?").join(",");
+      await this.pool.execute(
+        `DELETE FROM pipeline_card_values WHERE mitra_id = ? AND card_id = ? AND field_id IN (${ph})`,
+        [mitraId, cardId, ...toDelete]
+      );
+    }
+    if (toUpsert.length > 0) {
+      const rows = toUpsert.map(e => [mitraId, cardId, e.fieldId, e.value, now, now]);
+      for (const chunk of chunkArray(rows, 500)) {
+        await this.pool.query(
+          `INSERT INTO pipeline_card_values (mitra_id, card_id, field_id, value, created_at, updated_at) VALUES ?
+           ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = VALUES(updated_at)`,
+          [chunk]
+        );
       }
     }
   }
@@ -7183,6 +7209,16 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
+  /** Batched lookup (anti N+1) - mitra-scoped seperti getMpwaTemplate. */
+  async getMpwaTemplatesByIds(ids: number[]): Promise<Map<number, MpwaTemplate>> {
+    const map = new Map<number, MpwaTemplate>();
+    if (ids.length === 0) return map;
+    const mitraId = getMitraId();
+    const rows = await this.db.select().from(mpwaTemplates).where(and(inArray(mpwaTemplates.id, ids), eq(mpwaTemplates.mitraId, mitraId)));
+    for (const r of rows) map.set(r.id, r);
+    return map;
+  }
+
   async getMpwaTemplateByKey(key: string): Promise<MpwaTemplate | undefined> {
     const mitraId = getMitraId();
     const [row] = await this.db.select().from(mpwaTemplates).where(and(eq(mpwaTemplates.key, key), eq(mpwaTemplates.mitraId, mitraId)));
@@ -8020,13 +8056,19 @@ export class DatabaseStorage implements IStorage {
     if (items.length === 0) return 0;
     const mitraId = getMitraId();
     const nowIso = new Date().toISOString();
+    // 2026-10-04: multi-row INSERT ber-chunk - 5000 recipient dulu = 5000 round-trip
+    // sambil memegang 1 koneksi pool sepanjang itu.
+    const rows = items.map(r => [
+      r.campaignId, r.customerId ?? null, r.phone, r.customerName ?? null,
+      r.renderedMessage ?? null, "pending", 0, mitraId, nowIso,
+    ]);
     const conn = await this.pool.getConnection();
     await conn.beginTransaction();
     try {
-      for (const r of items) {
-        await conn.execute(
-          `INSERT INTO broadcast_recipients (campaign_id, customer_id, phone, customer_name, rendered_message, status, retry_count, mitra_id, created_at) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?)`,
-          [r.campaignId, r.customerId ?? null, r.phone, r.customerName ?? null, r.renderedMessage ?? null, mitraId, nowIso]
+      for (const chunk of chunkArray(rows, 500)) {
+        await conn.query(
+          `INSERT INTO broadcast_recipients (campaign_id, customer_id, phone, customer_name, rendered_message, status, retry_count, mitra_id, created_at) VALUES ?`,
+          [chunk]
         );
       }
       await conn.commit();
@@ -8139,6 +8181,16 @@ export class DatabaseStorage implements IStorage {
     return row;
   }
 
+  /** Batched lookup (anti N+1) - mitra-scoped seperti getWaDevice. */
+  async getWaDevicesByIds(ids: number[]): Promise<Map<number, WaDevice>> {
+    const map = new Map<number, WaDevice>();
+    if (ids.length === 0) return map;
+    const mitraId = getMitraId();
+    const rows = await this.db.select().from(waDevices).where(and(inArray(waDevices.id, ids), eq(waDevices.mitraId, mitraId)));
+    for (const r of rows) map.set(r.id, r);
+    return map;
+  }
+
   async createWaDevice(data: InsertWaDevice): Promise<WaDevice> {
     const mitraId = getMitraId();
     const nowIso = new Date().toISOString();
@@ -8202,6 +8254,15 @@ export class DatabaseStorage implements IStorage {
   async getReseller(id: number): Promise<Reseller | undefined> {
     const [row] = await this.db.select().from(resellers).where(eq(resellers.id, id));
     return row;
+  }
+
+  /** Batched lookup (anti N+1) - semantik sama dengan getReseller (tanpa scope mitra). */
+  async getResellersByIds(ids: number[]): Promise<Map<number, Reseller>> {
+    const map = new Map<number, Reseller>();
+    if (ids.length === 0) return map;
+    const rows = await this.db.select().from(resellers).where(inArray(resellers.id, ids));
+    for (const r of rows) map.set(r.id, r);
+    return map;
   }
 
   async createReseller(data: InsertReseller): Promise<Reseller> {
@@ -8391,6 +8452,10 @@ export class DatabaseStorage implements IStorage {
     if (items.length === 0) return { added: 0, skipped: 0, duplicates: [] };
     const mitraId = getMitraId();
     const nowIso = new Date().toISOString();
+    // Tenant guard: phonebookId harus milik mitra aktif (dulu tidak dicek - kontak
+    // bisa disuntik ke phonebook mitra lain lewat id tebakan).
+    const [pbRows] = await this.pool.execute(`SELECT id FROM phonebooks WHERE id = ? AND mitra_id = ?`, [phonebookId, mitraId]);
+    if ((pbRows as any[]).length === 0) throw new Error("Phonebook tidak ditemukan");
     // Check existing phones di phonebook (scoped to mitra)
     const [existingResult] = await this.pool.execute(`SELECT phone FROM phonebook_contacts WHERE phonebook_id = ? AND mitra_id = ?`, [phonebookId, mitraId]);
     const existingPhones = new Set((existingResult as any[]).map((r: any) => r.phone));
@@ -8406,20 +8471,23 @@ export class DatabaseStorage implements IStorage {
     });
 
     if (toInsert.length > 0) {
+      // Multi-row INSERT ber-chunk (bukan 1 query per baris) - import 5000 kontak
+      // dulu = 5000 round-trip. conn.query (bukan execute) dibutuhkan untuk VALUES ?.
+      const rows = toInsert.map(r => [
+        phonebookId, r.name, r.phone, r.email ?? null, (r as any).address ?? null,
+        (r as any).notes ?? null,
+        r.customFields ? (typeof r.customFields === "string" ? r.customFields : JSON.stringify(r.customFields)) : null,
+        r.customerId ?? null,
+        r.tags ? (typeof r.tags === "string" ? r.tags : JSON.stringify(r.tags)) : null,
+        mitraId, nowIso, nowIso,
+      ]);
       const conn = await this.pool.getConnection();
       await conn.beginTransaction();
       try {
-        for (const r of toInsert) {
-          await conn.execute(
-            `INSERT INTO phonebook_contacts (phonebook_id, name, phone, email, address, notes, custom_fields, customer_id, tags, mitra_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              phonebookId, r.name, r.phone, r.email ?? null, (r as any).address ?? null,
-              (r as any).notes ?? null,
-              r.customFields ? (typeof r.customFields === "string" ? r.customFields : JSON.stringify(r.customFields)) : null,
-              r.customerId ?? null,
-              r.tags ? (typeof r.tags === "string" ? r.tags : JSON.stringify(r.tags)) : null,
-              mitraId, nowIso, nowIso,
-            ]
+        for (const chunk of chunkArray(rows, 500)) {
+          await conn.query(
+            `INSERT INTO phonebook_contacts (phonebook_id, name, phone, email, address, notes, custom_fields, customer_id, tags, mitra_id, created_at, updated_at) VALUES ?`,
+            [chunk]
           );
         }
         await conn.commit();
@@ -8436,51 +8504,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   // v4.2.27: bulk add tags ke kontak (merge dengan tag existing)
+  // 2026-10-04: SELECT per-id diganti 1 SELECT ... IN; UPDATE tetap per baris karena
+  // nilai tags hasil merge beda tiap kontak (kolom JSON) - tapi tetap 1 koneksi + transaksi.
   async bulkAddTagsToContacts(contactIds: number[], tagsToAdd: string[]): Promise<number> {
-    if (contactIds.length === 0 || tagsToAdd.length === 0) return 0;
-    const mitraId = getMitraId();
-    const nowIso = new Date().toISOString();
-    const conn = await this.pool.getConnection();
-    await conn.beginTransaction();
-    try {
-      let updated = 0;
-      for (const id of contactIds) {
-        const [rowResult] = await conn.execute(`SELECT id, tags FROM phonebook_contacts WHERE id = ? AND mitra_id = ?`, [id, mitraId]);
-        const row: any = (rowResult as any[])[0];
-        if (!row) continue;
-        let existing: string[] = [];
-        try { existing = row.tags ? JSON.parse(row.tags) : []; } catch {}
-        const merged = Array.from(new Set([...existing, ...tagsToAdd]));
-        await conn.execute(`UPDATE phonebook_contacts SET tags = ?, updated_at = ? WHERE id = ? AND mitra_id = ?`, [JSON.stringify(merged), nowIso, id, mitraId]);
-        updated++;
-      }
-      await conn.commit();
-      return updated;
-    } catch (e) {
-      await conn.rollback();
-      throw e;
-    } finally {
-      conn.release();
-    }
+    return this._bulkRewriteContactTags(contactIds, (existing) =>
+      Array.from(new Set([...existing, ...tagsToAdd]))
+    , tagsToAdd.length === 0);
   }
 
   // v4.2.27: bulk remove tag dari kontak
   async bulkRemoveTagFromContacts(contactIds: number[], tagToRemove: string): Promise<number> {
-    if (contactIds.length === 0) return 0;
+    return this._bulkRewriteContactTags(contactIds, (existing) =>
+      existing.filter(t => t !== tagToRemove)
+    );
+  }
+
+  /** Helper bersama add/remove tag: 1 SELECT batch + UPDATE per baris dalam transaksi. */
+  private async _bulkRewriteContactTags(contactIds: number[], rewrite: (existing: string[]) => string[], noop = false): Promise<number> {
+    if (contactIds.length === 0 || noop) return 0;
     const mitraId = getMitraId();
     const nowIso = new Date().toISOString();
+    const placeholders = contactIds.map(() => "?").join(",");
+    const [rowsResult] = await this.pool.execute(
+      `SELECT id, tags FROM phonebook_contacts WHERE id IN (${placeholders}) AND mitra_id = ?`,
+      [...contactIds, mitraId]
+    );
+    const rows = rowsResult as Array<{ id: number; tags: string | null }>;
+    if (rows.length === 0) return 0;
+
     const conn = await this.pool.getConnection();
     await conn.beginTransaction();
     try {
       let updated = 0;
-      for (const id of contactIds) {
-        const [rowResult] = await conn.execute(`SELECT id, tags FROM phonebook_contacts WHERE id = ? AND mitra_id = ?`, [id, mitraId]);
-        const row: any = (rowResult as any[])[0];
-        if (!row) continue;
+      for (const row of rows) {
         let existing: string[] = [];
         try { existing = row.tags ? JSON.parse(row.tags) : []; } catch {}
-        const filtered = existing.filter(t => t !== tagToRemove);
-        await conn.execute(`UPDATE phonebook_contacts SET tags = ?, updated_at = ? WHERE id = ? AND mitra_id = ?`, [filtered.length ? JSON.stringify(filtered) : null, nowIso, id, mitraId]);
+        const next = rewrite(existing);
+        await conn.execute(
+          `UPDATE phonebook_contacts SET tags = ?, updated_at = ? WHERE id = ? AND mitra_id = ?`,
+          [next.length ? JSON.stringify(next) : null, nowIso, row.id, mitraId]
+        );
         updated++;
       }
       await conn.commit();
@@ -8550,23 +8613,15 @@ export class DatabaseStorage implements IStorage {
     );
     const affectedPhonebookIds: number[] = (affectedResult as any[]).map((r: any) => r.phonebook_id);
 
-    const conn = await this.pool.getConnection();
-    await conn.beginTransaction();
-    try {
-      let deleted = 0;
-      for (const id of ids) {
-        await conn.execute(`DELETE FROM phonebook_contacts WHERE id = ? AND mitra_id = ?`, [id, mitraId]);
-        deleted++;
-      }
-      await conn.commit();
-      for (const pid of affectedPhonebookIds) await this._refreshPhonebookCount(pid);
-      return deleted;
-    } catch (e) {
-      await conn.rollback();
-      throw e;
-    } finally {
-      conn.release();
-    }
+    // 2026-10-04: satu DELETE ... IN (atomic) menggantikan loop DELETE per-id;
+    // count dari affectedRows (dulu menghitung id yang tidak match sebagai terhapus).
+    const [delResult] = await this.pool.execute(
+      `DELETE FROM phonebook_contacts WHERE id IN (${placeholders}) AND mitra_id = ?`,
+      [...ids, mitraId]
+    );
+    const deleted = Number((delResult as any)?.affectedRows ?? 0);
+    for (const pid of affectedPhonebookIds) await this._refreshPhonebookCount(pid);
+    return deleted;
   }
 
   // ==================== END v4.2.20 / v4.2.21 / v4.2.24 ====================
@@ -9160,6 +9215,15 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [row] = await this.db.select().from(users).where(eq(users.id, id));
     return row;
+  }
+
+  /** Batched lookup (anti N+1) - semantik sama dengan getUser (tanpa scope mitra). */
+  async getUsersByIds(ids: number[]): Promise<Map<number, User>> {
+    const map = new Map<number, User>();
+    if (ids.length === 0) return map;
+    const rows = await this.db.select().from(users).where(inArray(users.id, ids));
+    for (const r of rows) map.set(r.id, r);
+    return map;
   }
   /** photoPath (+legacy photoUrl base64) untuk avatar user, untuk endpoint stream foto. */
   async getUserPhotoMeta(id: number): Promise<{ photoPath: string | null; photoUrl: string | null } | null> {

@@ -74,6 +74,11 @@ export async function runBillingIntakeRules(): Promise<{ created: number; resolv
       activeByCustomer.set(cid, { id: card.id, stageId: card.stageId });
     }
 
+    // 2026-10-04 perf: createCard kini pakai MAX(position) agregat (bukan load semua
+    // kartu stage - dulu O(N²) sepanjang loop ini), setCardValues batch upsert, dan
+    // moveCard append tanpa renumber stage tujuan. INSERT kartu tetap per-baris dengan
+    // sengaja: multi-row insert butuh asumsi insertId berurutan untuk masterCardId
+    // (self-reference) - tidak aman di semua mode innodb_autoinc_lock_mode.
     for (const c of customers) {
       const matches = customerMatchesFilter(c, cfg.filter, nowMs);
       const active = activeByCustomer.get(c.id);

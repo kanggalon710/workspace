@@ -44,7 +44,19 @@ function substitute(template: string, vars: Record<string, any>): string {
  * + variant lebih kecil untuk reseller.
  * fallback `cs` / `nama_isp` ambil dari app_settings kalau ada.
  */
-async function buildVarsPelanggan(c: {
+/** Setting perusahaan yang identik untuk semua recipient - di-load SEKALI per
+ *  enrolment (2026-10-04; dulu 4 query getSetting per recipient = ~20rb query
+ *  untuk campaign 5000 orang). */
+interface CompanyVars { ispName: string; waCs: string; waFinance: string; portalUrl: string }
+async function loadCompanyVars(): Promise<CompanyVars> {
+  const ispName = (await storage.getSetting("company_name")) ?? "JABNET";
+  const waCs = (await storage.getSetting("company_wa_cs")) ?? "https://wa.me/6281234567890";
+  const waFinance = (await storage.getSetting("company_wa_finance")) ?? waCs;
+  const portalUrl = (await storage.getSetting("customer_portal_url")) ?? "https://portal.jabnet.id";
+  return { ispName, waCs, waFinance, portalUrl };
+}
+
+function buildVarsPelanggan(c: {
   name: string;
   customerId?: string | null;
   phone?: string | null;
@@ -54,11 +66,8 @@ async function buildVarsPelanggan(c: {
   dueDate?: string | null;
   lastPaymentDate?: string | null;
   installDate?: string | null;
-}, extras: { manualText?: string; manualDate?: string } = {}): Promise<Record<string, string>> {
-  const ispName = (await storage.getSetting("company_name")) ?? "JABNET";
-  const waCs = (await storage.getSetting("company_wa_cs")) ?? "https://wa.me/6281234567890";
-  const waFinance = (await storage.getSetting("company_wa_finance")) ?? waCs;
-  const portalUrl = (await storage.getSetting("customer_portal_url")) ?? "https://portal.jabnet.id";
+}, extras: { manualText?: string; manualDate?: string } = {}, company: CompanyVars): Record<string, string> {
+  const { ispName, waCs, waFinance, portalUrl } = company;
 
   const fmtRp = (n: number | null | undefined) => n == null ? "-" : `Rp. ${Number(n).toLocaleString("id-ID")}`;
   const fmtDate = (iso: string | null | undefined) => {
@@ -120,17 +129,15 @@ async function buildVarsPelanggan(c: {
   };
 }
 
-async function buildVarsReseller(r: {
+function buildVarsReseller(r: {
   name: string;
   phone?: string | null;
   address?: string | null;
   saldo?: number | null;
   commissionRate?: number | null;
   joinedAt?: string | null;
-}, extras: { manualText?: string; manualDate?: string } = {}): Promise<Record<string, string>> {
-  const ispName = (await storage.getSetting("company_name")) ?? "JABNET";
-  const waCs = (await storage.getSetting("company_wa_cs")) ?? "https://wa.me/6281234567890";
-  const waFinance = (await storage.getSetting("company_wa_finance")) ?? waCs;
+}, extras: { manualText?: string; manualDate?: string } = {}, company: CompanyVars): Record<string, string> {
+  const { ispName, waCs, waFinance } = company;
   const fmtRp = (n: number | null | undefined) => n == null ? "-" : `Rp. ${Number(n).toLocaleString("id-ID")}`;
   const fmtDate = (iso: string | null | undefined) => {
     if (!iso) return "-";
@@ -222,6 +229,9 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
   };
   const targetType = (campaign as any).targetType ?? "pelanggan";
 
+  // Setting perusahaan identik utk semua recipient - load sekali (anti N+1).
+  const company = await loadCompanyVars();
+
   // -- Priority 1: directRecipients --
   const directRaw = (campaign as any).directRecipients as string | null;
   if (directRaw) {
@@ -231,26 +241,30 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
       throw new Error("directRecipients format tidak valid");
     }
 
+    // Batch lookup sekali, bukan getCustomer/getReseller per recipient.
+    const resellerIds = targetType === "reseller"
+      ? directList.map(r => Number(r.resellerId ?? r.id)).filter(n => Number.isFinite(n) && n > 0)
+      : [];
+    const customerIds = targetType !== "reseller"
+      ? directList.map(r => Number(r.id)).filter(n => Number.isFinite(n) && n > 0)
+      : [];
+    const resellersById = await storage.getResellersByIds(resellerIds);
+    const customersById = await storage.getCustomersByIds(customerIds);
+
     const items: any[] = [];
     for (const r of directList) {
       if (!r.phone) continue;
       let vars: Record<string, string>;
       if (targetType === "reseller") {
-        // Lookup full reseller dari DB kalau id ada, kalau enggak pakai snapshot
-        let resellerData: any = { name: r.name, phone: r.phone };
-        if (r.resellerId || r.id) {
-          const full = await storage.getReseller(Number(r.resellerId ?? r.id));
-          if (full) resellerData = full;
-        }
-        vars = await buildVarsReseller(resellerData, extras);
+        // Lookup full reseller dari map kalau id ada, kalau enggak pakai snapshot
+        const full = resellersById.get(Number(r.resellerId ?? r.id));
+        const resellerData: any = full ?? { name: r.name, phone: r.phone };
+        vars = buildVarsReseller(resellerData, extras, company);
       } else {
-        // Pelanggan: lookup full customer dari DB untuk dapat 28 params
-        let customerData: any = { name: r.name, customerId: r.customerId, phone: r.phone };
-        if (r.id) {
-          const full = await storage.getCustomer(Number(r.id));
-          if (full) customerData = full;
-        }
-        vars = await buildVarsPelanggan(customerData, extras);
+        // Pelanggan: full customer dari map untuk dapat 28 params
+        const full = r.id ? customersById.get(Number(r.id)) : undefined;
+        const customerData: any = full ?? { name: r.name, customerId: r.customerId, phone: r.phone };
+        vars = buildVarsPelanggan(customerData, extras, company);
       }
       const rendered = substitute(content, vars);
       items.push({
@@ -281,13 +295,13 @@ export async function enrolCampaignAudience(campaignId: number): Promise<{ enrol
   if (!filter) throw new Error("Audience tidak valid (directRecipients/filter/savedSegment harus diset)");
 
   const audience = await storage.loadBroadcastAudience(filter, 5000);
+  // Batch lookup full customer sekali (dulu getCustomer per audience row - s/d 5000 query).
+  const fullById = await storage.getCustomersByIds(audience.map(a => a.id));
 
   const items: any[] = [];
   for (const a of audience) {
-    let customerData: any = a;
-    const full = await storage.getCustomer(a.id);
-    if (full) customerData = full;
-    const vars = await buildVarsPelanggan(customerData, extras);
+    const customerData: any = fullById.get(a.id) ?? a;
+    const vars = buildVarsPelanggan(customerData, extras, company);
     const rendered = substitute(content, vars);
     items.push({
       campaignId,
@@ -538,14 +552,16 @@ export async function cancelBroadcastCampaign(campaignId: number): Promise<void>
 
 /** Resume failed recipients dengan reset status ke pending (untuk retry) */
 export async function retryFailedRecipients(campaignId: number): Promise<number> {
-  // MySQL port: pakai db.execute langsung dgn typed result
-  const db = (storage as any).db;
+  // 2026-10-04: + scope mitra_id - dulu UPDATE tanpa tenant filter bisa me-reset
+  // recipient campaign mitra lain yang kebetulan share id.
+  const mitraId = getMitraIdOrNull();
+  if (mitraId == null) return 0;
   const pool = (storage as any).pool;
   if (!pool) return 0;
   const [result]: any = await pool.execute(
     `UPDATE broadcast_recipients SET status='pending', error_message=NULL, retry_count=retry_count+1
-     WHERE campaign_id=? AND status='failed'`,
-    [campaignId],
+     WHERE campaign_id=? AND mitra_id=? AND status='failed'`,
+    [campaignId, mitraId],
   );
   return result?.affectedRows ?? 0;
 }
