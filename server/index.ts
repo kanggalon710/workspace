@@ -15,6 +15,7 @@ import { trafficSnapshotWorker } from "./traffic-snapshot-worker.js";
 import { teamspaceWorker } from "./teamspace-worker.js";
 import { withMitra } from "./tenant-context.js";
 import { AdminSeedError } from "../shared/adminSeed.js";
+import { buildRobotsTxt, buildSitemapXml, isIndexablePath, isKnownSpaPath } from "../shared/routesManifest.js";
 
 // Worker enable flags - di-set di .env (default: enable kalau env tidak diset = backward compat).
 // Untuk cPanel "prod baru", default-nya false (avoid dual-write dgn prod existing).
@@ -95,6 +96,32 @@ app.use(router);
 const publicPath = existsSync(path.join(__dirname, "public"))
   ? path.join(__dirname, "public")
   : path.join(__dirname, "..", "dist", "public");
+
+// ==================== SEO: robots / sitemap / noindex (audit 2026-10-04) ====================
+// Registry rute + builder murni di shared/routesManifest.ts (unit-tested).
+const APP_PUBLIC_URL = (process.env.APP_PUBLIC_URL || "https://workspace.jabnet.id").replace(/\/$/, "");
+
+app.get("/robots.txt", (req, res) => {
+  const portal = isPortalHost(req);
+  res.type("text/plain").send(buildRobotsTxt(APP_PUBLIC_URL, { portalHost: portal }));
+});
+
+app.get("/sitemap.xml", (req, res) => {
+  // Portal host tidak punya halaman indexable - 404 jujur, bukan sitemap kosong palsu.
+  if (isPortalHost(req)) return res.status(404).type("text/plain").send("Not found");
+  res.type("application/xml").send(buildSitemapXml(APP_PUBLIC_URL));
+});
+
+// Semua path NON-indexable (login, staff, portal, token/tracker, dsb) diberi
+// X-Robots-Tag: noindex. Hanya halaman di INDEXABLE_PAGES yang bebas header ini.
+app.use((req, res, next) => {
+  const p = req.path;
+  if (p !== "/robots.txt" && p !== "/sitemap.xml" && !isIndexablePath(p)) {
+    res.setHeader("X-Robots-Tag", "noindex");
+  }
+  next();
+});
+
 app.use(express.static(publicPath));
 
 // v4.2.21: /api/* yang ngga match endpoint → return 404 JSON (bukan SPA HTML fallback)
@@ -108,9 +135,15 @@ app.use("/api", (req, res) => {
   });
 });
 
-// SPA fallback HANYA untuk non-API path
-app.use((_req, res) => {
-  res.sendFile(path.join(publicPath, "index.html"));
+// SPA fallback HANYA untuk GET non-API path. Rute yang dikenal SPA -> 200;
+// path tak dikenal -> index.html dengan STATUS 404 (crawler/curl lihat 404 asli,
+// SPA tetap render halaman 404-nya sendiri). Non-GET -> 404 polos.
+app.use((req, res) => {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return res.status(404).type("text/plain").send("Not found");
+  }
+  const status = isKnownSpaPath(req.path) ? 200 : 404;
+  res.status(status).sendFile(path.join(publicPath, "index.html"));
 });
 
 // Global error handler - catch any uncaught error from route handlers

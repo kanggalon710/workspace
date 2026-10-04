@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { useLocation } from "wouter";
 import { usePortalAuth } from "@/context/CustomerPortalAuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
  * Telco-grade hero dengan gradient mesh, trust signals, dan UX terfokus.
  */
 export default function PortalLoginPage() {
+  useDocumentMeta({ title: "Portal Pelanggan JABNET - Login", robots: "noindex" });
   const [, setLocation] = useLocation();
   const { requestOtp, isAuthenticated } = usePortalAuth();
   const [customerId, setCustomerId] = useState("");

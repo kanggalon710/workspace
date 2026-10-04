@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { Redirect, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -9,6 +10,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
+  useDocumentMeta({ title: "Login Staf - JABNET Workspace", robots: "noindex" });
   const { login, user } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

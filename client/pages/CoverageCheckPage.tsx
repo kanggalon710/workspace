@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { INDEXABLE_PAGES, CANONICAL_BASE_URL } from "@shared/routesManifest";
 import {
   MapPin, Crosshair, Search, Loader2, CheckCircle2, XCircle, AlertTriangle,
   Compass, Target, Activity, Zap, Radio, LogIn, Gift, Shield, MessageCircle,
@@ -86,6 +88,13 @@ function formatDistance(m: number): string {
 }
 
 export default function CoverageCheckPage() {
+  // Meta SEO halaman publik - sumber yang sama dengan sitemap server (routesManifest).
+  const pageMeta = INDEXABLE_PAGES.find((p) => p.path === "/coverage-check");
+  useDocumentMeta({
+    title: pageMeta?.title,
+    description: pageMeta?.description,
+    canonical: `${CANONICAL_BASE_URL}/coverage-check`,
+  });
   const { isLoaded, loadError } = useGoogleMaps();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [latInput, setLatInput] = useState("");
