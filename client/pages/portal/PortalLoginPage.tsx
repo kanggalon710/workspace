@@ -171,9 +171,9 @@ export default function PortalLoginPage() {
               Lupa Customer ID?{" "}
               <a
                 href="https://wa.me/6282180009030?text=Halo%20JABNET%2C%20saya%20lupa%20Customer%20ID"
-                className="text-primary font-semibold hover:underline inline-flex items-center gap-1"
+                className="text-primary font-semibold hover:underline inline-flex items-center gap-1 min-h-11 px-1 -my-3 align-middle"
               >
-                <MessageCircle className="h-3 w-3" />
+                <MessageCircle className="h-3 w-3" aria-hidden="true" />
                 Hubungi CS
               </a>
             </p>

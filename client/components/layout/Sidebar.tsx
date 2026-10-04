@@ -268,12 +268,13 @@ export function Sidebar() {
             </p>
           </div>
           <button
+            type="button"
             onClick={toggle}
-            className="hidden md:flex w-7 h-7 rounded-md items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all shrink-0"
+            className="hidden md:flex w-11 h-11 -m-2 rounded-md items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all shrink-0"
             title={collapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"}
             aria-label={collapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"}
           >
-            <PanelLeftClose className="h-4 w-4" />
+            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>

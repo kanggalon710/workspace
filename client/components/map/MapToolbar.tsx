@@ -125,16 +125,21 @@ export function MapToolbar({
             </div>
           </div>
 
-          {/* Toggle button */}
+          {/* Toggle button - target sentuh >=44px (area klik lebih besar dari lingkaran visual) */}
           <button
+            type="button"
             onClick={() => setCollapsed(!collapsed)}
-            className="glass rounded-full w-7 h-7 flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+            aria-label={collapsed ? "Buka toolbar peta" : "Lipat toolbar peta"}
+            aria-expanded={!collapsed}
+            className="relative flex items-center justify-center w-11 h-11 -m-2 group"
           >
-            {collapsed ? (
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            ) : (
-              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-            )}
+            <span className="glass rounded-full w-7 h-7 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all">
+              {collapsed ? (
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+              ) : (
+                <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+              )}
+            </span>
           </button>
         </div>
       </TooltipProvider>

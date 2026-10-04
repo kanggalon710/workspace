@@ -322,7 +322,7 @@ function LoginForm({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
               aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
               tabIndex={-1}
             >
@@ -339,7 +339,7 @@ function LoginForm({
                   "_blank"
                 );
               }}
-              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              className="inline-flex items-center min-h-11 px-1 -my-3 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
             >
               Lupa password?
             </a>

@@ -747,7 +747,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-3">
-          <Link href="/login" className="flex items-center gap-2.5 group">
+          <Link href="/login" className="flex items-center gap-2.5 group min-h-11 min-w-11">
             <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
               <Radio className="h-4 w-4 text-white" />
             </div>

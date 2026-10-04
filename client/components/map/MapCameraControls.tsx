@@ -69,8 +69,10 @@ export function MapCameraControls({ mapRef, onFitBounds }: MapCameraControlsProp
           <TooltipContent side="left" className="text-xs">Tampilkan Semua Aset</TooltipContent>
         </Tooltip>
 
-        {/* Compass rose (decorative) */}
-        <div className="glass rounded-lg md:rounded-xl shadow-lg compass-rose select-none hidden md:block" title="Utara" aria-hidden="true">
+        {/* Compass rose (decorative) - wrapper yang menyembunyikan di mobile:
+            .compass-rose @apply flex menimpa utilitas `hidden` kalau ditaruh satu elemen */}
+        <div className="hidden md:block" aria-hidden="true">
+        <div className="glass rounded-lg md:rounded-xl shadow-lg compass-rose select-none" title="Utara">
           <div className="relative w-8 h-8">
             <span className="absolute top-0 left-1/2 -translate-x-1/2 text-red-500 font-bold" style={{fontSize: 9}}>N</span>
             <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-muted-foreground" style={{fontSize: 8}}>S</span>
@@ -78,6 +80,7 @@ export function MapCameraControls({ mapRef, onFitBounds }: MapCameraControlsProp
             <span className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground" style={{fontSize: 8}}>E</span>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-red-500 rotate-45" />
           </div>
+        </div>
         </div>
       </div>
 
