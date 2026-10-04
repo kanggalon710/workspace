@@ -22,7 +22,7 @@ import { parseRecurrence } from "../shared/ruleRecurrence.js";
 import { COLLECTION_ATTRS } from "../shared/collectionMetrics.js";
 import { parseOwnerDivisions } from "../shared/collectionSop.js";
 import { shapeRuleActions, parseConditionGroups, parseTimeTriggerConfig } from "./pipeline-automation-helpers.js";
-import { devDbSyncAvailable } from "./dev-db-sync.js";
+import { devDbSyncAvailable, devDbSyncProdDbName } from "./dev-db-sync.js";
 import { getBuildInfo, checkForUpdate, runSelfUpdate, passengerRestartSupported, type SelfUpdateConfig } from "./self-update.js";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -177,32 +177,8 @@ router.get("/api/public-config", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
-  // Env gate FIRST - on production these vars are absent, so the route 404s (looks like it doesn't exist).
-  if (!devDbSyncAvailable(process.env)) return sendError(res, "Not found", 404);
-  if (!requireWritePermission(req, res, "integrations")) return;
-  try {
-    const result = await storage.runDevDbSyncFromProd(process.env.PROD_DB_NAME!);
-    const failed = result.tables.filter((t) => !t.ok);
-    sendSuccess(res, {
-      tablesCopied: result.tables.filter((t) => t.ok).length,
-      totalRows: result.totalRows,
-      durationMs: result.durationMs,
-      perTable: result.tables,
-      failed,
-      skippedMissingInProd: result.skippedMissingInProd,
-    });
-    // Best-effort: trigger a Passenger reload so in-memory caches (route-cache, perm cache,
-    // public-config) are rebuilt against the freshly-copied data. Reloads on next HTTP request.
-    try {
-      const tmpDir = path.join(process.cwd(), "tmp");
-      await mkdir(tmpDir, { recursive: true });
-      await writeFile(path.join(tmpDir, "restart.txt"), new Date().toISOString());
-    } catch { /* ignore - not fatal */ }
-  } catch (e: any) {
-    sendError(res, e?.message || "Sinkronisasi gagal", 500);
-  }
-});
+// CATATAN: /api/dev/db-sync dipindah ke bawah `router.use(authMiddleware)` (audit
+// 2026-10-04) - di sini req.authUser belum terisi sehingga permission check selalu 401.
 
 // ==================== SELF-UPDATE (pembaruan aplikasi dari GitHub) ====================
 
@@ -348,6 +324,38 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   }
 }
 router.use(authMiddleware);
+
+// Dev-only: tarik data dari production ke DB dev. Didaftarkan SETELAH authMiddleware
+// supaya req.authUser terisi dan requireWritePermission benar-benar mengotorisasi
+// (anon -> 401, tanpa izin write integrations -> 403). Env gate tetap yang pertama.
+router.post("/api/dev/db-sync", async (req: Request, res: Response) => {
+  // Env gate FIRST - on production these vars are absent, so the route 404s (looks like it doesn't exist).
+  const prodDbName = devDbSyncProdDbName(process.env);
+  if (!prodDbName) return sendError(res, "Not found", 404);
+  if (!req.authUser) return sendError(res, "Unauthorized", 401);
+  if (!requireWritePermission(req, res, "integrations")) return;
+  try {
+    const result = await storage.runDevDbSyncFromProd(prodDbName);
+    const failed = result.tables.filter((t) => !t.ok);
+    sendSuccess(res, {
+      tablesCopied: result.tables.filter((t) => t.ok).length,
+      totalRows: result.totalRows,
+      durationMs: result.durationMs,
+      perTable: result.tables,
+      failed,
+      skippedMissingInProd: result.skippedMissingInProd,
+    });
+    // Best-effort: trigger a Passenger reload so in-memory caches (route-cache, perm cache,
+    // public-config) are rebuilt against the freshly-copied data. Reloads on next HTTP request.
+    try {
+      const tmpDir = path.join(process.cwd(), "tmp");
+      await mkdir(tmpDir, { recursive: true });
+      await writeFile(path.join(tmpDir, "restart.txt"), new Date().toISOString());
+    } catch { /* ignore - not fatal */ }
+  } catch (e: unknown) {
+    sendError(res, e instanceof Error ? e.message : "Sinkronisasi gagal", 500);
+  }
+});
 
 // ==================== SELF-UPDATE ROUTES (butuh req.authUser -> WAJIB setelah authMiddleware) ====================
 

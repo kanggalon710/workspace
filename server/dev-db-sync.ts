@@ -25,6 +25,13 @@ export function devDbSyncAvailable(env: NodeJS.ProcessEnv): boolean {
   return true;
 }
 
+/** PROD_DB_NAME tervalidasi - null bila fitur tidak tersedia. Pengganti
+ *  `process.env.PROD_DB_NAME!` (satu-satunya non-null assertion env di codebase). */
+export function devDbSyncProdDbName(env: NodeJS.ProcessEnv): string | null {
+  if (!devDbSyncAvailable(env)) return null;
+  return (env.PROD_DB_NAME ?? "").trim() || null;
+}
+
 /** Tables present in BOTH schemas (only these can be mirrored). Prod order preserved. */
 export function tablesToMirror(prodTables: string[], devTables: string[]): string[] {
   const dev = new Set(devTables);

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { devDbSyncAvailable, tablesToMirror, tablesMissingInProd, copyColumns, buildCopySql } from "./dev-db-sync.js";
+import { devDbSyncAvailable, devDbSyncProdDbName, tablesToMirror, tablesMissingInProd, copyColumns, buildCopySql } from "./dev-db-sync.js";
 
 test("devDbSyncAvailable: only when flag on + prod≠current + current ends _dev", () => {
   const base = { DEV_DB_SYNC_ENABLED: "true", PROD_DB_NAME: "jabnet_fiber", DB_NAME: "jabnet_fiber_dev" };
@@ -47,4 +47,12 @@ test("buildCopySql: doubles internal backticks in identifiers", () => {
     "TRUNCATE TABLE `dev``db`.`t`",
     "INSERT INTO `dev``db`.`t` (`id`) SELECT `id` FROM `prod`.`t`",
   ]);
+});
+
+test("devDbSyncProdDbName: returns validated name only when the feature is available", () => {
+  const good = { DEV_DB_SYNC_ENABLED: "true", PROD_DB_NAME: "jabnet_fiber", DB_NAME: "jabnet_fiber_dev" };
+  assert.equal(devDbSyncProdDbName(good), "jabnet_fiber");
+  assert.equal(devDbSyncProdDbName({}), null);
+  assert.equal(devDbSyncProdDbName({ ...good, DEV_DB_SYNC_ENABLED: "false" }), null);
+  assert.equal(devDbSyncProdDbName({ ...good, DB_NAME: "jabnet_fiber" }), null);
 });
