@@ -2,6 +2,45 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-10-05 - express-session DIHAPUS (bukan di-harden)
+**Konteks:** Audit minta fail startup tanpa SESSION_SECRET + secure cookies. Investigasi: 0
+pemakaian `req.session` di seluruh repo - auth staff = bearer token + cookie `ftth_session`
+custom (sudah `secure: isProd`), portal = token DB. Middleware session cuma menerbitkan cookie
+yang tak pernah dibaca, dengan fallback secret hardcoded dan `secure:false`.
+**Opsi:** (a) harden middleware mati; (b) hapus dependency + keraskan yang benar-benar dipakai.
+**Keputusan:** (b). SESSION_SECRET tidak dibutuhkan lagi (requirement aslinya jadi moot - deviasi
+sadar dari teks prompt, disetujui owner). Yang dikeraskan: trust proxy 1 hop, req.ip utk rate
+limit, 500 generik. **Biaya kalau salah:** kalau suatu saat butuh session server-side, pasang
+ulang dengan benar - lebih murah daripada merawat ilusi keamanan.
+
+## 2026-10-05 - Anti-enumeration OTP: respons seragam + verify by customerId
+**Konteks:** request-otp lama membedakan "ID tak terdaftar" / "tanpa HP" / sukses, bocorkan
+phoneMasked pra-auth, dan return debugOtp kapan pun MPWA mati (production juga = takeover).
+**Opsi:** (a) decoy otpSessionId (tetap bisa dibedakan di verify: sesi decoy vs attempts-left);
+(b) verify ganti kunci ke {customerId, code} + 1 pesan gagal generik utk SEMUA kegagalan.
+**Keputusan:** (b) + fallback legacy otpSessionId 1 rilis. phoneMasked dihapus dari respons
+pra-auth; phone pelanggan tetap di respons SUKSES verify (pasca-auth, data miliknya sendiri).
+Throttle terlihat (429) hanya pre-lookup dan berlaku sama utk ID dikenal/tidak; kuota DB
+per-customer jadi silent drop. **Biaya kalau salah:** UX kehilangan "sisa percobaan" dan nomor
+tujuan; itu harga standar anti-enumeration.
+
+## 2026-10-05 - robots.txt TIDAK memblok halaman privat (noindex via header)
+**Konteks:** Audit minta robots + noindex. Memblok crawl di robots justru menyembunyikan
+X-Robots-Tag noindex (URL bisa terindeks "tanpa konten" dari link eksternal).
+**Keputusan:** robots.txt hanya Disallow /api/ + sitemap (halaman indexable = /coverage-check
+saja); kontrol indexing = X-Robots-Tag noindex di semua path non-indexable. 404 asli utk path
+tak dikenal via registry shared/routesManifest.ts (maintenance: route App.tsx baru wajib
+didaftarkan). Tanpa SSR, meta per-halaman di-set JS - server headers tetap sumber kebenaran
+crawler. Tidak ada structured data (tidak ada konten yang pantas; tidak mengarang data bisnis).
+
+## 2026-10-05 - Deferral sadar: migrasi Google Maps API & drizzle-orm 0.45.3
+**Konteks:** Warning deprecation Marker/Autocomplete di dev; advisory HIGH SQLi drizzle-orm.
+**Keputusan (owner):** keduanya DITUNDA ke branch sendiri. Maps = ~18 situs Marker + clusterer
++ mapId prasyarat = rewrite peta luas, terlalu berisiko utk branch remediasi; drizzle 0.45.3
+flagged semver-major di atas storage.ts 16rb baris. Detail scope di TODO. Warning TIDAK
+di-suppress. **Biaya kalau salah:** advisory SQLi hidup lebih lama - mitigasi: semua query
+parameterized; prioritaskan branch-nya.
+
 ## 2026-08-28 - Billing sync jadi nightly 2AM (ganti polling adaptif)
 **Konteks:** Worker billing sync polling adaptif (60s sibuk / 600s off-peak) dan tiap cycle
 menarik SEMUA tenant berturut-turut → beban tinggi ke billing.jabnet.id. User mau sync harian

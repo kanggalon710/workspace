@@ -3,6 +3,36 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-10-05 - Remediasi penuh audit 2026-10-04 (security/perf/SEO/a11y)
+**Agent:** Claude Fable 5 (Claude Code) | **Status:** selesai di branch `feature/audit-remediation-20261004`, siap PR ke dev
+**Why:** Owner mengeksekusi seluruh backlog audit 2026-10-04 (lihat entri di bawah) dengan
+otorisasi testing di workspace-dev; production tidak disentuh.
+**Changes (per fase):** (1a) admin seed tanpa password hardcoded + fail-loud (shared/adminSeed.ts);
+(1b) express-session dihapus, trust proxy 1 hop, req.ip utk rate limit, 500 generik;
+(1c) OTP anti-enumeration: respons seragam, throttle pre-lookup IP+ID, verify {customerId,code}
+generik, debugOtp digate OTP_DEV_EXPOSE+non-prod, crypto.randomInt (shared/otpPolicy.ts);
+(2) /api/dev/db-sync pindah ke bawah authMiddleware + devDbSyncProdDbName tervalidasi;
+(3) batch semua query-in-loop teraudit + 2 tenant-gap (phonebook ownership, retryFailedRecipients
+mitra scope) + pola baru multi-row INSERT ber-chunk (shared/batch.ts);
+(4) SEO: routesManifest + robots/sitemap/X-Robots-Tag/404 asli + useDocumentMeta;
+(5) a11y/responsive: coverage + 4 map-overlay + viewport zoom + dobel-h1 global;
+(6) server/env.ts boundary env tervalidasi; deps: npm audit fix non-breaking (16->6 advisories).
+**Files (inti):** shared/{adminSeed,otpPolicy,batch,routesManifest}.ts(+test), server/{index,routes,
+storage,customer-portal-routes,mpwa,broadcast-worker,pipeline-billing-intake,rate-limit,env,
+dev-db-sync}.ts, client/pages/{CoverageCheckPage,LoginPage,MapPage,portal/*}.tsx,
+client/components/{map/*,layout/{Sidebar,TopBar},ui/input}.tsx, client/hooks/useDocumentMeta.ts,
+client/context/CustomerPortalAuthContext.tsx, index.html, client/index.css, docs.
+**Verified:** `npx tsc --noEmit` 0 error; `npx tsx --test shared/*.test.ts server/*.test.ts`
+488/488 (303 lama + 38 baru + server suites); `npm run build` OK; `git diff --check` bersih.
+Live di server lokal (bundle prod + MySQL container): admin-seed fail-loud (exit 1) & seed
+chief0012; OTP matrix (unknown/known seragam, wrong x5 -> lock, kode benar pasca-lock tetap
+generik, sukses login portal, 429 throttle per-ID); db-sync anon 401; robots/sitemap/404/
+X-Robots-Tag; headless Chrome 360/768/1280 di coverage/login/portal-login/map: overflow 0,
+h1 tunggal, target >=44px first-party, input >=16px, konsol bersih.
+**Notes:** Deviasi sadar tercatat di DECISIONS (express-session dihapus; robots tidak memblok
+halaman privat). Deferral: migrasi Maps API, drizzle-orm 0.45.3, tailwind v4 (TODO). Verifikasi
+di workspace-dev menunggu merge ke dev + CI + pull cPanel DEV.
+
 ## 2026-10-04 - Full-stack audit (read-only)
 **Agent:** Codex (GPT-5) | **Status:** audit complete, remediation not started
 **Why:** The owner requested the latest code plus an evidence-based audit covering security,

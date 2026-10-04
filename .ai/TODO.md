@@ -1,42 +1,60 @@
 # TODO / Backlog - Optimasi Codebase
 
-## Audit 2026-10-04 - remediation backlog
-- [ ] **P0 Security - remove known first-admin credential fallback.**
-  `server/storage.ts:10934` falls back to `Admin@1234` and seeds username `admin`. Fail startup
-  loudly when `ADMIN_DEFAULT_PASSWORD` is absent, or generate/report a one-time secret through an
-  approved untracked channel. Do not commit a replacement password.
-- [ ] **P1 Security - harden session and error handling.**
-  `server/index.ts:47-60` only warns when `SESSION_SECRET` is missing in production and sets
-  `cookie.secure=false`; `server/index.ts:117-120` returns raw exception messages. Fail closed for
-  a missing production secret, enable secure cookies behind the configured proxy, and return a
-  generic 500 response while keeping detailed errors server-side.
-- [ ] **P1 Security - stop OTP account enumeration and add pre-lookup/IP throttling.**
-  `server/customer-portal-routes.ts:198-216` returns distinct messages for an unknown customer,
-  a customer without a phone, and a known customer, while rate limiting starts only after lookup.
-  Use a uniform public response and an IP/tenant throttle before customer lookup.
-- [ ] **P1 Context/order - move `/api/dev/db-sync` after `authMiddleware`.**
-  The route is declared at `server/routes.ts:179`, but middleware is installed at line 349. Its
-  `requireWritePermission` check therefore never receives `req.authUser` when the feature is on.
-- [ ] **P1 Performance - eliminate query-in-loop batch paths.**
-  At minimum: phonebook import/tag updates (`server/storage.ts:8398-8410`, `8433-8440`,
-  `8462+`), pipeline billing intake card creation (`server/pipeline-billing-intake.ts:77+`), and
-  customer/broadcast worker lookups (`server/broadcast-worker.ts:286+`). Prefer batch inserts,
-  one scoped select plus bulk update, and batched lookup maps.
-- [ ] **P1 Public SEO/status - add generated robots/sitemap, route metadata, canonical URLs, and
-  real 404 behavior.** No robots/sitemap files or per-route metadata were found. The catch-all
-  `server/index.ts:110-112` serves `index.html` with HTTP 200 for every unknown non-API path.
-- [ ] **P1 Responsive/accessibility - fix public coverage and map controls.** Browser evidence at
-  360/768/1280: no overflow, but `/coverage-check` has two `h1`s (`CoverageCheckPage.tsx:243,731`),
-  36px buttons, and 14px inputs. Map camera buttons shrink to 28px and use forbidden `max-md:`
-  (`client/components/map/MapCameraControls.tsx:41-72`); icon-only buttons also need labels.
-- [ ] **P2 DRY/design-system debt.** Audit grep found local `KpiCard`/`StatTile`/`StatusBadge`
-  shadows alongside shared primitives and 402 hardcoded/raw palette matches. Extend the shared
-  primitives before migrating call sites; do not perform blind visual substitutions.
-- [ ] **P2 Type/config debt.** Audit grep found 3,777 non-test `any`/`as any` matches and 38 direct
-  `process.env` reads. Introduce a validated server config boundary and migrate risky external-data
-  paths first. Typecheck currently passes, so prioritize boundary correctness over mechanical churn.
-- [ ] **Dependency advisories unverified.** Retry `npm audit --omit=dev --json` when registry TLS is
-  available; the 2026-10-04 attempt failed before advisories were returned.
+## Audit 2026-10-04 - remediation backlog (DIKERJAKAN 2026-10-05, branch feature/audit-remediation-20261004)
+- [x] **P0 Security - first-admin credential fallback DIHAPUS.** Password WAJIB dari env
+  `ADMIN_DEFAULT_PASSWORD` (fresh install tanpa itu -> server exit 1). Identitas env-driven
+  (`ADMIN_USERNAME` default `chief0012`). Logika murni `shared/adminSeed.ts` + 6 test.
+  Nilai default lama di-scrub dari docs hidup (.env.example/LOCAL-DEV/CPANEL-SETUP*/CLAUDE.md).
+- [x] **P1 Security - session & error handling.** express-session DIHAPUS (terbukti 0 pemakaian;
+  lihat DECISIONS). trust proxy=1 hop di production (TRUST_PROXY overridable); kedua getClientIp
+  pakai req.ip (XFF mentah tidak dipercaya lagi). Global 500 -> pesan generik, detail hanya log.
+- [x] **P1 Security - OTP enumeration + throttling.** Respons request-otp SERAGAM (tanpa
+  otpSessionId/phoneMasked); throttle pre-lookup per mitra+IP (10/15m) + per-ID submit (3/15m);
+  verify pakai {customerId, code} dgn 1 pesan gagal generik + throttle verify per-IP (15/15m);
+  debugOtp hanya `OTP_DEV_EXPOSE=true` + non-production (MPWA mati BUKAN lagi alasan bocor OTP);
+  crypto.randomInt. Logika murni `shared/otpPolicy.ts` + 13 test.
+- [x] **P1 Context/order - `/api/dev/db-sync`** dipindah ke bawah authMiddleware; authz jalan
+  (anon 401 teruji live); `PROD_DB_NAME!` diganti helper tervalidasi (+1 test).
+- [x] **P1 Performance - query-in-loop.** Phonebook bulk create/tags/delete, bulkInsertRecipients,
+  enrolment broadcast (settings hoist + getCustomersByIds/getResellersByIds), createCard MAX(position),
+  setCardValues batch upsert, moveCard append fast-path, campaigns list 3 batch helper. Pola baru:
+  multi-row INSERT ber-chunk (shared/batch.ts). Yang SENGAJA tidak dibatch: insert kartu intake
+  per-baris (masterCardId self-ref vs asumsi insertId berurutan) - lihat komentar di
+  server/pipeline-billing-intake.ts.
+- [x] **P1 SEO/status.** `shared/routesManifest.ts` (registry rute + 8 test) -> robots.txt +
+  sitemap.xml generated, X-Robots-Tag noindex utk semua path non-indexable, catch-all GET-only
+  dgn 404 asli utk path tak dikenal, meta per halaman publik via useDocumentMeta. PERAWATAN:
+  route baru di App.tsx WAJIB ditambah ke routesManifest (kalau tidak -> 404).
+- [x] **P1 Responsive/a11y.** /coverage-check: 1 h1, label htmlFor, input >=16px (Input variant
+  `xl` baru), tombol >=44px. 4 komponen map-overlay: max-md:* -> mobile-first, tombol >=44px,
+  aria-label lengkap. Media query max-width di index.css dihapus (dead code). Viewport
+  user-scalable=no dihapus (WCAG 1.4.4). Dobel-h1 global: Sidebar/TopBar h1 -> span/div.
+  Terverifikasi headless Chrome 360/768/1280 (overflow 0, konsol bersih).
+- [x] **P2 DRY/type (scope: file tersentuh saja).** `server/env.ts` boundary env tervalidasi
+  (fail-loud; 7 test); `server/rate-limit.ts` limiter bersama; Input variant xl di primitif.
+  Sisa ~30 process.env read + 3.7rb `any` lama di luar scope branch ini (tidak disapu mekanis).
+- [x] **Dependency advisories.** `npm audit fix` non-breaking: 16 -> 6 advisories (0 critical).
+  Sisa 6 butuh MAJOR (lihat backlog di bawah).
+
+## Backlog baru hasil remediasi 2026-10-05
+- [ ] **drizzle-orm 0.45.3** (HIGH: SQL injection via improperly escaped identifiers,
+  GHSA-gpj5-g38j-94v9). Fix flagged semver-major (0.x). Branch sendiri + regresi penuh
+  (typecheck, 488 test, build, smoke CRUD di dev). Eksposur sekarang terbatas (query
+  parameterized/sql`` template), tapi jangan ditunda lama.
+- [ ] **tailwindcss v4 chain** (braces/chokidar/fast-glob/micromatch HIGH). Major upgrade =
+  rewrite toolchain build. Rencanakan terpisah.
+- [ ] **Migrasi Google Maps API deprecated** (warning di console dev): legacy `Marker` ->
+  `AdvancedMarkerElement` + `Autocomplete` -> `PlaceAutocompleteElement`. Scope: MapPage.tsx
+  (8 situs + MarkerClusterer), CanvassingPage.tsx (7 + clusterer), CoverageCheckPage.tsx (1
+  Marker + 1 Autocomplete), components/pipelines/CoordinateInput.tsx (1). Prasyarat: `mapId`
+  di loader GoogleMapsContext (AdvancedMarker wajib mapId), rework clusterer, styling
+  PlaceAutocompleteElement (web component). JANGAN suppress warning tanpa migrasi.
+  `PublicCoveragePage.tsx` = dead code tak ter-route (hapus saat migrasi).
+- [ ] **Legacy verify-otp `otpSessionId`**: hapus fallback body lama setelah 1 rilis dev->prod
+  (klien SPA cache lama saja yang pakai).
+- [ ] Sidebar nav rows 36px (<44px touch) - pola repo-wide, keputusan desain terpisah.
+- [ ] Unknown non-GET path -> 401 dari globalWriteGuard (bukan 404) - pre-existing, fails closed,
+  kosmetik.
 
 ## Produksi - butuh aksi manual (2026-09-04)
 - [x] **Auto-sync billing dinyalakan di produksi** (2026-09-04 07:28 GMT). Env + restart +

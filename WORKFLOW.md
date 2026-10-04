@@ -5,7 +5,7 @@ setelah cocok baru ke **`main`**, dan update **production** lewat branch **`depl
 kalau sudah OK.
 
 ```
-  feature/*  ─►  dev  ─►  (test di dev.workspace.jabnet.id)  ─►  main  ─►  production
+  feature/*  ─►  dev  ─►  (test di workspace-dev.jabnet.id)  ─►  main  ─►  production
                  │                                                │
              deploy-dev  (auto-build CI)                       deploy  (auto-build CI)
                  │                                                │
@@ -41,7 +41,7 @@ kalau sudah OK.
 ### Langkah B - Uji di lingkungan DEV
 5. cPanel DEV: **Git Version Control -> Update from Remote** (pull `deploy-dev`),
    `npm install` bila dependency berubah, **Restart**.
-6. Cek di `https://dev.workspace.jabnet.id`. Kalau ada bug, ulangi Langkah A.
+6. Cek di `https://workspace-dev.jabnet.id`. Kalau ada bug, ulangi Langkah A.
 
 ### Langkah C - Naikkan ke `main` (setelah cocok)
 7. Kalau di dev sudah cocok, buka PR **`dev` -> `main`**, review, merge.
