@@ -16,15 +16,12 @@ import { teamspaceWorker } from "./teamspace-worker.js";
 import { withMitra } from "./tenant-context.js";
 import { AdminSeedError } from "../shared/adminSeed.js";
 import { buildRobotsTxt, buildSitemapXml, isIndexablePath, isKnownSpaPath } from "../shared/routesManifest.js";
+import { serverEnv } from "./env.js";
 
 // Worker enable flags - di-set di .env (default: enable kalau env tidak diset = backward compat).
 // Untuk cPanel "prod baru", default-nya false (avoid dual-write dgn prod existing).
-const workersGloballyEnabled = process.env.WORKERS_ENABLED !== "false";
-const flag = (name: string, defaultVal = true): boolean => {
-  const v = process.env[name];
-  if (v === undefined) return defaultVal && workersGloballyEnabled;
-  return v.toLowerCase() === "true" && workersGloballyEnabled;
-};
+// Semua pembacaan env runtime lewat boundary tervalidasi server/env.ts (audit 2026-10-04).
+const flag = serverEnv.workerFlag;
 const BILLING_SYNC_ENABLED = flag("BILLING_SYNC_ENABLED");
 const TRAFFIC_SNAPSHOT_ENABLED = flag("TRAFFIC_SNAPSHOT_ENABLED");
 const SLA_ESCALATION_ENABLED = flag("SLA_ESCALATION_ENABLED");
@@ -36,7 +33,7 @@ const TEAMSPACE_WORKER_ENABLED = flag("TEAMSPACE_WORKER_ENABLED");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = serverEnv.port;
 
 // Middleware
 // Limit 10MB - cukup untuk foto bukti lapangan (auto-compress ke ~300KB per foto)
@@ -51,16 +48,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 //
 // trust proxy: di cPanel, app jalan di belakang tepat 1 hop (Apache/Passenger), jadi
 // X-Forwarded-For hop pertama dipercaya supaya req.ip = IP klien asli (dipakai rate limit).
-// Di dev lokal tanpa proxy JANGAN trust (header bisa dipalsukan klien langsung).
-// Override via env TRUST_PROXY ("false" atau jumlah hop).
-const isProd = process.env.NODE_ENV === "production";
-const trustProxyEnv = process.env.TRUST_PROXY;
-app.set(
-  "trust proxy",
-  trustProxyEnv !== undefined
-    ? (trustProxyEnv === "false" ? false : Number(trustProxyEnv) || 1)
-    : (isProd ? 1 : false),
-);
+// Di dev lokal tanpa proxy JANGAN trust. Override via env TRUST_PROXY (lihat server/env.ts).
+app.set("trust proxy", serverEnv.trustProxy);
 
 // v4.2.13: Multi-domain - portal.jabnet.id khusus pelanggan, fiber-tools.arkanova.id staff
 // Saat request masuk dari domain portal, batasi hanya /api/portal/* + /portal/* + static
@@ -99,7 +88,7 @@ const publicPath = existsSync(path.join(__dirname, "public"))
 
 // ==================== SEO: robots / sitemap / noindex (audit 2026-10-04) ====================
 // Registry rute + builder murni di shared/routesManifest.ts (unit-tested).
-const APP_PUBLIC_URL = (process.env.APP_PUBLIC_URL || "https://workspace.jabnet.id").replace(/\/$/, "");
+const APP_PUBLIC_URL = serverEnv.appPublicUrl;
 
 app.get("/robots.txt", (req, res) => {
   const portal = isPortalHost(req);
@@ -424,7 +413,7 @@ process.on("uncaughtException", (err: Error) => {
 
 app.listen(PORT, () => {
   console.log(`[JABNET FTTH] Server running on http://localhost:${PORT}`);
-  if (process.env.NODE_ENV !== "production") {
+  if (!serverEnv.isProd) {
     console.log(`[JABNET FTTH] Frontend: http://localhost:${PORT} (Vite middleware aktif)`);
   }
 });
