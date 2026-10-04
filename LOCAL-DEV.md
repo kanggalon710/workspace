@@ -31,7 +31,6 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=root
 DB_NAME=jabnet_fiber
-SESSION_SECRET=ganti-string-random-minimal-32-karakter
 ADMIN_DEFAULT_PASSWORD=<isi-password-lokal-sendiri-min-8-karakter>
 JABNET_UPLOAD_ROOT=./uploads
 TEAMSPACE_WORKER_ENABLED=true

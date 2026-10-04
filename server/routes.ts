@@ -666,7 +666,10 @@ const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 menit
 const ATTEMPT_WINDOW_MS = 5 * 60 * 1000; // 5 menit
 
 function getClientIp(req: Request): string {
-  return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
+  // req.ip sudah menghormati setting "trust proxy" (index.ts) - JANGAN baca
+  // X-Forwarded-For mentah di sini: tanpa trust proxy header itu bisa dipalsukan
+  // klien untuk melewati rate limit per-IP.
+  return req.ip || "unknown";
 }
 
 function checkRateLimit(key: string): { allowed: boolean; retryAfterSec?: number } {

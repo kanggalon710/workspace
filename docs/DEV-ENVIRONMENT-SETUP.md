@@ -161,7 +161,7 @@ JABNET_PRIVATE_ROOT=/home/jabnet/private/fiber-jabnet-dev
 JABNET_UPLOAD_ROOT=/home/jabnet/private/fiber-jabnet-dev/uploads
 
 # --- Session (BEDA dari prod supaya token tidak cross-pollute) ---
-SESSION_SECRET=<generate-baru-via-openssl-rand-hex-32>
+# SESSION_SECRET tidak dipakai lagi (express-session dihapus 2026-10-04)
 
 # --- Dev safety flags (CRITICAL) ---
 MPWA_FORCE_DISABLED=true

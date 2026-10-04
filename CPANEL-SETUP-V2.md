@@ -195,7 +195,6 @@ DB_POOL_LIMIT=5
 DEV_DB_SYNC_ENABLED=true
 PROD_DB_NAME=jabnet_fiber
 
-SESSION_SECRET=<hasil: openssl rand -hex 32>
 ADMIN_DEFAULT_PASSWORD=   # ← WAJIB utk DB kosong; generate sendiri (openssl rand -base64 18)
 
 BILLING_API_TOKEN=

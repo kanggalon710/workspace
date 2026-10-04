@@ -142,7 +142,8 @@ function generateSessionToken(): string {
 }
 
 function getClientIp(req: Request): string {
-  return (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip || "unknown";
+  // req.ip menghormati "trust proxy" (index.ts); X-Forwarded-For mentah bisa dipalsukan.
+  return req.ip || "unknown";
 }
 
 /** Customer auth middleware - validasi token dari header Authorization Bearer */

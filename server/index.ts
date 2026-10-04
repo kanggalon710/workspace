@@ -1,7 +1,6 @@
 // config.ts harus jadi import PERTAMA - dia load dotenv sebelum storage.ts buat MySQL pool
 import "./config.js";
 import express from "express";
-import session from "express-session";
 import path from "path";
 import { existsSync } from "fs";
 import { fileURLToPath } from "url";
@@ -45,21 +44,22 @@ const PORT = process.env.PORT || 3002;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-if (!process.env.SESSION_SECRET && process.env.NODE_ENV === "production") {
-  console.warn("[WARN] SESSION_SECRET tidak diset di production! Set env var SESSION_SECRET.");
-}
-
-app.use(session({
-  secret: process.env.SESSION_SECRET || "ftth-jabnet-secret-dev-only",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    secure: false,
-    httpOnly: true,
-    sameSite: "lax",
-  },
-}));
+// express-session DIHAPUS (audit 2026-10-04): tidak ada satu pun pemakaian req.session -
+// auth staff pakai bearer token + cookie ftth_session sendiri (routes.ts), portal pakai
+// token DB. Lihat .ai/DECISIONS.md.
+//
+// trust proxy: di cPanel, app jalan di belakang tepat 1 hop (Apache/Passenger), jadi
+// X-Forwarded-For hop pertama dipercaya supaya req.ip = IP klien asli (dipakai rate limit).
+// Di dev lokal tanpa proxy JANGAN trust (header bisa dipalsukan klien langsung).
+// Override via env TRUST_PROXY ("false" atau jumlah hop).
+const isProd = process.env.NODE_ENV === "production";
+const trustProxyEnv = process.env.TRUST_PROXY;
+app.set(
+  "trust proxy",
+  trustProxyEnv !== undefined
+    ? (trustProxyEnv === "false" ? false : Number(trustProxyEnv) || 1)
+    : (isProd ? 1 : false),
+);
 
 // v4.2.13: Multi-domain - portal.jabnet.id khusus pelanggan, fiber-tools.arkanova.id staff
 // Saat request masuk dari domain portal, batasi hanya /api/portal/* + /portal/* + static
@@ -115,10 +115,13 @@ app.use((_req, res) => {
 
 // Global error handler - catch any uncaught error from route handlers
 // (Express 5 sudah handle Promise rejection, ini safety net untuk sync throws)
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("[ExpressError]", err?.stack ?? err);
+app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // Detail (stack, message) hanya ke log server - response publik generik supaya
+  // pesan exception internal (path, SQL, dsb) tidak bocor ke klien (audit 2026-10-04).
+  const detail = err instanceof Error ? err.stack ?? err.message : String(err);
+  console.error(`[ExpressError] ${req.method} ${req.path}:`, detail);
   if (res.headersSent) return;
-  res.status(500).json({ success: false, error: err?.message ?? "Internal server error" });
+  res.status(500).json({ success: false, error: "Terjadi kesalahan pada server. Coba lagi atau hubungi admin." });
 });
 
 storage.seedAdminIfNeeded().catch((e: unknown) => {
