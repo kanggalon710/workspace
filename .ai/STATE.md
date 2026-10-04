@@ -28,14 +28,17 @@ Never deploy production without explicit user approval.
   admin username is `chief0012` (env-overridable). No hardcoded password anywhere.
 
 ## In progress
-Branch needs: PR -> `dev`, CI builds `deploy-dev`, cPanel DEV pull + restart, then the
-dev-environment verification round on `https://workspace-dev.jabnet.id` (staff login/logout,
-OTP uniformity, robots/sitemap/404, console). Local verification already done.
+Nothing. `dev` is fast-forwarded to the remediation head, CI built `deploy-dev`, and
+workspace-dev was updated via the in-app updater and VERIFIED live (2026-10-05): staff
+login/logout, OTP uniformity + 429 throttle (fake IDs only, no real messages), robots/
+sitemap (honors this env's APP_PUBLIC_URL), real 404 + X-Robots-Tag, coverage page with
+live Maps key, clean console. Review-fix round included (timing oracle, TRUST_PROXY parse,
+limiter sweep, resend invalidation, manifest drift-guard test).
 
 ## Blocked, needs a human
-- cPanel DEV "Update from Remote" + Restart after the dev merge (owner action), unless the
-  in-app Pembaruan Aplikasi is used on workspace-dev.
-- Production deploy of all of this: explicit owner approval required.
+- Production deploy (dev -> main -> deploy + cPanel PROD): explicit owner approval required.
+  Reminder saat promote: TIDAK perlu env baru di prod (OTP_DEV_EXPOSE jangan diset;
+  TRUST_PROXY default 1 hop di production sudah benar untuk cPanel).
 - IMPORTANT for dev/prod env: portal OTP debug is now gated - set `OTP_DEV_EXPOSE=true` ONLY
   on local dev. MPWA-disabled tenants NO LONGER return the OTP in responses (that was an
   account-takeover hole, closed on purpose).

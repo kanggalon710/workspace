@@ -29,9 +29,12 @@ chief0012; OTP matrix (unknown/known seragam, wrong x5 -> lock, kode benar pasca
 generik, sukses login portal, 429 throttle per-ID); db-sync anon 401; robots/sitemap/404/
 X-Robots-Tag; headless Chrome 360/768/1280 di coverage/login/portal-login/map: overflow 0,
 h1 tunggal, target >=44px first-party, input >=16px, konsol bersih.
-**Notes:** Deviasi sadar tercatat di DECISIONS (express-session dihapus; robots tidak memblok
-halaman privat). Deferral: migrasi Maps API, drizzle-orm 0.45.3, tailwind v4 (TODO). Verifikasi
-di workspace-dev menunggu merge ke dev + CI + pull cPanel DEV.
+**Notes:** Deviasi sadar tercatat di DECISIONS. Deferral: migrasi Maps API, drizzle-orm 0.45.3,
+tailwind v4 (TODO). Ronde review fresh-context menemukan 9 isu - semua ditutup (timing oracle
+OTP via respons-dulu-kerja-async, TRUST_PROXY parse ketat, sweep rate-limit map, resend
+meng-expire OTP lama, 429 tanpa nama bucket, drift-guard test manifest, dll). Dev di-deploy
+via in-app updater (deploy-dev f346095 = source 99d5571) dan diverifikasi live di
+workspace-dev.jabnet.id - OTP test pakai ID fiktif saja (tidak ada pesan WA nyata terkirim).
 
 ## 2026-10-04 - Full-stack audit (read-only)
 **Agent:** Codex (GPT-5) | **Status:** audit complete, remediation not started
