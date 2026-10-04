@@ -494,14 +494,9 @@
   @apply text-[10px] font-mono text-muted-foreground/80 px-3 py-1 bg-background/70 backdrop-blur-sm;
 }
 
-@media (max-width: 767px) {
-  .touch-target { min-width: 48px; min-height: 48px; }
-  .map-fullscreen-mobile {
-    position: fixed !important;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 10;
-  }
-}
+/* .touch-target & .map-fullscreen-mobile (max-width media query) dihapus 2026-10-04:
+   tidak ada satu pun pemakai di client/ - dead code sekaligus satu-satunya
+   media query max-width (dilarang standar mobile-first). */
 
 /* Leaflet */
 .leaflet-container {

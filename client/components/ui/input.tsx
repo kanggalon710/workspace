@@ -8,26 +8,30 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   rightIcon?: React.ReactNode;
   /** Error state - red border + destructive focus ring. */
   error?: boolean;
-  /** Size variant. */
-  inputSize?: "sm" | "md" | "lg";
+  /** Size variant. `xl` = >=44px + text 16px (wajib utk form publik/mobile:
+   *  touch target + cegah auto-zoom iOS pada input <16px). */
+  inputSize?: "sm" | "md" | "lg" | "xl";
 }
 
 const sizeMap = {
   sm: "h-8 text-xs",
   md: "h-10 text-sm",
   lg: "h-11 text-sm",
+  xl: "h-12 text-base",
 };
 
 const padMap = {
   sm: { base: "px-3", withLeft: "pl-8", withRight: "pr-8" },
   md: { base: "px-3.5", withLeft: "pl-9", withRight: "pr-9" },
   lg: { base: "px-4", withLeft: "pl-10", withRight: "pr-10" },
+  xl: { base: "px-4", withLeft: "pl-10", withRight: "pr-10" },
 };
 
 const iconPosMap = {
   sm: "left-2.5 right-2.5 [&_svg]:size-3.5",
   md: "left-3 right-3 [&_svg]:size-4",
   lg: "left-3.5 right-3.5 [&_svg]:size-4",
+  xl: "left-3.5 right-3.5 [&_svg]:size-4",
 };
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(

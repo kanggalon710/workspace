@@ -32,7 +32,7 @@ function CheckRow({ checked, label, hint, onToggle }: { checked: boolean; label:
       type="button"
       onClick={onToggle}
       aria-pressed={checked}
-      className="flex items-start gap-2.5 w-full px-2 py-1.5 rounded-lg text-xs transition-all hover:bg-accent text-left"
+      className="flex items-start gap-2.5 w-full px-2 py-1.5 min-h-11 md:min-h-0 rounded-lg text-xs transition-all hover:bg-accent text-left"
     >
       <div className={`w-3 h-3 mt-0.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${
         checked ? "bg-primary border-primary" : "border-muted-foreground"
@@ -55,7 +55,7 @@ export function MapLayerPanel({
 
   return (
     <div
-      className="absolute bottom-16 right-4 z-50 glass rounded-xl shadow-xl animate-pop-in max-md:fixed max-md:bottom-auto max-md:top-14 max-md:right-4 max-md:z-[55]"
+      className="fixed top-14 right-4 z-[55] md:absolute md:top-auto md:bottom-16 md:z-50 glass rounded-xl shadow-xl animate-pop-in"
       style={{ minWidth: 180 }}
     >
       <div className="p-3 space-y-1">
@@ -63,16 +63,23 @@ export function MapLayerPanel({
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             Layer Aset
           </p>
-          <button onClick={onClose} className="md:hidden text-muted-foreground hover:text-foreground">
-            <X className="h-3.5 w-3.5" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup panel layer"
+            className="md:hidden inline-flex items-center justify-center w-11 h-11 -m-2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
 
         {layerItems.map((item) => (
           <button
             key={item.key}
+            type="button"
             onClick={() => onToggleLayer(item.key)}
-            className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-lg text-xs transition-all hover:bg-accent"
+            aria-pressed={!!layers[item.key]}
+            className="flex items-center gap-2.5 w-full px-2 py-1.5 min-h-11 md:min-h-0 rounded-lg text-xs transition-all hover:bg-accent"
           >
             <div
               className="w-3 h-3 rounded-full shrink-0 transition-opacity"

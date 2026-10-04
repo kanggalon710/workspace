@@ -267,7 +267,7 @@ export default function CoverageCheckPage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             {/* Search alamat */}
             <div className="md:col-span-6">
-              <Label className="text-xs">Cari alamat / nama tempat</Label>
+              <Label htmlFor="coverage-search" className="text-xs">Cari alamat / nama tempat</Label>
               {isLoaded ? (
                 <Autocomplete
                   onLoad={(ac) => { autocompleteRef.current = ac; }}
@@ -278,16 +278,18 @@ export default function CoverageCheckPage() {
                   }}
                 >
                   <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                     <Input
+                      id="coverage-search"
                       type="text"
+                      inputSize="xl"
                       placeholder="Contoh: Jl. Otista Garut, Tarogong Kaler..."
-                      className="pl-9"
+                      className="pl-10"
                     />
                   </div>
                 </Autocomplete>
               ) : (
-                <Input disabled placeholder="Memuat Maps API..." />
+                <Input disabled inputSize="xl" placeholder="Memuat Maps API..." aria-label="Cari alamat / nama tempat" />
               )}
             </div>
 
@@ -297,6 +299,7 @@ export default function CoverageCheckPage() {
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
                 onClick={handleGPS}
                 disabled={gpsLoading || isChecking}
                 className="w-full"
@@ -314,20 +317,24 @@ export default function CoverageCheckPage() {
           {/* Manual lat/lng */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end pt-2 border-t border-border">
             <div className="md:col-span-4">
-              <Label className="text-xs">Latitude</Label>
+              <Label htmlFor="coverage-lat" className="text-xs">Latitude</Label>
               <Input
+                id="coverage-lat"
                 type="number"
                 step="any"
+                inputSize="xl"
                 value={latInput}
                 onChange={(e) => setLatInput(e.target.value)}
                 placeholder="-7.218750"
               />
             </div>
             <div className="md:col-span-4">
-              <Label className="text-xs">Longitude</Label>
+              <Label htmlFor="coverage-lng" className="text-xs">Longitude</Label>
               <Input
+                id="coverage-lng"
                 type="number"
                 step="any"
+                inputSize="xl"
                 value={lngInput}
                 onChange={(e) => setLngInput(e.target.value)}
                 placeholder="107.908417"
@@ -336,6 +343,7 @@ export default function CoverageCheckPage() {
             <div className="md:col-span-4">
               <Button
                 type="button"
+                size="xl"
                 onClick={handleManualSubmit}
                 disabled={isChecking || !latInput || !lngInput}
                 className="w-full"
@@ -635,8 +643,10 @@ export default function CoverageCheckPage() {
                         <p className="text-sm font-semibold text-foreground">Daftar Sekarang</p>
 
                         <div>
-                          <Label className="text-xs">Nama Lengkap <span className="text-destructive">*</span></Label>
+                          <Label htmlFor="reg-name" className="text-xs">Nama Lengkap <span className="text-destructive">*</span></Label>
                           <Input
+                            id="reg-name"
+                            inputSize="xl"
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
                             placeholder="Nama lengkap Anda"
@@ -645,9 +655,11 @@ export default function CoverageCheckPage() {
                         </div>
 
                         <div>
-                          <Label className="text-xs">Nomor WhatsApp <span className="text-destructive">*</span></Label>
+                          <Label htmlFor="reg-phone" className="text-xs">Nomor WhatsApp <span className="text-destructive">*</span></Label>
                           <Input
+                            id="reg-phone"
                             type="tel"
+                            inputSize="xl"
                             value={regPhone}
                             onChange={(e) => setRegPhone(e.target.value)}
                             placeholder="08xxxxxxxxxx"
@@ -656,8 +668,10 @@ export default function CoverageCheckPage() {
                         </div>
 
                         <div>
-                          <Label className="text-xs">Alamat Pemasangan</Label>
+                          <Label htmlFor="reg-address" className="text-xs">Alamat Pemasangan</Label>
                           <Input
+                            id="reg-address"
+                            inputSize="xl"
                             value={regAddress}
                             onChange={(e) => setRegAddress(e.target.value)}
                             placeholder="Alamat lengkap pemasangan"
@@ -665,9 +679,9 @@ export default function CoverageCheckPage() {
                         </div>
 
                         <div>
-                          <Label className="text-xs">Paket yang Diminati</Label>
+                          <Label htmlFor="reg-package" className="text-xs">Paket yang Diminati</Label>
                           <Select value={regPackage} onValueChange={setRegPackage}>
-                            <SelectTrigger>
+                            <SelectTrigger id="reg-package" className="h-12 text-base">
                               <SelectValue placeholder="Pilih paket" />
                             </SelectTrigger>
                             <SelectContent>
@@ -681,6 +695,7 @@ export default function CoverageCheckPage() {
                         </div>
 
                         <Button
+                          size="xl"
                           className="w-full bg-success hover:brightness-95 text-white"
                           onClick={handleRegister}
                           disabled={regSubmitting}
@@ -708,9 +723,9 @@ export default function CoverageCheckPage() {
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-success hover:brightness-95 text-white font-medium py-2.5 px-4 text-sm transition"
+                          className="inline-flex items-center justify-center gap-2 w-full min-h-11 rounded-lg bg-success hover:brightness-95 text-white font-medium py-2.5 px-4 text-sm transition"
                         >
-                          <MessageCircle className="h-4 w-4" />
+                          <MessageCircle className="h-4 w-4" aria-hidden="true" />
                           Chat WhatsApp Langsung
                         </a>
                       </div>
@@ -737,16 +752,17 @@ function PublicShell({ children }: { children: React.ReactNode }) {
               <Radio className="h-4 w-4 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="font-bold text-sm text-foreground leading-tight group-hover:text-primary transition">JABNET FTTH</h1>
+              {/* span, bukan h1 - h1 halaman cuma satu: "Cek Lokasi Coverage" (audit 2026-10-04) */}
+              <span className="block font-bold text-sm text-foreground leading-tight group-hover:text-primary transition">JABNET FTTH</span>
               <p className="text-[10px] text-muted-foreground leading-tight">Cek Coverage Publik</p>
             </div>
           </Link>
           <div className="flex-1" />
           <Link
             href="/login"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition"
+            className="flex items-center gap-1.5 px-4 min-h-11 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition"
           >
-            <LogIn className="h-3.5 w-3.5" />
+            <LogIn className="h-4 w-4" aria-hidden="true" />
             Login Staff
           </Link>
         </div>

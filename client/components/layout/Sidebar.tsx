@@ -260,7 +260,9 @@ export function Sidebar() {
         <div className="relative flex items-center gap-3">
           <BrandMark className="w-9 h-9 shrink-0 shadow-elev-md rounded-xl ring-1 ring-white/15" />
           <div className="flex-1 min-w-0">
-            <h1 className="font-black text-sm text-white tracking-tight leading-none">JABNET <span className="text-white/60 font-bold">Workspace</span></h1>
+            {/* span, bukan h1: brand sidebar selalu di DOM (mobile cuma di-translate off-screen),
+                jadi h1 di sini bikin tiap halaman punya 2 h1 (audit 2026-10-04) */}
+            <span className="block font-black text-sm text-white tracking-tight leading-none">JABNET <span className="text-white/60 font-bold">Workspace</span></span>
             <p className="text-[10px] text-white/50 uppercase tracking-[0.15em] font-semibold mt-0.5">
               Fiber Operations
             </p>

@@ -489,9 +489,9 @@ export default function MapPage() {
 
   return (
     <div className={`${isMobile ? "" : "space-y-2"}`}>
-      {/* Header - hidden on mobile */}
-      {!isMobile && (
-        <div className="flex items-center justify-between">
+      {/* Header - hidden on mobile via CSS (bukan isMobile state: state mulai false,
+          jadi dulu h1 sempat render di first paint mobile -> "dua h1" di audit) */}
+      <div className="hidden md:flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Peta Jaringan</h1>
             <p className="text-muted-foreground text-sm">
@@ -504,8 +504,7 @@ export default function MapPage() {
                   : "Pilih mode di toolbar untuk mulai menambah aset"}
             </p>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Map container */}
       <div className={

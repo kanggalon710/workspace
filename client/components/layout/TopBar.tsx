@@ -169,7 +169,8 @@ export function TopBar() {
 
       {/* Mobile: page title (hamburger already takes left space) */}
       <div className="md:hidden flex-1 min-w-0">
-        <h1 className="text-sm font-bold text-foreground truncate tracking-tight">{pageLabel}</h1>
+        {/* div, bukan h1 - h1 halaman datang dari PageHeader; ini cuma label bar atas */}
+        <div className="text-sm font-bold text-foreground truncate tracking-tight">{pageLabel}</div>
       </div>
 
       {/* Spacer */}

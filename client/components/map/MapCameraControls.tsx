@@ -37,21 +37,22 @@ export function MapCameraControls({ mapRef, onFitBounds }: MapCameraControlsProp
 
   return (
     <TooltipProvider delayDuration={300}>
-      {/* Zoom controls */}
-      <div className="absolute left-4 bottom-28 md:left-auto md:right-4 md:bottom-24 z-[30] flex flex-col gap-1 max-md:bottom-4 max-md:left-2 max-md:gap-0.5">
-        <div className="glass rounded-xl md:rounded-xl max-md:rounded-lg shadow-lg overflow-hidden">
+      {/* Zoom controls - mobile-first (audit 2026-10-04): dulu max-md:* mengecilkan
+          tombol ke 28px; kini base >=44px (touch target) + md: untuk desktop. */}
+      <div className="absolute bottom-4 left-2 md:left-auto md:right-4 md:bottom-24 z-[30] flex flex-col gap-0.5 md:gap-1">
+        <div className="glass rounded-lg md:rounded-xl shadow-lg overflow-hidden">
           <Tooltip>
             <TooltipTrigger asChild>
-              <button onClick={zoomIn} className="map-toolbar-btn w-10 h-10 max-md:w-7 max-md:h-7 border-b border-border/30">
-                <Plus className="h-4 w-4 max-md:h-3 max-md:w-3" />
+              <button type="button" aria-label="Perbesar peta" onClick={zoomIn} className="map-toolbar-btn w-11 h-11 md:w-12 md:h-12 border-b border-border/30">
+                <Plus className="h-4 w-4" aria-hidden="true" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="left" className="text-xs">Zoom In</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button onClick={zoomOut} className="map-toolbar-btn w-10 h-10 max-md:w-7 max-md:h-7">
-                <Minus className="h-4 w-4 max-md:h-3 max-md:w-3" />
+              <button type="button" aria-label="Perkecil peta" onClick={zoomOut} className="map-toolbar-btn w-11 h-11 md:w-12 md:h-12">
+                <Minus className="h-4 w-4" aria-hidden="true" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="left" className="text-xs">Zoom Out</TooltipContent>
@@ -61,15 +62,15 @@ export function MapCameraControls({ mapRef, onFitBounds }: MapCameraControlsProp
         {/* Fit bounds */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button onClick={onFitBounds} className="glass rounded-xl max-md:rounded-lg shadow-lg map-toolbar-btn w-10 h-10 max-md:w-7 max-md:h-7">
-              <LocateFixed className="h-4 w-4 max-md:h-3 max-md:w-3" />
+            <button type="button" aria-label="Tampilkan semua aset di peta" onClick={onFitBounds} className="glass rounded-lg md:rounded-xl shadow-lg map-toolbar-btn w-11 h-11 md:w-12 md:h-12">
+              <LocateFixed className="h-4 w-4" aria-hidden="true" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="left" className="text-xs">Tampilkan Semua Aset</TooltipContent>
         </Tooltip>
 
         {/* Compass rose (decorative) */}
-        <div className="glass rounded-xl max-md:rounded-lg shadow-lg compass-rose select-none max-md:hidden" title="Utara">
+        <div className="glass rounded-lg md:rounded-xl shadow-lg compass-rose select-none hidden md:block" title="Utara" aria-hidden="true">
           <div className="relative w-8 h-8">
             <span className="absolute top-0 left-1/2 -translate-x-1/2 text-red-500 font-bold" style={{fontSize: 9}}>N</span>
             <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-muted-foreground" style={{fontSize: 8}}>S</span>

@@ -25,7 +25,7 @@ export function MapMitraSelector({
   return (
     <section
       aria-label="Pilih data mitra"
-      className={`absolute left-1/2 top-16 -translate-x-1/2 md:top-3 z-[45] flex items-center gap-2 max-w-[calc(100vw-1rem)] rounded-lg bg-card/95 px-2 py-1.5 shadow-elev-md backdrop-blur ${panelOpen ? "max-md:hidden" : ""}`}
+      className={`absolute left-1/2 top-16 -translate-x-1/2 md:top-3 z-[45] items-center gap-2 max-w-[calc(100vw-1rem)] rounded-lg bg-card/95 px-2 py-1.5 shadow-elev-md backdrop-blur ${panelOpen ? "hidden md:flex" : "flex"}`}
     >
       <span className="pl-1 text-[11px] font-semibold text-muted-foreground whitespace-nowrap">Data mitra:</span>
       <div className="w-36 sm:w-44">
