@@ -1,0 +1,1 @@
+function c(e,t){return`https://wa.me/${e.replace(/^0/,"62").replace(/[^0-9]/g,"")}?text=${encodeURIComponent(t)}`}function i(e,t,a){const r=e.trim().toLowerCase();if(!r||t.filter(Boolean).join(" ").toLowerCase().includes(r))return!0;const n=r.replace(/\D/g,"");return!!(n&&String(a??"").replace(/\D/g,"").includes(n))}export{i as m,c as w};
