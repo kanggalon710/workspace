@@ -33,6 +33,7 @@ interface CommandItemDef {
   keywords?: string[];
   permission?: string;
   requireSystemAdmin?: boolean;
+  rootOnly?: boolean;   // hanya tenant root JABNET (activeMitraId === 1) - lihat divisions.ts
   shortcut?: string;
 }
 
@@ -47,6 +48,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [location, setLocation] = useLocation();
   const { canRead, logout, user } = useAuth();
   const isSysAdmin = !!user?.isSystemAdmin;
+  const isRootTenant = Number(user?.activeMitraId ?? 1) === 1;
   const [darkMode, setDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
@@ -139,6 +141,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const billingItems: CommandItemDef[] = [
     { id: "tickets", label: "Work Order / Tiket", icon: ClipboardList, path: "/tickets", permission: "tickets" },
     { id: "collections", label: "Collection (Penagihan)", icon: AlertCircle, path: "/collections", permission: "collections" },
+    { id: "collections-mitra", label: "Collection Mitra (Tagihan Mitra)", icon: Building2, path: "/collections/mitra", permission: "collections_mitra", rootOnly: true, keywords: ["mitra", "tagihan", "collection", "partner"] },
     { id: "packages", label: "Paket Internet", icon: Package, path: "/billing/packages", permission: "packages" },
     { id: "sessions", label: "Sesi Aktif", icon: Activity, path: "/billing/sessions", permission: "sessions" },
     { id: "monitoring", label: "Monitoring", icon: BarChart3, path: "/billing/monitoring", permission: "monitoring" },
@@ -202,12 +205,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     .filter((p) => p !== location)
     .map((p) => allNavDefs.find((i) => i.path === p))
     .filter((i): i is CommandItemDef => !!i)
-    .filter((i) => (!i.requireSystemAdmin || isSysAdmin) && (!i.permission || canRead(i.permission)))
+    .filter((i) => (!i.requireSystemAdmin || isSysAdmin) && (!i.rootOnly || isRootTenant) && (!i.permission || canRead(i.permission)))
     .slice(0, 5);
 
   const filterByPerm = (items: CommandItemDef[]) =>
     items.filter((item) => {
       if (item.requireSystemAdmin && !isSysAdmin) return false;
+      if (item.rootOnly && !isRootTenant) return false;
       return !item.permission || canRead(item.permission);
     });
 

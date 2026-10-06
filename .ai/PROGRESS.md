@@ -3,6 +3,32 @@
 > Entri terbaru di ATAS. Satu entri per satuan pekerjaan. Jelaskan KENAPA (git sudah
 > mencatat APA). Jangan menulis ulang/menghapus entri lama; tambahkan entri koreksi.
 
+## 2026-10-06 - Collection Mitra (tagihan bulanan JABNET → partner ISP)
+**Agent:** Claude Fable 5 (Claude Code) | **Status:** selesai lokal, BELUM commit/deploy
+**Why:** Supervisor tidak punya cara melacak status pembayaran mitra (sudah bayar /
+follow-up / menunggak). Collection existing hanya untuk pelanggan retail. Scope disetujui
+user: subjek = tabel `mitras` existing, kartu auto per bulan, nominal manual, UI kanban.
+**Changes:** Tabel baru `mitra_collections` + `mitra_collection_activities` (subjek =
+`subject_mitra_id`, BUKAN kolom tenant `mitra_id`; unique subject+period = jangkar
+idempotensi). Stage FIXED di `shared/mitraCollection.ts` (belum_bayar→dihubungi→
+janji_bayar→lunas/menunggak) + helper periode, 7 unit test. Storage section baru
+(ensure/list/stats/move/activities, root-tenant-only). 8 endpoint `/api/mitra-collections*`
+(gerbang keras `activeMitraId===1` + izin baru `collections_mitra`). Auto-create: lazy di
+GET periode berjalan + hook nightly billing-sync (withMitra(1)). Client:
+`MitraCollectionPage.tsx` (kanban + selector periode + dialog detail nominal Rp/aktivitas),
+flag `rootOnly` di divisions.ts difilter di Sidebar/BottomNav/Beranda/CommandPalette.
+**Files:** shared/mitraCollection.ts(+test), shared/schema.ts, shared/routesManifest.ts,
+server/storage.ts, server/routes.ts, server/billing-sync-worker.ts,
+client/pages/MitraCollectionPage.tsx, client/App.tsx, client/lib/divisions.ts,
+client/components/{CommandPalette,layout/Sidebar,layout/BottomNav}.tsx, client/pages/BerandaPage.tsx
+**Verified:** typecheck 0, 496/496 test, build OK. Live di scratch MySQL8 (podman):
+lazy-ensure 2 kartu, prefill nominal periode berikutnya, lunas set paidAt+closedAt,
+reopen bersih, aktivitas tercatat, tenant non-root 403, anon 401, periode invalid 400.
+Headless Chromium 360/768/1280: tanpa horizontal scroll, console clean, dialog fit 360px.
+**Notes:** Assignee & foto bukti SENGAJA ditunda (aktivitas teks cukup utk v1 - pola
+`collection_assignees` siap ditiru). Mitra nonaktif: kartu bulan berjalan tetap, periode
+berikutnya ter-skip otomatis.
+
 ## 2026-10-05 - Remediasi penuh audit 2026-10-04 (security/perf/SEO/a11y)
 **Agent:** Claude Fable 5 (Claude Code) | **Status:** selesai di branch `feature/audit-remediation-20261004`, siap PR ke dev
 **Why:** Owner mengeksekusi seluruh backlog audit 2026-10-04 (lihat entri di bawah) dengan

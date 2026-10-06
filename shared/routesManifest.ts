@@ -32,7 +32,7 @@ const EXACT_PATHS = new Set<string>([
   "/", "/announcements", "/api-keys", "/audit-logs", "/bestray-manager",
   "/billing/monitoring", "/billing/packages", "/billing/routers", "/billing/sessions",
   "/broadcast", "/bugs", "/cable-cores", "/cables", "/canvassing", "/canvassing/history",
-  "/canvassing/reports", "/collections", "/collections/cs", "/collections/marketing",
+  "/canvassing/reports", "/collections", "/collections/cs", "/collections/marketing", "/collections/mitra",
   "/communications", "/contacts", "/core-connections", "/coverage-check", "/customers",
   "/dashboard-jaringan", "/devices", "/export-import", "/hr/absen", "/hrd/sdm",
   "/integrations", "/integrations/chatwoot/agents", "/leads", "/login", "/loyalty",

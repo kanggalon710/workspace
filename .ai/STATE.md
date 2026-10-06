@@ -1,5 +1,5 @@
 # STATE - JABNET Workspace
-Updated: 2026-10-05 by Claude Fable 5 (Claude Code)
+Updated: 2026-10-06 by Claude Fable 5 (Claude Code)
 
 ## What this is
 Operational platform for JABNET FTTH. Backend: Node 20, Express 5, Drizzle/MySQL.
@@ -9,54 +9,52 @@ coverage page and customer portal. Architecture and MySQL patterns are in `CLAUD
 ## Run and verify
 ```bash
 npx tsc --noEmit
-npx tsx --test shared/*.test.ts server/*.test.ts   # 488 tests
+npx tsx --test shared/*.test.ts server/*.test.ts   # 496 tests
 npm run build
 npm run dev
 ```
-Deploy follows `WORKFLOW.md` (dev URL is `workspace-dev.jabnet.id` - fixed, was stale).
-Never deploy production without explicit user approval.
+Local DB: `.env` points at `jabnet_fiber_v2_dev` on 127.0.0.1:3306 but those credentials
+are REJECTED by the host MariaDB (pre-existing). Working local pattern: scratch MySQL 8
+container on port 3307 + env overrides (`DB_HOST=127.0.0.1 DB_PORT=3307 DB_USER=root
+DB_PASSWORD=root DB_NAME=jabnet_fiber`), `npm run db:push` once, then `npm run dev`.
+Deploy follows `WORKFLOW.md` (dev URL `workspace-dev.jabnet.id`). Never deploy
+production without explicit user approval.
 
 ## Works
-- Branch `feature/audit-remediation-20261004` (from `origin/dev` @ 1b5425e) holds the FULL
-  remediation of the 2026-10-04 audit: security (admin seed, sessions, OTP enumeration,
-  dev/db-sync authz), performance (query-in-loop batching), SEO (robots/sitemap/noindex/404),
-  a11y/responsive (coverage + map overlays, single h1, pinch-zoom), validated env boundary,
-  npm audit fix (16 -> 6 advisories). Details: `.ai/PROGRESS.md` top entry + `.ai/TODO.md`.
-- All gates green on the branch: typecheck 0, 488/488 tests, build OK. Live-verified locally
-  (prod bundle + scratch MySQL container) incl. headless-Chrome checks at 360/768/1280.
-- Fresh install now REQUIRES `ADMIN_DEFAULT_PASSWORD` env (server exits otherwise); default
-  admin username is `chief0012` (env-overridable). No hardcoded password anywhere.
+- Everything from the 2026-10-05 audit remediation (see PROGRESS) - live on workspace-dev.
+- NEW (2026-10-06, local working tree on branch `main`, NOT yet committed):
+  **Collection Mitra** - monthly payment tracking of partner ISPs (mitras) by JABNET root.
+  Kanban at `/collections/mitra` (permission `collections_mitra`, root tenant only,
+  server-enforced). Cards auto-created per active mitra per month (lazy on GET + nightly
+  billing-sync hook), amount entered manually with prev-period prefill, fixed stages
+  belum_bayar/dihubungi/janji_bayar/lunas/menunggak, activity log, WA CTA.
+  All gates green: typecheck 0, 496/496 tests, build OK, live-verified on scratch MySQL +
+  headless Chromium at 360/768/1280 (clean console, no overflow, 403 for non-root tenants).
 
 ## In progress
-Nothing. `dev` is fast-forwarded to the remediation head, CI built `deploy-dev`, and
-workspace-dev was updated via the in-app updater and VERIFIED live (2026-10-05): staff
-login/logout, OTP uniformity + 429 throttle (fake IDs only, no real messages), robots/
-sitemap (honors this env's APP_PUBLIC_URL), real 404 + X-Robots-Tag, coverage page with
-live Maps key, clean console. Review-fix round included (timing oracle, TRUST_PROXY parse,
-limiter sweep, resend invalidation, manifest drift-guard test).
+Nothing running. Next step: commit the Collection Mitra work (await user direction on
+branch/commit) - the working tree holds it uncommitted on local `main`.
 
 ## Blocked, needs a human
-- Production deploy (dev -> main -> deploy + cPanel PROD): explicit owner approval required.
-  Reminder saat promote: TIDAK perlu env baru di prod (OTP_DEV_EXPOSE jangan diset;
-  TRUST_PROXY default 1 hop di production sudah benar untuk cPanel).
-- IMPORTANT for dev/prod env: portal OTP debug is now gated - set `OTP_DEV_EXPOSE=true` ONLY
-  on local dev. MPWA-disabled tenants NO LONGER return the OTP in responses (that was an
-  account-takeover hole, closed on purpose).
+- Commit/push/deploy of Collection Mitra: user decision (repo rule: no production deploy
+  without explicit OK; local `main` differs from remote flow dev->main->deploy).
+- Production promote reminders from 2026-10-05 entry still apply (no OTP_DEV_EXPOSE in
+  prod, TRUST_PROXY default fine).
 
 ## Traps
-1. `shared/routesManifest.ts` must list every SPA route in `client/App.tsx`; unlisted paths
-   are served with real HTTP 404 by the server catch-all (SPA still renders).
-2. verify-otp now takes `{customerId, code}`; legacy `otpSessionId` body is a 1-release
-   fallback - remove it next release.
-3. `express-session` is GONE (was dead code). Do not reintroduce without a real `req.session`
-   consumer. Staff cookie auth = `ftth_session` (routes.ts), portal = DB tokens.
-4. Rate-limit keys use `req.ip` behind `trust proxy` (1 hop in prod, see `server/env.ts` /
-   TRUST_PROXY). Don't parse X-Forwarded-For manually again.
-5. Multi-row insert pattern: `chunkArray` (shared/batch.ts) + `conn.query("... VALUES ?")`.
-   Pipeline-intake card INSERT deliberately stays per-row (masterCardId self-ref, see comment).
-6. Remaining 6 npm advisories all need semver-major (drizzle-orm 0.45.3 SQLi fix + tailwind
-   v4 chain) - deferred with owner approval, see TODO + DECISIONS.
+1. `shared/routesManifest.ts` must list every SPA route in `client/App.tsx` (a drift-guard
+   test fails otherwise and the server serves real 404 for unlisted paths).
+2. "mitra" in schema = TENANT. The billed partner in `mitra_collections` is
+   `subject_mitra_id`; the `mitra_id` column stays the owner-tenant convention (always 1).
+   Never reuse the word "reseller" - `resellers = mitras` is a legacy alias.
+3. Collection Mitra stages are FIXED constants in `shared/mitraCollection.ts` (no stage
+   table, no Pipeline Manager) - deliberate YAGNI, see DECISIONS if that changes.
+4. TEXT columns (repo convention for dates) cannot be part of a MySQL index - the
+   mitra_collection_activities index is collection_id only for that reason.
+5. verify-otp takes `{customerId, code}`; legacy `otpSessionId` fallback removal is due
+   next release.
+6. Remaining 6 npm advisories need semver-majors - deferred with owner approval (TODO).
 
 ## Recently touched
-- See `.ai/PROGRESS.md` 2026-10-05 entry for the full file list (server security/perf core,
-  coverage/map/portal client, shared pure modules + tests, docs). By Claude Fable 5.
+See `.ai/PROGRESS.md` 2026-10-06 entry (Collection Mitra) for the full file list.
+By Claude Fable 5 (Claude Code).

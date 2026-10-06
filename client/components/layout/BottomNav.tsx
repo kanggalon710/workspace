@@ -6,13 +6,13 @@ import { useSidebar } from "@/context/SidebarContext";
 import { DIVISIONS, ROLE_HOME_DIVISION, getDivision, type Division, type DivisionModule } from "@/lib/divisions";
 
 /** Leaf modul (path + icon + permission) - termasuk anak nested. */
-type Leaf = { label: string; path: string; icon: any; permission?: string };
+type Leaf = { label: string; path: string; icon: any; permission?: string; rootOnly?: boolean };
 
 function flattenLeaves(mods: DivisionModule[]): Leaf[] {
   const out: Leaf[] = [];
   for (const m of mods) {
     if (m.children) out.push(...flattenLeaves(m.children));
-    else if (m.path) out.push({ label: m.label, path: m.path, icon: m.icon, permission: m.permission });
+    else if (m.path) out.push({ label: m.label, path: m.path, icon: m.icon, permission: m.permission, rootOnly: m.rootOnly });
   }
   return out;
 }
@@ -25,25 +25,26 @@ export function BottomNav() {
   const { user, canRead } = useAuth();
   const { setMobileOpen } = useSidebar();
 
-  const canSee = (p?: string) => !p || canRead(p);
+  const isRootTenant = Number(user?.activeMitraId ?? 1) === 1;
+  const canSee = (l: Leaf) => (!l.rootOnly || isRootTenant) && (!l.permission || canRead(l.permission));
 
   // Divisi aktif: yang salah satu modulnya cocok dengan lokasi; fallback divisi home role;
   // fallback divisi pertama yang punya modul terlihat.
   const activeDivision: Division | undefined = useMemo(() => {
     for (const d of DIVISIONS) {
-      const leaves = flattenLeaves(d.modules).filter((l) => canSee(l.permission));
+      const leaves = flattenLeaves(d.modules).filter(canSee);
       if (leaves.some((l) => location === l.path || location.startsWith(l.path + "/"))) return d;
     }
     const home = getDivision(ROLE_HOME_DIVISION[user?.role ?? ""]);
-    if (home && flattenLeaves(home.modules).some((l) => canSee(l.permission))) return home;
-    return DIVISIONS.find((d) => flattenLeaves(d.modules).some((l) => canSee(l.permission)));
-  }, [location, user?.role, canRead]);
+    if (home && flattenLeaves(home.modules).some(canSee)) return home;
+    return DIVISIONS.find((d) => flattenLeaves(d.modules).some(canSee));
+  }, [location, user?.role, canRead, isRootTenant]);
 
   // Maks 3 modul cepat dari divisi aktif (permission-filtered) + Beranda + Menu = 5 item.
   const quick: Leaf[] = useMemo(() => {
     if (!activeDivision) return [];
-    return flattenLeaves(activeDivision.modules).filter((l) => canSee(l.permission)).slice(0, 3);
-  }, [activeDivision, canRead]);
+    return flattenLeaves(activeDivision.modules).filter(canSee).slice(0, 3);
+  }, [activeDivision, canRead, isRootTenant]);
 
   const isActive = (path: string) => location === path || location.startsWith(path + "/");
 

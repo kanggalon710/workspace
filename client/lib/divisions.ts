@@ -15,6 +15,9 @@ export type DivisionModule = {
   path?: string;
   icon: any;
   permission?: string;
+  /** true = hanya tampil untuk tenant root JABNET (activeMitraId === 1). Cosmetic saja -
+   *  gerbang kerasnya tetap cek tenant di server (auto-sync izin memberi key ke semua tenant). */
+  rootOnly?: boolean;
   children?: DivisionModule[];
 };
 
@@ -113,6 +116,7 @@ export const DIVISIONS: Division[] = [
     description: "Penagihan & paket: collection pipeline, paket internet, billing",
     modules: [
       { label: "Collection (Penagihan)", path: "/collections", icon: AlertCircle, permission: "collections" },
+      { label: "Collection Mitra (Tagihan Mitra)", path: "/collections/mitra", icon: Landmark, permission: "collections_mitra", rootOnly: true },
       { label: "Paket Internet", path: "/billing/packages", icon: Package, permission: "packages" },
     ],
   },

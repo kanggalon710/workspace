@@ -65,10 +65,12 @@ export default function BerandaPage() {
   const [, navigate] = useLocation();
   const { user, canRead } = useAuth();
 
-  const canSee = (p?: string) => !p || canRead(p);
+  const isRootTenant = Number(user?.activeMitraId ?? 1) === 1;
+  const canSee = (m: { permission?: string; rootOnly?: boolean }) =>
+    (!m.rootOnly || isRootTenant) && (!m.permission || canRead(m.permission));
   const accessible = useMemo(
     () => DIVISIONS.filter((d) =>
-      d.modules.some((m) => (m.children ? m.children.some((c) => canSee(c.permission)) : canSee(m.permission)))),
+      d.modules.some((m) => (m.children ? m.children.some(canSee) : canSee(m)))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user?.role],
   );

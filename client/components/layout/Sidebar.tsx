@@ -24,6 +24,7 @@ type NavItem = {
   roles?: string[];
   permission?: string;
   requireSystemAdmin?: boolean;  // true = hanya JABNET system admin yang lihat item ini
+  rootOnly?: boolean;            // true = hanya tenant root JABNET (activeMitraId === 1) - lihat divisions.ts
   children?: NavItem[];      // v4.2.20: support nested submenu (1 level)
   hub?: boolean;             // v5.1: item Beranda divisi - tidak membuat group visible sendirian
 };
@@ -187,6 +188,7 @@ export function Sidebar() {
   // Combined visibility: permission check + system-admin gate
   const isItemVisible = (item: NavItem) => {
     if (item.requireSystemAdmin && !isSysAdmin) return false;
+    if (item.rootOnly && Number(user?.activeMitraId ?? 1) !== 1) return false;
     return hasPerm(item.permission);
   };
 

@@ -512,6 +512,47 @@ export const collectionStageMap = mysqlTable("collection_stage_map", {
 export type CollectionConfig = typeof collectionConfig.$inferSelect;
 export type CollectionStageMapRow = typeof collectionStageMap.$inferSelect;
 
+// ==================== COLLECTION MITRA (tagihan JABNET → partner ISP) ====================
+// Pelacakan pembayaran bulanan mitra ke JABNET (root tenant). PENTING: `mitraId` di sini
+// tetap = TENANT pemilik (selalu 1/JABNET, konvensi semua tabel), sedangkan mitra yang
+// DITAGIH disimpan di `subjectMitraId` (FK → mitras.id). Satu kartu per mitra per periode
+// bulanan "YYYY-MM" (unique). Stage FIXED di shared/mitraCollection.ts (bukan tabel).
+
+export const mitraCollections = mysqlTable("mitra_collections", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),       // tenant pemilik (selalu JABNET root)
+  subjectMitraId: int("subject_mitra_id").notNull(),   // mitra yang ditagih (mitras.id)
+  subjectName: varchar("subject_name", { length: 255 }).notNull(), // snapshot nama (tahan rename/nonaktif)
+  period: varchar("period", { length: 7 }).notNull(),  // "YYYY-MM"
+  stage: varchar("stage", { length: 32 }).notNull().default("belum_bayar"), // key di MITRA_COLLECTION_STAGES
+  amount: int("amount"),                               // Rp, input manual finance (prefill dari periode sebelumnya)
+  promiseDate: text("promise_date"),                   // janji bayar
+  paidAt: text("paid_at"),                             // diset saat pindah ke stage lunas
+  closedAt: text("closed_at"),                         // diset saat pindah ke stage lunas/menunggak
+  closeReason: text("close_reason"),                   // manual_lunas | manual_menunggak
+  notes: text("notes"),
+  createdBy: int("created_by"),                        // null = worker/auto
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+}, (t) => ({
+  uniqSubjectPeriod: uniqueIndex("uniq_mitra_col_period").on(t.subjectMitraId, t.period), // jangkar idempotensi
+  byPeriodStage: index("idx_mitra_col_period").on(t.mitraId, t.period, t.stage),
+}));
+
+export const mitraCollectionActivities = mysqlTable("mitra_collection_activities", {
+  id: int("id").autoincrement().primaryKey(),
+  mitraId: int("mitra_id").notNull().default(1),
+  collectionId: int("collection_id").notNull(),        // mitra_collections.id
+  userId: int("user_id"),                              // null = sistem/worker
+  type: varchar("type", { length: 32 }).notNull(),     // note | call | whatsapp | visit | stage_change | amount_set | auto_opened
+  content: text("content"),                            // teks atau JSON {"from":"belum_bayar","to":"dihubungi"}
+  createdAt: text("created_at").notNull(),
+}, (t) => ({
+  // created_at is TEXT (repo convention) - cannot join the index without a key length,
+  // so index collection_id only; per-card activity sets are small, sort happens in query.
+  byCollection: index("idx_mca_collection").on(t.collectionId),
+}));
+
 // ===== Generic Pipelines Engine (Phase 1) - separate from leads/collections =====
 export const pipelines = mysqlTable("pipelines", {
   id: int("id").autoincrement().primaryKey(),
@@ -1763,6 +1804,9 @@ export const ALL_PERMISSIONS = [
   // the Customers (customers) / Lead (leads) pages they used to piggyback on.
   { key: "collections_cs", label: "Pipeline Reaktivasi (Layanan)", group: "Layanan Pelanggan" },
   { key: "collections_marketing", label: "Pipeline Reaktivasi (Marketing)", group: "Marketing" },
+  // Collection Mitra: tagihan bulanan JABNET → partner ISP. Root-tenant-only by construction
+  // (server checks activeMitraId === 1), so deliberately NOT in ALL_FEATURES.
+  { key: "collections_mitra", label: "Collection Mitra (Tagihan Mitra)", group: "Keuangan" },
 ] as const;
 
 // Phase E: feature flags per mitra (stored in mitras.features JSON column)
@@ -1918,6 +1962,8 @@ export const insertLeadSchema = createInsertSchema(leads).omit({ id: true });
 export const insertLeadActivitySchema = createInsertSchema(leadActivities).omit({ id: true });
 export const insertCollectionSchema = createInsertSchema(collections).omit({ id: true });
 export const insertCollectionActivitySchema = createInsertSchema(collectionActivities).omit({ id: true });
+export const insertMitraCollectionSchema = createInsertSchema(mitraCollections).omit({ id: true });
+export const insertMitraCollectionActivitySchema = createInsertSchema(mitraCollectionActivities).omit({ id: true });
 export const insertCanvassingSessionSchema = createInsertSchema(canvassingSessions).omit({ id: true });
 export const insertCanvassingLogSchema = createInsertSchema(canvassingLogs).omit({ id: true });
 export const insertOdpScrapeCacheSchema = createInsertSchema(odpScrapeCache).omit({ id: true });
@@ -1977,6 +2023,10 @@ export type Collection = typeof collections.$inferSelect;
 export type InsertCollection = z.infer<typeof insertCollectionSchema>;
 export type CollectionActivity = typeof collectionActivities.$inferSelect;
 export type InsertCollectionActivity = z.infer<typeof insertCollectionActivitySchema>;
+export type MitraCollection = typeof mitraCollections.$inferSelect;
+export type InsertMitraCollection = z.infer<typeof insertMitraCollectionSchema>;
+export type MitraCollectionActivity = typeof mitraCollectionActivities.$inferSelect;
+export type InsertMitraCollectionActivity = z.infer<typeof insertMitraCollectionActivitySchema>;
 export type CollectionStageRow = typeof collectionStages.$inferSelect;
 export type CollectionStageRole = "none" | "entry" | "paid" | "writeoff" | "dismantel" | "overdue";
 export type CanvassingSession = typeof canvassingSessions.$inferSelect;

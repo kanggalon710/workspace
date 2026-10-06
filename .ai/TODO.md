@@ -1,5 +1,12 @@
 # TODO / Backlog - Optimasi Codebase
 
+## Collection Mitra (2026-10-06) - follow-up
+- [x] Fitur inti Collection Mitra (schema, API, worker hook, kanban UI) - selesai & terverifikasi lokal.
+- [ ] Commit + push (belum di-commit - menunggu arahan user; branch kerja saat ini `main` lokal).
+- [ ] Assignee per kartu mitra (tiru pola `collection_assignees`) - bila finance butuh pembagian PIC.
+- [ ] Foto bukti kunjungan di aktivitas mitra (tiru pola `collection_activities.photo_path`).
+- [ ] Notifikasi/reminder WA ke PIC mitra menjelang jatuh tempo (template MPWA baru).
+
 ## Audit 2026-10-04 - remediation backlog (DIKERJAKAN 2026-10-05, branch feature/audit-remediation-20261004)
 - [x] **P0 Security - first-admin credential fallback DIHAPUS.** Password WAJIB dari env
   `ADMIN_DEFAULT_PASSWORD` (fresh install tanpa itu -> server exit 1). Identitas env-driven

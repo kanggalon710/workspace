@@ -39,6 +39,7 @@ const UsersPage = lazy(() => import("@/pages/UsersPage"));
 const RolesPage = lazy(() => import("@/pages/RolesPage"));
 const SettingsHubPage = lazy(() => import("@/pages/SettingsHubPage"));
 const CollectionPipelinePage = lazy(() => import("@/pages/CollectionPipelinePage"));
+const MitraCollectionPage = lazy(() => import("@/pages/MitraCollectionPage"));
 const LoyaltyAdminPage = lazy(() => import("@/pages/LoyaltyAdminPage"));
 const MpwaPage = lazy(() => import("@/pages/MpwaPage"));
 const BroadcastPage = lazy(() => import("@/pages/BroadcastPage"));
@@ -270,6 +271,7 @@ function ProtectedRouter() {
           {/* SOP churn→reaktivasi: view collection ter-scope divisi (delegasi lintas-divisi). */}
           <Route path="/collections/cs">{() => <WithPerm permission="collections_cs"><CollectionPipelinePage division="cs" /></WithPerm>}</Route>
           <Route path="/collections/marketing">{() => <WithPerm permission="collections_marketing"><CollectionPipelinePage division="marketing" /></WithPerm>}</Route>
+          <Route path="/collections/mitra">{() => <WithPerm permission="collections_mitra"><MitraCollectionPage /></WithPerm>}</Route>
           <Route path="/pipelines">{() => <WithPerm permission="pipelines"><PipelinesPage /></WithPerm>}</Route>
           {/* Pipeline kerja per-divisi (HRD/NOC dst) - board kustom ter-scope divisi. */}
           <Route path="/pipelines/divisi/:key">{(params) => <WithPerm permission={`pipelines_${params.key}`}><PipelinesPage division={params.key} /></WithPerm>}</Route>

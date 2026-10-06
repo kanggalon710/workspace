@@ -29,6 +29,7 @@ import { withMitra, getMitraIdOrNull } from "./tenant-context.js";
 import { mapBillingSample } from "./billing-admin-helpers.js";
 import { runBillingIntakeRules } from "./pipeline-billing-intake.js";
 import { parseCollectionsMode, legacyCollectionsActive } from "../shared/collectionsMode.js";
+import { currentPeriod } from "../shared/mitraCollection.js";
 
 type WorkerState = "idle" | "running" | "backing_off" | "stopped";
 
@@ -291,6 +292,15 @@ export class BillingSyncWorker {
         await this.sleep(gapMs);
         if (this.state === "stopped") { console.log("[BillingSyncWorker] stop saat jeda → loop nightly dihentikan"); break; }
       }
+    }
+    // Collection Mitra: pastikan kartu tagihan bulanan per mitra ada untuk periode berjalan.
+    // Sekali per cycle di konteks root (JABNET yang menagih) - meng-cover pergantian bulan
+    // walau tidak ada yang membuka board. Idempotent (unique key subject+period).
+    try {
+      const ensure = await withMitra(1, () => storage.ensureMitraCollectionCards(currentPeriod()));
+      if (ensure.created > 0) console.log(`[BillingSyncWorker] mitra-collection: ${ensure.created} kartu periode ${currentPeriod()} dibuat`);
+    } catch (e: any) {
+      console.warn("[BillingSyncWorker] mitra-collection ensure failed:", e?.message);
     }
     return agg;
   }

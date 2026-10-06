@@ -2,6 +2,19 @@
 
 > Konteks -> opsi -> pilihan -> alasan. Entri terbaru di ATAS.
 
+## 2026-10-06 - Collection Mitra: tabel baru + stage fixed (bukan reuse pipeline retail)
+**Konteks:** Pelacakan pembayaran bulanan mitra (partner ISP) oleh JABNET root. Opsi:
+(a) reuse tabel `collections` (keyed customer, stage per-tenant configurable), (b) kartu di
+generic pipeline engine, (c) tabel khusus `mitra_collections` + stage konstanta.
+**Pilihan:** (c). **Alasan:** `collections` terikat `customer_id` + tenancy per-mitra -
+subjeknya di sini justru mitra lain, dipaksakan akan mengaburkan dua makna `mitra_id`.
+Kolom subjek dinamai `subject_mitra_id` agar konvensi `mitra_id`=tenant tetap murni.
+Stage dibuat FIXED di `shared/mitraCollection.ts` (tanpa tabel stage, tanpa Pipeline
+Manager) - YAGNI: alur tagihan mitra sederhana dan root-only; configurability bisa
+ditambah belakangan kalau terbukti perlu. Akses: gerbang keras server `activeMitraId===1`
+(izin `collections_mitra` ikut ter-auto-grant ke semua tenant oleh upgradePermissionsV412,
+maka flag client `rootOnly` hanya kosmetik penyembunyi menu).
+
 ## 2026-10-05 - express-session DIHAPUS (bukan di-harden)
 **Konteks:** Audit minta fail startup tanpa SESSION_SECRET + secure cookies. Investigasi: 0
 pemakaian `req.session` di seluruh repo - auth staff = bearer token + cookie `ftth_session`

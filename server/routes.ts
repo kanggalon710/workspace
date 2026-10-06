@@ -15,6 +15,7 @@ import { parseSendDays, isValidSendTime, localDateStr } from "../shared/checkinS
 import { parseEventRecurrence, buildTeamCalendarIcs } from "../shared/eventRecurrence.js";
 import { computeScore, parseScoreWeights } from "../shared/performanceScore.js";
 import { customerConnStatus } from "../shared/customerStatus.js";
+import { currentPeriod, isValidPeriod, isMitraCollectionStage } from "../shared/mitraCollection.js";
 import { DEFAULT_OPTICAL_THRESHOLDS, type OpticalThresholds } from "../shared/opticalPower.js";
 import { buildDeviceIndexes, matchCustomerDevice } from "./ont-match.js";
 import { runStageEnterAutomations, dispatchCardEvent } from "./pipeline-automation.js";
@@ -11062,6 +11063,110 @@ router.delete("/api/collections/:id", async (req: Request, res: Response) => {
     await storage.deleteCollection(Number(req.params.id));
     await logAudit(req, "DELETE", "collection", Number(req.params.id));
     sendSuccess(res, { deleted: true });
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+// ==================== COLLECTION MITRA (tagihan JABNET → partner ISP) ====================
+// Root-tenant-only: hanya JABNET (activeMitraId=1) yang menagih mitranya. Auto-sync izin
+// memberi key `collections_mitra` ke role Admin semua tenant, jadi cek tenant di sini
+// adalah gerbang kerasnya (client hanya menyembunyikan menu).
+function mitraCollectionAccessOK(req: Request, write: boolean): boolean {
+  if (Number(req.authUser?.activeMitraId ?? 0) !== 1) return false;
+  return write ? hasWritePermission(req, "collections_mitra") : hasPermission(req, "collections_mitra");
+}
+
+router.get("/api/mitra-collections", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, false)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const period = String(req.query.period ?? currentPeriod());
+    if (!isValidPeriod(period)) return sendError(res, "Periode tidak valid (format YYYY-MM)");
+    // Lazy-ensure utk periode berjalan: board langsung terisi saat dibuka tgl 1 sekalipun.
+    // Idempotent (unique key) + murah (skip bila semua mitra aktif sudah punya kartu).
+    if (period === currentPeriod()) await storage.ensureMitraCollectionCards(period);
+    sendSuccess(res, await storage.getMitraCollections(period));
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+router.get("/api/mitra-collections/stats", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, false)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const period = String(req.query.period ?? currentPeriod());
+    if (!isValidPeriod(period)) return sendError(res, "Periode tidak valid (format YYYY-MM)");
+    sendSuccess(res, await storage.getMitraCollectionStats(period));
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+router.get("/api/mitra-collections/periods", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, false)) return sendError(res, "Akses ditolak", 403);
+  try {
+    sendSuccess(res, await storage.getMitraCollectionPeriods());
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+// Backfill manual: buat kartu untuk periode tertentu (mis. periode depan / bulan terlewat).
+router.post("/api/mitra-collections/ensure", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, true)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const period = String(req.body?.period ?? "");
+    if (!isValidPeriod(period)) return sendError(res, "Periode tidak valid (format YYYY-MM)");
+    const result = await storage.ensureMitraCollectionCards(period);
+    await logAudit(req, "CREATE", "mitra_collection_ensure", 0, period, result);
+    sendSuccess(res, result);
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+// NB: route spesifik di atas HARUS terdaftar sebelum "/:id" (Express match berurutan).
+router.patch("/api/mitra-collections/:id", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, true)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const patch: any = {};
+    if (req.body?.amount !== undefined) {
+      const amount = req.body.amount === null ? null : Number(req.body.amount);
+      if (amount !== null && (!Number.isFinite(amount) || amount < 0)) return sendError(res, "Nominal tidak valid");
+      patch.amount = amount;
+    }
+    if (req.body?.notes !== undefined) patch.notes = String(req.body.notes ?? "") || null;
+    if (req.body?.promiseDate !== undefined) patch.promiseDate = String(req.body.promiseDate ?? "") || null;
+    if (Object.keys(patch).length === 0) return sendError(res, "Tidak ada field yang diubah");
+    const row = await storage.updateMitraCollection(Number(req.params.id), patch, req.authUser!.id);
+    sendSuccess(res, row);
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+router.patch("/api/mitra-collections/:id/stage", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, true)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const stage = String(req.body?.stage ?? "");
+    if (!isMitraCollectionStage(stage)) return sendError(res, "Stage tidak dikenal");
+    const note = req.body?.note ? String(req.body.note) : undefined;
+    const promiseDate = req.body?.promiseDate !== undefined ? String(req.body.promiseDate ?? "") : undefined;
+    const row = await storage.moveMitraCollectionStage(Number(req.params.id), stage, req.authUser!.id, note, promiseDate);
+    await logAudit(req, "UPDATE", "mitra_collection", row.id, row.subjectName, { stage });
+    sendSuccess(res, row);
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+router.get("/api/mitra-collections/:id/activities", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, false)) return sendError(res, "Akses ditolak", 403);
+  try {
+    sendSuccess(res, await storage.getMitraCollectionActivities(Number(req.params.id)));
+  } catch (e: any) { sendError(res, e.message, 500); }
+});
+
+router.post("/api/mitra-collections/:id/activities", async (req: Request, res: Response) => {
+  if (!mitraCollectionAccessOK(req, true)) return sendError(res, "Akses ditolak", 403);
+  try {
+    const type = String(req.body?.type ?? "note");
+    if (!["note", "call", "whatsapp", "visit"].includes(type)) return sendError(res, "Tipe aktivitas tidak valid");
+    const content = String(req.body?.content ?? "").trim();
+    if (!content) return sendError(res, "Isi aktivitas wajib diisi");
+    const existing = await storage.getMitraCollection(Number(req.params.id));
+    if (!existing) return sendError(res, "Kartu tidak ditemukan", 404);
+    const row = await storage.createMitraCollectionActivity({
+      collectionId: existing.id, userId: req.authUser!.id, type, content,
+      createdAt: new Date().toISOString(),
+    } as any);
+    sendSuccess(res, row);
   } catch (e: any) { sendError(res, e.message, 500); }
 });
 

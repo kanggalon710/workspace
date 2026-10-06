@@ -77,6 +77,9 @@ import {
   type Collection, type InsertCollection,
   type CollectionActivity, type InsertCollectionActivity,
   type CollectionStageRow, type CollectionStageRole,
+  mitraCollections, mitraCollectionActivities,
+  type MitraCollection, type InsertMitraCollection,
+  type MitraCollectionActivity, type InsertMitraCollectionActivity,
   customerOtps, customerPortalSessions, trafficSnapshots,
   customerLoyalty, customerDiscounts, customerReferrals,
   pointTransactions, pointRedemptions,
@@ -169,6 +172,7 @@ import {
 } from "../shared/schema.js";
 import { BUILTIN_TEMPLATES, pipelineToTemplate, remapFieldConfig, remapTemplateRule, type TemplateDefinition } from "../shared/pipelineTemplate.js";
 import { type CollectionConfigInput, type StageMapRow } from "../shared/collectionConfig.js";
+import { prevPeriod, mitraStageCloses, isMitraCollectionStage } from "../shared/mitraCollection.js";
 import { getFieldTypeMeta } from "../shared/pipelineFieldTypes.js";
 import { capabilitiesFromLevel, deriveLevel, parseCapabilities, type PipelineCapability } from "../shared/pipelineCapabilities.js";
 import { parseGrants, sanitizeGrants, mergeAdditiveGrants, type GrantMap } from "../shared/permissionGrants.js";
@@ -2069,6 +2073,225 @@ export class DatabaseStorage implements IStorage {
       collectionId: Number(rows[0].collectionId),
       userId: rows[0].userId == null ? null : Number(rows[0].userId),
     };
+  }
+
+  // ==================== COLLECTION MITRA (tagihan JABNET → partner ISP) ====================
+  // Semua method di sini HANYA untuk tenant root (JABNET, mitra 1) - JABNET yang menagih
+  // mitranya, bukan sebaliknya. `subjectMitraId` = mitra yang ditagih; `mitraId` tetap
+  // konvensi tenant pemilik (selalu 1). Stage fixed di shared/mitraCollection.ts.
+
+  private assertMitraCollectionRoot(): void {
+    if (getMitraId() !== 1) throw new Error("Collection Mitra hanya tersedia untuk tenant JABNET");
+  }
+
+  /** Migrasi idempotent tabel collection mitra (pola runTeamspaceMigrations). */
+  private async runMitraCollectionMigrations(): Promise<void> {
+    const tables: Array<{ name: string; ddl: string }> = [
+      {
+        name: "mitra_collections",
+        ddl: `CREATE TABLE IF NOT EXISTS mitra_collections (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          subject_mitra_id INT NOT NULL,
+          subject_name VARCHAR(255) NOT NULL,
+          period VARCHAR(7) NOT NULL,
+          stage VARCHAR(32) NOT NULL DEFAULT 'belum_bayar',
+          amount INT NULL,
+          promise_date TEXT NULL,
+          paid_at TEXT NULL,
+          closed_at TEXT NULL,
+          close_reason TEXT NULL,
+          notes TEXT NULL,
+          created_by INT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NULL,
+          UNIQUE KEY uniq_mitra_col_period (subject_mitra_id, period),
+          KEY idx_mitra_col_period (mitra_id, period, stage)
+        )`,
+      },
+      {
+        name: "mitra_collection_activities",
+        ddl: `CREATE TABLE IF NOT EXISTS mitra_collection_activities (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mitra_id INT NOT NULL DEFAULT 1,
+          collection_id INT NOT NULL,
+          user_id INT NULL,
+          type VARCHAR(32) NOT NULL,
+          content TEXT NULL,
+          created_at TEXT NOT NULL,
+          KEY idx_mca_collection (collection_id)
+        )`,
+      },
+    ];
+    for (const t of tables) {
+      try {
+        await this.pool.execute(t.ddl);
+      } catch (e: any) {
+        console.warn(`[migration] mitra collection create ${t.name} skipped: ${e.message}`);
+      }
+    }
+  }
+
+  /** Pastikan tiap mitra aktif (kecuali JABNET sendiri) punya 1 kartu untuk `period`.
+   *  Idempotent: unique key (subject_mitra_id, period) + duplicate-key di-skip, jadi aman
+   *  dipanggil berulang / paralel (lazy dari GET list + worker nightly + manual backfill).
+   *  Amount di-prefill dari kartu periode sebelumnya bila ada (tagihan bulanan recurring). */
+  async ensureMitraCollectionCards(period: string): Promise<{ created: number; existing: number }> {
+    this.assertMitraCollectionRoot();
+    const actives = (await this.listMitras(false)).filter((m) => m.id !== 1);
+    const haveRows = await this.db.select({ subjectMitraId: mitraCollections.subjectMitraId })
+      .from(mitraCollections).where(eq(mitraCollections.period, period));
+    const have = new Set(haveRows.map((r) => Number(r.subjectMitraId)));
+    const missing = actives.filter((m) => !have.has(m.id));
+    if (missing.length === 0) return { created: 0, existing: have.size };
+
+    const prevRows = await this.db.select({ subjectMitraId: mitraCollections.subjectMitraId, amount: mitraCollections.amount })
+      .from(mitraCollections).where(eq(mitraCollections.period, prevPeriod(period)));
+    const prevAmount = new Map(prevRows.map((r) => [Number(r.subjectMitraId), r.amount]));
+
+    const now = new Date().toISOString();
+    let created = 0;
+    for (const m of missing) {
+      try {
+        const result = await this.db.insert(mitraCollections).values({
+          mitraId: 1,
+          subjectMitraId: m.id,
+          subjectName: m.name,
+          period,
+          stage: "belum_bayar",
+          amount: prevAmount.get(m.id) ?? null,
+          createdBy: null,
+          createdAt: now,
+        } as any);
+        const insertId = Number((result[0] as any).insertId);
+        await this.createMitraCollectionActivity({
+          collectionId: insertId, userId: null, type: "auto_opened",
+          content: JSON.stringify({ period }), createdAt: now,
+        } as any);
+        created++;
+      } catch (e: any) {
+        if (Number(e?.errno) !== 1062) throw e; // 1062 = duplicate key → run paralel, aman di-skip
+      }
+    }
+    return { created, existing: have.size };
+  }
+
+  /** List kartu 1 periode + kontak LIVE dari mitras (nomor terkini yang dipakai menagih;
+   *  subjectName tetap snapshot historis). Mitra yang dinonaktifkan di tengah bulan tetap
+   *  tampil (kartunya sudah ada) - periode berikutnya otomatis ter-skip oleh ensure. */
+  async getMitraCollections(period: string): Promise<Array<MitraCollection & { phone: string | null; contactName: string | null; contactPhone: string | null }>> {
+    this.assertMitraCollectionRoot();
+    const rows = await this.db.select({
+      col: mitraCollections,
+      phone: mitras.phone,
+      contactName: mitras.primaryContactName,
+      contactPhone: mitras.primaryContactPhone,
+    }).from(mitraCollections)
+      .leftJoin(mitras, eq(mitraCollections.subjectMitraId, mitras.id))
+      .where(eq(mitraCollections.period, period))
+      .orderBy(mitraCollections.subjectName);
+    return rows.map((r) => ({ ...r.col, phone: r.phone ?? null, contactName: r.contactName ?? null, contactPhone: r.contactPhone ?? null }));
+  }
+
+  async getMitraCollection(id: number): Promise<MitraCollection | undefined> {
+    this.assertMitraCollectionRoot();
+    const [row] = await this.db.select().from(mitraCollections).where(eq(mitraCollections.id, id));
+    return row;
+  }
+
+  /** Edit field manual (amount/notes/promiseDate). Perubahan amount dicatat sebagai
+   *  aktivitas `amount_set` supaya supervisor bisa audit siapa mengisi berapa. */
+  async updateMitraCollection(id: number, patch: Partial<InsertMitraCollection>, userId: number | null): Promise<MitraCollection> {
+    this.assertMitraCollectionRoot();
+    const existing = await this.getMitraCollection(id);
+    if (!existing) throw new Error("Kartu collection mitra tidak ditemukan");
+    const now = new Date().toISOString();
+    await this.db.update(mitraCollections)
+      .set({ ...patch, updatedAt: now })
+      .where(eq(mitraCollections.id, id));
+    if (patch.amount !== undefined && patch.amount !== existing.amount) {
+      await this.createMitraCollectionActivity({
+        collectionId: id, userId, type: "amount_set",
+        content: JSON.stringify({ from: existing.amount, to: patch.amount }), createdAt: now,
+      } as any);
+    }
+    const [row] = await this.db.select().from(mitraCollections).where(eq(mitraCollections.id, id));
+    return row!;
+  }
+
+  /** Pindah stage (pola moveCollectionStage): lunas/menunggak menutup kartu (closedAt,
+   *  lunas juga set paidAt); pindah keluar dari stage penutup = reopen. Selalu catat
+   *  aktivitas stage_change. Validasi key stage dilakukan di route (isMitraCollectionStage). */
+  async moveMitraCollectionStage(id: number, stage: string, userId: number | null, note?: string, promiseDate?: string): Promise<MitraCollection> {
+    this.assertMitraCollectionRoot();
+    if (!isMitraCollectionStage(stage)) throw new Error(`Stage tidak dikenal: ${stage}`);
+    const existing = await this.getMitraCollection(id);
+    if (!existing) throw new Error("Kartu collection mitra tidak ditemukan");
+    const now = new Date().toISOString();
+    const patch: any = { stage, updatedAt: now };
+    if (promiseDate !== undefined) patch.promiseDate = promiseDate || null;
+    if (mitraStageCloses(stage)) {
+      patch.closedAt = now;
+      patch.closeReason = `manual_${stage}`;
+      if (stage === "lunas") patch.paidAt = now;
+    } else if (existing.closedAt) {
+      patch.closedAt = null;
+      patch.closeReason = null;
+      patch.paidAt = null;
+    }
+    await this.db.update(mitraCollections).set(patch).where(eq(mitraCollections.id, id));
+    await this.createMitraCollectionActivity({
+      collectionId: id, userId, type: "stage_change",
+      content: JSON.stringify({ from: existing.stage, to: stage, ...(note ? { note } : {}) }), createdAt: now,
+    } as any);
+    const [row] = await this.db.select().from(mitraCollections).where(eq(mitraCollections.id, id));
+    return row!;
+  }
+
+  async getMitraCollectionStats(period: string): Promise<{
+    totalCards: number; totalAmount: number; paidCount: number; paidAmount: number;
+    outstandingAmount: number; byStage: Record<string, number>;
+  }> {
+    this.assertMitraCollectionRoot();
+    const rows = await this.db.select({ stage: mitraCollections.stage, amount: mitraCollections.amount })
+      .from(mitraCollections).where(eq(mitraCollections.period, period));
+    const byStage: Record<string, number> = {};
+    let totalAmount = 0, paidCount = 0, paidAmount = 0;
+    for (const r of rows) {
+      byStage[r.stage] = (byStage[r.stage] ?? 0) + 1;
+      const amt = Number(r.amount ?? 0);
+      totalAmount += amt;
+      if (r.stage === "lunas") { paidCount++; paidAmount += amt; }
+    }
+    // Outstanding = semua yang belum lunas (termasuk menunggak - tetap piutang).
+    return { totalCards: rows.length, totalAmount, paidCount, paidAmount, outstandingAmount: totalAmount - paidAmount, byStage };
+  }
+
+  /** Periode yang punya kartu, terbaru dulu (untuk dropdown periode di client). */
+  async getMitraCollectionPeriods(): Promise<string[]> {
+    this.assertMitraCollectionRoot();
+    const rows: any = ((await this.db.execute(sql`
+      SELECT DISTINCT period FROM mitra_collections ORDER BY period DESC
+    `))[0] as any);
+    return (rows as any[]).map((r) => String(r.period));
+  }
+
+  async getMitraCollectionActivities(collectionId: number): Promise<MitraCollectionActivity[]> {
+    this.assertMitraCollectionRoot();
+    return this.db.select().from(mitraCollectionActivities)
+      .where(eq(mitraCollectionActivities.collectionId, collectionId))
+      .orderBy(desc(mitraCollectionActivities.createdAt), desc(mitraCollectionActivities.id));
+  }
+
+  async createMitraCollectionActivity(data: InsertMitraCollectionActivity): Promise<MitraCollectionActivity> {
+    const result = await this.db.insert(mitraCollectionActivities).values({
+      ...data,
+      mitraId: 1,
+      createdAt: data.createdAt ?? new Date().toISOString(),
+    } as any);
+    const insertId = Number((result[0] as any).insertId);
+    const [row] = await this.db.select().from(mitraCollectionActivities).where(eq(mitraCollectionActivities.id, insertId));
+    return row!;
   }
 
   async getCollectionStats(): Promise<{ total: number; byStage: Record<string, number>; totalOverdue: number; avgAgeDays: number }> {
@@ -11017,6 +11240,9 @@ export class DatabaseStorage implements IStorage {
 
     // Teamspace v5.0 Fase 1 - teams + board tugas (additive, idempotent).
     await this.runTeamspaceMigrations();
+
+    // Collection Mitra - tagihan bulanan JABNET → partner ISP (additive, idempotent).
+    await this.runMitraCollectionMigrations();
 
     // 2. Seed default admin user - password WAJIB dari env, tanpa fallback hardcoded
     //    (audit 2026-10-04). Keputusan murni di shared/adminSeed.ts (unit-tested).
