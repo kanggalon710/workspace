@@ -1,0 +1,1 @@
+import{j as e}from"./react-vendor-RCstk0y8.js";function r({label:t,value:s}){return e.jsxs("div",{className:"bg-muted/30 rounded-md px-2 py-1.5",children:[e.jsx("div",{className:"text-[10px] text-muted-foreground",children:t}),e.jsx("div",{className:"font-medium truncate",children:s})]})}export{r as I};
